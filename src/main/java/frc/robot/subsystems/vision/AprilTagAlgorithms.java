@@ -23,10 +23,8 @@ public class AprilTagAlgorithms {
    * only be used when there are targets visible.
    *
    * @param estimatedPose The estimated pose to guess standard deviations for.
-   * @param targets The targets used in the calc for the pose. Must be a non-zero amount.
+   * @param targets The targets used in the calculation for the pose. Must be a non-zero amount.
    * @return The calculated standard deviations. Or empty if not suitable for estimation.
-   * @apiNote Calc is short for calculator by the way.
-   * @apiNote I'm just using slang guys.
    */
   public static Matrix<N3, N1> getEstimationStdDevs(
       Pose2d estimatedPose, List<PhotonTrackedTarget> targets) {
