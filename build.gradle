@@ -217,3 +217,7 @@ spotless {
         endWithNewline()
     }
 }
+
+javadoc {
+    options.stylesheetFile = new File(projectDir, "style.css")
+}
