@@ -69,5 +69,8 @@
   },
   "[java]": {
     "editor.defaultFormatter": "redhat.java"
+  },
+  "[github-actions-workflow]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
   }
 }

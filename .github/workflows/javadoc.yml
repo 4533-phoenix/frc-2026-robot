@@ -1,0 +1,106 @@
+name: Deploy Javadoc to GitHub Pages
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+  # Allows manual triggering
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: write # Needed for Javadoc generation and deployment
+  pages: write # Needed for Pages deployment
+  id-token: write # Needed for Pages deployment
+
+# Cancel any in-progress job or run
+concurrency:
+  group: "pages-${{ github.workflow }}"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Setup Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # Generate and Deploy Javadoc
+      - uses: MathieuSoysal/Javadoc-publisher.yml@v2.5.0
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          java-version: 17
+          project: gradle
+          java-distribution: temurin
+          javadoc-source-folder: build/docs/javadoc
+          target-folder: .
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # Define string replacements
+      - name: Define string replacements
+        id: define-replacements
+        run: |
+          echo "REPLACEMENTS=s/&nbsp;|&nbsp;//g;s/Package:&nbsp;/<b>Package<\/b>/g;s/<label for=\"search-input\">SEARCH:<\/label>//g;s/Summary:&nbsp;/<b>Summary<\/b>/g;s/Detail:&nbsp;/<b>Detail<\/b>/g" >> $GITHUB_ENV
+
+      # Clean HTML files
+      - name: Clean HTML files
+        env:
+          REPLACEMENTS: ${{ env.REPLACEMENTS }}
+        run: |
+          for file in $(find build/docs/javadoc -name "*.html"); do
+            sed -i "$REPLACEMENTS" "$file"
+            echo "Processed $file"
+          done
+
+      - name: Install minify
+        run: bun install -g minify
+
+      # Minify HTML files
+      - name: Minify HTML files
+        run: |
+          for file in $(find build/docs/javadoc -name "*.html"); do
+            minify "$file" > "${file}.min"
+            mv "${file}.min" "$file"
+            echo "Minified HTML: $file"
+          done
+
+      # # Minify JavaScript files
+      # - name: Minify JavaScript files
+      #   run: |
+      #     for file in $(find build/docs/javadoc -name "*.js"); do
+      #       minify "$file" > "${file}.min"
+      #       mv "${file}.min" "$file"
+      #       echo "Minified JavaScript: $file"
+      #     done
+
+      # Minify CSS files
+      - name: Minify CSS files
+        run: |
+          for file in $(find build/docs/javadoc -name "*.css"); do
+            minify "$file" > "${file}.min"
+            mv "${file}.min" "$file"
+            echo "Minified CSS: $file"
+          done
+
+      # Upload the Javadoc as a Pages artifact
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/docs/javadoc
+
+      # Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
