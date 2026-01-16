@@ -1,4 +1,6 @@
 frc.robot
 frc.robot.commands
+frc.robot.field
 frc.robot.subsystems.drive
+frc.robot.subsystems.vision
 frc.robot.util
