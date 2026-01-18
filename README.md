@@ -1,5 +1,6 @@
 <h1 align="left">
 FRC 2026 Robot Code
+<img src="https://phoenix4533.org/favicon.svg" align="right" width="45" height="45" />
 </h1>
 
 Welcome to the official repository for **FRC Team 4533 Phoenix's 2026 Robot Code**! This repository contains all the code for our robot, including subsystems, commands, and autonomous routines.
