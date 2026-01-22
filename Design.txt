@@ -1,0 +1,6 @@
+Ace - Climber
+2 Neo 550s to climb
+2 Neos to rotate
+2 limit swithces for min and max
+2 limit switches encoder for angle
+
