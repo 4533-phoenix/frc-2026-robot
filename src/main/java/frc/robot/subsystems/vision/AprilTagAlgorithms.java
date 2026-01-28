@@ -19,12 +19,15 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 public class AprilTagAlgorithms {
   /**
    * The standard deviations of the estimated pose for use with {@link
-   * edu.wpi.first.math.estimator.SwerveDrivePoseEstimator SwerveDrivePoseEstimator}. This should
+   * edu.wpi.first.math.estimator.SwerveDrivePoseEstimator
+   * SwerveDrivePoseEstimator}. This should
    * only be used when there are targets visible.
    *
    * @param estimatedPose The estimated pose to guess standard deviations for.
-   * @param targets The targets used in the calculation for the pose. Must be a non-zero amount.
-   * @return The calculated standard deviations. Or empty if not suitable for estimation.
+   * @param targets       The targets used in the calculation for the pose. Must
+   *                      be a non-zero amount.
+   * @return The calculated standard deviations. Or empty if not suitable for
+   *         estimation.
    */
   public static Matrix<N3, N1> getEstimationStdDevs(
       Pose2d estimatedPose, List<PhotonTrackedTarget> targets) {
@@ -32,18 +35,17 @@ public class AprilTagAlgorithms {
     double totalDistance = 0;
     for (PhotonTrackedTarget target : targets) {
       var tagPose = VisionConstants.fieldLayout.getTagPose(target.getFiducialId());
-      if (tagPose.isEmpty()) continue;
+      if (tagPose.isEmpty())
+        continue;
 
       numTags++;
-      totalDistance +=
-          tagPose.get().toPose2d().getTranslation().getDistance(estimatedPose.getTranslation());
+      totalDistance += tagPose.get().toPose2d().getTranslation().getDistance(estimatedPose.getTranslation());
     }
 
     double avgDistance = totalDistance / numTags;
 
     // Decrease std deviations further if more than one target is available
-    Matrix<N3, N1> stdDevs =
-        numTags == 1 ? VisionConstants.singleTagStdDevs : VisionConstants.multiTagStdDevs;
+    Matrix<N3, N1> stdDevs = numTags == 1 ? VisionConstants.singleTagStdDevs : VisionConstants.multiTagStdDevs;
 
     // Increase std devs based on average distance
     stdDevs = stdDevs.times(1 + (avgDistance * avgDistance / 30.0));

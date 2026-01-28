@@ -1,5 +1,7 @@
-// Copyright (c) 2026 Phoenix
-// http://github.com/4533-phoenix
+// Copyright (c) 2021-2026 Littleton Robotics
+// http://github.com/Mechanical-Advantage
+//
+// Modified by FRC Team 4533 (Phoenix) 2026
 //
 // Use of this source code is governed by a BSD
 // license that can be found in the LICENSE file
@@ -31,17 +33,22 @@ public interface ModuleIO {
   }
 
   /** Updates the set of loggable inputs. */
-  public default void updateInputs(ModuleIOInputs inputs) {}
+  public default void updateInputs(ModuleIOInputs inputs) {
+  }
 
   /** Run the drive motor at the specified open loop value. */
-  public default void setDriveOpenLoop(double output) {}
+  public default void setDriveOpenLoop(double output) {
+  }
 
   /** Run the turn motor at the specified open loop value. */
-  public default void setTurnOpenLoop(double output) {}
+  public default void setTurnOpenLoop(double output) {
+  }
 
   /** Run the drive motor at the specified velocity. */
-  public default void setDriveVelocity(double velocityRadPerSec) {}
+  public default void setDriveVelocity(double velocityRadPerSec) {
+  }
 
   /** Run the turn motor to the specified rotation. */
-  public default void setTurnPosition(Rotation2d rotation) {}
+  public default void setTurnPosition(Rotation2d rotation) {
+  }
 }
