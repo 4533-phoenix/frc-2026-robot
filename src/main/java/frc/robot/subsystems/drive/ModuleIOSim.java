@@ -1,6 +1,8 @@
 // Copyright (c) 2021-2026 Littleton Robotics
 // http://github.com/Mechanical-Advantage
 //
+// Modified by FRC Team 4533 (Phoenix) 2026
+//
 // Use of this source code is governed by a BSD
 // license that can be found in the LICENSE file
 // at the root directory of this project.
@@ -31,14 +33,12 @@ public class ModuleIOSim implements ModuleIO {
 
   public ModuleIOSim() {
     // Create drive and turn sim models
-    driveSim =
-        new DCMotorSim(
-            LinearSystemId.createDCMotorSystem(driveGearbox, 0.025, driveMotorReduction),
-            driveGearbox);
-    turnSim =
-        new DCMotorSim(
-            LinearSystemId.createDCMotorSystem(turnGearbox, 0.004, turnMotorReduction),
-            turnGearbox);
+    driveSim = new DCMotorSim(
+        LinearSystemId.createDCMotorSystem(driveGearbox, 0.025, driveMotorReduction),
+        driveGearbox);
+    turnSim = new DCMotorSim(
+        LinearSystemId.createDCMotorSystem(turnGearbox, 0.004, turnMotorReduction),
+        turnGearbox);
 
     // Enable wrapping for turn PID
     turnController.enableContinuousInput(-Math.PI, Math.PI);
@@ -48,8 +48,7 @@ public class ModuleIOSim implements ModuleIO {
   public void updateInputs(ModuleIOInputs inputs) {
     // Run closed-loop control
     if (driveClosedLoop) {
-      driveAppliedVolts =
-          driveFFVolts + driveController.calculate(driveSim.getAngularVelocityRadPerSec());
+      driveAppliedVolts = driveFFVolts + driveController.calculate(driveSim.getAngularVelocityRadPerSec());
     } else {
       driveController.reset();
     }
@@ -81,9 +80,9 @@ public class ModuleIOSim implements ModuleIO {
 
     // Update odometry inputs (50Hz because high-frequency odometry in sim doesn't
     // matter)
-    inputs.odometryTimestamps = new double[] {Timer.getFPGATimestamp()};
-    inputs.odometryDrivePositionsRad = new double[] {inputs.drivePositionRad};
-    inputs.odometryTurnPositions = new Rotation2d[] {inputs.turnPosition};
+    inputs.odometryTimestamps = new double[] { Timer.getFPGATimestamp() };
+    inputs.odometryDrivePositionsRad = new double[] { inputs.drivePositionRad };
+    inputs.odometryTurnPositions = new Rotation2d[] { inputs.turnPosition };
   }
 
   @Override

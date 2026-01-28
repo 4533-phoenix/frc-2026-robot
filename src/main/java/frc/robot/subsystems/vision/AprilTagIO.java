@@ -36,5 +36,6 @@ public interface AprilTagIO {
     public Pose3d[] rejectedPoses = new Pose3d[0];
   }
 
-  public default void updateInputs(AprilTagIOInputs inputs) {}
+  public default void updateInputs(AprilTagIOInputs inputs) {
+  }
 }

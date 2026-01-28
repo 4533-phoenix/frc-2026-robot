@@ -45,8 +45,7 @@ public class AprilTagIOPhotonSim extends AprilTagIOPhoton {
 
     VisionConstants.aprilTagSim.ifPresent(
         aprilTagSim -> {
-          FieldObject2d visionEstimation =
-              aprilTagSim.getDebugField().getObject("VisionEstimation");
+          FieldObject2d visionEstimation = aprilTagSim.getDebugField().getObject("VisionEstimation");
 
           if (inputs.validPoseObservations.length != 0) {
             visionEstimation.setPoses(inputs.validPoseObservations[0].robotPose().toPose2d());

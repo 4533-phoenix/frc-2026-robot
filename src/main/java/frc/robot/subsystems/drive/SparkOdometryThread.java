@@ -1,6 +1,8 @@
 // Copyright (c) 2021-2026 Littleton Robotics
 // http://github.com/Mechanical-Advantage
 //
+// Modified by FRC Team 4533 (Phoenix) 2026
+//
 // Use of this source code is governed by a BSD
 // license that can be found in the LICENSE file
 // at the root directory of this project.
@@ -18,9 +20,12 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.function.DoubleSupplier;
 
 /**
- * Provides an interface for asynchronously reading high-frequency measurements to a set of queues.
+ * Provides an interface for asynchronously reading high-frequency measurements
+ * to a set of queues.
  *
- * <p>This version includes an overload for Spark signals, which checks for errors to ensure that
+ * <p>
+ * This version includes an overload for Spark signals, which checks for errors
+ * to ensure that
  * all measurements in the sample are valid.
  */
 public class SparkOdometryThread {
