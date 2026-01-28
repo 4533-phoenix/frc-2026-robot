@@ -12,6 +12,17 @@ java {
 
 def ROBOT_MAIN_CLASS = "frc.robot.Main"
 
+repositories {
+    mavenCentral()
+    ivy {
+        url "https://github.com/drakeerv/zenoh-roborio-build/releases/download/"
+        patternLayout {
+            artifact "zenoh-rio-build-[revision]/[artifact]-[revision]-[classifier].[ext]"
+        }
+        metadataSources { artifact() }
+    }
+}
+
 // Define my targets (RoboRIO) and artifacts (deployable files)
 // This is added by GradleRIO's backing project DeployUtils.
 deploy {
@@ -71,6 +82,10 @@ task(replayWatch, type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 
+configurations {
+    zenohRoborio
+}
+
 // Defining my dependencies. In this case, WPILib (+ friends), and vendor libraries.
 // Also defines JUnit 4.
 dependencies {
@@ -97,6 +112,9 @@ dependencies {
 
     def akitJson = new groovy.json.JsonSlurper().parseText(new File(projectDir.getAbsolutePath() + "/vendordeps/AdvantageKit.json").text)
     annotationProcessor "org.littletonrobotics.akit:akit-autolog:$akitJson.version"
+
+    implementation "org.eclipse.zenoh:zenoh-java:1.7.2"
+    zenohRoborio "zenoh:zenoh-java-jni:1.7.2:armv7-unknown-linux-gnueabihf@zip"
 }
 
 test {
@@ -182,7 +200,7 @@ spotless {
     java {
         target fileTree(".") {
             include "**/*.java"
-            exclude "**/build/**", "**/build-*/**"
+            exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
         }
         toggleOffOn()
         googleJavaFormat()
@@ -193,7 +211,7 @@ spotless {
     groovyGradle {
         target fileTree(".") {
             include "**/*.gradle"
-            exclude "**/build/**", "**/build-*/**"
+            exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
         }
         greclipse()
         indentWithSpaces(4)
@@ -203,14 +221,14 @@ spotless {
     json {
         target fileTree(".") {
             include "**/*.json"
-            exclude "**/build/**", "**/build-*/**"
+            exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
         }
         gson().indentWithSpaces(2)
     }
     format "misc", {
         target fileTree(".") {
             include "**/*.md", "**/.gitignore"
-            exclude "**/build/**", "**/build-*/**"
+            exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
         }
         trimTrailingWhitespace()
         indentWithSpaces(2)
@@ -221,3 +239,15 @@ spotless {
 javadoc {
     options.stylesheetFile = new File(projectDir, "style.css")
 }
+
+task extractZenohNative(type: Copy) {
+    from {
+        configurations.zenohRoborio.collect { zipTree(it) }
+    }
+    include "**/libzenohjava.so"
+    eachFile { path = name }
+    includeEmptyDirs = false
+    into "src/main/deploy"
+}
+
+project.compileJava.dependsOn(extractZenohNative)
