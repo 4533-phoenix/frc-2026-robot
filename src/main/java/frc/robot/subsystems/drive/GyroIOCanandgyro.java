@@ -15,12 +15,12 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import java.util.Queue;
 
 /** IO implementation for Canandgyro. */
-public class GyroIOCanandgyro implements GyroIO {
+public class GyroIOCanAndGyro implements GyroIO {
   private final Canandgyro canandgyro = new Canandgyro(imuCanId);
   private final Queue<Double> yawPositionQueue;
   private final Queue<Double> yawTimestampQueue;
 
-  public GyroIOCanandgyro() {
+  public GyroIOCanAndGyro() {
     final CanandgyroSettings settings = new CanandgyroSettings();
     settings.setYawFramePeriod(1 / odometryFrequency);
     settings.setAngularVelocityFramePeriod(1 / 50.0);
