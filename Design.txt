@@ -1,6 +1,18 @@
 Ace - Climber
-2 Neo 550s to climb
-2 Neos to rotate
-2 limit swithces for min and max
+2 Neo 550s to climb (vertical motion)
+2 Neos to rotate (rotate the whole bot AFTER we use the 550s to climb)
+2 limit swithces for min and max 
 2 limit switches encoder for angle
 
+SO it should go like:
+
+Auto
+Neo 550s spin until we hit upper limit
+
+Teleop
+Neo 550s spin until we hit lower limit
+
+Endgame
+Neo 550s spin until we hit upper limit
+Neos spin until we hit max angle limit
+(or we can retry by spinner until lower limit)
