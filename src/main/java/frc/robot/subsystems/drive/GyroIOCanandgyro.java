@@ -36,10 +36,12 @@ public class GyroIOCanandgyro implements GyroIO {
     inputs.yawPosition = canandgyro.getRotation2d();
     inputs.yawVelocityRadPerSec = canandgyro.getAngularVelocityYaw() * 2 * Math.PI;
 
-    inputs.odometryYawTimestamps = yawTimestampQueue.stream().mapToDouble((Double value) -> value).toArray();
-    inputs.odometryYawPositions = yawPositionQueue.stream()
-        .map((Double value) -> Rotation2d.fromRotations(-value))
-        .toArray(Rotation2d[]::new);
+    inputs.odometryYawTimestamps =
+        yawTimestampQueue.stream().mapToDouble((Double value) -> value).toArray();
+    inputs.odometryYawPositions =
+        yawPositionQueue.stream()
+            .map((Double value) -> Rotation2d.fromRotations(-value))
+            .toArray(Rotation2d[]::new);
     yawTimestampQueue.clear();
     yawPositionQueue.clear();
   }

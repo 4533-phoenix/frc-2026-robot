@@ -12,14 +12,11 @@ package frc.robot.util;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class VirtualSubsystem extends SubsystemBase {
-  public VirtualSubsystem() {
-  }
+  public VirtualSubsystem() {}
 
   @Override
-  public void periodic() {
-  }
+  public void periodic() {}
 
   @Override
-  public void simulationPeriodic() {
-  }
+  public void simulationPeriodic() {}
 }

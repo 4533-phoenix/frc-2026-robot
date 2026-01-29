@@ -29,8 +29,7 @@ public class Vision extends VirtualSubsystem {
       AprilTagIO io,
       AprilTagIOInputsAutoLogged inputs,
       VisionSource source,
-      Alert disconnectedAlert) {
-  }
+      Alert disconnectedAlert) {}
 
   private final List<AprilTagCamera> aprilTagCameras = new ArrayList<>();
 
@@ -43,28 +42,30 @@ public class Vision extends VirtualSubsystem {
 
       switch (Constants.currentMode) {
         case REAL:
-          io = new AprilTagIOPhoton(
-              config.source(),
-              FieldUtils.getReefTags(),
-              () -> RobotTracker.getGlobalPose().getRotation());
+          io =
+              new AprilTagIOPhoton(
+                  config.source(),
+                  FieldUtils.getReefTags(),
+                  () -> RobotTracker.getGlobalPose().getRotation());
           break;
         case SIM:
-          io = new AprilTagIOPhotonSim(
-              config.source(),
-              FieldUtils.getReefTags(),
-              () -> RobotTracker.getGlobalPose().getRotation(),
-              config.simConfig());
+          io =
+              new AprilTagIOPhotonSim(
+                  config.source(),
+                  FieldUtils.getReefTags(),
+                  () -> RobotTracker.getGlobalPose().getRotation(),
+                  config.simConfig());
           break;
         case REPLAY:
         default:
-          io = new AprilTagIO() {
-          };
+          io = new AprilTagIO() {};
           break;
       }
 
-      Alert disconnectedAlert = new Alert(
-          aprilTagLogRoot + " " + config.source().name() + " is disconnected!",
-          AlertType.kWarning);
+      Alert disconnectedAlert =
+          new Alert(
+              aprilTagLogRoot + " " + config.source().name() + " is disconnected!",
+              AlertType.kWarning);
 
       aprilTagCameras.add(
           new AprilTagCamera(
