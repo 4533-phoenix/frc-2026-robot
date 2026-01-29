@@ -18,6 +18,7 @@ repositories {
         url "https://github.com/drakeerv/zenoh-roborio-build/releases/download/"
         patternLayout {
             artifact "zenoh-rio-build-[revision]/[artifact]-[revision]-[classifier].[ext]"
+            artifact "zenoh-rio-build-[revision]/[artifact]-[revision].[ext]"
         }
         metadataSources { artifact() }
     }
@@ -47,8 +48,7 @@ deploy {
                     jvmArgs.add("-XX:MaxGCPauseMillis=50")
 
                     // The options below may improve performance, but should only be enabled on the RIO 2
-                    //
-                    final MAX_JAVA_HEAP_SIZE_MB = 100;
+                    final MAX_JAVA_HEAP_SIZE_MB = 256;
                     jvmArgs.add("-Xmx" + MAX_JAVA_HEAP_SIZE_MB + "M")
                     jvmArgs.add("-Xms" + MAX_JAVA_HEAP_SIZE_MB + "M")
                     jvmArgs.add("-XX:+AlwaysPreTouch")
@@ -113,7 +113,7 @@ dependencies {
     def akitJson = new groovy.json.JsonSlurper().parseText(new File(projectDir.getAbsolutePath() + "/vendordeps/AdvantageKit.json").text)
     annotationProcessor "org.littletonrobotics.akit:akit-autolog:$akitJson.version"
 
-    implementation "org.eclipse.zenoh:zenoh-java:1.7.2"
+    implementation "zenoh:zenoh-java:1.7.2"
     zenohRoborio "zenoh:zenoh-java-jni:1.7.2:armv7-unknown-linux-gnueabihf@zip"
 }
 

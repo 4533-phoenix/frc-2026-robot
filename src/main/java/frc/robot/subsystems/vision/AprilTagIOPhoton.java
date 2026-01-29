@@ -48,19 +48,21 @@ public class AprilTagIOPhoton implements AprilTagIO {
       Supplier<Rotation2d> headingSupplier) {
     camera = new PhotonCamera(source.name());
 
-    globalEstimator = new PhotonPoseEstimator(
-        VisionConstants.fieldLayout,
-        PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        source.robotToCamera());
+    globalEstimator =
+        new PhotonPoseEstimator(
+            VisionConstants.fieldLayout,
+            PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+            source.robotToCamera());
 
     globalEstimator.setMultiTagFallbackStrategy(PhotonPoseEstimator.PoseStrategy.LOWEST_AMBIGUITY);
 
-    constrainedEstimator = new PhotonPoseEstimator(
-        VisionConstants.fieldLayout,
-        // See which one you like better
-        // PhotonPoseEstimator.PoseStrategy.CONSTRAINED_SOLVEPNP,
-        PhotonPoseEstimator.PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
-        source.robotToCamera());
+    constrainedEstimator =
+        new PhotonPoseEstimator(
+            VisionConstants.fieldLayout,
+            // See which one you like better
+            // PhotonPoseEstimator.PoseStrategy.CONSTRAINED_SOLVEPNP,
+            PhotonPoseEstimator.PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+            source.robotToCamera());
 
     this.headingSupplier = headingSupplier;
     this.trigConstrainedTargets = trigConstrainedTargets;
@@ -125,11 +127,12 @@ public class AprilTagIOPhoton implements AprilTagIO {
        * to give the RIO the information needed to compute CONSTRAINED_SOLVEPNP.
        */
       if (constrainedEstimator.getPrimaryStrategy() == PoseStrategy.CONSTRAINED_SOLVEPNP) {
-        maybeConstrainedPose = constrainedEstimator.update(
-            result,
-            camera.getCameraMatrix(),
-            camera.getDistCoeffs(),
-            VisionConstants.constrainedSolvePnpParams);
+        maybeConstrainedPose =
+            constrainedEstimator.update(
+                result,
+                camera.getCameraMatrix(),
+                camera.getDistCoeffs(),
+                VisionConstants.constrainedSolvePnpParams);
       } else if (constrainedEstimator.getPrimaryStrategy() == PoseStrategy.PNP_DISTANCE_TRIG_SOLVE
           && result.getBestTarget() != null
           && FieldUtils.getClosestReef().tag.fiducialId() == result.getBestTarget().fiducialId) {
@@ -146,16 +149,19 @@ public class AprilTagIOPhoton implements AprilTagIO {
 
       EstimatedRobotPose estimatedConstrainedPose = maybeConstrainedPose.get();
 
-      Matrix<N3, N1> constrainedStdDevs = AprilTagAlgorithms.getEstimationStdDevs(
-          estimatedConstrainedPose.estimatedPose.toPose2d(), result.getTargets());
+      Matrix<N3, N1> constrainedStdDevs =
+          AprilTagAlgorithms.getEstimationStdDevs(
+              estimatedConstrainedPose.estimatedPose.toPose2d(), result.getTargets());
 
-      PoseObservation constrainedObservation = new PoseObservation(
-          estimatedConstrainedPose.estimatedPose,
-          estimatedConstrainedPose.timestampSeconds,
-          VisionConstants.noAmbiguity, // constrained observations use gyro heading as validation
-          result.getBestTarget().getFiducialId(),
-          constrainedStdDevs,
-          PoseEstimationMethod.TRIG);
+      PoseObservation constrainedObservation =
+          new PoseObservation(
+              estimatedConstrainedPose.estimatedPose,
+              estimatedConstrainedPose.timestampSeconds,
+              VisionConstants
+                  .noAmbiguity, // constrained observations use gyro heading as validation
+              result.getBestTarget().getFiducialId(),
+              constrainedStdDevs,
+              PoseEstimationMethod.TRIG);
 
       validPoseObservations.add(constrainedObservation);
       validPoses.add(constrainedObservation.robotPose());
@@ -173,16 +179,18 @@ public class AprilTagIOPhoton implements AprilTagIO {
         MultiTargetPNPResult multiTagResult = result.getMultiTagResult().get();
 
         Pose3d pose = estimatedPose.estimatedPose;
-        Matrix<N3, N1> stdDevs = AprilTagAlgorithms.getEstimationStdDevs(pose.toPose2d(), result.getTargets());
+        Matrix<N3, N1> stdDevs =
+            AprilTagAlgorithms.getEstimationStdDevs(pose.toPose2d(), result.getTargets());
 
-        PoseObservation observation = new PoseObservation(
-            estimatedPose.estimatedPose,
-            estimatedPose.timestampSeconds,
-            multiTagResult.estimatedPose.ambiguity,
-            // multiTagResult.fiducialIDsUsed.stream().mapToInt(id -> id).toArray()
-            VisionConstants.noAmbiguity,
-            stdDevs,
-            PoseEstimationMethod.MULTI_TAG);
+        PoseObservation observation =
+            new PoseObservation(
+                estimatedPose.estimatedPose,
+                estimatedPose.timestampSeconds,
+                multiTagResult.estimatedPose.ambiguity,
+                // multiTagResult.fiducialIDsUsed.stream().mapToInt(id -> id).toArray()
+                VisionConstants.noAmbiguity,
+                stdDevs,
+                PoseEstimationMethod.MULTI_TAG);
 
         validPoseObservations.add(observation);
         validPoses.add(observation.robotPose());
@@ -201,15 +209,17 @@ public class AprilTagIOPhoton implements AprilTagIO {
         PhotonTrackedTarget target = result.getTargets().get(0);
 
         Pose3d pose = estimatedPose.estimatedPose;
-        Matrix<N3, N1> stdDevs = AprilTagAlgorithms.getEstimationStdDevs(pose.toPose2d(), result.getTargets());
-        PoseObservation observation = new PoseObservation(
-            pose,
-            estimatedPose.timestampSeconds,
-            target.poseAmbiguity,
-            // new int[] {target.fiducialId}
-            target.fiducialId,
-            stdDevs,
-            PoseEstimationMethod.SINGLE_TAG);
+        Matrix<N3, N1> stdDevs =
+            AprilTagAlgorithms.getEstimationStdDevs(pose.toPose2d(), result.getTargets());
+        PoseObservation observation =
+            new PoseObservation(
+                pose,
+                estimatedPose.timestampSeconds,
+                target.poseAmbiguity,
+                // new int[] {target.fiducialId}
+                target.fiducialId,
+                stdDevs,
+                PoseEstimationMethod.SINGLE_TAG);
 
         if (SingleTagAlgorithms.isUsable(target)) {
           validPoseObservations.add(observation);

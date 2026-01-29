@@ -27,8 +27,7 @@ import org.photonvision.PhotonPoseEstimator.ConstrainedSolvepnpParams;
 import org.photonvision.simulation.VisionSystemSim;
 
 public class VisionConstants {
-  public static final record AprilTagCameraConfig(VisionSource source, SimCameraConfig simConfig) {
-  }
+  public static final record AprilTagCameraConfig(VisionSource source, SimCameraConfig simConfig) {}
 
   public static enum PoseEstimationMethod {
     MULTI_TAG,
@@ -37,12 +36,13 @@ public class VisionConstants {
     CONSTRAINED
   }
 
-  public static final AprilTagFieldLayout fieldLayout = AprilTagFieldLayout
-      .loadField(AprilTagFields.k2025ReefscapeWelded);
+  public static final AprilTagFieldLayout fieldLayout =
+      AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeWelded);
 
-  public static final Optional<VisionSystemSim> aprilTagSim = Constants.currentMode == Mode.SIM
-      ? Optional.of(new VisionSystemSim("AprilTagSim"))
-      : Optional.empty();
+  public static final Optional<VisionSystemSim> aprilTagSim =
+      Constants.currentMode == Mode.SIM
+          ? Optional.of(new VisionSystemSim("AprilTagSim"))
+          : Optional.empty();
 
   public static final List<AprilTagCameraConfig> aprilTagCamerasConfigs = List.of();
 
@@ -51,8 +51,8 @@ public class VisionConstants {
 
   public static final int noAmbiguity = -100;
 
-  public static final Optional<ConstrainedSolvepnpParams> constrainedSolvePnpParams = Optional
-      .of(new ConstrainedSolvepnpParams(true, 0));
+  public static final Optional<ConstrainedSolvepnpParams> constrainedSolvePnpParams =
+      Optional.of(new ConstrainedSolvepnpParams(true, 0));
 
   // The standard deviations of our vision estimated poses, which affect
   // correction rate
