@@ -22,12 +22,13 @@ public class DriveConstants {
   public static final double trackWidth = Units.inchesToMeters(26.5);
   public static final double wheelBase = Units.inchesToMeters(26.5);
   public static final double driveBaseRadius = Math.hypot(trackWidth / 2.0, wheelBase / 2.0);
-  public static final Translation2d[] moduleTranslations = new Translation2d[] {
-      new Translation2d(trackWidth / 2.0, wheelBase / 2.0),
-      new Translation2d(trackWidth / 2.0, -wheelBase / 2.0),
-      new Translation2d(-trackWidth / 2.0, wheelBase / 2.0),
-      new Translation2d(-trackWidth / 2.0, -wheelBase / 2.0)
-  };
+  public static final Translation2d[] moduleTranslations =
+      new Translation2d[] {
+        new Translation2d(trackWidth / 2.0, wheelBase / 2.0),
+        new Translation2d(trackWidth / 2.0, -wheelBase / 2.0),
+        new Translation2d(-trackWidth / 2.0, wheelBase / 2.0),
+        new Translation2d(-trackWidth / 2.0, -wheelBase / 2.0)
+      };
 
   // Zeroed rotation values for each module, see setup instructions
   public static final Rotation2d frontLeftZeroRotation = new Rotation2d(0.0);
@@ -36,7 +37,8 @@ public class DriveConstants {
   public static final Rotation2d backRightZeroRotation = new Rotation2d(0.0);
 
   // Device CAN IDs
-  public static final int imuCanId = 0; // We are using the NavX, will need to be updated if using CanAndGyro
+  public static final int imuCanId =
+      0; // We are using the NavX, will need to be updated if using CanAndGyro
 
   // Dual gyro parameters
   public static final double driftGain = 0.01;
@@ -66,9 +68,11 @@ public class DriveConstants {
   public static final DCMotor driveGearbox = DCMotor.getNEO(1);
 
   // Drive encoder configuration
-  public static final double driveEncoderPositionFactor = 2 * Math.PI / driveMotorReduction; // Rotor Rotations ->
+  public static final double driveEncoderPositionFactor =
+      2 * Math.PI / driveMotorReduction; // Rotor Rotations ->
   // Wheel Radians
-  public static final double driveEncoderVelocityFactor = (2 * Math.PI) / 60.0 / driveMotorReduction; // Rotor RPM ->
+  public static final double driveEncoderVelocityFactor =
+      (2 * Math.PI) / 60.0 / driveMotorReduction; // Rotor RPM ->
   // Wheel Rad/Sec
 
   // Drive PID configuration
@@ -104,15 +108,16 @@ public class DriveConstants {
   public static final double robotMassKg = 74.088; // TODO: Update this value
   public static final double robotMOI = 6.883;
   public static final double wheelCOF = 1.1; // TODO: Update this value
-  public static final RobotConfig ppConfig = new RobotConfig(
-      robotMassKg,
-      robotMOI,
-      new ModuleConfig(
-          wheelRadiusMeters,
-          maxSpeedMetersPerSec,
-          wheelCOF,
-          driveGearbox.withReduction(driveMotorReduction),
-          driveMotorCurrentLimit,
-          1),
-      moduleTranslations);
+  public static final RobotConfig ppConfig =
+      new RobotConfig(
+          robotMassKg,
+          robotMOI,
+          new ModuleConfig(
+              wheelRadiusMeters,
+              maxSpeedMetersPerSec,
+              wheelCOF,
+              driveGearbox.withReduction(driveMotorReduction),
+              driveMotorCurrentLimit,
+              1),
+          moduleTranslations);
 }
