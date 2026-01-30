@@ -55,15 +55,10 @@ public class RobotContainer {
         drive =
             new Drive(
                 new GyroIONavX(),
-                // Ids on current bot are F'd, so using sim modules for now
-                // new ModuleIOSpark(0),
-                // new ModuleIOSpark(1),
-                // new ModuleIOSpark(2),
-                // new ModuleIOSpark(3));
-                new ModuleIOSim(),
-                new ModuleIOSim(),
-                new ModuleIOSim(),
-                new ModuleIOSim());
+                new ModuleIOSpark(0),
+                new ModuleIOSpark(1),
+                new ModuleIOSpark(2),
+                new ModuleIOSpark(3));
         climb = new Climb(new ClimbIOReal());
         break;
 
