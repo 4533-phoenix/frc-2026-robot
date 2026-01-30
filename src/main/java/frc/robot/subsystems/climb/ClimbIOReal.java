@@ -17,8 +17,7 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
-import com.revrobotics.spark.SparkMaxLimitSwitch;
-import com.revrobotics.spark.SparkMaxLimitSwitch.Type;
+import edu.wpi.first.wpilibj.DigitalInput;
 
 public class ClimbIOReal implements ClimbIO {
   private final SparkMax liftA = new SparkMax(liftMotorACanId, MotorType.kBrushless);
@@ -27,10 +26,10 @@ public class ClimbIOReal implements ClimbIO {
   private final SparkMax rotateA = new SparkMax(rotateMotorACanId, MotorType.kBrushless);
   private final SparkMax rotateB = new SparkMax(rotateMotorBCanId, MotorType.kBrushless);
 
-  private final SparkMaxLimitSwitch liftForwardLimit = liftA.getForwardLimitSwitch(Type.kNormallyOpen);
-  private final SparkMaxLimitSwitch liftReverseLimit = liftA.getReverseLimitSwitch(Type.kNormallyOpen);
-  private final SparkMaxLimitSwitch rotateForwardLimit = rotateA.getForwardLimitSwitch(Type.kNormallyOpen);
-  private final SparkMaxLimitSwitch rotateReverseLimit = rotateA.getReverseLimitSwitch(Type.kNormallyOpen);
+  private final DigitalInput liftLowerLimit = new DigitalInput(liftLowerLimitDio);
+  private final DigitalInput liftUpperLimit = new DigitalInput(liftUpperLimitDio);
+  private final DigitalInput rotateMinLimit = new DigitalInput(rotateMinLimitDio);
+  private final DigitalInput rotateMaxLimit = new DigitalInput(rotateMaxLimitDio);
 
   private final Debouncer liftConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
@@ -100,16 +99,16 @@ public class ClimbIOReal implements ClimbIO {
     ifOk(rotateA, rotateA::getOutputCurrent, (v) -> inputs.rotateCurrentAmps = v);
     inputs.rotateConnected = rotateConnectedDebounce.calculate(!sparkStickyFault);
 
-  inputs.liftLowerLimit = liftReverseLimit.isPressed();
-  inputs.liftUpperLimit = liftForwardLimit.isPressed();
-  inputs.rotateMinLimit = rotateReverseLimit.isPressed();
-  inputs.rotateMaxLimit = rotateForwardLimit.isPressed();
+    inputs.liftLowerLimit = !liftLowerLimit.get();
+    inputs.liftUpperLimit = !liftUpperLimit.get();
+    inputs.rotateMinLimit = !rotateMinLimit.get();
+    inputs.rotateMaxLimit = !rotateMaxLimit.get();
   }
 
   @Override
   public void setLiftOpenLoop(double volts) {
-    boolean atUpper = liftForwardLimit.isPressed();
-    boolean atLower = liftReverseLimit.isPressed();
+    boolean atUpper = !liftUpperLimit.get();
+    boolean atLower = !liftLowerLimit.get();
     if ((volts > 0.0 && atUpper) || (volts < 0.0 && atLower)) {
       liftA.setVoltage(0.0);
       liftB.setVoltage(0.0);
@@ -121,8 +120,8 @@ public class ClimbIOReal implements ClimbIO {
 
   @Override
   public void setRotateOpenLoop(double volts) {
-    boolean atMax = rotateForwardLimit.isPressed();
-    boolean atMin = rotateReverseLimit.isPressed();
+    boolean atMax = !rotateMaxLimit.get();
+    boolean atMin = !rotateMinLimit.get();
     if ((volts > 0.0 && atMax) || (volts < 0.0 && atMin)) {
       rotateA.setVoltage(0.0);
       rotateB.setVoltage(0.0);
