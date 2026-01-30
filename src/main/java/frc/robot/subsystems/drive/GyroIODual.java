@@ -13,54 +13,53 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import org.littletonrobotics.junction.Logger;
 
 public class GyroIODual implements GyroIO {
-    private final GyroIONavX navx = new GyroIONavX();
-    private final GyroIOCanAndGyro canandgyro = new GyroIOCanAndGyro();
-    
-    private Rotation2d driftOffset = Rotation2d.kZero;
+  private final GyroIONavX navx = new GyroIONavX();
+  private final GyroIOCanAndGyro canandgyro = new GyroIOCanAndGyro();
 
-    @Override
-    public void updateInputs(GyroIOInputs inputs) {
-        GyroIOInputs navxIn = new GyroIOInputs();
-        GyroIOInputs canIn = new GyroIOInputs();
-        
-        navx.updateInputs(navxIn);
-        canandgyro.updateInputs(canIn);
+  private Rotation2d driftOffset = Rotation2d.kZero;
 
-        if (navxIn.connected) {
-            inputs.connected = true;
-            Rotation2d currentCorrectedPos = navxIn.yawPosition.plus(driftOffset);
+  @Override
+  public void updateInputs(GyroIOInputs inputs) {
+    GyroIOInputs navxIn = new GyroIOInputs();
+    GyroIOInputs canIn = new GyroIOInputs();
 
-            if (canIn.connected) {
-                double error = canIn.yawPosition.minus(currentCorrectedPos).getRadians();
-                boolean isStill = Math.abs(navxIn.yawVelocityRadPerSec) < velocityGateRadPerSec;
+    navx.updateInputs(navxIn);
+    canandgyro.updateInputs(canIn);
 
-                if (isStill && Math.abs(error) > errorThresholdRad) {
-                    double step = error * driftGain;
-                    step = Math.max(-maxCorrectionRadPerFrame, Math.min(maxCorrectionRadPerFrame, step));
-                    driftOffset = driftOffset.plus(Rotation2d.fromRadians(step));
-                }
-            }
+    if (navxIn.connected) {
+      inputs.connected = true;
+      Rotation2d currentCorrectedPos = navxIn.yawPosition.plus(driftOffset);
 
-            inputs.yawPosition = navxIn.yawPosition.plus(driftOffset);
-            inputs.yawVelocityRadPerSec = navxIn.yawVelocityRadPerSec;
-            inputs.odometryYawTimestamps = navxIn.odometryYawTimestamps;
-            
-            inputs.odometryYawPositions = new Rotation2d[navxIn.odometryYawPositions.length];
-            for (int i = 0; i < navxIn.odometryYawPositions.length; i++) {
-                inputs.odometryYawPositions[i] = navxIn.odometryYawPositions[i].plus(driftOffset);
-            }
-        } else if (canIn.connected) {
-            inputs.connected = true;
-            inputs.yawPosition = canIn.yawPosition;
-            inputs.yawVelocityRadPerSec = canIn.yawVelocityRadPerSec;
-            inputs.odometryYawTimestamps = canIn.odometryYawTimestamps;
-            inputs.odometryYawPositions = canIn.odometryYawPositions;
-            
-            
-        } else {
-            inputs.connected = false;
+      if (canIn.connected) {
+        double error = canIn.yawPosition.minus(currentCorrectedPos).getRadians();
+        boolean isStill = Math.abs(navxIn.yawVelocityRadPerSec) < velocityGateRadPerSec;
+
+        if (isStill && Math.abs(error) > errorThresholdRad) {
+          double step = error * driftGain;
+          step = Math.max(-maxCorrectionRadPerFrame, Math.min(maxCorrectionRadPerFrame, step));
+          driftOffset = driftOffset.plus(Rotation2d.fromRadians(step));
         }
+      }
 
-        Logger.recordOutput("Drive/Gyro/DriftOffsetDeg", driftOffset.getDegrees());
+      inputs.yawPosition = navxIn.yawPosition.plus(driftOffset);
+      inputs.yawVelocityRadPerSec = navxIn.yawVelocityRadPerSec;
+      inputs.odometryYawTimestamps = navxIn.odometryYawTimestamps;
+
+      inputs.odometryYawPositions = new Rotation2d[navxIn.odometryYawPositions.length];
+      for (int i = 0; i < navxIn.odometryYawPositions.length; i++) {
+        inputs.odometryYawPositions[i] = navxIn.odometryYawPositions[i].plus(driftOffset);
+      }
+    } else if (canIn.connected) {
+      inputs.connected = true;
+      inputs.yawPosition = canIn.yawPosition;
+      inputs.yawVelocityRadPerSec = canIn.yawVelocityRadPerSec;
+      inputs.odometryYawTimestamps = canIn.odometryYawTimestamps;
+      inputs.odometryYawPositions = canIn.odometryYawPositions;
+
+    } else {
+      inputs.connected = false;
     }
+
+    Logger.recordOutput("Drive/Gyro/DriftOffsetDeg", driftOffset.getDegrees());
+  }
 }
