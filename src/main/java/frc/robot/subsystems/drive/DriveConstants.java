@@ -38,7 +38,7 @@ public class DriveConstants {
 
   // Device CAN IDs
   public static final int imuCanId =
-      0; // We are using the NavX, will need to be updated if using CanAndGyro
+      14; // We are using the NavX, will need to be updated if using CanAndGyro
 
   // Dual gyro parameters
   public static final double driftGain = 0.01;
