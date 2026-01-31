@@ -13,18 +13,18 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.RobotTracker;
 import frc.robot.field.FieldUtils;
 import frc.robot.subsystems.vision.VisionConstants.AprilTagCameraConfig;
 import frc.robot.subsystems.vision.VisionConstants.PoseEstimationMethod;
-import frc.robot.util.VirtualSubsystem;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.littletonrobotics.junction.Logger;
 
-public class Vision extends VirtualSubsystem {
+public class Vision extends SubsystemBase {
   public static record AprilTagCamera(
       AprilTagIO io,
       AprilTagIOInputsAutoLogged inputs,

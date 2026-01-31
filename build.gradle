@@ -48,7 +48,7 @@ deploy {
                     jvmArgs.add("-XX:MaxGCPauseMillis=50")
 
                     // The options below may improve performance, but should only be enabled on the RIO 2
-                    final MAX_JAVA_HEAP_SIZE_MB = 256;
+                    final MAX_JAVA_HEAP_SIZE_MB = 100;
                     jvmArgs.add("-Xmx" + MAX_JAVA_HEAP_SIZE_MB + "M")
                     jvmArgs.add("-Xms" + MAX_JAVA_HEAP_SIZE_MB + "M")
                     jvmArgs.add("-XX:+AlwaysPreTouch")
@@ -114,7 +114,8 @@ dependencies {
     annotationProcessor "org.littletonrobotics.akit:akit-autolog:$akitJson.version"
 
     implementation "zenoh:zenoh-java:1.7.2"
-    zenohRoborio "zenoh:zenoh-java-jni:1.7.2:armv7-unknown-linux-gnueabihf@zip"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.22"
+    zenohRoborio "zenoh:zenoh-java-jni:1.7.2:arm-unknown-linux-gnueabi@zip"
 }
 
 test {

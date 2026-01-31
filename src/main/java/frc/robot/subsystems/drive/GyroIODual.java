@@ -55,7 +55,6 @@ public class GyroIODual implements GyroIO {
       inputs.yawVelocityRadPerSec = canIn.yawVelocityRadPerSec;
       inputs.odometryYawTimestamps = canIn.odometryYawTimestamps;
       inputs.odometryYawPositions = canIn.odometryYawPositions;
-
     } else {
       inputs.connected = false;
     }
