@@ -11,9 +11,7 @@ package frc.robot.util;
 
 import com.revrobotics.REVLibError;
 import com.revrobotics.spark.SparkBase;
-
 import edu.wpi.first.util.function.BooleanConsumer;
-
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
