@@ -28,6 +28,10 @@ import frc.robot.subsystems.drive.GyroIODual;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSpark;
+import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterIO;
+import frc.robot.subsystems.shooter.ShooterIOReal;
+import frc.robot.subsystems.shooter.ShooterIOSim;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -40,6 +44,7 @@ public class RobotContainer {
   // Subsystems
   private final Drive drive;
   private final Climb climb;
+  private final Shooter shooter;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -60,6 +65,7 @@ public class RobotContainer {
                 new ModuleIOSpark(2),
                 new ModuleIOSpark(3));
         climb = new Climb(new ClimbIO() {});
+        shooter = new Shooter(new ShooterIOReal());
         break;
 
       case SIM:
@@ -72,6 +78,7 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim());
         climb = new Climb(new ClimbIOSim());
+        shooter = new Shooter(new ShooterIOSim());
         break;
 
       default:
@@ -84,6 +91,7 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {});
         climb = new Climb(new ClimbIO() {});
+        shooter = new Shooter(new ShooterIO() {});
         break;
     }
 

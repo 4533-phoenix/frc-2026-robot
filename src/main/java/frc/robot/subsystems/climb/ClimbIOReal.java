@@ -10,17 +10,16 @@ package frc.robot.subsystems.climb;
 import static frc.robot.subsystems.climb.ClimbConstants.*;
 import static frc.robot.util.SparkUtil.*;
 
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
-
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
-import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkLimitSwitch;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 
 // TODO: Need to verify how spark max limits work
 
@@ -74,14 +73,13 @@ public class ClimbIOReal implements ClimbIO {
     sparkStickyFault = false;
     ifOk(
         liftSpark,
-        new DoubleSupplier[] {
-          liftSpark::getAppliedOutput, liftSpark::getBusVoltage
-        },
+        new DoubleSupplier[] {liftSpark::getAppliedOutput, liftSpark::getBusVoltage},
         (vals) -> inputs.liftAppliedVolts = vals[0] * vals[1]);
     ifOk(liftSpark, liftSpark::getOutputCurrent, (v) -> inputs.liftCurrentAmps = v);
-    ifOk(liftSpark, new BooleanSupplier[] {
-          liftUpperLimit::isPressed, liftLowerLimit::isPressed
-        }, (vals) -> {
+    ifOk(
+        liftSpark,
+        new BooleanSupplier[] {liftUpperLimit::isPressed, liftLowerLimit::isPressed},
+        (vals) -> {
           inputs.liftUpperLimit = vals[0];
           inputs.liftLowerLimit = vals[1];
         });
@@ -90,14 +88,13 @@ public class ClimbIOReal implements ClimbIO {
     sparkStickyFault = false;
     ifOk(
         rotateSpark,
-        new DoubleSupplier[] {
-          rotateSpark::getAppliedOutput, rotateSpark::getBusVoltage
-        },
+        new DoubleSupplier[] {rotateSpark::getAppliedOutput, rotateSpark::getBusVoltage},
         (vals) -> inputs.rotateAppliedVolts = vals[0] * vals[1]);
     ifOk(rotateSpark, rotateSpark::getOutputCurrent, (v) -> inputs.rotateCurrentAmps = v);
-    ifOk(rotateSpark, new BooleanSupplier[] {
-          rotateMaxLimit::isPressed, rotateMinLimit::isPressed
-        }, (vals) -> {
+    ifOk(
+        rotateSpark,
+        new BooleanSupplier[] {rotateMaxLimit::isPressed, rotateMinLimit::isPressed},
+        (vals) -> {
           inputs.rotateMinLimit = vals[0];
           inputs.rotateMaxLimit = vals[1];
         });
