@@ -31,14 +31,13 @@ public class DriveConstants {
       };
 
   // Zeroed rotation values for each module, see setup instructions
-  public static final Rotation2d frontLeftZeroRotation = new Rotation2d(0.0);
-  public static final Rotation2d frontRightZeroRotation = new Rotation2d(0.0);
-  public static final Rotation2d backLeftZeroRotation = new Rotation2d(0.0);
-  public static final Rotation2d backRightZeroRotation = new Rotation2d(0.0);
+  public static final Rotation2d frontLeftZeroRotation = Rotation2d.fromDegrees(-144.49);
+  public static final Rotation2d frontRightZeroRotation = Rotation2d.fromDegrees(113.03);
+  public static final Rotation2d backLeftZeroRotation = Rotation2d.fromDegrees(-56.51);
+  public static final Rotation2d backRightZeroRotation = Rotation2d.fromDegrees(-172.27);
 
   // Device CAN IDs
-  public static final int imuCanId =
-      14; // We are using the NavX, will need to be updated if using CanAndGyro
+  public static final int imuCanId = 14;
 
   // Dual gyro parameters
   public static final double driftGain = 0.01;
@@ -62,7 +61,8 @@ public class DriveConstants {
   public static final int backRightEncoderCanId = 13;
 
   // Drive motor configuration
-  public static final int driveMotorCurrentLimit = 30;
+  public static final int driveMotorCurrentLimit = 40;
+  public static final int driveMotorSecondaryCurrentLimit = 80;
   public static final double wheelRadiusMeters = Units.inchesToMeters(1.5);
   public static final double driveMotorReduction = 6.75; // Random BS values we got from somewhere
   public static final DCMotor driveGearbox = DCMotor.getNEO(1);
@@ -87,7 +87,8 @@ public class DriveConstants {
 
   // Turn motor configuration
   public static final boolean turnInverted = false;
-  public static final int turnMotorCurrentLimit = 30;
+  public static final int turnMotorCurrentLimit = 40;
+  public static final int turnMotorSecondaryCurrentLimit = 80;
   public static final double turnMotorReduction = 12.8; // Random BS values we got from somewhere
   public static final DCMotor turnGearbox = DCMotor.getNEO(1);
 
@@ -97,7 +98,7 @@ public class DriveConstants {
   public static final double turnEncoderVelocityFactor = 2 * Math.PI; // Rotations/Sec -> Rad/Sec
 
   // Turn PID configuration
-  public static final double turnKp = 3.0;
+  public static final double turnKp = 0.4;
   public static final double turnKd = 0.01;
   public static final double turnSimP = 8.0;
   public static final double turnSimD = 0.0;
