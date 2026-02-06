@@ -12,16 +12,8 @@ import edu.wpi.first.math.system.plant.DCMotor;
 /** Hardware and tuning constants for the climb subsystem. */
 public final class ClimbConstants {
   // CAN IDs
-  public static final int liftMotorACanId = 14;
-  public static final int liftMotorBCanId = 15;
-  public static final int rotateMotorACanId = 16;
-  public static final int rotateMotorBCanId = 17;
-
-  // DIO channels for limit switches
-  public static final int liftLowerLimitDio = 0;
-  public static final int liftUpperLimitDio = 1;
-  public static final int rotateMinLimitDio = 2;
-  public static final int rotateMaxLimitDio = 3;
+  public static final int liftMotorCanId = 14;
+  public static final int rotateMotorCanId = 16;
 
   // Motor and current limits
   public static final int liftMotorCurrentLimit = 30;
