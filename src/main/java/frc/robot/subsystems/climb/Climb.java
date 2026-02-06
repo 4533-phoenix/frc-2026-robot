@@ -11,8 +11,6 @@ import static frc.robot.subsystems.climb.ClimbConstants.*;
 
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
@@ -36,27 +34,27 @@ public class Climb extends SubsystemBase {
   @Override
   public void simulationPeriodic() {}
 
-  private void startLiftUp() {
+  public void startLiftUp() {
     io.setLiftOpenLoop(defaultLiftVoltage);
   }
 
-  private void startLiftDown() {
+  public void startLiftDown() {
     io.setLiftOpenLoop(-defaultLiftVoltage);
   }
 
-  private void stopLift() {
+  public void stopLift() {
     io.setLiftOpenLoop(0.0);
   }
 
-  private void startRotateForward() {
+  public void startRotateForward() {
     io.setRotateOpenLoop(defaultRotateVoltage);
   }
 
-  private void startRotateReverse() {
+  public void startRotateReverse() {
     io.setRotateOpenLoop(-defaultRotateVoltage);
   }
 
-  private void stopRotate() {
+  public void stopRotate() {
     io.setRotateOpenLoop(0.0);
   }
 
@@ -65,27 +63,19 @@ public class Climb extends SubsystemBase {
     stopRotate();
   }
 
-  public Command liftUpCommand() {
-    return Commands.race(
-        Commands.runEnd(this::startLiftUp, this::stopLift, this),
-        Commands.waitUntil(() -> inputs.liftUpperLimit || !inputs.liftConnected));
+  public boolean liftUpperLimit() {
+    return inputs.liftUpperLimit || !inputs.liftConnected;
   }
 
-  public Command liftDownCommand() {
-    return Commands.race(
-        Commands.runEnd(this::startLiftDown, this::stopLift, this),
-        Commands.waitUntil(() -> inputs.liftLowerLimit || !inputs.liftConnected));
+  public boolean liftLowerLimit() {
+    return inputs.liftLowerLimit || !inputs.liftConnected;
   }
 
-  public Command rotateForwardCommand() {
-    return Commands.race(
-        Commands.runEnd(this::startRotateForward, this::stopRotate, this),
-        Commands.waitUntil(() -> inputs.rotateMaxLimit || !inputs.rotateConnected));
+  public boolean rotateForwardLimit() {
+    return inputs.rotateMaxLimit || !inputs.rotateConnected;
   }
 
-  public Command rotateReverseCommand() {
-    return Commands.race(
-        Commands.runEnd(this::startRotateReverse, this::stopRotate, this),
-        Commands.waitUntil(() -> inputs.rotateMinLimit || !inputs.rotateConnected));
+  public boolean rotateReverseLimit() {
+    return inputs.rotateMinLimit || !inputs.rotateConnected;
   }
 }
