@@ -1,5 +1,6 @@
 plugins {
     id "java"
+    id "c"
     id "edu.wpi.first.GradleRIO" version "2026.2.1"
     id "com.peterabeles.gversion" version "1.10"
     id "com.diffplug.spotless" version "6.12.0"
@@ -12,8 +13,44 @@ java {
 
 def ROBOT_MAIN_CLASS = "frc.robot.Main"
 
-repositories {
-    mavenCentral()
+// Native build configuration
+model {
+    components {
+        // Define a Shared Library for the Vision Server
+        vision_server(NativeLibrarySpec) {
+            targetPlatform wpi.platforms.roborio
+
+            // Define C sources
+            sources {
+                c {
+                    source {
+                        srcDir 'src/main/native/c'
+                        include '**/*.c'
+                    }
+                    exportedHeaders {
+                        srcDir 'src/main/native/include'
+                    }
+                }
+            }
+
+            // Add JNI includes and force linux headers for cross compilation
+            binaries.all {
+                def javaHome = org.gradle.internal.jvm.Jvm.current().javaHome
+                if (javaHome != null) {
+                    if (toolChain in Gcc || toolChain in Clang) {
+                        cCompiler.args "-I", "${javaHome}/include"
+
+                        // Force include our local Linux JNI header instead of the Windows one
+                        cCompiler.args "-I", "${projectDir}/src/main/native/include/linux"
+
+                        // Standard compilation flags
+                        cCompiler.args "-fPIC", "-pthread", "-O2", "-Wall"
+                        linker.args "-pthread"
+                    }
+                }
+            }
+        }
+    }
 }
 
 // Define my targets (RoboRIO) and artifacts (deployable files)
@@ -46,6 +83,15 @@ deploy {
                     jvmArgs.add("-XX:+AlwaysPreTouch")
                 }
 
+                // Custom Artifact for the Native Library
+                // Manually grab the built .so file and put it in the FRC lib folder
+                visionLib(getArtifactTypeClass('FileTreeArtifact')) {
+                    files = project.fileTree('build/libs/vision_server/shared/roborio') {
+                        include '*.so'
+                    }
+                    directory = '/usr/local/frc/third-party/lib'
+                }
+
                 // Static files artifact
                 frcStaticFileDeploy(getArtifactTypeClass('FileTreeArtifact')) {
                     files = project.fileTree('src/main/deploy')
@@ -60,6 +106,14 @@ deploy {
 }
 
 def deployArtifact = deploy.targets.roborio.artifacts.frcJava
+
+// Critical: Ensure the native code is compiled before we try to deploy it
+project.afterEvaluate {
+    def deployTask = project.tasks.findByName('deployroborio')
+    if (deployTask) {
+        deployTask.dependsOn('assemble')
+    }
+}
 
 // Set to true to use debug for all targets including JNI, which will drastically impact
 // performance.
