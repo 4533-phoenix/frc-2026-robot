@@ -13,10 +13,6 @@ java {
 
 def ROBOT_MAIN_CLASS = "frc.robot.Main"
 
-repositories {
-    mavenCentral()
-}
-
 // Native build configuration for the vision server
 model {
     components {
@@ -44,12 +40,7 @@ model {
                     if (toolChain in Gcc || toolChain in Clang) {
                         // Include generic JNI headers
                         cCompiler.args "-I", "${javaHome}/include"
-
-                        // Force include our local Linux JNI header instead of the Windows one
                         cCompiler.args "-I", "${projectDir}/src/main/native/include/linux"
-
-                        // Tell the compiler where to find WPILib headers for JNI
-                        wpi.cpp.deps.wpilib(it)
 
                         // Standard compilation flags
                         cCompiler.args "-fPIC", "-pthread", "-O2", "-Wall"
@@ -63,6 +54,8 @@ model {
 
 // Custom task to flatten the native library for deployment
 task stageNativeLib(type: Copy) {
+    dependsOn 'vision_serverReleaseSharedLibrary'
+
     from fileTree('build/libs/vision_server/shared') {
         include '**/libvision_server.so'
         exclude '**/*.debug'

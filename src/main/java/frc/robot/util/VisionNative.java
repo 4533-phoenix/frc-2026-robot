@@ -65,7 +65,8 @@ public class VisionNative {
         System.loadLibrary("vision_server");
         loaded = true;
       } catch (UnsatisfiedLinkError e) {
-        System.err.println("[VisionNative] Failed to load vision_server library: " + e.getMessage());
+        System.err.println(
+            "[VisionNative] Failed to load vision_server library: " + e.getMessage());
         loaded = false;
       }
     }
