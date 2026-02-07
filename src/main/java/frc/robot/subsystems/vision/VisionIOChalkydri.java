@@ -15,20 +15,25 @@ import frc.robot.util.VisionNative.VisionObservation;
 import java.util.List;
 
 public class VisionIOChalkydri implements VisionIO {
+  private final VisionNative vision;
+
   public VisionIOChalkydri() {
-    VisionNative.start(SERVER_PORT);
+    vision = VisionNative.getInstance();
+    vision.start(SERVER_PORT);
   }
 
   @Override
   public void updateInputs(VisionIOInputs inputs) {
-    inputs.serverLoaded = true;
-    List<VisionObservation> observations = VisionNative.readPackets();
+    inputs.serverLoaded = vision.isLoaded();
+    List<VisionObservation> observations = vision.readPackets();
 
     // debug print all the observations
     for (VisionObservation obs : observations) {
       System.out.println(
           "Camera ID: "
               + obs.cameraId()
+              + ", Tag Count: "
+              + obs.numTags()
               + ", Timestamp: "
               + obs.getTimestampSeconds()
               + ", Pose: "
@@ -46,6 +51,7 @@ public class VisionIOChalkydri implements VisionIO {
     inputs.visionPoses = new Pose2d[size];
     inputs.timestamps = new double[size];
     inputs.cameraIds = new long[size];
+    inputs.tagCounts = new long[size];
     inputs.stdDevs = new double[size][3];
 
     for (int i = 0; i < size; i++) {
@@ -53,10 +59,15 @@ public class VisionIOChalkydri implements VisionIO {
       inputs.visionPoses[i] = obs.getPose();
       inputs.timestamps[i] = obs.getTimestampSeconds();
       inputs.cameraIds[i] = obs.cameraId();
+      inputs.tagCounts[i] = obs.numTags();
 
       inputs.stdDevs[i][0] = obs.stdX();
       inputs.stdDevs[i][1] = obs.stdY();
       inputs.stdDevs[i][2] = obs.stdRot();
     }
+  }
+
+  public void broadcastRobotHeading(double heading) {
+    vision.broadcast(heading);
   }
 }
