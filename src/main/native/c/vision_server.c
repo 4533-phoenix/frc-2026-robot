@@ -47,14 +47,14 @@ typedef struct
 } LockFreeQueue;
 
 // Global states
-LockFreeQueue vq = {.head = 0, .tail = 0};
+static LockFreeQueue vq = {.head = 0, .tail = 0};
 
 // Broadcast globals
-int broadcast_fd = -1;
-struct sockaddr_in broadcast_addr;
+static int broadcast_fd = -1;
+static struct sockaddr_in broadcast_addr;
 
 // Helper function to get the Monotonic micros
-uint64_t get_monotonic_micros()
+static uint64_t get_monotonic_micros()
 {
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -62,7 +62,7 @@ uint64_t get_monotonic_micros()
 }
 
 // Worker thread for recieving cam updates and pushing them to the queue
-void *vision_worker_thread(void *arg)
+static void *vision_worker_thread(void *arg)
 {
   int listenfd = *(int *)arg;
   free(arg);
@@ -75,30 +75,32 @@ void *vision_worker_thread(void *arg)
     ssize_t len =
         recvfrom(listenfd, &incoming, sizeof(incoming), 0, NULL, NULL);
 
-    if (len == sizeof(VisionMeasurement))
-    {
-      uint64_t now = get_monotonic_micros();
-
-      // Calculate absolute Monotonic timestamp from delay
-      incoming.ts = now - incoming.ts;
-
-      // Load current indices
-      int h = atomic_load_explicit(&vq.head, memory_order_relaxed);
-      int t = atomic_load_explicit(&vq.tail, memory_order_acquire);
-
-      int next_h = (h + 1) & MASK;
-
-      // If queue is full, we push the tail forward to overwrite oldest
-      if (next_h == t)
-      {
-        atomic_store_explicit(&vq.tail, (t + 1) & MASK, memory_order_release);
-        printf("[VisionNative-c] Warning: Queue full, dropping oldest packet\n");
-      }
-
-      // Write the data to the buffer
-      vq.data[h] = incoming;
-      atomic_store_explicit(&vq.head, next_h, memory_order_release);
+    if (len != sizeof(VisionMeasurement)) {
+      printf("[VisionNative-c] Warning: Received packet of unexpected size %zd\n", len);
+      continue;
     }
+
+    uint64_t now = get_monotonic_micros();
+
+    // Calculate absolute Monotonic timestamp from delay
+    incoming.ts = now - incoming.ts;
+
+    // Load current indices
+    int h = atomic_load_explicit(&vq.head, memory_order_relaxed);
+    int t = atomic_load_explicit(&vq.tail, memory_order_acquire);
+
+    int next_h = (h + 1) & MASK;
+
+    // If queue is full, we push the tail forward to overwrite oldest
+    if (next_h == t)
+    {
+      atomic_store_explicit(&vq.tail, (t + 1) & MASK, memory_order_release);
+      printf("[VisionNative-c] Warning: Queue full, dropping oldest packet\n");
+    }
+
+    // Write the data to the buffer
+    vq.data[h] = incoming;
+    atomic_store_explicit(&vq.head, next_h, memory_order_release);
   }
   return NULL;
 }
@@ -122,6 +124,9 @@ JNIEXPORT void JNICALL Java_frc_robot_util_VisionNative_startServer(JNIEnv *env,
   // Set socket options
   int rcvbuf = RECIEVE_BUF_SIZE;
   setsockopt(listenfd, SOL_SOCKET, SO_RCVBUF, &rcvbuf, sizeof(rcvbuf));
+  int reuse = 1;
+  setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+
   servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
   servaddr.sin_port = htons(port);
   servaddr.sin_family = AF_INET;
@@ -144,31 +149,31 @@ JNIEXPORT void JNICALL Java_frc_robot_util_VisionNative_startServer(JNIEnv *env,
   pthread_create(&thread_id, NULL, vision_worker_thread, arg);
 
   // Initialize broadcast socket
-  if (broadcast_fd == -1)
+  if (broadcast_fd != -1) return;
+  printf("[VisionNative-c] Initializing broadcast socket\n");
+
+  int b_fd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (b_fd < 0)
   {
-    broadcast_fd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (broadcast_fd < 0)
-    {
-      perror("Broadcast socket creation failed");
-    }
-    else
-    {
-      int broadcast = 1;
-      if (setsockopt(broadcast_fd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0)
-      {
-        perror("Error setting broadcast permission");
-        close(broadcast_fd);
-        broadcast_fd = -1;
-      }
-      else
-      {
-        memset(&broadcast_addr, 0, sizeof(broadcast_addr));
-        broadcast_addr.sin_family = AF_INET;
-        broadcast_addr.sin_port = htons(7002);
-        broadcast_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-      }
-    }
+    perror("[VisionNative-c] Broadcast socket creation failed");
+    return;
   }
+
+  int broadcast = 1;
+  int b_reuse = 1;
+  setsockopt(b_fd, SOL_SOCKET, SO_REUSEADDR, &b_reuse, sizeof(b_reuse));
+  if (setsockopt(b_fd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0)
+  {
+    perror("[VisionNative-c] Error setting broadcast permission");
+    close(b_fd);
+    return;
+  }
+
+  memset(&broadcast_addr, 0, sizeof(broadcast_addr));
+  broadcast_addr.sin_family = AF_INET;
+  broadcast_addr.sin_port = htons(7002);
+  broadcast_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+  broadcast_fd = b_fd; // Only set global once fully ready
 }
 
 JNIEXPORT void JNICALL Java_frc_robot_util_VisionNative_broadcastRobotHeading(JNIEnv *env, jclass cls, jdouble angle)
