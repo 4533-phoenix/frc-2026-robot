@@ -19,4 +19,7 @@ public class VisionConstants {
 
   /** Time in seconds before we consider a camera offline */
   public static final double OFFLINE_TIMEOUT_SECONDS = 1.0;
+
+  /** What port the vision server listens on */
+  public static final int SERVER_PORT = 7001;
 }

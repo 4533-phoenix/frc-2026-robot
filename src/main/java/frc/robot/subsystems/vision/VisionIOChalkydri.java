@@ -7,14 +7,16 @@
 
 package frc.robot.subsystems.vision;
 
+import static frc.robot.subsystems.vision.VisionConstants.*;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.util.VisionNative;
 import frc.robot.util.VisionNative.VisionObservation;
 import java.util.List;
 
 public class VisionIOChalkydri implements VisionIO {
-  public VisionIOChalkydri(int port) {
-    VisionNative.start(port);
+  public VisionIOChalkydri() {
+    VisionNative.start(SERVER_PORT);
   }
 
   @Override
