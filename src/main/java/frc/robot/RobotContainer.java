@@ -28,9 +28,18 @@ import frc.robot.subsystems.drive.GyroIODual;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSpark;
-import frc.robot.subsystems.shooter.Shooter;
-import frc.robot.subsystems.shooter.ShooterIO;
-import frc.robot.subsystems.shooter.ShooterIOSim;
+import frc.robot.subsystems.shooter.flywheel.Flywheel;
+import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
+import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
+import frc.robot.subsystems.shooter.flywheel.FlywheelIOTalonFX;
+import frc.robot.subsystems.shooter.hood.Hood;
+import frc.robot.subsystems.shooter.hood.HoodIO;
+import frc.robot.subsystems.shooter.hood.HoodIOServo;
+import frc.robot.subsystems.shooter.hood.HoodIOSim;
+import frc.robot.subsystems.shooter.indexer.Indexer;
+import frc.robot.subsystems.shooter.indexer.IndexerIO;
+import frc.robot.subsystems.shooter.indexer.IndexerIOSim;
+import frc.robot.subsystems.shooter.indexer.IndexerIOSpark;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOChalkydri;
@@ -46,7 +55,9 @@ public class RobotContainer {
   // Subsystems
   private final Drive drive;
   private final Climb climb;
-  private final Shooter shooter;
+  private final Flywheel flywheel;
+  private final Hood hood;
+  private final Indexer indexer;
   private final Vision vision;
 
   // Controller
@@ -68,7 +79,9 @@ public class RobotContainer {
                 new ModuleIOSpark(2),
                 new ModuleIOSpark(3));
         climb = new Climb(new ClimbIO() {});
-        shooter = new Shooter(new ShooterIO() {});
+        flywheel = new Flywheel(new FlywheelIO() {});
+        hood = new Hood(new HoodIO() {});
+        indexer = new Indexer(new IndexerIO() {});
         vision = new Vision(new VisionIOChalkydri(), drive);
         break;
 
@@ -82,7 +95,9 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim());
         climb = new Climb(new ClimbIOSim());
-        shooter = new Shooter(new ShooterIOSim());
+        flywheel = new Flywheel(new FlywheelIOSim());
+        hood = new Hood(new HoodIOSim());
+        indexer = new Indexer(new IndexerIOSim());
         vision = new Vision(new VisionIO() {}, drive);
         break;
 
@@ -96,7 +111,9 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {});
         climb = new Climb(new ClimbIO() {});
-        shooter = new Shooter(new ShooterIO() {});
+        flywheel = new Flywheel(new FlywheelIO() {});
+        hood = new Hood(new HoodIO() {});
+        indexer = new Indexer(new IndexerIO() {});
         vision = new Vision(new VisionIO() {}, drive);
         break;
     }
