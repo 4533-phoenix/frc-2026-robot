@@ -11,11 +11,7 @@ import java.util.Map;
 
 public class VisionConstants {
   /** Map of Camera IDs (from C) to Human Readable Names */
-  public static final Map<Long, String> CAMERA_MAP =
-      Map.of(
-          0L, "FrontLeft",
-          1L, "FrontRight",
-          2L, "BackCenter");
+  public static final Map<Long, String> CAMERA_MAP = Map.of(1L, "TestCamera");
 
   /** Time in seconds before we consider a camera offline */
   public static final double OFFLINE_TIMEOUT_SECONDS = 1.0;

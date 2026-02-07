@@ -24,6 +24,24 @@ public class VisionIOChalkydri implements VisionIO {
     inputs.serverLoaded = true;
     List<VisionObservation> observations = VisionNative.readPackets();
 
+    // debug print all the observations
+    for (VisionObservation obs : observations) {
+      System.out.println(
+          "Camera ID: "
+              + obs.cameraId()
+              + ", Timestamp: "
+              + obs.getTimestampSeconds()
+              + ", Pose: "
+              + obs.getPose()
+              + ", StdDevs: ["
+              + obs.stdX()
+              + ", "
+              + obs.stdY()
+              + ", "
+              + obs.stdRot()
+              + "]");
+    }
+
     int size = observations.size();
     inputs.visionPoses = new Pose2d[size];
     inputs.timestamps = new double[size];

@@ -1,6 +1,6 @@
 #define _GNU_SOURCE
 #include <jni.h>
-#include <hal/HAL.h>
+#include <time.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <pthread.h>
@@ -42,13 +42,19 @@ typedef struct {
 // Global states
 LockFreeQueue vq = {.head = 0, .tail = 0};
 
+// Helper function to get the FPGA micros
+uint64_t get_fpga_time_micros() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)(ts.tv_sec * 1000000 + ts.tv_nsec / 1000);
+}
+
 // Worker thread for recieving cam updates and pushing them to the queue
 void *vision_worker_thread(void *arg) {
   int listenfd = *(int *)arg;
   free(arg);
 
   VisionMeasurement incoming;
-  int32_t status = 0;
   pthread_setname_np(pthread_self(), "VisionUDPWorker");
 
   while (1) {
@@ -56,7 +62,7 @@ void *vision_worker_thread(void *arg) {
         recvfrom(listenfd, &incoming, sizeof(incoming), 0, NULL, NULL);
 
     if (len == sizeof(VisionMeasurement)) {
-      uint64_t now = HAL_GetFPGATime(&status);
+      uint64_t now = get_fpga_time_micros();
       
       // Calculate absolute FPGA timestamp from delay
       incoming.ts = now - incoming.ts;
