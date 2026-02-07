@@ -33,7 +33,9 @@ typedef struct __attribute__((packed))
   RobotPos pose;
   VisionUncertainty stds;
   uint64_t ts;
-  uint64_t camera_id;
+  uint8_t camera_id;
+  uint8_t num_tags;
+  uint8_t padding[6];
 } VisionMeasurement;
 
 // Ring buffer struct
@@ -46,6 +48,10 @@ typedef struct
 
 // Global states
 LockFreeQueue vq = {.head = 0, .tail = 0};
+
+// Broadcast globals
+int broadcast_fd = -1;
+struct sockaddr_in broadcast_addr;
 
 // Helper function to get the Monotonic micros
 uint64_t get_monotonic_micros()
@@ -126,7 +132,7 @@ JNIEXPORT void JNICALL Java_frc_robot_util_VisionNative_startServer(JNIEnv *env,
     close(listenfd);
     return;
   }
-  printf("Ready to recive on port %d\n", port);
+  printf("[VisionNative-c] Ready to receive on port %d\n", port);
 
   // Use malloc so the FD pointer persists for the thread
   int *arg = malloc(sizeof(int));
@@ -135,6 +141,41 @@ JNIEXPORT void JNICALL Java_frc_robot_util_VisionNative_startServer(JNIEnv *env,
   // Create background thread
   pthread_t thread_id;
   pthread_create(&thread_id, NULL, vision_worker_thread, arg);
+
+  // Initialize broadcast socket
+  if (broadcast_fd == -1)
+  {
+    broadcast_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (broadcast_fd < 0)
+    {
+      perror("Broadcast socket creation failed");
+    }
+    else
+    {
+      int broadcast = 1;
+      if (setsockopt(broadcast_fd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0)
+      {
+        perror("Error setting broadcast permission");
+        close(broadcast_fd);
+        broadcast_fd = -1;
+      }
+      else
+      {
+        memset(&broadcast_addr, 0, sizeof(broadcast_addr));
+        broadcast_addr.sin_family = AF_INET;
+        broadcast_addr.sin_port = htons(7002);
+        broadcast_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+      }
+    }
+  }
+}
+
+JNIEXPORT void JNICALL Java_frc_robot_util_VisionNative_broadcastRobotHeading(JNIEnv *env, jclass cls, jdouble angle)
+{
+  if (broadcast_fd != -1)
+  {
+    sendto(broadcast_fd, &angle, sizeof(double), 0, (struct sockaddr *)&broadcast_addr, sizeof(broadcast_addr));
+  }
 }
 
 // Gets all packets recieved and waiting in queue

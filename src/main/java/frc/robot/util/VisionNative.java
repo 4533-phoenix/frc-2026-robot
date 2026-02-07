@@ -21,14 +21,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class VisionNative {
+  private static VisionNative instance;
   private static final int MAX_QUEUE_SIZE = 32;
   public static final int STRUCT_SIZE = 64;
 
-  private static final ByteBuffer buffer;
+  private final ByteBuffer buffer;
   private static boolean loaded = false;
 
   // Reusable list to minimize GC pressure
-  private static final List<VisionObservation> observations = new ArrayList<>(MAX_QUEUE_SIZE);
+  private final List<VisionObservation> observations;
+
+  public static synchronized VisionNative getInstance() {
+    if (instance == null) {
+      instance = new VisionNative();
+    }
+    return instance;
+  }
 
   /** Represents a single vision measurement with WPILib helper methods. */
   public record VisionObservation(
@@ -39,7 +47,8 @@ public class VisionNative {
       double stdY,
       double stdRot,
       long timestampMicros,
-      long cameraId) {
+      int cameraId,
+      int numTags) {
 
     /** Converts raw coordinates to a WPILib Pose2d. */
     public Pose2d getPose() {
@@ -58,36 +67,50 @@ public class VisionNative {
   }
 
   static {
-    buffer = ByteBuffer.allocateDirect(MAX_QUEUE_SIZE * STRUCT_SIZE);
-    buffer.order(ByteOrder.nativeOrder());
-
     if (RobotBase.isReal()) {
       try {
         System.loadLibrary("vision_server");
         loaded = true;
       } catch (UnsatisfiedLinkError e) {
         System.err.println(
-            "[VisionNative] Failed to load vision_server library: " + e.getMessage());
+            "[VisionNative-java] Failed to load vision_server library: " + e.getMessage());
         loaded = false;
       }
     }
   }
 
+  private VisionNative() {
+    buffer = ByteBuffer.allocateDirect(MAX_QUEUE_SIZE * STRUCT_SIZE);
+    buffer.order(ByteOrder.nativeOrder());
+    observations = new ArrayList<>(MAX_QUEUE_SIZE);
+  }
+
   private static native void startServer(int port);
+
+  private static native void broadcastRobotHeading(double angle);
 
   private static native int drainPackets(ByteBuffer buf, long currentHalTime);
 
-  public static void start(int port) {
-    if (loaded) {
-      startServer(port);
-      System.out.println("[VisionNative] Vision server started on port " + port);
-    } else {
-      System.err.println("[VisionNative] Cannot start server: native library not loaded.");
+  public void start(int port) {
+    if (!loaded) {
+      System.err.println("[VisionNative-java] Cannot start server: native library not loaded.");
+      return;
     }
+    startServer(port);
+    System.out.println("[VisionNative-java] Vision server started on port " + port);
+  }
+
+  public void broadcast(double angle) {
+    if (!loaded) return;
+    broadcastRobotHeading(angle);
+  }
+
+  public boolean isLoaded() {
+    return loaded;
   }
 
   /** Drains the C queue and returns the latest observations. */
-  public static List<VisionObservation> readPackets() {
+  public List<VisionObservation> readPackets() {
     observations.clear();
     if (!loaded) return observations;
 
@@ -106,7 +129,8 @@ public class VisionNative {
               buffer.getDouble(offset + 32), // stdY
               buffer.getDouble(offset + 40), // stdRot
               buffer.getLong(offset + 48), // ts
-              buffer.getLong(offset + 56) // camId
+              Byte.toUnsignedInt(buffer.get(offset + 56)), // camId
+              Byte.toUnsignedInt(buffer.get(offset + 57)) // numTags
               ));
     }
     return observations;

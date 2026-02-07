@@ -28,6 +28,7 @@ import frc.robot.subsystems.drive.GyroIODual;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSpark;
+import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.flywheel.Flywheel;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
@@ -55,6 +56,7 @@ public class RobotContainer {
   private final Flywheel flywheel;
   private final Hood hood;
   private final Indexer indexer;
+  private final Shooter shooter;
   private final Vision vision;
 
   // Controller
@@ -79,6 +81,7 @@ public class RobotContainer {
         flywheel = new Flywheel(new FlywheelIO() {});
         hood = new Hood(new HoodIO() {});
         indexer = new Indexer(new IndexerIO() {});
+        shooter = new Shooter(flywheel, hood, indexer);
         vision = new Vision(new VisionIOChalkydri(), drive);
         break;
 
@@ -95,6 +98,7 @@ public class RobotContainer {
         flywheel = new Flywheel(new FlywheelIOSim());
         hood = new Hood(new HoodIOSim());
         indexer = new Indexer(new IndexerIOSim());
+        shooter = new Shooter(flywheel, hood, indexer);
         vision = new Vision(new VisionIO() {}, drive);
         break;
 
@@ -111,6 +115,7 @@ public class RobotContainer {
         flywheel = new Flywheel(new FlywheelIO() {});
         hood = new Hood(new HoodIO() {});
         indexer = new Indexer(new IndexerIO() {});
+        shooter = new Shooter(flywheel, hood, indexer);
         vision = new Vision(new VisionIO() {}, drive);
         break;
     }

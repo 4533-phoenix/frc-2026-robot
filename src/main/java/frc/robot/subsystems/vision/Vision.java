@@ -44,6 +44,8 @@ public class Vision extends SubsystemBase {
     io.updateInputs(inputs);
     Logger.processInputs("Vision", inputs);
 
+    io.broadcastRobotHeading(drive.getRotation().getRadians());
+
     double currentTime = Timer.getTimestamp();
 
     for (int i = 0; i < inputs.visionPoses.length; i++) {

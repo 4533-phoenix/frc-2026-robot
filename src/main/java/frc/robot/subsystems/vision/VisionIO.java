@@ -19,7 +19,10 @@ public interface VisionIO {
     public double[] timestamps = new double[] {};
     public double[][] stdDevs = new double[][] {};
     public long[] cameraIds = new long[] {};
+    public long[] tagCounts = new long[] {};
   }
 
   public default void updateInputs(VisionIOInputs inputs) {}
+
+  public default void broadcastRobotHeading(double heading) {}
 }
