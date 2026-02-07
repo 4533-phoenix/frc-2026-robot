@@ -1,8 +1,23 @@
+// Copyright (c) 2026 FRC Team 4533 (Phoenix)
+// Derived from the AdvantageKit framework by Littleton Robotics
+//
+// Use of this source code is governed by a BSD
+// license that can be found in the LICENSE file
+// at the root directory of this project.
+
 package frc.robot.util;
 
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.RobotBase;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 
 public class VisionNative {
   private static final int MAX_QUEUE_SIZE = 32;
@@ -11,12 +26,40 @@ public class VisionNative {
   private static final ByteBuffer buffer;
   private static boolean loaded = false;
 
+  // Reusable list to minimize GC pressure
+  private static final List<VisionObservation> observations = new ArrayList<>(MAX_QUEUE_SIZE);
+
+  /** Represents a single vision measurement with WPILib helper methods. */
+  public record VisionObservation(
+      double x,
+      double y,
+      double rotRadians,
+      double stdX,
+      double stdY,
+      double stdRot,
+      long timestampMicros,
+      long cameraId) {
+
+    /** Converts raw coordinates to a WPILib Pose2d. */
+    public Pose2d getPose() {
+      return new Pose2d(x, y, new Rotation2d(rotRadians));
+    }
+
+    /** Converts raw standard deviations to a WPILib Matrix. */
+    public Matrix<N3, N1> getStdDevs() {
+      return VecBuilder.fill(stdX, stdY, stdRot);
+    }
+
+    /** Converts microsecond timestamp to seconds (FPGA time). */
+    public double getTimestampSeconds() {
+      return timestampMicros / 1.0e6;
+    }
+  }
+
   static {
-    // Allocate direct memory (Zero Copy)
     buffer = ByteBuffer.allocateDirect(MAX_QUEUE_SIZE * STRUCT_SIZE);
     buffer.order(ByteOrder.nativeOrder());
 
-    // 1. Only load the library if the bot is not being simulated
     if (RobotBase.isReal()) {
       try {
         System.loadLibrary("vision_server");
@@ -25,51 +68,39 @@ public class VisionNative {
         System.err.println("Failed to load vision_server library: " + e.getMessage());
         loaded = false;
       }
-    } else {
-      System.out.println("Simulation detected: Skipping native vision library load.");
     }
   }
 
-  /** Starts the UDP listener thread in C. */
   private static native void startServer(int port);
 
-  /**
-   * Drains the C queue into the shared ByteBuffer.
-   *
-   * @param buf The DirectByteBuffer to write to.
-   * @return The number of packets written.
-   */
   private static native int drainPackets(ByteBuffer buf);
 
-  /** Safe wrapper for starting the server */
   public static void start(int port) {
-    if (loaded) {
-      startServer(port);
-    }
+    if (loaded) startServer(port);
   }
 
-  /** Call this in your robot periodic. Parses the raw bytes into a usable Java format. */
-  public static void readPackets() {
-    if (!loaded) return;
+  /** Drains the C queue and returns the latest observations. */
+  public static List<VisionObservation> readPackets() {
+    observations.clear();
+    if (!loaded) return observations;
 
     int count = drainPackets(buffer);
 
     for (int i = 0; i < count; i++) {
       int offset = i * STRUCT_SIZE;
 
-      // Read doubles directly from raw memory
-      double x = buffer.getDouble(offset);
-      double y = buffer.getDouble(offset + 8);
-      double rot = buffer.getDouble(offset + 16);
-
-      // Skip stds (3 doubles = 24 bytes) for now
-
-      // Read timestamp and ID
-      long ts = buffer.getLong(offset + 48);
-      long camId = buffer.getLong(offset + 56);
-
-      // TODO: Process your data here
-      // System.out.printf("Cam: %d | X: %.2f Y: %.2f%n", camId, x, y);
+      observations.add(
+          new VisionObservation(
+              buffer.getDouble(offset), // x
+              buffer.getDouble(offset + 8), // y
+              buffer.getDouble(offset + 16), // rot (radians)
+              buffer.getDouble(offset + 24), // stdX
+              buffer.getDouble(offset + 32), // stdY
+              buffer.getDouble(offset + 40), // stdRot
+              buffer.getLong(offset + 48), // ts
+              buffer.getLong(offset + 56) // camId
+              ));
     }
+    return observations;
   }
 }
