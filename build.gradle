@@ -48,6 +48,9 @@ model {
                         // Force include our local Linux JNI header instead of the Windows one
                         cCompiler.args "-I", "${projectDir}/src/main/native/include/linux"
 
+                        // Tell the compiler where to find WPILib headers for JNI
+                        wpi.cpp.deps.wpilib(it)
+
                         // Standard compilation flags
                         cCompiler.args "-fPIC", "-pthread", "-O2", "-Wall"
                         linker.args "-pthread"
