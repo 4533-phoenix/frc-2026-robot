@@ -13,7 +13,11 @@ java {
 
 def ROBOT_MAIN_CLASS = "frc.robot.Main"
 
-// Native build configuration
+repositories {
+    mavenCentral()
+}
+
+// Native build configuration for the vision server
 model {
     components {
         // Define a Shared Library for the Vision Server
@@ -38,6 +42,7 @@ model {
                 def javaHome = org.gradle.internal.jvm.Jvm.current().javaHome
                 if (javaHome != null) {
                     if (toolChain in Gcc || toolChain in Clang) {
+                        // Include generic JNI headers
                         cCompiler.args "-I", "${javaHome}/include"
 
                         // Force include our local Linux JNI header instead of the Windows one
@@ -51,6 +56,22 @@ model {
             }
         }
     }
+}
+
+// Custom task to flatten the native library for deployment
+task stageNativeLib(type: Copy) {
+    from fileTree('build/libs/vision_server/shared') {
+        include '**/libvision_server.so'
+        exclude '**/*.debug'
+    }
+    into 'build/staged_lib'
+
+    // Handle duplicates by including the last one found (usually Release)
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+    // Flatten the directory structure
+    eachFile { f -> f.path = f.name }
+    includeEmptyDirs = false
 }
 
 // Define my targets (RoboRIO) and artifacts (deployable files)
@@ -83,12 +104,10 @@ deploy {
                     jvmArgs.add("-XX:+AlwaysPreTouch")
                 }
 
-                // Custom Artifact for the Native Library
-                // Manually grab the built .so file and put it in the FRC lib folder
+                // Native Library artifact
+                // Deploys the flattened .so file to the third-party lib directory
                 visionLib(getArtifactTypeClass('FileTreeArtifact')) {
-                    files = project.fileTree('build/libs/vision_server/shared/roborio') {
-                        include '*.so'
-                    }
+                    files = project.fileTree('build/staged_lib')
                     directory = '/usr/local/frc/third-party/lib'
                 }
 
@@ -107,11 +126,12 @@ deploy {
 
 def deployArtifact = deploy.targets.roborio.artifacts.frcJava
 
-// Critical: Ensure the native code is compiled before we try to deploy it
+// Ensure native code is staged after compilation and before deployment
 project.afterEvaluate {
     def deployTask = project.tasks.findByName('deployroborio')
     if (deployTask) {
-        deployTask.dependsOn('assemble')
+        deployTask.dependsOn(stageNativeLib)
+        stageNativeLib.mustRunAfter 'assemble'
     }
 }
 
