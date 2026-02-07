@@ -9,7 +9,10 @@ package frc.robot.subsystems.vision;
 
 import static frc.robot.subsystems.vision.VisionConstants.*;
 
+import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
@@ -27,6 +30,12 @@ public class Vision extends SubsystemBase {
   private final Map<Long, Double> lastTimestampMap = new HashMap<>();
   private final Map<Long, Alert> alertMap = new HashMap<>();
 
+  // Pre-allocated standard deviation vector to avoid allocations in periodic()
+  private final Matrix<N3, N1> stdVector = VecBuilder.fill(0, 0, 0);
+
+  // Pre-computed log paths to avoid string concatenation
+  private final Map<Long, String> logPaths = new HashMap<>();
+
   public Vision(VisionIO io, Drive drive) {
     this.io = io;
     this.drive = drive;
@@ -36,6 +45,8 @@ public class Vision extends SubsystemBase {
       alertMap.put(
           entry.getKey(),
           new Alert("Vision: Camera '" + entry.getValue() + "' is offline!", AlertType.kWarning));
+      // Pre-compute log paths to avoid string concatenation every cycle
+      logPaths.put(entry.getKey(), "Vision/CameraStatus/" + entry.getValue());
     }
   }
 
@@ -52,8 +63,11 @@ public class Vision extends SubsystemBase {
       long id = inputs.cameraIds[i];
       lastTimestampMap.put(id, currentTime);
 
-      var stds = VecBuilder.fill(inputs.stdDevs[i][0], inputs.stdDevs[i][1], inputs.stdDevs[i][2]);
-      drive.addVisionMeasurement(inputs.visionPoses[i], inputs.timestamps[i], stds);
+      // Reuse pre-allocated vector instead of creating new one
+      stdVector.set(0, 0, inputs.stdDevs[i][0]);
+      stdVector.set(1, 0, inputs.stdDevs[i][1]);
+      stdVector.set(2, 0, inputs.stdDevs[i][2]);
+      drive.addVisionMeasurement(inputs.visionPoses[i], inputs.timestamps[i], stdVector);
     }
 
     for (long id : CAMERA_MAP.keySet()) {
@@ -61,7 +75,7 @@ public class Vision extends SubsystemBase {
       boolean isOffline = (currentTime - lastSeen) > OFFLINE_TIMEOUT_SECONDS;
 
       alertMap.get(id).set(isOffline);
-      Logger.recordOutput("Vision/CameraStatus/" + CAMERA_MAP.get(id), !isOffline);
+      Logger.recordOutput(logPaths.get(id), !isOffline);
     }
   }
 }

@@ -15,9 +15,8 @@ while True:
     
     if len(data) == 8:
         # Unpack double (float64)
-        # 'd' is for double float. 
-        # Using native byte order defaults. If you see weird numbers, try '<d' (little-endian) or '>d' (big-endian)
-        heading = struct.unpack('d', data)[0]
-        print(f"Received heading from {addr}: {heading}")
+        heading_rad = struct.unpack('d', data)[0]
+        heading_deg = heading_rad * (180.0 / 3.141592653589793)
+        print(f"[{addr[0]}] Heading: {heading_rad:.4f} rad ({heading_deg:.2f} deg)")
     else:
         print(f"Received packet of unexpected size: {len(data)} bytes from {addr}")

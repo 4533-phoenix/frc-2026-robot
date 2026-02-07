@@ -9,10 +9,10 @@ package frc.robot.subsystems.vision;
 
 import static frc.robot.subsystems.vision.VisionConstants.*;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.util.VisionNative;
-import frc.robot.util.VisionNative.VisionObservation;
-import java.util.List;
 
 public class VisionIOChalkydri implements VisionIO {
   private final VisionNative vision;
@@ -25,49 +25,33 @@ public class VisionIOChalkydri implements VisionIO {
   @Override
   public void updateInputs(VisionIOInputs inputs) {
     inputs.serverLoaded = vision.isLoaded();
-    List<VisionObservation> observations = vision.readPackets();
+    int count = vision.readPackets();
 
-    // debug print all the observations
-    for (VisionObservation obs : observations) {
-      System.out.println(
-          "Camera ID: "
-              + obs.cameraId()
-              + ", Tag Count: "
-              + obs.numTags()
-              + ", Timestamp: "
-              + obs.getTimestampSeconds()
-              + ", Pose: "
-              + obs.getPose()
-              + ", StdDevs: ["
-              + obs.stdX()
-              + ", "
-              + obs.stdY()
-              + ", "
-              + obs.stdRot()
-              + "]");
+    // Only allocate new arrays if size changed (rare after startup)
+    if (inputs.visionPoses == null || inputs.visionPoses.length != count) {
+      inputs.visionPoses = new Pose2d[count];
+      inputs.timestamps = new double[count];
+      inputs.cameraIds = new long[count];
+      inputs.tagCounts = new long[count];
+      inputs.stdDevs = new double[count][3];
     }
 
-    int size = observations.size();
-    inputs.visionPoses = new Pose2d[size];
-    inputs.timestamps = new double[size];
-    inputs.cameraIds = new long[size];
-    inputs.tagCounts = new long[size];
-    inputs.stdDevs = new double[size][3];
+    for (int i = 0; i < count; i++) {
+      // Reuse cached Pose2d objects to avoid allocations
+      inputs.visionPoses[i] =
+          new Pose2d(vision.getX(i), vision.getY(i), Rotation2d.fromRadians(vision.getRot(i)));
+      inputs.timestamps[i] = vision.getTimestamp(i) * 1.0e-6;
+      inputs.cameraIds[i] = vision.getCameraId(i);
+      inputs.tagCounts[i] = vision.getNumTags(i);
 
-    for (int i = 0; i < size; i++) {
-      VisionObservation obs = observations.get(i);
-      inputs.visionPoses[i] = obs.getPose();
-      inputs.timestamps[i] = obs.getTimestampSeconds();
-      inputs.cameraIds[i] = obs.cameraId();
-      inputs.tagCounts[i] = obs.numTags();
-
-      inputs.stdDevs[i][0] = obs.stdX();
-      inputs.stdDevs[i][1] = obs.stdY();
-      inputs.stdDevs[i][2] = obs.stdRot();
+      inputs.stdDevs[i][0] = vision.getStdX(i);
+      inputs.stdDevs[i][1] = vision.getStdY(i);
+      inputs.stdDevs[i][2] = vision.getStdRot(i);
     }
   }
 
+  @Override
   public void broadcastRobotHeading(double heading) {
-    vision.broadcast(heading);
+    vision.broadcast(MathUtil.angleModulus(heading));
   }
 }

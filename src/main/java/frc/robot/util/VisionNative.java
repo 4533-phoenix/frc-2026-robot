@@ -8,17 +8,9 @@
 package frc.robot.util;
 
 import edu.wpi.first.hal.HALUtil;
-import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.numbers.N1;
-import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.RobotBase;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.List;
 
 public class VisionNative {
   private static VisionNative instance;
@@ -28,42 +20,14 @@ public class VisionNative {
   private final ByteBuffer buffer;
   private static boolean loaded = false;
 
-  // Reusable list to minimize GC pressure
-  private final List<VisionObservation> observations;
+  // Cache for current packet count to avoid recalculating offsets
+  private int currentPacketCount = 0;
 
   public static synchronized VisionNative getInstance() {
     if (instance == null) {
       instance = new VisionNative();
     }
     return instance;
-  }
-
-  /** Represents a single vision measurement with WPILib helper methods. */
-  public record VisionObservation(
-      double x,
-      double y,
-      double rotRadians,
-      double stdX,
-      double stdY,
-      double stdRot,
-      long timestampMicros,
-      int cameraId,
-      int numTags) {
-
-    /** Converts raw coordinates to a WPILib Pose2d. */
-    public Pose2d getPose() {
-      return new Pose2d(x, y, new Rotation2d(rotRadians));
-    }
-
-    /** Converts raw standard deviations to a WPILib Matrix. */
-    public Matrix<N3, N1> getStdDevs() {
-      return VecBuilder.fill(stdX, stdY, stdRot);
-    }
-
-    /** Converts microsecond timestamp to seconds (FPGA time). */
-    public double getTimestampSeconds() {
-      return timestampMicros / 1.0e6;
-    }
   }
 
   static {
@@ -82,7 +46,6 @@ public class VisionNative {
   private VisionNative() {
     buffer = ByteBuffer.allocateDirect(MAX_QUEUE_SIZE * STRUCT_SIZE);
     buffer.order(ByteOrder.nativeOrder());
-    observations = new ArrayList<>(MAX_QUEUE_SIZE);
   }
 
   private static native void startServer(int port);
@@ -109,30 +72,57 @@ public class VisionNative {
     return loaded;
   }
 
-  /** Drains the C queue and returns the latest observations. */
-  public List<VisionObservation> readPackets() {
-    observations.clear();
-    if (!loaded) return observations;
+  /** Drains the C queue and returns the count of observations. */
+  public int readPackets() {
+    if (!loaded) return 0;
+    currentPacketCount = drainPackets(buffer, HALUtil.getFPGATime());
+    return currentPacketCount;
+  }
 
-    // Pass current FPGA time to sync clocks
-    int count = drainPackets(buffer, HALUtil.getFPGATime());
+  // Pre-calculated byte offsets for struct fields
+  private static final int OFFSET_X = 0;
+  private static final int OFFSET_Y = 8;
+  private static final int OFFSET_ROT = 16;
+  private static final int OFFSET_STD_X = 24;
+  private static final int OFFSET_STD_Y = 32;
+  private static final int OFFSET_STD_ROT = 40;
+  private static final int OFFSET_TIMESTAMP = 48;
+  private static final int OFFSET_CAMERA_ID = 56;
+  private static final int OFFSET_NUM_TAGS = 57;
 
-    for (int i = 0; i < count; i++) {
-      int offset = i * STRUCT_SIZE;
+  public double getX(int i) {
+    return buffer.getDouble(i * STRUCT_SIZE + OFFSET_X);
+  }
 
-      observations.add(
-          new VisionObservation(
-              buffer.getDouble(offset), // x
-              buffer.getDouble(offset + 8), // y
-              buffer.getDouble(offset + 16), // rot (radians)
-              buffer.getDouble(offset + 24), // stdX
-              buffer.getDouble(offset + 32), // stdY
-              buffer.getDouble(offset + 40), // stdRot
-              buffer.getLong(offset + 48), // ts
-              Byte.toUnsignedInt(buffer.get(offset + 56)), // camId
-              Byte.toUnsignedInt(buffer.get(offset + 57)) // numTags
-              ));
-    }
-    return observations;
+  public double getY(int i) {
+    return buffer.getDouble(i * STRUCT_SIZE + OFFSET_Y);
+  }
+
+  public double getRot(int i) {
+    return buffer.getDouble(i * STRUCT_SIZE + OFFSET_ROT);
+  }
+
+  public double getStdX(int i) {
+    return buffer.getDouble(i * STRUCT_SIZE + OFFSET_STD_X);
+  }
+
+  public double getStdY(int i) {
+    return buffer.getDouble(i * STRUCT_SIZE + OFFSET_STD_Y);
+  }
+
+  public double getStdRot(int i) {
+    return buffer.getDouble(i * STRUCT_SIZE + OFFSET_STD_ROT);
+  }
+
+  public long getTimestamp(int i) {
+    return buffer.getLong(i * STRUCT_SIZE + OFFSET_TIMESTAMP);
+  }
+
+  public int getCameraId(int i) {
+    return Byte.toUnsignedInt(buffer.get(i * STRUCT_SIZE + OFFSET_CAMERA_ID));
+  }
+
+  public int getNumTags(int i) {
+    return Byte.toUnsignedInt(buffer.get(i * STRUCT_SIZE + OFFSET_NUM_TAGS));
   }
 }

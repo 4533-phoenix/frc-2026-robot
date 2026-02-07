@@ -92,6 +92,7 @@ void *vision_worker_thread(void *arg)
       if (next_h == t)
       {
         atomic_store_explicit(&vq.tail, (t + 1) & MASK, memory_order_release);
+        printf("[VisionNative-c] Warning: Queue full, dropping oldest packet\n");
       }
 
       // Write the data to the buffer
@@ -114,7 +115,7 @@ JNIEXPORT void JNICALL Java_frc_robot_util_VisionNative_startServer(JNIEnv *env,
   listenfd = socket(AF_INET, SOCK_DGRAM, 0);
   if (listenfd < 0)
   {
-    perror("Socket creation failed");
+    perror("[VisionNative-c] Socket creation failed");
     return;
   }
 
@@ -128,7 +129,7 @@ JNIEXPORT void JNICALL Java_frc_robot_util_VisionNative_startServer(JNIEnv *env,
   // Bind server address to socket descriptor
   if (bind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) == -1)
   {
-    perror("Bind failed");
+    perror("[VisionNative-c] Bind failed");
     close(listenfd);
     return;
   }

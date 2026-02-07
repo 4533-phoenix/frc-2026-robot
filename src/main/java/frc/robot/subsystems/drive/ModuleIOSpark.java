@@ -252,14 +252,26 @@ public class ModuleIOSpark implements ModuleIO {
         (values) -> inputs.turnAppliedVolts = values[0] * values[1]);
     ifOk(turnSpark, turnSpark::getOutputCurrent, (value) -> inputs.turnCurrentAmps = value);
 
-    inputs.odometryTimestamps =
-        timestampQueue.stream().mapToDouble((Double value) -> value).toArray();
-    inputs.odometryDrivePositionsRad =
-        drivePositionQueue.stream().mapToDouble((Double value) -> value).toArray();
-    inputs.odometryTurnPositions =
-        turnPositionQueue.stream()
-            .map((Double value) -> new Rotation2d(value).minus(zeroRotation))
-            .toArray(Rotation2d[]::new);
+    int count = timestampQueue.size();
+    inputs.odometryTimestamps = new double[count];
+    inputs.odometryDrivePositionsRad = new double[count];
+    inputs.odometryTurnPositions = new Rotation2d[count];
+
+    int i = 0;
+    for (Double timestamp : timestampQueue) {
+      inputs.odometryTimestamps[i++] = timestamp;
+    }
+
+    i = 0;
+    for (Double position : drivePositionQueue) {
+      inputs.odometryDrivePositionsRad[i++] = position;
+    }
+
+    i = 0;
+    for (Double position : turnPositionQueue) {
+      inputs.odometryTurnPositions[i++] = new Rotation2d(position).minus(zeroRotation);
+    }
+
     timestampQueue.clear();
     drivePositionQueue.clear();
     turnPositionQueue.clear();
