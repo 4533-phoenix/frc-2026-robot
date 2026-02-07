@@ -65,7 +65,7 @@ public class VisionNative {
         System.loadLibrary("vision_server");
         loaded = true;
       } catch (UnsatisfiedLinkError e) {
-        System.err.println("Failed to load vision_server library: " + e.getMessage());
+        System.err.println("[VisionNative] Failed to load vision_server library: " + e.getMessage());
         loaded = false;
       }
     }
@@ -76,7 +76,12 @@ public class VisionNative {
   private static native int drainPackets(ByteBuffer buf);
 
   public static void start(int port) {
-    if (loaded) startServer(port);
+    if (loaded) {
+      startServer(port);
+      System.out.println("[VisionNative] Vision server started on port " + port);
+    } else {
+      System.err.println("[VisionNative] Cannot start server: native library not loaded.");
+    }
   }
 
   /** Drains the C queue and returns the latest observations. */
