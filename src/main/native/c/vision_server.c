@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <jni.h>
+#include <hal/HAL.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <pthread.h>
@@ -8,7 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -45,9 +45,10 @@ LockFreeQueue vq = {.head = 0, .tail = 0};
 // Worker thread for recieving cam updates and pushing them to the queue
 void *vision_worker_thread(void *arg) {
   int listenfd = *(int *)arg;
-  free(arg); // Free memory allocated in main thread
+  free(arg);
 
   VisionMeasurement incoming;
+  int32_t status = 0;
   pthread_setname_np(pthread_self(), "VisionUDPWorker");
 
   while (1) {
@@ -55,6 +56,11 @@ void *vision_worker_thread(void *arg) {
         recvfrom(listenfd, &incoming, sizeof(incoming), 0, NULL, NULL);
 
     if (len == sizeof(VisionMeasurement)) {
+      uint64_t now = HAL_GetFPGATime(&status);
+      
+      // Calculate absolute FPGA timestamp from delay
+      incoming.ts = now - incoming.ts;
+
       // Load current indices
       int h = atomic_load_explicit(&vq.head, memory_order_relaxed);
       int t = atomic_load_explicit(&vq.tail, memory_order_acquire);
@@ -76,7 +82,6 @@ void *vision_worker_thread(void *arg) {
 
 // --- JNI EXPORTS ---
 
-// JNI Function to start the server
 JNIEXPORT void JNICALL Java_frc_robot_util_VisionNative_startServer(JNIEnv *env, jclass cls, jint port) {
   int listenfd;
   struct sockaddr_in servaddr;
@@ -113,7 +118,7 @@ JNIEXPORT void JNICALL Java_frc_robot_util_VisionNative_startServer(JNIEnv *env,
   pthread_create(&thread_id, NULL, vision_worker_thread, arg);
 }
 
-// JNI Function to drain packets to Java ByteBuffer
+// Gets all packets recieved and waiting in queue
 JNIEXPORT jint JNICALL Java_frc_robot_util_VisionNative_drainPackets(JNIEnv *env, jclass cls, jobject byte_buffer) {
   VisionMeasurement *out_buffer = (VisionMeasurement *)(*env)->GetDirectBufferAddress(env, byte_buffer);
   

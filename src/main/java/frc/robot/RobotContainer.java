@@ -34,7 +34,6 @@ import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOChalkydri;
-
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
