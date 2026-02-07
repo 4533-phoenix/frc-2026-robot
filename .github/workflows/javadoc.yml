@@ -94,6 +94,11 @@ jobs:
             echo "Minified CSS: $file"
           done
 
+      # Download the favicon from the offical website
+      - name: Download favicon
+        run: |
+          curl -o build/docs/javadoc/favicon.ico https://phoenix4533.org/favicon.ico
+
       # Upload the Javadoc as a Pages artifact
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
