@@ -12,7 +12,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <dlfcn.h>
 
 #define MAX_QUEUE_SIZE 32
 #define MASK (MAX_QUEUE_SIZE - 1)
@@ -23,6 +22,7 @@ typedef struct __attribute__((packed))
 {
   double x, y, rot;
 } RobotPos;
+
 typedef struct __attribute__((packed))
 {
   double x, y, rot;
@@ -47,28 +47,9 @@ typedef struct
 // Global states
 LockFreeQueue vq = {.head = 0, .tail = 0};
 
-typedef uint64_t (*HAL_GetFPGATime_Func)(int32_t *);
-
-// Helper function to get the FPGA micros
-uint64_t get_fpga_time_micros()
+// Helper function to get the Monotonic micros
+uint64_t get_monotonic_micros()
 {
-  static HAL_GetFPGATime_Func hal_fpga_time = NULL;
-
-  if (!hal_fpga_time)
-  {
-    // GCC diagnostic ignored to fix ISO C forbidden cast warning
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-    hal_fpga_time = (HAL_GetFPGATime_Func)dlsym(RTLD_DEFAULT, "HAL_GetFPGATime");
-#pragma GCC diagnostic pop
-  }
-
-  if (hal_fpga_time)
-  {
-    int32_t status = 0;
-    return hal_fpga_time(&status);
-  }
-
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   return (uint64_t)(ts.tv_sec * 1000000 + ts.tv_nsec / 1000);
@@ -90,9 +71,9 @@ void *vision_worker_thread(void *arg)
 
     if (len == sizeof(VisionMeasurement))
     {
-      uint64_t now = get_fpga_time_micros();
+      uint64_t now = get_monotonic_micros();
 
-      // Calculate absolute FPGA timestamp from delay
+      // Calculate absolute Monotonic timestamp from delay
       incoming.ts = now - incoming.ts;
 
       // Load current indices
@@ -157,12 +138,16 @@ JNIEXPORT void JNICALL Java_frc_robot_util_VisionNative_startServer(JNIEnv *env,
 }
 
 // Gets all packets recieved and waiting in queue
-JNIEXPORT jint JNICALL Java_frc_robot_util_VisionNative_drainPackets(JNIEnv *env, jclass cls, jobject byte_buffer)
+JNIEXPORT jint JNICALL Java_frc_robot_util_VisionNative_drainPackets(JNIEnv *env, jclass cls, jobject byte_buffer, jlong current_hal_time)
 {
   VisionMeasurement *out_buffer = (VisionMeasurement *)(*env)->GetDirectBufferAddress(env, byte_buffer);
 
   if (out_buffer == NULL)
     return 0;
+
+  // Calculate offset to sync C clock to Java clock
+  uint64_t now_monotonic = get_monotonic_micros();
+  uint64_t offset = (uint64_t)current_hal_time - now_monotonic;
 
   int t = atomic_load_explicit(&vq.tail, memory_order_relaxed);
   int h = atomic_load_explicit(&vq.head, memory_order_acquire);
@@ -171,6 +156,10 @@ JNIEXPORT jint JNICALL Java_frc_robot_util_VisionNative_drainPackets(JNIEnv *env
   while (t != h)
   {
     out_buffer[count] = vq.data[t];
+
+    // Apply offset to convert packet from Monotonic to FPGA time
+    out_buffer[count].ts += offset;
+
     t = (t + 1) & MASK;
     count++;
 
