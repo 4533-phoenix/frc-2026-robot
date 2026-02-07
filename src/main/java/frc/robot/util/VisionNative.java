@@ -7,6 +7,7 @@
 
 package frc.robot.util;
 
+import edu.wpi.first.hal.HALUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -74,7 +75,7 @@ public class VisionNative {
 
   private static native void startServer(int port);
 
-  private static native int drainPackets(ByteBuffer buf);
+  private static native int drainPackets(ByteBuffer buf, long currentHalTime);
 
   public static void start(int port) {
     if (loaded) {
@@ -90,7 +91,8 @@ public class VisionNative {
     observations.clear();
     if (!loaded) return observations;
 
-    int count = drainPackets(buffer);
+    // Pass current FPGA time to sync clocks
+    int count = drainPackets(buffer, HALUtil.getFPGATime());
 
     for (int i = 0; i < count; i++) {
       int offset = i * STRUCT_SIZE;
