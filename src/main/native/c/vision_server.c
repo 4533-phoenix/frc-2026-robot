@@ -12,20 +12,24 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <dlfcn.h>
 
 #define MAX_QUEUE_SIZE 32
 #define MASK (MAX_QUEUE_SIZE - 1)
 #define RECIEVE_BUF_SIZE 1048576
 
 // Structs that are given from our rust code (Packed to match Java)
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed))
+{
   double x, y, rot;
 } RobotPos;
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed))
+{
   double x, y, rot;
 } VisionUncertainty;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed))
+{
   RobotPos pose;
   VisionUncertainty stds;
   uint64_t ts;
@@ -33,7 +37,8 @@ typedef struct __attribute__((packed)) {
 } VisionMeasurement;
 
 // Ring buffer struct
-typedef struct {
+typedef struct
+{
   volatile VisionMeasurement data[MAX_QUEUE_SIZE];
   atomic_int head; // Written by Worker
   atomic_int tail; // Read by Main
@@ -42,28 +47,51 @@ typedef struct {
 // Global states
 LockFreeQueue vq = {.head = 0, .tail = 0};
 
+typedef uint64_t (*HAL_GetFPGATime_Func)(int32_t *);
+
 // Helper function to get the FPGA micros
-uint64_t get_fpga_time_micros() {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (uint64_t)(ts.tv_sec * 1000000 + ts.tv_nsec / 1000);
+uint64_t get_fpga_time_micros()
+{
+  static HAL_GetFPGATime_Func hal_fpga_time = NULL;
+
+  if (!hal_fpga_time)
+  {
+    // GCC diagnostic ignored to fix ISO C forbidden cast warning
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+    hal_fpga_time = (HAL_GetFPGATime_Func)dlsym(RTLD_DEFAULT, "HAL_GetFPGATime");
+#pragma GCC diagnostic pop
+  }
+
+  if (hal_fpga_time)
+  {
+    int32_t status = 0;
+    return hal_fpga_time(&status);
+  }
+
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return (uint64_t)(ts.tv_sec * 1000000 + ts.tv_nsec / 1000);
 }
 
 // Worker thread for recieving cam updates and pushing them to the queue
-void *vision_worker_thread(void *arg) {
+void *vision_worker_thread(void *arg)
+{
   int listenfd = *(int *)arg;
   free(arg);
 
   VisionMeasurement incoming;
   pthread_setname_np(pthread_self(), "VisionUDPWorker");
 
-  while (1) {
+  while (1)
+  {
     ssize_t len =
         recvfrom(listenfd, &incoming, sizeof(incoming), 0, NULL, NULL);
 
-    if (len == sizeof(VisionMeasurement)) {
+    if (len == sizeof(VisionMeasurement))
+    {
       uint64_t now = get_fpga_time_micros();
-      
+
       // Calculate absolute FPGA timestamp from delay
       incoming.ts = now - incoming.ts;
 
@@ -74,7 +102,8 @@ void *vision_worker_thread(void *arg) {
       int next_h = (h + 1) & MASK;
 
       // If queue is full, we push the tail forward to overwrite oldest
-      if (next_h == t) {
+      if (next_h == t)
+      {
         atomic_store_explicit(&vq.tail, (t + 1) & MASK, memory_order_release);
       }
 
@@ -88,14 +117,16 @@ void *vision_worker_thread(void *arg) {
 
 // --- JNI EXPORTS ---
 
-JNIEXPORT void JNICALL Java_frc_robot_util_VisionNative_startServer(JNIEnv *env, jclass cls, jint port) {
+JNIEXPORT void JNICALL Java_frc_robot_util_VisionNative_startServer(JNIEnv *env, jclass cls, jint port)
+{
   int listenfd;
   struct sockaddr_in servaddr;
   memset(&servaddr, 0, sizeof(servaddr));
 
   // Create a UDP Socket
   listenfd = socket(AF_INET, SOCK_DGRAM, 0);
-  if (listenfd < 0) {
+  if (listenfd < 0)
+  {
     perror("Socket creation failed");
     return;
   }
@@ -108,7 +139,8 @@ JNIEXPORT void JNICALL Java_frc_robot_util_VisionNative_startServer(JNIEnv *env,
   servaddr.sin_family = AF_INET;
 
   // Bind server address to socket descriptor
-  if (bind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) == -1) {
+  if (bind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) == -1)
+  {
     perror("Bind failed");
     close(listenfd);
     return;
@@ -125,16 +157,19 @@ JNIEXPORT void JNICALL Java_frc_robot_util_VisionNative_startServer(JNIEnv *env,
 }
 
 // Gets all packets recieved and waiting in queue
-JNIEXPORT jint JNICALL Java_frc_robot_util_VisionNative_drainPackets(JNIEnv *env, jclass cls, jobject byte_buffer) {
+JNIEXPORT jint JNICALL Java_frc_robot_util_VisionNative_drainPackets(JNIEnv *env, jclass cls, jobject byte_buffer)
+{
   VisionMeasurement *out_buffer = (VisionMeasurement *)(*env)->GetDirectBufferAddress(env, byte_buffer);
-  
-  if (out_buffer == NULL) return 0;
+
+  if (out_buffer == NULL)
+    return 0;
 
   int t = atomic_load_explicit(&vq.tail, memory_order_relaxed);
   int h = atomic_load_explicit(&vq.head, memory_order_acquire);
 
   int count = 0;
-  while (t != h) {
+  while (t != h)
+  {
     out_buffer[count] = vq.data[t];
     t = (t + 1) & MASK;
     count++;
