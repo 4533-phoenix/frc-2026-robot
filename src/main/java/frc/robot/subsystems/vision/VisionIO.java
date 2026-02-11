@@ -18,8 +18,8 @@ public interface VisionIO {
     public Pose2d[] visionPoses = new Pose2d[] {};
     public double[] timestamps = new double[] {};
     public double[][] stdDevs = new double[][] {};
-    public long[] cameraIds = new long[] {};
-    public long[] tagCounts = new long[] {};
+    public int[] cameraIds = new int[] {};
+    public int[] tagCounts = new int[] {};
   }
 
   public default void updateInputs(VisionIOInputs inputs) {}

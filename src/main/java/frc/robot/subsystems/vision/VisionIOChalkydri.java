@@ -31,8 +31,8 @@ public class VisionIOChalkydri implements VisionIO {
     if (inputs.visionPoses == null || inputs.visionPoses.length != count) {
       inputs.visionPoses = new Pose2d[count];
       inputs.timestamps = new double[count];
-      inputs.cameraIds = new long[count];
-      inputs.tagCounts = new long[count];
+      inputs.cameraIds = new int[count];
+      inputs.tagCounts = new int[count];
       inputs.stdDevs = new double[count][3];
     }
 
