@@ -19,15 +19,19 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.IntakeCommands;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.climb.ClimbIO;
 import frc.robot.subsystems.climb.ClimbIOSim;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
-import frc.robot.subsystems.drive.GyroIODual;
+import frc.robot.subsystems.drive.GyroIOCanAndGyro;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSpark;
+import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.IntakeIO;
+import frc.robot.subsystems.intake.IntakeIOReal;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.flywheel.Flywheel;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
@@ -53,6 +57,7 @@ public class RobotContainer {
   // Subsystems
   private final Drive drive;
   private final Climb climb;
+  private final Intake intake;
   private final Flywheel flywheel;
   private final Hood hood;
   private final Indexer indexer;
@@ -72,12 +77,13 @@ public class RobotContainer {
         // Real robot, instantiate hardware IO implementations
         drive =
             new Drive(
-                new GyroIODual(),
+                new GyroIOCanAndGyro(),
                 new ModuleIOSpark(0),
                 new ModuleIOSpark(1),
                 new ModuleIOSpark(2),
                 new ModuleIOSpark(3));
         climb = new Climb(new ClimbIO() {});
+        intake = new Intake(new IntakeIOReal());
         flywheel = new Flywheel(new FlywheelIO() {});
         hood = new Hood(new HoodIO() {});
         indexer = new Indexer(new IndexerIO() {});
@@ -95,6 +101,7 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim());
         climb = new Climb(new ClimbIOSim());
+        intake = new Intake(new IntakeIO() {});
         flywheel = new Flywheel(new FlywheelIOSim());
         hood = new Hood(new HoodIOSim());
         indexer = new Indexer(new IndexerIOSim());
@@ -112,6 +119,7 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {});
         climb = new Climb(new ClimbIO() {});
+        intake = new Intake(new IntakeIO() {});
         flywheel = new Flywheel(new FlywheelIO() {});
         hood = new Hood(new HoodIO() {});
         indexer = new Indexer(new IndexerIO() {});
@@ -158,15 +166,9 @@ public class RobotContainer {
             () -> -controller.getLeftX(),
             () -> -controller.getRightX()));
 
-    // Lock to 0° when A button is held
-    controller
-        .a()
-        .whileTrue(
-            DriveCommands.joystickDriveAtAngle(
-                drive,
-                () -> -controller.getLeftY(),
-                () -> -controller.getLeftX(),
-                () -> Rotation2d.kZero));
+    // Deploy intake and spin while A is held and set the default command to retract when released
+    intake.setDefaultCommand(IntakeCommands.holdRetracted(intake));
+    controller.a().whileTrue(IntakeCommands.deploy(intake));
 
     // Switch to X pattern when X button is pressed
     controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));

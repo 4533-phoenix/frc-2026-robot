@@ -27,14 +27,14 @@ public class Vision extends SubsystemBase {
   private final VisionIOInputsAutoLogged inputs = new VisionIOInputsAutoLogged();
   private final Drive drive;
 
-  private final Map<Long, Double> lastTimestampMap = new HashMap<>();
-  private final Map<Long, Alert> alertMap = new HashMap<>();
+  private final Map<Integer, Double> lastTimestampMap = new HashMap<>();
+  private final Map<Integer, Alert> alertMap = new HashMap<>();
 
   // Pre-allocated standard deviation vector to avoid allocations in periodic()
   private final Matrix<N3, N1> stdVector = VecBuilder.fill(0, 0, 0);
 
   // Pre-computed log paths to avoid string concatenation
-  private final Map<Long, String> logPaths = new HashMap<>();
+  private final Map<Integer, String> logPaths = new HashMap<>();
 
   public Vision(VisionIO io, Drive drive) {
     this.io = io;
@@ -60,7 +60,7 @@ public class Vision extends SubsystemBase {
     double currentTime = Timer.getTimestamp();
 
     for (int i = 0; i < inputs.visionPoses.length; i++) {
-      long id = inputs.cameraIds[i];
+      int id = inputs.cameraIds[i];
       lastTimestampMap.put(id, currentTime);
 
       // Reuse pre-allocated vector instead of creating new one
@@ -70,7 +70,7 @@ public class Vision extends SubsystemBase {
       drive.addVisionMeasurement(inputs.visionPoses[i], inputs.timestamps[i], stdVector);
     }
 
-    for (long id : CAMERA_MAP.keySet()) {
+    for (int id : CAMERA_MAP.keySet()) {
       double lastSeen = lastTimestampMap.getOrDefault(id, 0.0);
       boolean isOffline = (currentTime - lastSeen) > OFFLINE_TIMEOUT_SECONDS;
 

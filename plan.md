@@ -1,9 +1,9 @@
-# Shooting Implementation Plan (Refined)
+# Shooting Implementation Plan
 
 The objective is to implement a "Shooting Mode" that coordinates the drivetrain, flywheel, hood, and indexer.
 **Key Constraints**:
 1.  **Zone Restricted**: Shooting mode can only be entered/maintained while in a specific field zone.
-2.  **Toggle Activation**: The driver toggles the mode on/off.
+2.  **Hold Activation**: The driver holds the control to enable the mode; releasing exits the mode (i.e. hold to enter shoot mode).
 3.  **Hub Centric**: Rotation auto-aligns to the Hub Center (dependent on Alliance side).
 
 ## 1. Prerequisite Commands & Subsystems
@@ -23,8 +23,8 @@ We need to define the geometry for the game.
 ## 3. RobotContainer Logic
 
 ### Controls
-- **Toggle Shooting Mode**: `Right Bumper` (Toggle).
-- **Fire**: `Right Trigger` (Hold to feed).
+- **Shooting Mode**: `Left Trigger` (Hold).
+- **Fire**: `Right Trigger` (Hold to feed, different values, different feed rates?).
 
 ### Structure
 
@@ -37,7 +37,7 @@ BooleanSupplier isInZone = () -> {
 ```
 
 #### B. The "Shooting Mode" Command
-This command runs while the mode is toggled ON.
+This command runs while the mode is held/active (release to exit).
 1.  **Drive**: Use `joystickDriveAtAngle`.
     - *XY*: Driver controlled.
     - *Rotation*: Calculated angle to `FieldConstants.getHubCenter()`.
@@ -61,14 +61,12 @@ Command shootingModeCommand = Commands.parallel(
     shooter.prepareToShoot(...)
 ).until(() -> !isInZone.getAsBoolean()); // Safety: cancel if leaving zone
 
-// Toggle binding with condition
-controller.rightBumper()
-    .and(isInZone) // Can only toggle ON if in zone
-    .toggleOnTrue(shootingModeCommand);
+// Hold binding: Bind `shootingModeCommand` to Left Trigger while-held.
+// Example: new Trigger(controller.leftTrigger()).whileTrue(shootingModeCommand);
 
 // Firing Logic
 new Trigger(shootingModeCommand::isScheduled) // Only if mode is active
-    .and(controller.rightTrigger())           // And trigger pressed
+    .and(controller.rightTrigger())           // And trigger pressed (Maybe slightly different code for controlling feed rate mentioned above)
     .and(shooter::isReady)                    // And mechanicals ready
     .and(atTargetRot)                         // And aimed
     .whileTrue(shooter.feed());
