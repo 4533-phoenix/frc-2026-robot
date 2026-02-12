@@ -7,12 +7,15 @@
 
 package frc.robot.subsystems.shooter.flywheel;
 
+import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 
 public class FlywheelIOSim implements FlywheelIO {
@@ -24,38 +27,43 @@ public class FlywheelIOSim implements FlywheelIO {
   private final PIDController pid = new PIDController(flywheelKp, flywheelKi, flywheelKd);
   private final SimpleMotorFeedforward ff = new SimpleMotorFeedforward(flywheelKs, flywheelKv);
 
-  private double appliedVolts = 0.0;
+  private Voltage appliedVoltage = Volts.of(0.0);
   private boolean closedLoop = false;
-  private double velocitySetpoint = 0.0;
+  private AngularVelocity velocitySetpoint = RadiansPerSecond.of(0.0);
 
   @Override
   public void updateInputs(FlywheelIOInputs inputs) {
     if (closedLoop) {
-      appliedVolts =
-          pid.calculate(sim.getAngularVelocityRadPerSec(), velocitySetpoint)
-              + ff.calculate(velocitySetpoint);
+      appliedVoltage =
+          Volts.of(
+              MathUtil.clamp(
+                  pid.calculate(
+                          sim.getAngularVelocityRadPerSec(), velocitySetpoint.in(RadiansPerSecond))
+                      + ff.calculate(velocitySetpoint.in(RadiansPerSecond)),
+                  -12.0,
+                  12.0));
     }
 
-    sim.setInputVoltage(MathUtil.clamp(appliedVolts, -12.0, 12.0));
-    sim.update(0.02);
+    sim.setInputVoltage(appliedVoltage.in(Volts));
+    final double dt = 0.02;
+    sim.update(dt);
 
     inputs.connected = true;
-    inputs.positionRad += sim.getAngularVelocityRadPerSec() * 0.02;
-    inputs.velocityRadPerSec = sim.getAngularVelocityRadPerSec();
-    inputs.appliedVolts = appliedVolts;
-    inputs.currentAmps = Math.abs(sim.getCurrentDrawAmps());
+    inputs.velocity = RadiansPerSecond.of(sim.getAngularVelocityRadPerSec());
+    inputs.appliedVoltage = appliedVoltage;
+    inputs.appliedCurrent = Amps.of(sim.getCurrentDrawAmps());
   }
 
   @Override
-  public void setVelocity(double velocityRadPerSec) {
+  public void setAngularVelocity(AngularVelocity velocity) {
     closedLoop = true;
-    velocitySetpoint = velocityRadPerSec;
+    velocitySetpoint = velocity;
     pid.reset();
   }
 
   @Override
   public void stop() {
     closedLoop = false;
-    appliedVolts = 0.0;
+    appliedVoltage = Volts.of(0.0);
   }
 }

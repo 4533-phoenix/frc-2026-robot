@@ -15,9 +15,6 @@ public final class IntakeConstants {
   public static final int armMotorCanId = 15;
   public static final int spinnerMotorCanId = 16;
 
-  // DIO pins
-  public static final int dutyCycleEncoderPin = 8;
-
   // Gear ratio: 112 NEO rotations = 1 output shaft rotation
   public static final double armMotorReduction = 112.0;
 
@@ -34,27 +31,23 @@ public final class IntakeConstants {
   public static final int spinnerMotorCurrentLimit = 30;
 
   // Arm PID configuration (on the SparkMax, in output-shaft radians)
-  public static final double armKp = 12.0; // TODO: Tune
+  public static final double armKp = 1.0;
   public static final double armKi = 0.0;
-  public static final double armKd = 0.0; // TODO: Tune
+  public static final double armKd = 0.0;
 
   // Arm Feedforward configuration
-  public static final double armKs = 0.0; // TODO: Tune
-  public static final double armKg = 0.5; // TODO: Tune
-  public static final double armKv = 4.65; // TODO: Tune
-  public static final double armKa = 0.04; // TODO: Tune
+  public static final double armKs = 0.0;
+  public static final double armKg = 0.0;
+  public static final double armKv = 0.0;
+  public static final double armKa = 0.0;
 
   // Arm Motion Profile Constraints
-  public static final double armMaxVelocityRadPerSec = Math.PI * 2; // TODO: Tune
-  public static final double armMaxAccelerationRadPerSecSquared = Math.PI * 4; // TODO: Tune
+  public static final double armMaxVelocityRadPerSec = Math.PI * 2;
+  public static final double armMaxAccelerationRadPerSecSquared = Math.PI * 4;
 
   // Arm positions (output shaft, relative to stow = 0)
   public static final Rotation2d armDeployedPosition = Rotation2d.fromDegrees(101.9);
   public static final Rotation2d armRetractedPosition = Rotation2d.kZero;
-
-  // Arm soft limits (radians, relative to stow = 0)
-  public static final double armForwardSoftLimitRad = Math.toRadians(108.0);
-  public static final double armReverseSoftLimitRad = Math.toRadians(-5.0);
 
   // Spinner voltage
   public static final double spinnerIntakeVoltage = 6.0;

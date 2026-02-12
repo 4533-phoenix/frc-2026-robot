@@ -25,10 +25,6 @@ public interface IntakeIO {
     public boolean spinnerConnected = false;
     public double spinnerAppliedVolts = 0.0;
     public double spinnerCurrentAmps = 0.0;
-
-    // Duty cycle encoder (absolute)
-    public boolean dutyCycleConnected = false;
-    public Rotation2d dutyCyclePosition = Rotation2d.kZero;
   }
 
   /** Updates the set of loggable inputs. */

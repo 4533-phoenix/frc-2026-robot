@@ -7,6 +7,11 @@
 
 package frc.robot.subsystems.shooter.flywheel;
 
+import static edu.wpi.first.units.Units.*;
+import static frc.robot.subsystems.shooter.ShooterConstants.*;
+
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -29,8 +34,13 @@ public class Flywheel extends SubsystemBase {
     disconnectedAlert.set(!inputs.connected);
   }
 
-  public void runVelocity(double velocityRadPerSec) {
-    io.setVelocity(velocityRadPerSec);
+  public void setAngularVelocity(AngularVelocity velocity) {
+    io.setAngularVelocity(velocity);
+  }
+
+  public void setLinearVelocity(LinearVelocity velocity) {
+    setAngularVelocity(
+        RadiansPerSecond.of(velocity.in(MetersPerSecond) / flywheelWheelRadius.in(Meters)));
   }
 
   public void stop() {

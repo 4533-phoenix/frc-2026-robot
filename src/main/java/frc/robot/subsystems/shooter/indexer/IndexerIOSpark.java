@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems.shooter.indexer;
 
+import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 import static frc.robot.util.SparkUtil.*;
 
@@ -16,15 +17,20 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.units.measure.Voltage;
+import java.util.function.DoubleSupplier;
 
 public class IndexerIOSpark implements IndexerIO {
   private final SparkMax spark = new SparkMax(indexerMotorId, MotorType.kBrushless);
+
+  private final Debouncer sparkDebouncer = new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
   public IndexerIOSpark() {
     var config = new SparkMaxConfig();
     config
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit(indexerMotorCurrentLimit)
+        .smartCurrentLimit((int) indexerMotorCurrentLimit.in(Amps))
         .voltageCompensation(12.0);
     config.signals.appliedOutputPeriodMs(40).busVoltagePeriodMs(40).outputCurrentPeriodMs(40);
 
@@ -38,22 +44,17 @@ public class IndexerIOSpark implements IndexerIO {
 
   @Override
   public void updateInputs(IndexerIOInputs inputs) {
-    inputs.connected =
-        true; // SparkMax doesn't have a simple isConnected check like Phoenix6, assume true if no
-    // error?
-    // Actually Phoenix6 BaseStatusSignal.isAllGood checks if data is fresh.
-    // For SparkMax we can check for faults or just assume connected if we can read.
-    // But existing ShooterIOReal didn't implement updateInputs for Indexer, so I'll just do basic
-    // reading.
-
-    inputs.positionRad = spark.getEncoder().getPosition();
-    inputs.velocityRadPerSec = spark.getEncoder().getVelocity();
-    inputs.appliedVolts = spark.getAppliedOutput() * spark.getBusVoltage();
-    inputs.currentAmps = spark.getOutputCurrent();
+    sparkStickyFault = false;
+    ifOk(
+        spark,
+        new DoubleSupplier[] {spark::getAppliedOutput, spark::getBusVoltage},
+        (values) -> inputs.appliedVoltage = Volts.of(values[0] * values[1]));
+    ifOk(spark, spark::getOutputCurrent, (value) -> inputs.appliedCurrent = Amps.of(value));
+    inputs.connected = sparkDebouncer.calculate(!sparkStickyFault);
   }
 
   @Override
-  public void setVolts(double volts) {
-    spark.setVoltage(volts);
+  public void setVoltage(Voltage voltage) {
+    spark.setVoltage(voltage.in(Volts));
   }
 }
