@@ -7,21 +7,23 @@
 
 package frc.robot.subsystems.shooter.flywheel;
 
+import static edu.wpi.first.units.Units.*;
+
+import edu.wpi.first.units.measure.*;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface FlywheelIO {
   @AutoLog
   public static class FlywheelIOInputs {
     public boolean connected = false;
-    public double positionRad = 0.0;
-    public double velocityRadPerSec = 0.0;
-    public double appliedVolts = 0.0;
-    public double currentAmps = 0.0;
+    public AngularVelocity velocity = RadiansPerSecond.of(0.0);
+    public Voltage appliedVoltage = Volts.of(0.0);
+    public Current appliedCurrent = Amps.of(0.0);
   }
 
   public default void updateInputs(FlywheelIOInputs inputs) {}
 
-  public default void setVelocity(double velocityRadPerSec) {}
+  public default void setAngularVelocity(AngularVelocity velocity) {}
 
   public default void stop() {}
 }

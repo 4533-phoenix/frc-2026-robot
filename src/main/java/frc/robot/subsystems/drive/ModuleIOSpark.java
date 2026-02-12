@@ -210,6 +210,8 @@ public class ModuleIOSpark implements ModuleIO {
 
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
+    // TODO: We need to figure out why this is here (Or mor generaly adding better connection
+    // detection?)
     sparkStickyFault = false;
     ifOk(driveSpark, driveEncoder::getPosition, (value) -> inputs.drivePositionRad = value);
     ifOk(driveSpark, driveEncoder::getVelocity, (value) -> inputs.driveVelocityRadPerSec = value);

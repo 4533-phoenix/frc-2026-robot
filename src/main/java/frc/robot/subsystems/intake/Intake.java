@@ -36,8 +36,6 @@ public class Intake extends SubsystemBase {
       new Alert("Intake arm motor disconnected", AlertType.kWarning);
   private final Alert spinnerDisconnectedAlert =
       new Alert("Intake spinner motor disconnected", AlertType.kWarning);
-  private final Alert encoderDisconnectedAlert =
-      new Alert("Intake duty cycle encoder disconnected", AlertType.kWarning);
 
   public Intake(IntakeIO io) {
     this.io = io;
@@ -53,7 +51,6 @@ public class Intake extends SubsystemBase {
 
     armDisconnectedAlert.set(!inputs.armConnected);
     spinnerDisconnectedAlert.set(!inputs.spinnerConnected);
-    encoderDisconnectedAlert.set(!inputs.dutyCycleConnected);
 
     // Calculate next setpoint
     setpoint = profile.calculate(0.020, setpoint, goal);
@@ -89,10 +86,5 @@ public class Intake extends SubsystemBase {
   @AutoLogOutput(key = "Intake/ArmPositionDeg")
   public double getArmPositionDeg() {
     return inputs.armPosition.getDegrees();
-  }
-
-  @AutoLogOutput(key = "Intake/DutyCyclePositionDeg")
-  public double getDutyCyclePositionDeg() {
-    return inputs.dutyCyclePosition.getDegrees();
   }
 }

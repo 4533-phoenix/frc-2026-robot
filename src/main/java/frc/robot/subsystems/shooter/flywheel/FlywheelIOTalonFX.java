@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems.shooter.flywheel;
 
+import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
 import com.ctre.phoenix6.BaseStatusSignal;
@@ -34,7 +35,7 @@ public class FlywheelIOTalonFX implements FlywheelIO {
     var config = new TalonFXConfiguration();
     config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
     config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
-    config.CurrentLimits.StatorCurrentLimit = flywheelMotorCurrentLimit;
+    config.CurrentLimits.StatorCurrentLimit = flywheelMotorCurrentLimit.in(Amps);
     config.CurrentLimits.StatorCurrentLimitEnable = true;
     config.Slot0.kP = flywheelKp;
     config.Slot0.kI = flywheelKi;
@@ -54,15 +55,14 @@ public class FlywheelIOTalonFX implements FlywheelIO {
     BaseStatusSignal.refreshAll(position, velocity, appliedVolts, current);
 
     inputs.connected = BaseStatusSignal.isAllGood(position, velocity, appliedVolts, current);
-    inputs.positionRad = position.getValue().in(edu.wpi.first.units.Units.Radians);
-    inputs.velocityRadPerSec = velocity.getValue().in(edu.wpi.first.units.Units.RadiansPerSecond);
-    inputs.appliedVolts = appliedVolts.getValue().in(edu.wpi.first.units.Units.Volts);
-    inputs.currentAmps = current.getValue().in(edu.wpi.first.units.Units.Amps);
+    inputs.velocity = velocity.getValue();
+    inputs.appliedVoltage = appliedVolts.getValue();
+    inputs.appliedCurrent = current.getValue();
   }
 
   @Override
-  public void setVelocity(double velocityRadPerSec) {
-    talon.setControl(new VelocityVoltage(velocityRadPerSec / (2.0 * Math.PI)));
+  public void setAngularVelocity(AngularVelocity velocity) {
+    talon.setControl(new VelocityVoltage(velocity.in(RadiansPerSecond) / (2.0 * Math.PI)));
   }
 
   @Override

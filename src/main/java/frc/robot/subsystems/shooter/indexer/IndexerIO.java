@@ -7,19 +7,22 @@
 
 package frc.robot.subsystems.shooter.indexer;
 
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Volts;
+
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface IndexerIO {
   @AutoLog
   public static class IndexerIOInputs {
     public boolean connected = false;
-    public double positionRad = 0.0;
-    public double velocityRadPerSec = 0.0;
-    public double appliedVolts = 0.0;
-    public double currentAmps = 0.0;
+    public Voltage appliedVoltage = Volts.of(0.0);
+    public Current appliedCurrent = Amps.of(0.0);
   }
 
   public default void updateInputs(IndexerIOInputs inputs) {}
 
-  public default void setVolts(double volts) {}
+  public default void setVoltage(Voltage voltage) {}
 }

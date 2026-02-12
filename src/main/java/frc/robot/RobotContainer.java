@@ -9,6 +9,8 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.*;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -181,6 +183,24 @@ public class RobotContainer {
                             new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
                     drive)
                 .ignoringDisable(true));
+
+    // Shooter Controls
+    hood.setDefaultCommand(Commands.run(() -> hood.setPosition(0.0), hood));
+    flywheel.setDefaultCommand(Commands.run(() -> flywheel.stop(), flywheel));
+    indexer.setDefaultCommand(Commands.run(() -> indexer.stopIndexer(), indexer));
+
+    controller
+        .leftBumper()
+        .whileTrue(
+            Commands.run(
+                () -> {
+                  hood.setLaunchAngle(Degrees.of(45));
+                  flywheel.setAngularVelocity(RotationsPerSecond.of(100));
+                },
+                hood,
+                flywheel));
+
+    controller.rightBumper().whileTrue(Commands.run(() -> indexer.startIndexer(), indexer));
   }
 
   /**

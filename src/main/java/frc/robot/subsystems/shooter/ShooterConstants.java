@@ -7,20 +7,38 @@
 
 package frc.robot.subsystems.shooter;
 
+import static edu.wpi.first.units.Units.*;
+
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.Voltage;
 
 public final class ShooterConstants {
   public static final int flywheelMotorId = 18;
   public static final int indexerMotorId = 17;
   public static final int hoodServoChannel = 0;
 
+  public static final Distance crankArmLength = Inches.of(6.403);
+  public static final Distance groundLinkDistance = Inches.of(7.521);
+  public static final Distance servoMinLength = Inches.of(6.925);
+  public static final Distance servoMaxLength = Inches.of(10.5);
+  public static final Angle crankTangentToLaunchAngle = Degrees.of(12.875);
+  public static final Angle mechanismTotalAngle = Degrees.of(149.007);
+
   public static final double flywheelReduction = 1.0;
   public static final double flywheelMOI = 0.0042;
+  public static final Distance flywheelWheelRadius = Inches.of(2.05);
 
-  public static final int indexerMotorCurrentLimit = 20;
-  public static final double indexerOnVoltage = 6.0;
+  public static final Current indexerMotorCurrentLimit = Amps.of(20.0);
+  public static final Voltage indexerOnVoltage = Volts.of(3.0);
+  public static final Voltage indexerOffVoltage = Volts.of(0.0);
+  public static final double indexerMOI = 0.0005;
+  public static final double indexerReduction = 1.0;
 
-  public static final double flywheelMotorCurrentLimit = 40.0;
+  public static final Current flywheelMotorCurrentLimit = Amps.of(40.0);
 
   public static final DCMotor flywheelGearbox = DCMotor.getFalcon500(1);
   public static final DCMotor indexerGearbox = DCMotor.getNeo550(1);
@@ -35,16 +53,6 @@ public final class ShooterConstants {
 
   // New simple control limits for operator bindings
   // Flywheel target range in rotations per second (rps)
-  public static final double flywheelMinRps = 0.0;
-  public static final double flywheelMaxRps = 100.0;
-
-  // Hood servo positions (assumed 0.0 - 1.0 scale)
-  public static final double hoodMinPosition = 0.0;
-  public static final double hoodMaxPosition = 1.0;
-  // amount to increment/decrement the hood when dpad is held
-  public static final double hoodStep = 0.01;
-
-  // Indexer voltage range
-  public static final double indexerMinVolts = 0.0;
-  public static final double indexerMaxVolts = 12.0;
+  public static final AngularVelocity flywheelMinRps = RotationsPerSecond.of(0.0);
+  public static final AngularVelocity flywheelMaxRps = RotationsPerSecond.of(100.0);
 }

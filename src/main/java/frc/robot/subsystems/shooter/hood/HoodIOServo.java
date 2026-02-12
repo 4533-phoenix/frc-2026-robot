@@ -14,6 +14,10 @@ import edu.wpi.first.wpilibj.Servo;
 public class HoodIOServo implements HoodIO {
   private final Servo servo = new Servo(hoodServoChannel);
 
+  public HoodIOServo() {
+    servo.setBoundsMicroseconds(2000, 1500, 1500, 1500, 1000);
+  }
+
   @Override
   public void updateInputs(HoodIOInputs inputs) {
     inputs.position = servo.getPosition();

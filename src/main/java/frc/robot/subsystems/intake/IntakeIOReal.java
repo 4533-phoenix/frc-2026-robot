@@ -10,8 +10,8 @@ package frc.robot.subsystems.intake;
 import static frc.robot.subsystems.intake.IntakeConstants.*;
 import static frc.robot.util.SparkUtil.*;
 
+import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
-import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.FeedbackSensor;
@@ -23,17 +23,14 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import java.util.function.DoubleSupplier;
 
 public class IntakeIOReal implements IntakeIO {
   private final SparkMax armSpark = new SparkMax(armMotorCanId, MotorType.kBrushless);
   private final SparkMax spinnerSpark = new SparkMax(spinnerMotorCanId, MotorType.kBrushless);
 
-  private final RelativeEncoder armEncoder;
+  private final AbsoluteEncoder armEncoder;
   private final SparkClosedLoopController armController;
-
-  private final DutyCycleEncoder dutyCycleEncoder = new DutyCycleEncoder(dutyCycleEncoderPin);
 
   private final Debouncer armConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
@@ -41,29 +38,27 @@ public class IntakeIOReal implements IntakeIO {
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
   public IntakeIOReal() {
-    armEncoder = armSpark.getEncoder();
+    armEncoder = armSpark.getAbsoluteEncoder();
     armController = armSpark.getClosedLoopController();
 
     // Configure arm motor
     var armConfig = new SparkMaxConfig();
     armConfig
-        .idleMode(IdleMode.kBrake)
+        .idleMode(IdleMode.kCoast)
         .smartCurrentLimit(armMotorCurrentLimit)
         .voltageCompensation(12.0)
         .inverted(true);
     armConfig
-        .encoder
-        .positionConversionFactor(armEncoderPositionFactor)
-        .velocityConversionFactor(armEncoderVelocityFactor)
-        .uvwMeasurementPeriod(10)
-        .uvwAverageDepth(2);
-    armConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(armKp, 0.0, armKd);
+        .absoluteEncoder
+        .positionConversionFactor(2.0 * Math.PI)
+        .velocityConversionFactor((2.0 * Math.PI) / 60.0)
+        .zeroOffset(globalEncoderOffsetRad / (2.0 * Math.PI));
     armConfig
-        .softLimit
-        .forwardSoftLimitEnabled(true)
-        .forwardSoftLimit(armForwardSoftLimitRad)
-        .reverseSoftLimitEnabled(true)
-        .reverseSoftLimit(armReverseSoftLimitRad);
+        .closedLoop
+        .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
+        .pid(armKp, 0.0, armKd)
+        .positionWrappingEnabled(true)
+        .positionWrappingInputRange(0, 2.0 * Math.PI);
     armConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
@@ -79,9 +74,6 @@ public class IntakeIOReal implements IntakeIO {
         () ->
             armSpark.configure(
                 armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
-
-    // Seed the SparkMax internal encoder with the duty cycle encoder reading
-    seedArmEncoder();
 
     // Configure spinner motor
     var spinnerConfig = new SparkMaxConfig();
@@ -101,23 +93,6 @@ public class IntakeIOReal implements IntakeIO {
         () ->
             spinnerSpark.configure(
                 spinnerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
-  }
-
-  // Seeds the sparks internal encoder with the external encoder. TODO: WE NEED THE GLOBAL ENCODER
-  // ADAPTER.
-  private void seedArmEncoder() {
-    tryUntilOk(
-        armSpark,
-        5,
-        () -> {
-          if (dutyCycleEncoder.isConnected()) {
-            double rawValue = dutyCycleEncoder.get();
-            double absolutePositionRad = (rawValue * 2.0 * Math.PI) - globalEncoderOffsetRad;
-            return armEncoder.setPosition(absolutePositionRad);
-          } else {
-            return armEncoder.setPosition(0.0);
-          }
-        });
   }
 
   @Override
@@ -142,15 +117,6 @@ public class IntakeIOReal implements IntakeIO {
     ifOk(
         spinnerSpark, spinnerSpark::getOutputCurrent, (value) -> inputs.spinnerCurrentAmps = value);
     inputs.spinnerConnected = spinnerConnectedDebounce.calculate(!sparkStickyFault);
-
-    // Duty cycle encoder
-    inputs.dutyCycleConnected = dutyCycleEncoder.isConnected();
-    if (inputs.dutyCycleConnected) {
-      double rawRad = dutyCycleEncoder.get() * 2.0 * Math.PI;
-      inputs.dutyCyclePosition = new Rotation2d(rawRad - globalEncoderOffsetRad);
-    } else {
-      inputs.dutyCyclePosition = new Rotation2d(0.0);
-    }
   }
 
   @Override

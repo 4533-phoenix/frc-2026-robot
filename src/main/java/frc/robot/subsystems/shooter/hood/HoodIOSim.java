@@ -7,6 +7,8 @@
 
 package frc.robot.subsystems.shooter.hood;
 
+import edu.wpi.first.math.MathUtil;
+
 public class HoodIOSim implements HoodIO {
   private double position = 0.0;
 
@@ -17,6 +19,6 @@ public class HoodIOSim implements HoodIO {
 
   @Override
   public void setPosition(double position) {
-    this.position = position;
+    this.position = MathUtil.clamp(position, 0.0, 1.0);
   }
 }

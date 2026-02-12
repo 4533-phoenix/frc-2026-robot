@@ -7,6 +7,11 @@
 
 package frc.robot.subsystems.shooter.hood;
 
+import static edu.wpi.first.units.Units.*;
+import static frc.robot.subsystems.shooter.ShooterConstants.*;
+
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
@@ -24,12 +29,41 @@ public class Hood extends SubsystemBase {
     Logger.processInputs("Shooter/Hood", inputs);
   }
 
-  public void setPosition(double position) {
-    io.setPosition(position);
+  private static double convertLaunchAngleToServoPosition(Angle launchAngle) {
+    // 1. Convert Launch Angle (0-90) to the Plate's angle relative to horizon
+    // If launch is 77.125, plate is 90.0 (vertical)
+    Angle plateAngle = launchAngle.plus(crankTangentToLaunchAngle);
+
+    // 2. Calculate the required internal triangle angle (Theta)
+    // Because extending the servo pushes the plate DOWN, the relationship is
+    // inverse:
+    // As plateAngle decreases (towards horizon), internalTheta must increase.
+    Angle internalTheta = mechanismTotalAngle.minus(plateAngle);
+
+    // 3. Law of Cosines to solve for required servo length (Side c)
+    double a = groundLinkDistance.in(Inches);
+    double b = crankArmLength.in(Inches);
+    double cosTheta = Math.cos(internalTheta.in(Radians));
+
+    double servoLengthSquared = (a * a) + (b * b) - (2 * a * b * cosTheta);
+    double servoLength = Math.sqrt(Math.max(0, servoLengthSquared));
+
+    // 4. Map the calculated length to a 0.0 - 1.0 range
+    // 0.0 = 6.925" (Min)
+    // 1.0 = 10.5" (Max)
+    double minLen = servoMinLength.in(Inches);
+    double maxLen = servoMaxLength.in(Inches);
+    double position = (servoLength - minLen) / (maxLen - minLen);
+
+    // 5. Clamp to valid range (100-200 duty cycle would be: 100 + (position * 100))
+    return MathUtil.clamp(position, 0.0, 1.0);
   }
 
-  /** Return last-updated hood position (0..1). */
-  public double getPosition() {
-    return inputs.position;
+  public void setLaunchAngle(Angle angle) {
+    io.setPosition(convertLaunchAngleToServoPosition(angle));
+  }
+
+  public void setPosition(double position) {
+    io.setPosition(position);
   }
 }

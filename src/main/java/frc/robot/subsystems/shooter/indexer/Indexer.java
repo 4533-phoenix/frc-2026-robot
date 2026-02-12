@@ -32,15 +32,10 @@ public class Indexer extends SubsystemBase {
   }
 
   public void startIndexer() {
-    io.setVolts(indexerOnVoltage);
+    io.setVoltage(indexerOnVoltage);
   }
 
-  public void stop() {
-    io.setVolts(0.0);
-  }
-
-  /** Set indexer output voltage directly. */
-  public void setVolts(double volts) {
-    io.setVolts(volts);
+  public void stopIndexer() {
+    io.setVoltage(indexerOffVoltage);
   }
 }
