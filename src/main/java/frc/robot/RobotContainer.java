@@ -32,16 +32,18 @@ import frc.robot.subsystems.drive.ModuleIOSpark;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOReal;
-import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.flywheel.Flywheel;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
+import frc.robot.subsystems.shooter.flywheel.FlywheelIOTalonFX;
 import frc.robot.subsystems.shooter.hood.Hood;
 import frc.robot.subsystems.shooter.hood.HoodIO;
+import frc.robot.subsystems.shooter.hood.HoodIOServo;
 import frc.robot.subsystems.shooter.hood.HoodIOSim;
 import frc.robot.subsystems.shooter.indexer.Indexer;
 import frc.robot.subsystems.shooter.indexer.IndexerIO;
 import frc.robot.subsystems.shooter.indexer.IndexerIOSim;
+import frc.robot.subsystems.shooter.indexer.IndexerIOSpark;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOChalkydri;
@@ -61,7 +63,6 @@ public class RobotContainer {
   private final Flywheel flywheel;
   private final Hood hood;
   private final Indexer indexer;
-  private final Shooter shooter;
   private final Vision vision;
 
   // Controller
@@ -84,10 +85,9 @@ public class RobotContainer {
                 new ModuleIOSpark(3));
         climb = new Climb(new ClimbIO() {});
         intake = new Intake(new IntakeIOReal());
-        flywheel = new Flywheel(new FlywheelIO() {});
-        hood = new Hood(new HoodIO() {});
-        indexer = new Indexer(new IndexerIO() {});
-        shooter = new Shooter(flywheel, hood, indexer);
+        flywheel = new Flywheel(new FlywheelIOTalonFX());
+        hood = new Hood(new HoodIOServo());
+        indexer = new Indexer(new IndexerIOSpark());
         vision = new Vision(new VisionIOChalkydri(), drive);
         break;
 
@@ -105,7 +105,6 @@ public class RobotContainer {
         flywheel = new Flywheel(new FlywheelIOSim());
         hood = new Hood(new HoodIOSim());
         indexer = new Indexer(new IndexerIOSim());
-        shooter = new Shooter(flywheel, hood, indexer);
         vision = new Vision(new VisionIO() {}, drive);
         break;
 
@@ -123,7 +122,6 @@ public class RobotContainer {
         flywheel = new Flywheel(new FlywheelIO() {});
         hood = new Hood(new HoodIO() {});
         indexer = new Indexer(new IndexerIO() {});
-        shooter = new Shooter(flywheel, hood, indexer);
         vision = new Vision(new VisionIO() {}, drive);
         break;
     }

@@ -38,4 +38,9 @@ public class Indexer extends SubsystemBase {
   public void stop() {
     io.setVolts(0.0);
   }
+
+  /** Set indexer output voltage directly. */
+  public void setVolts(double volts) {
+    io.setVolts(volts);
+  }
 }

@@ -27,4 +27,9 @@ public class Hood extends SubsystemBase {
   public void setPosition(double position) {
     io.setPosition(position);
   }
+
+  /** Return last-updated hood position (0..1). */
+  public double getPosition() {
+    return inputs.position;
+  }
 }
