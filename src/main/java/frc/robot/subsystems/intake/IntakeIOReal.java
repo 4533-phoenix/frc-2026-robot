@@ -103,15 +103,16 @@ public class IntakeIOReal implements IntakeIO {
                 spinnerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
   }
 
-  // Seeds the sparks internal encoder with the external encoder. TODO: WE NEED THE GLOBAL ENCODER ADAPTER.
+  // Seeds the sparks internal encoder with the external encoder. TODO: WE NEED THE GLOBAL ENCODER
+  // ADAPTER.
   private void seedArmEncoder() {
     tryUntilOk(
         armSpark,
         5,
         () -> {
           if (dutyCycleEncoder.isConnected()) {
-            double absolutePositionRad =
-                (dutyCycleEncoder.get() * 2.0 * Math.PI) - globalEncoderOffsetRad;
+            double rawValue = dutyCycleEncoder.get();
+            double absolutePositionRad = (rawValue * 2.0 * Math.PI) - globalEncoderOffsetRad;
             return armEncoder.setPosition(absolutePositionRad);
           } else {
             return armEncoder.setPosition(0.0);
@@ -147,6 +148,8 @@ public class IntakeIOReal implements IntakeIO {
     if (inputs.dutyCycleConnected) {
       double rawRad = dutyCycleEncoder.get() * 2.0 * Math.PI;
       inputs.dutyCyclePosition = new Rotation2d(rawRad - globalEncoderOffsetRad);
+    } else {
+      inputs.dutyCyclePosition = new Rotation2d(0.0);
     }
   }
 

@@ -41,6 +41,7 @@ public class FlywheelIOTalonFX implements FlywheelIO {
     config.Slot0.kD = flywheelKd;
     config.Slot0.kS = flywheelKs;
     config.Slot0.kV = flywheelKv;
+    config.Slot0.kA = flywheelKa;
     talon.getConfigurator().apply(config);
 
     BaseStatusSignal.setUpdateFrequencyForAll(50.0, position, velocity, appliedVolts, current);
