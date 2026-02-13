@@ -185,7 +185,7 @@ public class RobotContainer {
                 .ignoringDisable(true));
 
     // Shooter Controls
-    hood.setDefaultCommand(Commands.run(() -> hood.setPosition(0.0), hood));
+    hood.setDefaultCommand(Commands.run(() -> hood.retract(), hood));
     flywheel.setDefaultCommand(Commands.run(() -> flywheel.stop(), flywheel));
     indexer.setDefaultCommand(Commands.run(() -> indexer.stopIndexer(), indexer));
 

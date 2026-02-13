@@ -7,15 +7,20 @@
 
 package frc.robot.subsystems.shooter.hood;
 
+import static edu.wpi.first.units.Units.Inches;
+
+import edu.wpi.first.units.measure.Distance;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface HoodIO {
   @AutoLog
   public static class HoodIOInputs {
-    public double position = 0.0;
+    public Distance currentLength = Inches.of(0);
+    public Distance targetLength = Inches.of(0);
+    public boolean atSetpoint = false;
   }
 
   public default void updateInputs(HoodIOInputs inputs) {}
 
-  public default void setPosition(double position) {}
+  public default void setLength(Distance length) {}
 }

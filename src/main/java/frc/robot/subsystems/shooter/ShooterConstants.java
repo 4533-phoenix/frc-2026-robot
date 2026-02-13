@@ -23,6 +23,7 @@ public final class ShooterConstants {
   public static final Distance servoMaxLength = Inches.of(10.5);
   public static final Angle crankTangentToLaunchAngle = Degrees.of(12.875);
   public static final Angle mechanismTotalAngle = Degrees.of(149.007);
+  public static final LinearVelocity maxServoVelocity = MetersPerSecond.of(0.02);
 
   public static final double flywheelReduction = 1.0;
   public static final MomentOfInertia flywheelMOI = KilogramSquareMeters.of(0.0042);
