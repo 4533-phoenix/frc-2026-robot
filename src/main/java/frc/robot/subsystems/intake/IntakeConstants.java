@@ -7,7 +7,13 @@
 
 package frc.robot.subsystems.intake;
 
-import edu.wpi.first.math.geometry.Rotation2d;
+import static edu.wpi.first.units.Units.*;
+
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularAcceleration;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 
 /** Hardware and tuning constants for the intake subsystem. */
 public final class IntakeConstants {
@@ -24,11 +30,11 @@ public final class IntakeConstants {
       ((2.0 * Math.PI) / 60.0) / armMotorReduction;
 
   // Global encoder offset (radians)
-  public static final double globalEncoderOffsetRad = Math.toRadians(304.8);
+  public static final Angle globalEncoderOffset = Degrees.of(304.8);
 
   // Motor current limits
-  public static final int armMotorCurrentLimit = 40;
-  public static final int spinnerMotorCurrentLimit = 30;
+  public static final Current armMotorCurrentLimit = Amps.of(40);
+  public static final Current spinnerMotorCurrentLimit = Amps.of(40);
 
   // Arm PID configuration (on the SparkMax, in output-shaft radians)
   public static final double armKp = 1.0;
@@ -42,13 +48,14 @@ public final class IntakeConstants {
   public static final double armKa = 0.0;
 
   // Arm Motion Profile Constraints
-  public static final double armMaxVelocityRadPerSec = Math.PI * 2;
-  public static final double armMaxAccelerationRadPerSecSquared = Math.PI * 4;
+  public static final AngularVelocity armMaxVelocity = RadiansPerSecond.of(Math.PI * 2);
+  public static final AngularAcceleration armMaxAcceleration =
+      RadiansPerSecondPerSecond.of(Math.PI * 4);
 
   // Arm positions (output shaft, relative to stow = 0)
-  public static final Rotation2d armDeployedPosition = Rotation2d.fromDegrees(101.9);
-  public static final Rotation2d armRetractedPosition = Rotation2d.kZero;
+  public static final Angle armDeployedPosition = Degrees.of(101.9);
+  public static final Angle armRetractedPosition = Degrees.of(0.0);
 
   // Spinner voltage
-  public static final double spinnerIntakeVoltage = 6.0;
+  public static final Voltage spinnerIntakeVoltage = Volts.of(6.0);
 }
