@@ -7,16 +7,17 @@
 
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
-import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.measure.Angle;
 import org.littletonrobotics.junction.Logger;
 
 public class GyroIODual implements GyroIO {
   private final GyroIONavX navx = new GyroIONavX();
   private final GyroIOCanAndGyro canandgyro = new GyroIOCanAndGyro();
 
-  private Rotation2d driftOffset = Rotation2d.kZero;
+  private Angle driftOffset = Radians.of(0.0);
 
   @Override
   public void updateInputs(GyroIOInputs inputs) {
@@ -28,37 +29,42 @@ public class GyroIODual implements GyroIO {
 
     if (navxIn.connected) {
       inputs.connected = true;
-      Rotation2d currentCorrectedPos = navxIn.yawPosition.plus(driftOffset);
+      Angle currentCorrectedPos = navxIn.yawPosition.plus(driftOffset);
 
       if (canIn.connected) {
-        double error = canIn.yawPosition.minus(currentCorrectedPos).getRadians();
-        boolean isStill = Math.abs(navxIn.yawVelocityRadPerSec) < velocityGateRadPerSec;
+        Angle error = canIn.yawPosition.minus(currentCorrectedPos);
+        boolean isStill =
+            navxIn.yawVelocity.abs(RadiansPerSecond) < velocityGate.in(RadiansPerSecond);
 
-        if (isStill && Math.abs(error) > errorThresholdRad) {
-          double step = error * driftGain;
-          step = Math.max(-maxCorrectionRadPerFrame, Math.min(maxCorrectionRadPerFrame, step));
-          driftOffset = driftOffset.plus(Rotation2d.fromRadians(step));
+        if (isStill && (error.abs(Radians) > errorThreshold.in(Radians))) {
+          Angle step = error.times(driftGain);
+          step =
+              Radians.of(
+                  Math.max(
+                      -maxCorrectionPerFrame.in(Radians),
+                      Math.min(maxCorrectionPerFrame.in(Radians), step.in(Radians))));
+          driftOffset = driftOffset.plus(step);
         }
       }
 
       inputs.yawPosition = navxIn.yawPosition.plus(driftOffset);
-      inputs.yawVelocityRadPerSec = navxIn.yawVelocityRadPerSec;
+      inputs.yawVelocity = navxIn.yawVelocity;
       inputs.odometryYawTimestamps = navxIn.odometryYawTimestamps;
 
-      inputs.odometryYawPositions = new Rotation2d[navxIn.odometryYawPositions.length];
+      inputs.odometryYawPositions = new double[navxIn.odometryYawPositions.length];
       for (int i = 0; i < navxIn.odometryYawPositions.length; i++) {
-        inputs.odometryYawPositions[i] = navxIn.odometryYawPositions[i].plus(driftOffset);
+        inputs.odometryYawPositions[i] = navxIn.odometryYawPositions[i] + driftOffset.in(Radians);
       }
     } else if (canIn.connected) {
       inputs.connected = true;
       inputs.yawPosition = canIn.yawPosition;
-      inputs.yawVelocityRadPerSec = canIn.yawVelocityRadPerSec;
+      inputs.yawVelocity = canIn.yawVelocity;
       inputs.odometryYawTimestamps = canIn.odometryYawTimestamps;
       inputs.odometryYawPositions = canIn.odometryYawPositions;
     } else {
       inputs.connected = false;
     }
 
-    Logger.recordOutput("Drive/Gyro/DriftOffsetDeg", driftOffset.getDegrees());
+    Logger.recordOutput("Drive/Gyro/DriftOffset", driftOffset);
   }
 }

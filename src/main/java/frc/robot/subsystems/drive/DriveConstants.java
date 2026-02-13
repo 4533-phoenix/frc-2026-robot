@@ -9,28 +9,31 @@
 
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.units.Units.*;
+
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.RobotConfig;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.*;
 
 public class DriveConstants {
-  public static final double maxSpeedMetersPerSec = 4.8;
-  public static final double odometryFrequency = 100.0; // Hz
-  public static final double trackWidth = Units.inchesToMeters(20.5);
-  public static final double wheelBase = Units.inchesToMeters(20.5);
-  public static final double driveBaseRadius = Math.hypot(trackWidth / 2.0, wheelBase / 2.0);
+  public static final LinearVelocity maxLinearVelocity = MetersPerSecond.of(4.0);
+  public static final Frequency odometryFrequency = Hertz.of(100);
+  public static final Distance trackWidth = Inches.of(20.5);
+  public static final Distance wheelBase = Inches.of(20.5);
+  public static final Distance driveBaseRadius =
+      Meters.of(Math.hypot(trackWidth.in(Meters) / 2.0, wheelBase.in(Meters) / 2.0));
   public static final Translation2d[] moduleTranslations =
       new Translation2d[] {
-        new Translation2d(trackWidth / 2.0, wheelBase / 2.0),
-        new Translation2d(trackWidth / 2.0, -wheelBase / 2.0),
-        new Translation2d(-trackWidth / 2.0, wheelBase / 2.0),
-        new Translation2d(-trackWidth / 2.0, -wheelBase / 2.0)
+        new Translation2d(trackWidth.in(Meters) / 2.0, wheelBase.in(Meters) / 2.0),
+        new Translation2d(trackWidth.in(Meters) / 2.0, -wheelBase.in(Meters) / 2.0),
+        new Translation2d(-trackWidth.in(Meters) / 2.0, wheelBase.in(Meters) / 2.0),
+        new Translation2d(-trackWidth.in(Meters) / 2.0, -wheelBase.in(Meters) / 2.0)
       };
 
-  // Zeroed rotation values for each module, see setup instructions
+  // Zeroed rotation values for each module
   public static final Rotation2d frontLeftZeroRotation = Rotation2d.fromDegrees(-144.49);
   public static final Rotation2d frontRightZeroRotation = Rotation2d.fromDegrees(113.03);
   public static final Rotation2d backLeftZeroRotation = Rotation2d.fromDegrees(-56.51);
@@ -41,9 +44,9 @@ public class DriveConstants {
 
   // Dual gyro parameters
   public static final double driftGain = 0.01;
-  public static final double errorThresholdRad = Math.toRadians(0.5);
-  public static final double maxCorrectionRadPerFrame = Math.toRadians(0.1);
-  public static final double velocityGateRadPerSec = Math.toRadians(1.0);
+  public static final Angle errorThreshold = Degrees.of(0.5);
+  public static final Angle maxCorrectionPerFrame = Degrees.of(0.1);
+  public static final AngularVelocity velocityGate = DegreesPerSecond.of(1.0);
 
   public static final int frontLeftDriveCanId = 2;
   public static final int backLeftDriveCanId = 8;
@@ -63,17 +66,14 @@ public class DriveConstants {
   // Drive motor configuration
   public static final int driveMotorCurrentLimit = 40;
   public static final int driveMotorSecondaryCurrentLimit = 80;
-  public static final double wheelRadiusMeters = Units.inchesToMeters(1.5);
+  public static final Distance wheelRadius = Inches.of(1.5);
   public static final double driveMotorReduction = 6.75; // Random BS values we got from somewhere
   public static final DCMotor driveGearbox = DCMotor.getNEO(1);
 
   // Drive encoder configuration
-  public static final double driveEncoderPositionFactor =
-      2 * Math.PI / driveMotorReduction; // Rotor Rotations ->
-  // Wheel Radians
+  public static final double driveEncoderPositionFactor = 2 * Math.PI / driveMotorReduction;
   public static final double driveEncoderVelocityFactor =
-      (2 * Math.PI) / 60.0 / driveMotorReduction; // Rotor RPM ->
-  // Wheel Rad/Sec
+      (2 * Math.PI) / 60.0 / driveMotorReduction;
 
   // Drive PID configuration
   public static final double driveKp = 0.01;
@@ -87,8 +87,8 @@ public class DriveConstants {
 
   // Turn motor configuration
   public static final boolean turnInverted = false;
-  public static final int turnMotorCurrentLimit = 40;
-  public static final int turnMotorSecondaryCurrentLimit = 80;
+  public static final Current turnMotorCurrentLimit = Amps.of(40);
+  public static final Current turnMotorSecondaryCurrentLimit = Amps.of(80);
   public static final double turnMotorReduction = 12.8; // Random BS values we got from somewhere
   public static final DCMotor turnGearbox = DCMotor.getNEO(1);
 
@@ -105,17 +105,17 @@ public class DriveConstants {
   public static final double turnPIDMinInput = -Math.PI; // Radians
   public static final double turnPIDMaxInput = Math.PI; // Radians
 
-  // PathPlanner configuration
-  public static final double robotMassKg = 74.088; // TODO: Update this value
-  public static final double robotMOI = 6.883;
-  public static final double wheelCOF = 1.1; // TODO: Update this value
+  // PathPlanner configuration (TODO: Tune these values)
+  public static final Mass robotMass = Kilograms.of(74.088);
+  public static final MomentOfInertia robotMOI = KilogramSquareMeters.of(6.883);
+  public static final double wheelCOF = 1.1;
   public static final RobotConfig ppConfig =
       new RobotConfig(
-          robotMassKg,
+          robotMass,
           robotMOI,
           new ModuleConfig(
-              wheelRadiusMeters,
-              maxSpeedMetersPerSec,
+              wheelRadius.in(Meters),
+              maxLinearVelocity.in(MetersPerSecond),
               wheelCOF,
               driveGearbox.withReduction(driveMotorReduction),
               driveMotorCurrentLimit,
