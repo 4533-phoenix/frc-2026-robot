@@ -18,7 +18,8 @@ import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 public class IndexerIOSim implements IndexerIO {
   private final DCMotorSim sim =
       new DCMotorSim(
-          LinearSystemId.createDCMotorSystem(indexerGearbox, indexerMOI, indexerReduction),
+          LinearSystemId.createDCMotorSystem(
+              indexerGearbox, indexerMOI.in(KilogramSquareMeters), indexerReduction),
           indexerGearbox);
 
   private Voltage appliedVoltage = Volts.of(0.0);

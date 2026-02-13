@@ -21,7 +21,8 @@ import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 public class FlywheelIOSim implements FlywheelIO {
   private final FlywheelSim sim =
       new FlywheelSim(
-          LinearSystemId.createFlywheelSystem(flywheelGearbox, flywheelMOI, flywheelReduction),
+          LinearSystemId.createFlywheelSystem(
+              flywheelGearbox, flywheelMOI.in(KilogramSquareMeters), flywheelReduction),
           flywheelGearbox,
           flywheelReduction);
   private final PIDController pid = new PIDController(flywheelKp, flywheelKi, flywheelKd);
