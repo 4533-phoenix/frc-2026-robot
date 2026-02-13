@@ -10,11 +10,7 @@ package frc.robot.subsystems.shooter;
 import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.units.measure.*;
 
 public final class ShooterConstants {
   public static final int flywheelMotorId = 18;
@@ -29,13 +25,13 @@ public final class ShooterConstants {
   public static final Angle mechanismTotalAngle = Degrees.of(149.007);
 
   public static final double flywheelReduction = 1.0;
-  public static final double flywheelMOI = 0.0042;
+  public static final MomentOfInertia flywheelMOI = KilogramSquareMeters.of(0.0042);
   public static final Distance flywheelWheelRadius = Inches.of(2.05);
 
   public static final Current indexerMotorCurrentLimit = Amps.of(20.0);
   public static final Voltage indexerOnVoltage = Volts.of(3.0);
   public static final Voltage indexerOffVoltage = Volts.of(0.0);
-  public static final double indexerMOI = 0.0005;
+  public static final MomentOfInertia indexerMOI = KilogramSquareMeters.of(0.0005);
   public static final double indexerReduction = 1.0;
 
   public static final Current flywheelMotorCurrentLimit = Amps.of(40.0);
