@@ -9,17 +9,17 @@
 
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Angle;
 import java.util.Queue;
 
 /** IO implementation for NavX. */
 public class GyroIONavX implements GyroIO {
-  private final AHRS navX = new AHRS(NavXComType.kMXP_SPI, (byte) odometryFrequency);
+  private final AHRS navX = new AHRS(NavXComType.kMXP_SPI, (byte) odometryFrequency.in(Hertz));
   private final Queue<Double> yawPositionQueue;
   private final Queue<Double> yawTimestampQueue;
 
@@ -31,12 +31,12 @@ public class GyroIONavX implements GyroIO {
   @Override
   public void updateInputs(GyroIOInputs inputs) {
     inputs.connected = navX.isConnected();
-    inputs.yawPosition = Rotation2d.fromDegrees(-navX.getAngle());
-    inputs.yawVelocityRadPerSec = Units.degreesToRadians(-navX.getRawGyroZ());
+    inputs.yawPosition = Radians.of(Math.toRadians(-navX.getAngle()));
+    inputs.yawVelocity = RadiansPerSecond.of(Math.toRadians(-navX.getRawGyroZ()));
 
     int count = yawTimestampQueue.size();
     inputs.odometryYawTimestamps = new double[count];
-    inputs.odometryYawPositions = new Rotation2d[count];
+    inputs.odometryYawPositions = new Angle[count];
 
     int i = 0;
     for (Double timestamp : yawTimestampQueue) {
@@ -45,7 +45,7 @@ public class GyroIONavX implements GyroIO {
 
     i = 0;
     for (Double angle : yawPositionQueue) {
-      inputs.odometryYawPositions[i++] = Rotation2d.fromDegrees(-angle);
+      inputs.odometryYawPositions[i++] = Radians.of(Math.toRadians(-angle));
     }
 
     yawTimestampQueue.clear();
