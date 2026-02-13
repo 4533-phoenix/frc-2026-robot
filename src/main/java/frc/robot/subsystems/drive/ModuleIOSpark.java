@@ -35,7 +35,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
-
 import java.util.Queue;
 import java.util.function.DoubleSupplier;
 
@@ -214,8 +213,12 @@ public class ModuleIOSpark implements ModuleIO {
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
     sparkStickyFault = false;
-    ifOk(driveSpark, driveEncoder::getPosition, (value) -> inputs.drivePosition = Radians.of(value));
-    ifOk(driveSpark, driveEncoder::getVelocity, (value) -> inputs.driveVelocity = RadiansPerSecond.of(value));
+    ifOk(
+        driveSpark, driveEncoder::getPosition, (value) -> inputs.drivePosition = Radians.of(value));
+    ifOk(
+        driveSpark,
+        driveEncoder::getVelocity,
+        (value) -> inputs.driveVelocity = RadiansPerSecond.of(value));
     ifOk(
         driveSpark,
         new DoubleSupplier[] {driveSpark::getAppliedOutput, driveSpark::getBusVoltage},
@@ -229,13 +232,14 @@ public class ModuleIOSpark implements ModuleIO {
       currentTurnPosition =
           new Rotation2d(turnAbsolutePositionSignal.getValueAsDouble() * turnEncoderPositionFactor)
               .minus(zeroRotation);
-      inputs.turnVelocity = RadiansPerSecond.of(
-          turnVelocitySignal.getValueAsDouble() * turnEncoderVelocityFactor);
+      inputs.turnVelocity =
+          RadiansPerSecond.of(turnVelocitySignal.getValueAsDouble() * turnEncoderVelocityFactor);
 
       double internalPos = turnInternalEncoder.getPosition();
       double absolutePos = currentTurnPosition.getRadians();
       double turnError = Math.abs(internalPos - absolutePos);
-      boolean isStill = inputs.turnVelocity.abs(RadiansPerSecond) < velocityGate.in(RadiansPerSecond);
+      boolean isStill =
+          inputs.turnVelocity.abs(RadiansPerSecond) < velocityGate.in(RadiansPerSecond);
 
       if (isStill && turnError > errorThreshold.in(Radians)) {
         turnInternalEncoder.setPosition(absolutePos);
@@ -292,7 +296,9 @@ public class ModuleIOSpark implements ModuleIO {
 
   @Override
   public void setDriveVelocity(AngularVelocity velocity) {
-    double ffVolts = driveKs * Math.signum(velocity.in(RadiansPerSecond)) + driveKv * velocity.in(RadiansPerSecond);
+    double ffVolts =
+        driveKs * Math.signum(velocity.in(RadiansPerSecond))
+            + driveKv * velocity.in(RadiansPerSecond);
     driveController.setSetpoint(
         velocity.in(RadiansPerSecond),
         ControlType.kVelocity,

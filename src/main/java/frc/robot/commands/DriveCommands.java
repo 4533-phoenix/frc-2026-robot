@@ -7,6 +7,10 @@
 
 package frc.robot.commands;
 
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Volts;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -26,11 +30,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveConstants;
-
-import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
-import static edu.wpi.first.units.Units.Volts;
-
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.LinkedList;
@@ -208,8 +207,12 @@ public class DriveCommands {
                   for (int i = 0; i < n; i++) {
                     sumX += velocitySamples.get(i).in(RadiansPerSecond);
                     sumY += voltageSamples.get(i).in(Volts);
-                    sumXY += velocitySamples.get(i).in(RadiansPerSecond) * voltageSamples.get(i).in(Volts);
-                    sumX2 += velocitySamples.get(i).in(RadiansPerSecond) * velocitySamples.get(i).in(RadiansPerSecond);
+                    sumXY +=
+                        velocitySamples.get(i).in(RadiansPerSecond)
+                            * voltageSamples.get(i).in(Volts);
+                    sumX2 +=
+                        velocitySamples.get(i).in(RadiansPerSecond)
+                            * velocitySamples.get(i).in(RadiansPerSecond);
                   }
                   double kS = (sumY * sumX2 - sumX * sumXY) / (n * sumX2 - sumX * sumX);
                   double kV = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
@@ -273,7 +276,8 @@ public class DriveCommands {
                         wheelDelta += Math.abs(positions[i] - state.positions[i]) / 4.0;
                       }
                       double wheelRadius =
-                          (state.gyroDelta * DriveConstants.driveBaseRadius.in(Meters)) / wheelDelta;
+                          (state.gyroDelta * DriveConstants.driveBaseRadius.in(Meters))
+                              / wheelDelta;
 
                       NumberFormat formatter = new DecimalFormat("#0.000");
                       System.out.println(

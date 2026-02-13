@@ -12,7 +12,6 @@ import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import com.reduxrobotics.sensors.canandgyro.Canandgyro;
 import com.reduxrobotics.sensors.canandgyro.CanandgyroSettings;
-import edu.wpi.first.units.measure.Angle;
 import java.util.Queue;
 
 /** IO implementation for Canandgyro. */
@@ -39,7 +38,7 @@ public class GyroIOCanAndGyro implements GyroIO {
 
     int count = yawTimestampQueue.size();
     inputs.odometryYawTimestamps = new double[count];
-    inputs.odometryYawPositions = new Angle[count];
+    inputs.odometryYawPositions = new double[count];
 
     int i = 0;
     for (Double timestamp : yawTimestampQueue) {
@@ -48,7 +47,7 @@ public class GyroIOCanAndGyro implements GyroIO {
 
     i = 0;
     for (Double angle : yawPositionQueue) {
-      inputs.odometryYawPositions[i++] = Radians.of(angle * 2 * Math.PI);
+      inputs.odometryYawPositions[i++] = angle * 2 * Math.PI;
     }
 
     yawTimestampQueue.clear();

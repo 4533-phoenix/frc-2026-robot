@@ -44,9 +44,9 @@ public class DriveConstants {
 
   // Dual gyro parameters
   public static final double driftGain = 0.01;
-  public static final Angle errorThreshold = Radians.of(0.5);
-  public static final Angle maxCorrectionPerFrame = Radians.of(0.1);
-  public static final AngularVelocity velocityGate = RadiansPerSecond.of(1.0);
+  public static final Angle errorThreshold = Degrees.of(0.5);
+  public static final Angle maxCorrectionPerFrame = Degrees.of(0.1);
+  public static final AngularVelocity velocityGate = DegreesPerSecond.of(1.0);
 
   public static final int frontLeftDriveCanId = 2;
   public static final int backLeftDriveCanId = 8;

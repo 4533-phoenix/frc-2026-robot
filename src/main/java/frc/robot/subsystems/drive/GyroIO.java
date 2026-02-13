@@ -21,7 +21,7 @@ public interface GyroIO {
     public Angle yawPosition = Radians.of(0.0);
     public AngularVelocity yawVelocity = RadiansPerSecond.of(0.0);
     public double[] odometryYawTimestamps = new double[] {};
-    public Angle[] odometryYawPositions = new Angle[] {};
+    public double[] odometryYawPositions = new double[] {};
   }
 
   public default void updateInputs(GyroIOInputs inputs) {}
