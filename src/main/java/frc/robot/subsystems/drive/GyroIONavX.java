@@ -14,7 +14,6 @@ import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
-import edu.wpi.first.units.measure.Angle;
 import java.util.Queue;
 
 /** IO implementation for NavX. */
@@ -36,7 +35,7 @@ public class GyroIONavX implements GyroIO {
 
     int count = yawTimestampQueue.size();
     inputs.odometryYawTimestamps = new double[count];
-    inputs.odometryYawPositions = new Angle[count];
+    inputs.odometryYawPositions = new double[count];
 
     int i = 0;
     for (Double timestamp : yawTimestampQueue) {
@@ -45,7 +44,7 @@ public class GyroIONavX implements GyroIO {
 
     i = 0;
     for (Double angle : yawPositionQueue) {
-      inputs.odometryYawPositions[i++] = Radians.of(Math.toRadians(-angle));
+      inputs.odometryYawPositions[i++] = Math.toRadians(-angle);
     }
 
     yawTimestampQueue.clear();

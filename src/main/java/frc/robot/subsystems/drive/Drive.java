@@ -117,8 +117,7 @@ public class Drive extends SubsystemBase {
                 null,
                 null,
                 (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())),
-            new SysIdRoutine.Mechanism(
-                (voltage) -> runCharacterization(voltage), null, this));
+            new SysIdRoutine.Mechanism((voltage) -> runCharacterization(voltage), null, this));
   }
 
   @Override
@@ -165,7 +164,7 @@ public class Drive extends SubsystemBase {
       // Update gyro angle
       if (gyroInputs.connected) {
         // Use the real gyro angle
-        rawGyroRotation = Rotation2d.fromRadians(gyroInputs.odometryYawPositions[i].in(Radians));
+        rawGyroRotation = Rotation2d.fromRadians(gyroInputs.odometryYawPositions[i]);
       } else {
         // Use the angle delta from the kinematics and module deltas
         Twist2d twist = kinematics.toTwist2d(moduleDeltas);
@@ -189,7 +188,8 @@ public class Drive extends SubsystemBase {
     // Calculate module setpoints
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
-    SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, maxLinearVelocity.in(MetersPerSecond));
+    SwerveDriveKinematics.desaturateWheelSpeeds(
+        setpointStates, maxLinearVelocity.in(MetersPerSecond));
 
     // Log unoptimized setpoints
     Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
@@ -238,7 +238,9 @@ public class Drive extends SubsystemBase {
 
   /** Returns a command to run a dynamic test in the specified direction. */
   public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-    return run(() -> runCharacterization(Volts.of(0.0))).withTimeout(1.0).andThen(sysId.dynamic(direction));
+    return run(() -> runCharacterization(Volts.of(0.0)))
+        .withTimeout(1.0)
+        .andThen(sysId.dynamic(direction));
   }
 
   /** Returns the module states (turn angles and drive velocities) for all of the modules. */

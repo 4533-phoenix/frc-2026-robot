@@ -53,7 +53,8 @@ public class ModuleIOSim implements ModuleIO {
     // Run closed-loop control
     if (driveClosedLoop) {
       driveAppliedVoltage =
-          driveFFVolts.plus(Volts.of(driveController.calculate(driveSim.getAngularVelocityRadPerSec())));
+          driveFFVolts.plus(
+              Volts.of(driveController.calculate(driveSim.getAngularVelocityRadPerSec())));
     } else {
       driveController.reset();
     }
@@ -74,20 +75,21 @@ public class ModuleIOSim implements ModuleIO {
     inputs.drivePosition = driveSim.getAngularPosition();
     inputs.driveVelocity = driveSim.getAngularVelocity();
     inputs.driveAppliedVoltage = driveAppliedVoltage;
-    inputs.driveCurrent = Amps.of(driveSim.getCurrentDrawAmps());
+    inputs.driveCurrent = Amps.of(Math.abs(driveSim.getCurrentDrawAmps()));
 
     // Update turn inputs
     inputs.turnConnected = true;
     inputs.turnPosition = turnSim.getAngularPosition();
     inputs.turnVelocity = turnSim.getAngularVelocity();
     inputs.turnAppliedVoltage = turnAppliedVoltage;
-    inputs.turnCurrent = Amps.of(turnSim.getCurrentDrawAmps());
+    inputs.turnCurrent = Amps.of(Math.abs(turnSim.getCurrentDrawAmps()));
 
     // Update odometry inputs (50Hz because high-frequency odometry in sim doesn't
     // matter)
     inputs.odometryTimestamps = new double[] {Timer.getFPGATimestamp()};
     inputs.odometryDrivePositionsRad = new double[] {inputs.drivePosition.in(Radians)};
-    inputs.odometryTurnPositions = new Rotation2d[] {Rotation2d.fromRadians(inputs.turnPosition.in(Radians))};
+    inputs.odometryTurnPositions =
+        new Rotation2d[] {Rotation2d.fromRadians(inputs.turnPosition.in(Radians))};
   }
 
   @Override
@@ -105,7 +107,10 @@ public class ModuleIOSim implements ModuleIO {
   @Override
   public void setDriveVelocity(AngularVelocity velocity) {
     driveClosedLoop = true;
-    driveFFVolts = Volts.of(driveSimKs * Math.signum(velocity.in(RadiansPerSecond)) + driveSimKv * velocity.in(RadiansPerSecond));
+    driveFFVolts =
+        Volts.of(
+            driveSimKs * Math.signum(velocity.in(RadiansPerSecond))
+                + driveSimKv * velocity.in(RadiansPerSecond));
     driveController.setSetpoint(velocity.in(RadiansPerSecond));
   }
 

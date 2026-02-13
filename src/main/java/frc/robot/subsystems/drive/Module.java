@@ -94,18 +94,20 @@ public class Module {
 
   /** Returns the current drive velocity of the module in meters per second. */
   public LinearVelocity getCurrentVelocityMetersPerSec() {
-    return MetersPerSecond.of(
-        inputs.driveVelocity.in(RadiansPerSecond) * wheelRadius.in(Meters));
+    return MetersPerSecond.of(inputs.driveVelocity.in(RadiansPerSecond) * wheelRadius.in(Meters));
   }
 
   /** Returns the module position (turn angle and drive position). */
   public SwerveModulePosition getPosition() {
-    return new SwerveModulePosition(getCurrentPosition().in(Meters), Rotation2d.fromRadians(getCurrentAngle().in(Radians)));
+    return new SwerveModulePosition(
+        getCurrentPosition().in(Meters), Rotation2d.fromRadians(getCurrentAngle().in(Radians)));
   }
 
   /** Returns the module state (turn angle and drive velocity). */
   public SwerveModuleState getState() {
-    return new SwerveModuleState(getCurrentVelocityMetersPerSec().in(MetersPerSecond), Rotation2d.fromRadians(getCurrentAngle().in(Radians)));
+    return new SwerveModuleState(
+        getCurrentVelocityMetersPerSec().in(MetersPerSecond),
+        Rotation2d.fromRadians(getCurrentAngle().in(Radians)));
   }
 
   /** Returns the module positions received this cycle. */

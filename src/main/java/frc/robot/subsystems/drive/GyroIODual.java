@@ -33,7 +33,8 @@ public class GyroIODual implements GyroIO {
 
       if (canIn.connected) {
         Angle error = canIn.yawPosition.minus(currentCorrectedPos);
-        boolean isStill = navxIn.yawVelocity.abs(RadiansPerSecond) < velocityGate.in(RadiansPerSecond);
+        boolean isStill =
+            navxIn.yawVelocity.abs(RadiansPerSecond) < velocityGate.in(RadiansPerSecond);
 
         if (isStill && (error.abs(Radians) > errorThreshold.in(Radians))) {
           Angle step = error.times(driftGain);
@@ -50,9 +51,9 @@ public class GyroIODual implements GyroIO {
       inputs.yawVelocity = navxIn.yawVelocity;
       inputs.odometryYawTimestamps = navxIn.odometryYawTimestamps;
 
-      inputs.odometryYawPositions = new Angle[navxIn.odometryYawPositions.length];
+      inputs.odometryYawPositions = new double[navxIn.odometryYawPositions.length];
       for (int i = 0; i < navxIn.odometryYawPositions.length; i++) {
-        inputs.odometryYawPositions[i] = navxIn.odometryYawPositions[i].plus(driftOffset);
+        inputs.odometryYawPositions[i] = navxIn.odometryYawPositions[i] + driftOffset.in(Radians);
       }
     } else if (canIn.connected) {
       inputs.connected = true;
