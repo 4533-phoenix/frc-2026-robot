@@ -9,12 +9,14 @@
 
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.units.measure.*;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
@@ -27,9 +29,9 @@ public class ModuleIOSim implements ModuleIO {
   private boolean turnClosedLoop = false;
   private PIDController driveController = new PIDController(driveSimP, 0, driveSimD);
   private PIDController turnController = new PIDController(turnSimP, 0, turnSimD);
-  private double driveFFVolts = 0.0;
-  private double driveAppliedVolts = 0.0;
-  private double turnAppliedVolts = 0.0;
+  private Voltage driveFFVolts = Volts.of(0.0);
+  private Voltage driveAppliedVoltage = Volts.of(0.0);
+  private Voltage turnAppliedVoltage = Volts.of(0.0);
 
   public ModuleIOSim() {
     // Create drive and turn sim models
@@ -50,66 +52,66 @@ public class ModuleIOSim implements ModuleIO {
   public void updateInputs(ModuleIOInputs inputs) {
     // Run closed-loop control
     if (driveClosedLoop) {
-      driveAppliedVolts =
-          driveFFVolts + driveController.calculate(driveSim.getAngularVelocityRadPerSec());
+      driveAppliedVoltage =
+          driveFFVolts.plus(Volts.of(driveController.calculate(driveSim.getAngularVelocityRadPerSec())));
     } else {
       driveController.reset();
     }
     if (turnClosedLoop) {
-      turnAppliedVolts = turnController.calculate(turnSim.getAngularPositionRad());
+      turnAppliedVoltage = Volts.of(turnController.calculate(turnSim.getAngularPositionRad()));
     } else {
       turnController.reset();
     }
 
     // Update simulation state
-    driveSim.setInputVoltage(MathUtil.clamp(driveAppliedVolts, -12.0, 12.0));
-    turnSim.setInputVoltage(MathUtil.clamp(turnAppliedVolts, -12.0, 12.0));
+    driveSim.setInputVoltage(MathUtil.clamp(driveAppliedVoltage.in(Volts), -12.0, 12.0));
+    turnSim.setInputVoltage(MathUtil.clamp(turnAppliedVoltage.in(Volts), -12.0, 12.0));
     driveSim.update(0.02);
     turnSim.update(0.02);
 
     // Update drive inputs
     inputs.driveConnected = true;
-    inputs.drivePositionRad = driveSim.getAngularPositionRad();
-    inputs.driveVelocityRadPerSec = driveSim.getAngularVelocityRadPerSec();
-    inputs.driveAppliedVolts = driveAppliedVolts;
-    inputs.driveCurrentAmps = Math.abs(driveSim.getCurrentDrawAmps());
+    inputs.drivePosition = driveSim.getAngularPosition();
+    inputs.driveVelocity = driveSim.getAngularVelocity();
+    inputs.driveAppliedVoltage = driveAppliedVoltage;
+    inputs.driveCurrent = Amps.of(driveSim.getCurrentDrawAmps());
 
     // Update turn inputs
     inputs.turnConnected = true;
-    inputs.turnPosition = new Rotation2d(turnSim.getAngularPositionRad());
-    inputs.turnVelocityRadPerSec = turnSim.getAngularVelocityRadPerSec();
-    inputs.turnAppliedVolts = turnAppliedVolts;
-    inputs.turnCurrentAmps = Math.abs(turnSim.getCurrentDrawAmps());
+    inputs.turnPosition = turnSim.getAngularPosition();
+    inputs.turnVelocity = turnSim.getAngularVelocity();
+    inputs.turnAppliedVoltage = turnAppliedVoltage;
+    inputs.turnCurrent = Amps.of(turnSim.getCurrentDrawAmps());
 
     // Update odometry inputs (50Hz because high-frequency odometry in sim doesn't
     // matter)
     inputs.odometryTimestamps = new double[] {Timer.getFPGATimestamp()};
-    inputs.odometryDrivePositionsRad = new double[] {inputs.drivePositionRad};
-    inputs.odometryTurnPositions = new Rotation2d[] {inputs.turnPosition};
+    inputs.odometryDrivePositionsRad = new double[] {inputs.drivePosition.in(Radians)};
+    inputs.odometryTurnPositions = new Rotation2d[] {Rotation2d.fromRadians(inputs.turnPosition.in(Radians))};
   }
 
   @Override
-  public void setDriveOpenLoop(double output) {
+  public void setDriveOpenLoop(Voltage output) {
     driveClosedLoop = false;
-    driveAppliedVolts = output;
+    driveAppliedVoltage = Volts.of(MathUtil.clamp(output.in(Volts), -12.0, 12.0));
   }
 
   @Override
-  public void setTurnOpenLoop(double output) {
+  public void setTurnOpenLoop(Voltage output) {
     turnClosedLoop = false;
-    turnAppliedVolts = output;
+    turnAppliedVoltage = Volts.of(MathUtil.clamp(output.in(Volts), -12.0, 12.0));
   }
 
   @Override
-  public void setDriveVelocity(double velocityRadPerSec) {
+  public void setDriveVelocity(AngularVelocity velocity) {
     driveClosedLoop = true;
-    driveFFVolts = driveSimKs * Math.signum(velocityRadPerSec) + driveSimKv * velocityRadPerSec;
-    driveController.setSetpoint(velocityRadPerSec);
+    driveFFVolts = Volts.of(driveSimKs * Math.signum(velocity.in(RadiansPerSecond)) + driveSimKv * velocity.in(RadiansPerSecond));
+    driveController.setSetpoint(velocity.in(RadiansPerSecond));
   }
 
   @Override
-  public void setTurnPosition(Rotation2d rotation) {
+  public void setTurnPosition(Angle rotation) {
     turnClosedLoop = true;
-    turnController.setSetpoint(rotation.getRadians());
+    turnController.setSetpoint(rotation.in(Radians));
   }
 }

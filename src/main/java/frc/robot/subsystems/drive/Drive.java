@@ -31,6 +31,9 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -115,7 +118,7 @@ public class Drive extends SubsystemBase {
                 null,
                 (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())),
             new SysIdRoutine.Mechanism(
-                (voltage) -> runCharacterization(voltage.in(Volts)), null, this));
+                (voltage) -> runCharacterization(voltage), null, this));
   }
 
   @Override
@@ -162,7 +165,7 @@ public class Drive extends SubsystemBase {
       // Update gyro angle
       if (gyroInputs.connected) {
         // Use the real gyro angle
-        rawGyroRotation = gyroInputs.odometryYawPositions[i];
+        rawGyroRotation = Rotation2d.fromRadians(gyroInputs.odometryYawPositions[i].in(Radians));
       } else {
         // Use the angle delta from the kinematics and module deltas
         Twist2d twist = kinematics.toTwist2d(moduleDeltas);
@@ -186,7 +189,7 @@ public class Drive extends SubsystemBase {
     // Calculate module setpoints
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
-    SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, maxSpeedMetersPerSec);
+    SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, maxLinearVelocity.in(MetersPerSecond));
 
     // Log unoptimized setpoints
     Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
@@ -202,7 +205,7 @@ public class Drive extends SubsystemBase {
   }
 
   /** Runs the drive in a straight line with the specified drive output. */
-  public void runCharacterization(double output) {
+  public void runCharacterization(Voltage output) {
     for (int i = 0; i < 4; i++) {
       modules[i].runCharacterization(output);
     }
@@ -228,14 +231,14 @@ public class Drive extends SubsystemBase {
 
   /** Returns a command to run a quasistatic test in the specified direction. */
   public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
-    return run(() -> runCharacterization(0.0))
+    return run(() -> runCharacterization(Volts.of(0.0)))
         .withTimeout(1.0)
         .andThen(sysId.quasistatic(direction));
   }
 
   /** Returns a command to run a dynamic test in the specified direction. */
   public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-    return run(() -> runCharacterization(0.0)).withTimeout(1.0).andThen(sysId.dynamic(direction));
+    return run(() -> runCharacterization(Volts.of(0.0))).withTimeout(1.0).andThen(sysId.dynamic(direction));
   }
 
   /** Returns the module states (turn angles and drive velocities) for all of the modules. */
@@ -267,18 +270,18 @@ public class Drive extends SubsystemBase {
   public double[] getWheelRadiusCharacterizationPositions() {
     double[] values = new double[4];
     for (int i = 0; i < 4; i++) {
-      values[i] = modules[i].getWheelRadiusCharacterizationPosition();
+      values[i] = modules[i].getWheelRadiusCharacterizationPosition().in(Radians);
     }
     return values;
   }
 
-  /** Returns the average velocity of the modules in rad/sec. */
-  public double getFFCharacterizationVelocity() {
+  /** Returns the average velocity of the modules. */
+  public AngularVelocity getFFCharacterizationVelocity() {
     double output = 0.0;
     for (int i = 0; i < 4; i++) {
-      output += modules[i].getFFCharacterizationVelocity() / 4.0;
+      output += modules[i].getFFCharacterizationVelocity().in(RadiansPerSecond) / 4.0;
     }
-    return output;
+    return RadiansPerSecond.of(output);
   }
 
   /** Returns the current odometry pose. */
@@ -306,13 +309,13 @@ public class Drive extends SubsystemBase {
         visionRobotPoseMeters, timestampSeconds, visionMeasurementStdDevs);
   }
 
-  /** Returns the maximum linear speed in meters per sec. */
-  public double getMaxLinearSpeedMetersPerSec() {
-    return maxSpeedMetersPerSec;
+  /** Returns the maximum linear velocity. */
+  public LinearVelocity getMaxLinearVelocity() {
+    return maxLinearVelocity;
   }
 
-  /** Returns the maximum angular speed in radians per sec. */
-  public double getMaxAngularSpeedRadPerSec() {
-    return maxSpeedMetersPerSec / driveBaseRadius;
+  /** Returns the maximum angular velocity. */
+  public AngularVelocity getMaxAngularVelocity() {
+    return RadiansPerSecond.of(maxLinearVelocity.in(MetersPerSecond) / driveBaseRadius.in(Meters));
   }
 }
