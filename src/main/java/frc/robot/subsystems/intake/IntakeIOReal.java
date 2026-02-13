@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems.intake;
 
+import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.intake.IntakeConstants.*;
 import static frc.robot.util.SparkUtil.*;
 
@@ -22,7 +23,8 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
-import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Voltage;
 import java.util.function.DoubleSupplier;
 
 public class IntakeIOReal implements IntakeIO {
@@ -45,14 +47,14 @@ public class IntakeIOReal implements IntakeIO {
     var armConfig = new SparkMaxConfig();
     armConfig
         .idleMode(IdleMode.kCoast)
-        .smartCurrentLimit(armMotorCurrentLimit)
+        .smartCurrentLimit((int) armMotorCurrentLimit.in(Amps))
         .voltageCompensation(12.0)
         .inverted(true);
     armConfig
         .absoluteEncoder
         .positionConversionFactor(2.0 * Math.PI)
         .velocityConversionFactor((2.0 * Math.PI) / 60.0)
-        .zeroOffset(globalEncoderOffsetRad / (2.0 * Math.PI));
+        .zeroOffset(globalEncoderOffset.in(Radians) / (2.0 * Math.PI));
     armConfig
         .closedLoop
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
@@ -79,7 +81,7 @@ public class IntakeIOReal implements IntakeIO {
     var spinnerConfig = new SparkMaxConfig();
     spinnerConfig
         .idleMode(IdleMode.kCoast)
-        .smartCurrentLimit(spinnerMotorCurrentLimit)
+        .smartCurrentLimit((int) spinnerMotorCurrentLimit.in(Amps))
         .voltageCompensation(12.0)
         .inverted(true);
     spinnerConfig
@@ -99,13 +101,17 @@ public class IntakeIOReal implements IntakeIO {
   public void updateInputs(IntakeIOInputs inputs) {
     // Arm motor
     sparkStickyFault = false;
-    ifOk(armSpark, armEncoder::getPosition, (value) -> inputs.armPosition = new Rotation2d(value));
-    ifOk(armSpark, armEncoder::getVelocity, (value) -> inputs.armVelocityRadPerSec = value);
+    ifOk(armSpark, armEncoder::getPosition, (value) -> inputs.armPosition = Radians.of(value));
+    ifOk(
+        armSpark,
+        armEncoder::getVelocity,
+        (value) -> inputs.armVelocity = RadiansPerSecond.of(value));
     ifOk(
         armSpark,
         new DoubleSupplier[] {armSpark::getAppliedOutput, armSpark::getBusVoltage},
-        (values) -> inputs.armAppliedVolts = values[0] * values[1]);
-    ifOk(armSpark, armSpark::getOutputCurrent, (value) -> inputs.armCurrentAmps = value);
+        (values) -> inputs.armAppliedVoltage = Volts.of(values[0] * values[1]));
+    ifOk(
+        armSpark, armSpark::getOutputCurrent, (value) -> inputs.armAppliedCurrent = Amps.of(value));
     inputs.armConnected = armConnectedDebounce.calculate(!sparkStickyFault);
 
     // Spinner motor
@@ -113,20 +119,22 @@ public class IntakeIOReal implements IntakeIO {
     ifOk(
         spinnerSpark,
         new DoubleSupplier[] {spinnerSpark::getAppliedOutput, spinnerSpark::getBusVoltage},
-        (values) -> inputs.spinnerAppliedVolts = values[0] * values[1]);
+        (values) -> inputs.spinnerAppliedVoltage = Volts.of(values[0] * values[1]));
     ifOk(
-        spinnerSpark, spinnerSpark::getOutputCurrent, (value) -> inputs.spinnerCurrentAmps = value);
+        spinnerSpark,
+        spinnerSpark::getOutputCurrent,
+        (value) -> inputs.spinnerAppliedCurrent = Amps.of(value));
     inputs.spinnerConnected = spinnerConnectedDebounce.calculate(!sparkStickyFault);
   }
 
   @Override
-  public void setArmPosition(Rotation2d position, double arbFeedforwardVolts) {
+  public void setArmPosition(Angle angle, Voltage arbFeedforward) {
     armController.setSetpoint(
-        position.getRadians(), ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFeedforwardVolts);
+        angle.in(Radians), ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFeedforward.in(Volts));
   }
 
   @Override
-  public void setSpinnerVoltage(double volts) {
-    spinnerSpark.setVoltage(volts);
+  public void setSpinnerVoltage(Voltage voltage) {
+    spinnerSpark.setVoltage(voltage.in(Volts));
   }
 }

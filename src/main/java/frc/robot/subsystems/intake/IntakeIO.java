@@ -7,7 +7,12 @@
 
 package frc.robot.subsystems.intake;
 
-import edu.wpi.first.math.geometry.Rotation2d;
+import static edu.wpi.first.units.Units.*;
+
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 import org.littletonrobotics.junction.AutoLog;
 
 /** IO interface for the intake hardware. */
@@ -16,23 +21,23 @@ public interface IntakeIO {
   public static class IntakeIOInputs {
     // Arm motor
     public boolean armConnected = false;
-    public Rotation2d armPosition = Rotation2d.kZero;
-    public double armVelocityRadPerSec = 0.0;
-    public double armAppliedVolts = 0.0;
-    public double armCurrentAmps = 0.0;
+    public Angle armPosition = Radians.of(0.0);
+    public AngularVelocity armVelocity = RadiansPerSecond.of(0.0);
+    public Voltage armAppliedVoltage = Volts.of(0.0);
+    public Current armAppliedCurrent = Amps.of(0.0);
 
     // Spinner motor
     public boolean spinnerConnected = false;
-    public double spinnerAppliedVolts = 0.0;
-    public double spinnerCurrentAmps = 0.0;
+    public Voltage spinnerAppliedVoltage = Volts.of(0.0);
+    public Current spinnerAppliedCurrent = Amps.of(0.0);
   }
 
   /** Updates the set of loggable inputs. */
   public default void updateInputs(IntakeIOInputs inputs) {}
 
   /** Run the arm motor to the specified position with arbitrary feedforward. */
-  public default void setArmPosition(Rotation2d position, double arbFeedforwardVolts) {}
+  public default void setArmPosition(Angle angle, Voltage arbFeedforward) {}
 
   /** Run the spinner motor at the specified open loop voltage. */
-  public default void setSpinnerVoltage(double volts) {}
+  public default void setSpinnerVoltage(Voltage voltage) {}
 }
