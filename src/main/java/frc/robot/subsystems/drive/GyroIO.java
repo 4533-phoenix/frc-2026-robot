@@ -9,17 +9,19 @@
 
 package frc.robot.subsystems.drive;
 
-import edu.wpi.first.math.geometry.Rotation2d;
+import static edu.wpi.first.units.Units.*;
+
+import edu.wpi.first.units.measure.*;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface GyroIO {
   @AutoLog
   public static class GyroIOInputs {
     public boolean connected = false;
-    public Rotation2d yawPosition = Rotation2d.kZero;
-    public double yawVelocityRadPerSec = 0.0;
+    public Angle yawPosition = Radians.of(0.0);
+    public AngularVelocity yawVelocity = RadiansPerSecond.of(0.0);
     public double[] odometryYawTimestamps = new double[] {};
-    public Rotation2d[] odometryYawPositions = new Rotation2d[] {};
+    public double[] odometryYawPositions = new double[] {};
   }
 
   public default void updateInputs(GyroIOInputs inputs) {}

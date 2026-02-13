@@ -9,6 +9,7 @@
 
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
 import static frc.robot.util.SparkUtil.*;
 
@@ -33,6 +34,7 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Voltage;
 import java.util.Queue;
 import java.util.function.DoubleSupplier;
 
@@ -125,7 +127,7 @@ public class ModuleIOSpark implements ModuleIO {
     driveConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
-        .primaryEncoderPositionPeriodMs((int) (1000.0 / odometryFrequency))
+        .primaryEncoderPositionPeriodMs((int) (1000.0 / odometryFrequency.in(Hertz)))
         .primaryEncoderVelocityAlwaysOn(true)
         .primaryEncoderVelocityPeriodMs(20)
         .appliedOutputPeriodMs(50)
@@ -153,8 +155,8 @@ public class ModuleIOSpark implements ModuleIO {
     turnConfig
         .inverted(turnInverted)
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit(turnMotorCurrentLimit)
-        .secondaryCurrentLimit(turnMotorSecondaryCurrentLimit)
+        .smartCurrentLimit((int) turnMotorCurrentLimit.in(Amps))
+        .secondaryCurrentLimit((int) turnMotorSecondaryCurrentLimit.in(Amps))
         .voltageCompensation(12.0);
     turnConfig
         .encoder
@@ -210,16 +212,18 @@ public class ModuleIOSpark implements ModuleIO {
 
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
-    // TODO: We need to figure out why this is here (Or mor generaly adding better connection
-    // detection?)
     sparkStickyFault = false;
-    ifOk(driveSpark, driveEncoder::getPosition, (value) -> inputs.drivePositionRad = value);
-    ifOk(driveSpark, driveEncoder::getVelocity, (value) -> inputs.driveVelocityRadPerSec = value);
+    ifOk(
+        driveSpark, driveEncoder::getPosition, (value) -> inputs.drivePosition = Radians.of(value));
+    ifOk(
+        driveSpark,
+        driveEncoder::getVelocity,
+        (value) -> inputs.driveVelocity = RadiansPerSecond.of(value));
     ifOk(
         driveSpark,
         new DoubleSupplier[] {driveSpark::getAppliedOutput, driveSpark::getBusVoltage},
-        (values) -> inputs.driveAppliedVolts = values[0] * values[1]);
-    ifOk(driveSpark, driveSpark::getOutputCurrent, (value) -> inputs.driveCurrentAmps = value);
+        (values) -> inputs.driveAppliedVoltage = Volts.of(values[0] * values[1]));
+    ifOk(driveSpark, driveSpark::getOutputCurrent, (value) -> inputs.driveCurrent = Amps.of(value));
     inputs.driveConnected = driveConnectedDebounce.calculate(!sparkStickyFault);
 
     BaseStatusSignal.refreshAll(turnAbsolutePositionSignal, turnVelocitySignal);
@@ -228,31 +232,32 @@ public class ModuleIOSpark implements ModuleIO {
       currentTurnPosition =
           new Rotation2d(turnAbsolutePositionSignal.getValueAsDouble() * turnEncoderPositionFactor)
               .minus(zeroRotation);
-      inputs.turnVelocityRadPerSec =
-          turnVelocitySignal.getValueAsDouble() * turnEncoderVelocityFactor;
+      inputs.turnVelocity =
+          RadiansPerSecond.of(turnVelocitySignal.getValueAsDouble() * turnEncoderVelocityFactor);
 
       double internalPos = turnInternalEncoder.getPosition();
       double absolutePos = currentTurnPosition.getRadians();
       double turnError = Math.abs(internalPos - absolutePos);
-      boolean isStill = Math.abs(inputs.turnVelocityRadPerSec) < velocityGateRadPerSec;
+      boolean isStill =
+          inputs.turnVelocity.abs(RadiansPerSecond) < velocityGate.in(RadiansPerSecond);
 
-      if (isStill && turnError > errorThresholdRad) {
+      if (isStill && turnError > errorThreshold.in(Radians)) {
         turnInternalEncoder.setPosition(absolutePos);
       }
       inputs.turnConnected = turnConnectedDebounce.calculate(true);
     } else {
       currentTurnPosition = new Rotation2d(turnInternalEncoder.getPosition());
-      inputs.turnVelocityRadPerSec = turnInternalEncoder.getVelocity();
+      inputs.turnVelocity = RadiansPerSecond.of(turnInternalEncoder.getVelocity());
       inputs.turnConnected = turnConnectedDebounce.calculate(false);
     }
-    inputs.turnPosition = currentTurnPosition;
+    inputs.turnPosition = Radians.of(currentTurnPosition.getRadians());
 
     sparkStickyFault = false;
     ifOk(
         turnSpark,
         new DoubleSupplier[] {turnSpark::getAppliedOutput, turnSpark::getBusVoltage},
-        (values) -> inputs.turnAppliedVolts = values[0] * values[1]);
-    ifOk(turnSpark, turnSpark::getOutputCurrent, (value) -> inputs.turnCurrentAmps = value);
+        (values) -> inputs.turnAppliedVoltage = Volts.of(values[0] * values[1]));
+    ifOk(turnSpark, turnSpark::getOutputCurrent, (value) -> inputs.turnCurrent = Amps.of(value));
 
     int count = timestampQueue.size();
     inputs.odometryTimestamps = new double[count];
@@ -280,20 +285,22 @@ public class ModuleIOSpark implements ModuleIO {
   }
 
   @Override
-  public void setDriveOpenLoop(double output) {
+  public void setDriveOpenLoop(Voltage output) {
     driveSpark.setVoltage(output);
   }
 
   @Override
-  public void setTurnOpenLoop(double output) {
+  public void setTurnOpenLoop(Voltage output) {
     turnSpark.setVoltage(output);
   }
 
   @Override
-  public void setDriveVelocity(double velocityRadPerSec) {
-    double ffVolts = driveKs * Math.signum(velocityRadPerSec) + driveKv * velocityRadPerSec;
+  public void setDriveVelocity(AngularVelocity velocity) {
+    double ffVolts =
+        driveKs * Math.signum(velocity.in(RadiansPerSecond))
+            + driveKv * velocity.in(RadiansPerSecond);
     driveController.setSetpoint(
-        velocityRadPerSec,
+        velocity.in(RadiansPerSecond),
         ControlType.kVelocity,
         ClosedLoopSlot.kSlot0,
         ffVolts,
@@ -301,7 +308,7 @@ public class ModuleIOSpark implements ModuleIO {
   }
 
   @Override
-  public void setTurnPosition(Rotation2d rotation) {
-    turnController.setSetpoint(rotation.getRadians(), ControlType.kPosition, ClosedLoopSlot.kSlot0);
+  public void setTurnPosition(Angle rotation) {
+    turnController.setSetpoint(rotation.in(Radians), ControlType.kPosition, ClosedLoopSlot.kSlot0);
   }
 }

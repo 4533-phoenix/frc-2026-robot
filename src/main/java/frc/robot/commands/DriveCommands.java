@@ -7,6 +7,10 @@
 
 package frc.robot.commands;
 
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Volts;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -17,6 +21,8 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
@@ -81,9 +87,9 @@ public class DriveCommands {
           // Convert to field relative speeds & send command
           ChassisSpeeds speeds =
               new ChassisSpeeds(
-                  linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec(),
-                  linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec(),
-                  omega * drive.getMaxAngularSpeedRadPerSec());
+                  drive.getMaxLinearVelocity().times(linearVelocity.getX()),
+                  drive.getMaxLinearVelocity().times(linearVelocity.getY()),
+                  drive.getMaxAngularVelocity().times(omega));
           boolean isFlipped =
               DriverStation.getAlliance().isPresent()
                   && DriverStation.getAlliance().get() == Alliance.Red;
@@ -132,9 +138,9 @@ public class DriveCommands {
               // Convert to field relative speeds & send command
               ChassisSpeeds speeds =
                   new ChassisSpeeds(
-                      linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec(),
-                      linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec(),
-                      omega);
+                      drive.getMaxLinearVelocity().times(linearVelocity.getX()),
+                      drive.getMaxLinearVelocity().times(linearVelocity.getY()),
+                      RadiansPerSecond.of(omega));
               boolean isFlipped =
                   DriverStation.getAlliance().isPresent()
                       && DriverStation.getAlliance().get() == Alliance.Red;
@@ -157,8 +163,8 @@ public class DriveCommands {
    * <p>This command should only be used in voltage control mode.
    */
   public static Command feedforwardCharacterization(Drive drive) {
-    List<Double> velocitySamples = new LinkedList<>();
-    List<Double> voltageSamples = new LinkedList<>();
+    List<AngularVelocity> velocitySamples = new LinkedList<>();
+    List<Voltage> voltageSamples = new LinkedList<>();
     Timer timer = new Timer();
 
     return Commands.sequence(
@@ -172,7 +178,7 @@ public class DriveCommands {
         // Allow modules to orient
         Commands.run(
                 () -> {
-                  drive.runCharacterization(0.0);
+                  drive.runCharacterization(Volts.of(0.0));
                 },
                 drive)
             .withTimeout(FF_START_DELAY),
@@ -183,7 +189,7 @@ public class DriveCommands {
         // Accelerate and gather data
         Commands.run(
                 () -> {
-                  double voltage = timer.get() * FF_RAMP_RATE;
+                  Voltage voltage = Volts.of(timer.get() * FF_RAMP_RATE);
                   drive.runCharacterization(voltage);
                   velocitySamples.add(drive.getFFCharacterizationVelocity());
                   voltageSamples.add(voltage);
@@ -199,10 +205,14 @@ public class DriveCommands {
                   double sumXY = 0.0;
                   double sumX2 = 0.0;
                   for (int i = 0; i < n; i++) {
-                    sumX += velocitySamples.get(i);
-                    sumY += voltageSamples.get(i);
-                    sumXY += velocitySamples.get(i) * voltageSamples.get(i);
-                    sumX2 += velocitySamples.get(i) * velocitySamples.get(i);
+                    sumX += velocitySamples.get(i).in(RadiansPerSecond);
+                    sumY += voltageSamples.get(i).in(Volts);
+                    sumXY +=
+                        velocitySamples.get(i).in(RadiansPerSecond)
+                            * voltageSamples.get(i).in(Volts);
+                    sumX2 +=
+                        velocitySamples.get(i).in(RadiansPerSecond)
+                            * velocitySamples.get(i).in(RadiansPerSecond);
                   }
                   double kS = (sumY * sumX2 - sumX * sumXY) / (n * sumX2 - sumX * sumX);
                   double kV = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
@@ -266,7 +276,8 @@ public class DriveCommands {
                         wheelDelta += Math.abs(positions[i] - state.positions[i]) / 4.0;
                       }
                       double wheelRadius =
-                          (state.gyroDelta * DriveConstants.driveBaseRadius) / wheelDelta;
+                          (state.gyroDelta * DriveConstants.driveBaseRadius.in(Meters))
+                              / wheelDelta;
 
                       NumberFormat formatter = new DecimalFormat("#0.000");
                       System.out.println(

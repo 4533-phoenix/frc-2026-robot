@@ -9,6 +9,8 @@
 
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.units.Units.*;
+
 import com.revrobotics.REVLibError;
 import com.revrobotics.spark.SparkBase;
 import edu.wpi.first.wpilibj.Notifier;
@@ -49,7 +51,7 @@ public class SparkOdometryThread {
 
   public void start() {
     if (timestampQueues.size() > 0) {
-      notifier.startPeriodic(1.0 / DriveConstants.odometryFrequency);
+      notifier.startPeriodic(1.0 / DriveConstants.odometryFrequency.in(Hertz));
     }
   }
 

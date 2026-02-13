@@ -7,11 +7,11 @@
 
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import com.reduxrobotics.sensors.canandgyro.Canandgyro;
 import com.reduxrobotics.sensors.canandgyro.CanandgyroSettings;
-import edu.wpi.first.math.geometry.Rotation2d;
 import java.util.Queue;
 
 /** IO implementation for Canandgyro. */
@@ -22,7 +22,7 @@ public class GyroIOCanAndGyro implements GyroIO {
 
   public GyroIOCanAndGyro() {
     final CanandgyroSettings settings = new CanandgyroSettings();
-    settings.setYawFramePeriod(1 / odometryFrequency);
+    settings.setYawFramePeriod(1 / odometryFrequency.in(Hertz));
     settings.setAngularVelocityFramePeriod(1 / 50.0);
     canandgyro.setSettings(settings);
     canandgyro.setYaw(0.0);
@@ -33,12 +33,12 @@ public class GyroIOCanAndGyro implements GyroIO {
   @Override
   public void updateInputs(GyroIOInputs inputs) {
     inputs.connected = canandgyro.isConnected();
-    inputs.yawPosition = canandgyro.getRotation2d();
-    inputs.yawVelocityRadPerSec = canandgyro.getAngularVelocityYaw() * 2 * Math.PI;
+    inputs.yawPosition = Radians.of(canandgyro.getYaw() * 2 * Math.PI);
+    inputs.yawVelocity = RadiansPerSecond.of(canandgyro.getAngularVelocityYaw() * 2 * Math.PI);
 
     int count = yawTimestampQueue.size();
     inputs.odometryYawTimestamps = new double[count];
-    inputs.odometryYawPositions = new Rotation2d[count];
+    inputs.odometryYawPositions = new double[count];
 
     int i = 0;
     for (Double timestamp : yawTimestampQueue) {
@@ -47,7 +47,7 @@ public class GyroIOCanAndGyro implements GyroIO {
 
     i = 0;
     for (Double angle : yawPositionQueue) {
-      inputs.odometryYawPositions[i++] = Rotation2d.fromRotations(angle);
+      inputs.odometryYawPositions[i++] = angle * 2 * Math.PI;
     }
 
     yawTimestampQueue.clear();
