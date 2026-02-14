@@ -14,6 +14,7 @@ import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -32,6 +33,8 @@ public class Intake extends SubsystemBase {
   private TrapezoidProfile.State setpoint = new TrapezoidProfile.State();
   private TrapezoidProfile.State goal = new TrapezoidProfile.State();
   private double lastTime = 0.0;
+  // Track enabled state so we can resync the trapezoid profile on enable
+  private boolean lastEnabled = false;
 
   private final Alert armDisconnectedAlert =
       new Alert("Intake arm motor disconnected", AlertType.kWarning);
@@ -43,6 +46,9 @@ public class Intake extends SubsystemBase {
     lastTime = Timer.getFPGATimestamp();
     setpoint = new TrapezoidProfile.State(armRetractedPosition.in(Radians), 0.0);
     goal = new TrapezoidProfile.State(armRetractedPosition.in(Radians), 0.0);
+    // Initialize lastEnabled to the current DriverStation enabled state so the
+    // next rising edge will be detected correctly.
+    lastEnabled = DriverStation.isEnabled();
   }
 
   @Override
@@ -52,6 +58,25 @@ public class Intake extends SubsystemBase {
 
     armDisconnectedAlert.set(!inputs.armConnected);
     spinnerDisconnectedAlert.set(!inputs.spinnerConnected);
+
+    // If we've just been enabled, resync the internal trapezoid state to the
+    // measured encoder so the profile doesn't "jump" when the physical arm
+    // starts out away from the software's setpoint (causes bypassing the
+    // trapezoid). We only resync on the rising edge of enabled and only when
+    // the measured position differs significantly from the software setpoint.
+    boolean enabled = DriverStation.isEnabled();
+    if (enabled && !lastEnabled) {
+      double measuredPos = inputs.armPosition.in(Radians);
+      double measuredVel = inputs.armVelocity.in(RadiansPerSecond);
+      final double kResyncTol = Math.toRadians(5.0); // 5 deg tolerance
+      if (Math.abs(setpoint.position - measuredPos) > kResyncTol) {
+        setpoint = new TrapezoidProfile.State(measuredPos, measuredVel);
+        Logger.recordOutput("Intake/ProfileResynced", true);
+      } else {
+        Logger.recordOutput("Intake/ProfileResynced", false);
+      }
+    }
+    lastEnabled = enabled;
 
     // Calculate next setpoint using FPGA timestamp for actual loop dt
     double now = Timer.getFPGATimestamp();

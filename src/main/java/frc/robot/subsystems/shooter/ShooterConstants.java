@@ -35,18 +35,18 @@ public final class ShooterConstants {
   public static final MomentOfInertia indexerMOI = KilogramSquareMeters.of(0.0005);
   public static final double indexerReduction = 1.0;
 
-  public static final Current flywheelMotorCurrentLimit = Amps.of(40.0);
+  public static final Current flywheelMotorCurrentLimit = Amps.of(60.0);
 
   public static final DCMotor flywheelGearbox = DCMotor.getFalcon500(1);
   public static final DCMotor indexerGearbox = DCMotor.getNeo550(1);
 
   // PID constants for Flywheel velocity control
-  public static final double flywheelKp = 0.1;
+  public static final double flywheelKp = 0.25;
   public static final double flywheelKi = 0.0;
   public static final double flywheelKd = 0.0;
   public static final double flywheelKs = 0.2;
   public static final double flywheelKv = 0.113;
-  public static final double flywheelKa = 0.005;
+  public static final double flywheelKa = 0.04;
 
   // New simple control limits for operator bindings
   // Flywheel target range in rotations per second (rps)
