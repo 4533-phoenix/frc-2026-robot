@@ -44,11 +44,15 @@ public class HoodIOServo implements HoodIO {
 
   @Override
   public void setLength(Distance length) {
-    this.targetLength = length;
+    Distance clampedLength =
+        Meters.of(
+            MathUtil.clamp(
+                length.in(Meters), servoMinLength.in(Meters), servoMaxLength.in(Meters)));
+    this.targetLength = clampedLength;
 
     double min = servoMinLength.in(Inches);
     double max = servoMaxLength.in(Inches);
-    double val = (length.in(Inches) - min) / (max - min);
+    double val = (clampedLength.in(Inches) - min) / (max - min);
 
     servo.set(MathUtil.clamp(val, 0.0, 1.0));
   }
