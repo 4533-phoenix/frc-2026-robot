@@ -46,7 +46,7 @@ public class IntakeIOReal implements IntakeIO {
     // Configure arm motor
     var armConfig = new SparkMaxConfig();
     armConfig
-        .idleMode(IdleMode.kCoast)
+        .idleMode(IdleMode.kBrake)
         .smartCurrentLimit((int) armMotorCurrentLimit.in(Amps))
         .voltageCompensation(12.0)
         .inverted(true);

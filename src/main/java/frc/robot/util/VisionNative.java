@@ -14,7 +14,7 @@ import java.nio.ByteOrder;
 
 public class VisionNative {
   private static VisionNative instance;
-  private static final int MAX_QUEUE_SIZE = 32;
+  private static final int MAX_QUEUE_SIZE = 64;
   public static final int STRUCT_SIZE = 64;
 
   private final ByteBuffer buffer;

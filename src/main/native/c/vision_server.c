@@ -14,11 +14,13 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <errno.h>
 
-#define MAX_QUEUE_SIZE 32
+// Increased queue size to handle jitter (Java GC pauses)
+#define MAX_QUEUE_SIZE 64
 #define MASK (MAX_QUEUE_SIZE - 1)
-#define RECIEVE_BUF_SIZE 1048576
-#define RECV_BATCH 8
+#define RECIEVE_BUF_SIZE 4194304
+#define RECV_BATCH 16
 #define WORKER_CPU 1
 #define CACHE_LINE 64
 
@@ -50,7 +52,8 @@ typedef struct __attribute__((packed))
 // Cache-line-padded ring buffer (prevents false sharing)
 typedef struct
 {
-  volatile VisionMeasurement data[MAX_QUEUE_SIZE];
+  // Volatile removed on array: we use atomic indices + memcpy to ensure ordering
+  VisionMeasurement data[MAX_QUEUE_SIZE];
 
   // Written by Worker
   atomic_int head __attribute__((aligned(CACHE_LINE)));
@@ -59,10 +62,13 @@ typedef struct
   // Read by Main
   atomic_int tail __attribute__((aligned(CACHE_LINE)));
   char _pad_tail[CACHE_LINE - sizeof(atomic_int)];
+
+  // New: Atomic counter to track drops without blocking printf
+  atomic_ulong dropped_packets;
 } LockFreeQueue;
 
 // Global states
-static LockFreeQueue vq = {.head = 0, .tail = 0};
+static LockFreeQueue vq = {.head = 0, .tail = 0, .dropped_packets = 0};
 
 // Broadcast globals
 static int broadcast_fd = -1;
@@ -160,12 +166,15 @@ static void *vision_worker_thread(void *arg)
     uint64_t r_now = get_realtime_micros();
     int64_t r_to_m_offset = (int64_t)m_now - (int64_t)r_now;
 
+    // Load head/tail once per batch
+    int h = atomic_load_explicit(&vq.head, memory_order_relaxed);
+    int t = atomic_load_explicit(&vq.tail, memory_order_acquire);
+
     for (int i = 0; i < n; i++)
     {
       if (unlikely(msgs[i].msg_len != sizeof(VisionMeasurement)))
       {
-        printf("[VisionNative-c] Warning: Received packet of unexpected size %u\n",
-             msgs[i].msg_len);
+         // Silently ignore bad sizes to avoid printf spam in hot loop
         continue;
       }
 
@@ -179,22 +188,23 @@ static void *vision_worker_thread(void *arg)
       VisionMeasurement *pkt = &recv_bufs[i];
       uint64_t abs_ts_monotonic = adapter_us_monotonic - pkt->ts;
 
-      // Load current indices
-      int h = atomic_load_explicit(&vq.head, memory_order_relaxed);
-      int t = atomic_load_explicit(&vq.tail, memory_order_acquire);
       int next_h = (h + 1) & MASK;
 
-      // If queue is full, we push the tail forward to overwrite oldest
+      // If queue is full...
       if (unlikely(next_h == t))
       {
-        atomic_store_explicit(&vq.tail, (t + 1) & MASK, memory_order_release);
-        printf("[VisionNative-c] Warning: Queue full, dropping oldest packet\n");
+        // Do NOT move tail. Moving tail here causes data corruption/race conditions
+        // where the reader reads half-written data. Instead, drop the packet.
+        atomic_fetch_add_explicit(&vq.dropped_packets, 1, memory_order_relaxed);
+        continue; 
       }
 
       // Write the data to the buffer
       pkt->ts = abs_ts_monotonic;
-      vq.data[h] = *pkt;
+      memcpy((void*)&vq.data[h], pkt, sizeof(VisionMeasurement));
+      
       atomic_store_explicit(&vq.head, next_h, memory_order_release);
+      h = next_h;
     }
   }
   return NULL;
@@ -313,16 +323,31 @@ JNIEXPORT jint JNICALL Java_frc_robot_util_VisionNative_drainPackets(JNIEnv *env
   int t = atomic_load_explicit(&vq.tail, memory_order_relaxed);
   int h = atomic_load_explicit(&vq.head, memory_order_acquire);
 
+  // Check drops rarely to avoid spamming console
+  static uint64_t last_check = 0;
+  if (unlikely(now_monotonic - last_check > 2000000)) { // 2 seconds
+    unsigned long drops = atomic_exchange_explicit(&vq.dropped_packets, 0, memory_order_relaxed);
+    if (drops > 0) {
+        printf("[VisionNative-c] Warning: Dropped %lu packets due to full queue\n", drops);
+    }
+    last_check = now_monotonic;
+  }
+
   int count = 0;
   while (likely(t != h))
   {
-    // Copy from ring buffer into local variable
-    VisionMeasurement m = vq.data[t];
+    // Copy from ring buffer into local variable safely
+    VisionMeasurement m;
+    memcpy(&m, (const void*)&vq.data[t], sizeof(VisionMeasurement));
 
     // Apply offset to convert packet from Monotonic to FPGA time
     m.ts = (uint64_t)((int64_t)m.ts + offset);
 
-    out_buffer[count] = m;
+    // Write to Java buffer
+    // Note: out_buffer (Java DirectByteBuffer) might be unaligned. 
+    // memcpy is safer here too if strict alignment is required.
+    memcpy(&out_buffer[count], &m, sizeof(VisionMeasurement));
+    
     t = (t + 1) & MASK;
     count++;
 
