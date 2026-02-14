@@ -30,7 +30,7 @@ public class Hood extends SubsystemBase {
     Logger.processInputs("Shooter/Hood", inputs);
   }
 
-  private static Distance convertLaunchAngleToServoPosition(Angle launchAngle) {
+  private static Distance convertLaunchAngleToServoLength(Angle launchAngle) {
     // 1. Convert Launch Angle (0-90) to the Plate's angle relative to horizon
     // If launch is 77.125, plate is 90.0 (vertical)
     Angle plateAngle = launchAngle.plus(crankTangentToLaunchAngle);
@@ -55,7 +55,7 @@ public class Hood extends SubsystemBase {
   }
 
   public void setLaunchAngle(Angle angle) {
-    io.setLength(convertLaunchAngleToServoPosition(angle));
+    io.setLength(convertLaunchAngleToServoLength(angle));
   }
 
   public void retract() {

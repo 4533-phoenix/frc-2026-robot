@@ -27,7 +27,7 @@ import frc.robot.subsystems.climb.ClimbIO;
 import frc.robot.subsystems.climb.ClimbIOSim;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
-import frc.robot.subsystems.drive.GyroIOCanAndGyro;
+import frc.robot.subsystems.drive.GyroIODual;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSpark;
@@ -80,7 +80,7 @@ public class RobotContainer {
         // Real robot, instantiate hardware IO implementations
         drive =
             new Drive(
-                new GyroIOCanAndGyro(),
+                new GyroIODual(),
                 new ModuleIOSpark(0),
                 new ModuleIOSpark(1),
                 new ModuleIOSpark(2),
@@ -195,7 +195,7 @@ public class RobotContainer {
             Commands.run(
                 () -> {
                   hood.setLaunchAngle(Degrees.of(45));
-                  flywheel.setAngularVelocity(RotationsPerSecond.of(100));
+                  flywheel.setAngularVelocity(RotationsPerSecond.of(5));
                 },
                 hood,
                 flywheel));
@@ -210,8 +210,7 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     Command autoCommand = autoChooser.get();
-    if (autoCommand == null)
-      autoCommand = Commands.none();
+    if (autoCommand == null) autoCommand = Commands.none();
     return autoCommand;
   }
 }

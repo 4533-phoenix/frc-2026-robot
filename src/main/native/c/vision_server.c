@@ -76,12 +76,20 @@ static inline uint64_t get_monotonic_micros(void)
   return (uint64_t)ts.tv_sec * 1000000ULL + (uint64_t)ts.tv_nsec / 1000ULL;
 }
 
+// Helper function to get the Realtime micros (System Clock)
+static inline uint64_t get_realtime_micros(void)
+{
+  struct timespec ts;
+  clock_gettime(CLOCK_REALTIME, &ts);
+  return (uint64_t)ts.tv_sec * 1000000ULL + (uint64_t)ts.tv_nsec / 1000ULL;
+}
+
 // Extract SO_TIMESTAMPNS from cmsg ancillary data
 static inline uint64_t ts_from_cmsg(struct msghdr *msg)
 {
   for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(msg);
-       cmsg != NULL;
-       cmsg = CMSG_NXTHDR(msg, cmsg))
+     cmsg != NULL;
+     cmsg = CMSG_NXTHDR(msg, cmsg))
   {
     if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_TIMESTAMPNS)
     {
@@ -89,11 +97,11 @@ static inline uint64_t ts_from_cmsg(struct msghdr *msg)
       return (uint64_t)ts->tv_sec * 1000000ULL + (uint64_t)ts->tv_nsec / 1000ULL;
     }
   }
-  // Fallback (should not happen)
-  return get_monotonic_micros();
+  // Fallback to Realtime if cmsg is missing
+  return get_realtime_micros();
 }
 
-// Worker thread for recieving cam updates and pushing them to the queue
+// Worker thread for receiving cam updates and pushing them to the queue
 static void *vision_worker_thread(void *arg)
 {
   int listenfd = *(int *)arg;
@@ -118,8 +126,11 @@ static void *vision_worker_thread(void *arg)
   struct iovec iovecs[RECV_BATCH];
   struct mmsghdr msgs[RECV_BATCH];
 
-  // Control message buffers for SO_TIMESTAMPNS (one per message)
-  char ctrl_bufs[RECV_BATCH][CMSG_SPACE(sizeof(struct timespec))];
+  // Control message buffers for SO_TIMESTAMPNS (Union ensures 8-byte alignment for ARM)
+  union {
+    char buf[CMSG_SPACE(sizeof(struct timespec))];
+    struct timespec align;
+  } ctrl_bufs[RECV_BATCH];
 
   memset(msgs, 0, sizeof(msgs));
   for (int i = 0; i < RECV_BATCH; i++)
@@ -127,38 +138,46 @@ static void *vision_worker_thread(void *arg)
     iovecs[i].iov_base = &recv_bufs[i];
     iovecs[i].iov_len  = sizeof(VisionMeasurement);
 
-    msgs[i].msg_hdr.msg_iov     = &iovecs[i];
+    msgs[i].msg_hdr.msg_iov   = &iovecs[i];
     msgs[i].msg_hdr.msg_iovlen  = 1;
-    msgs[i].msg_hdr.msg_control    = ctrl_bufs[i];
-    msgs[i].msg_hdr.msg_controllen = sizeof(ctrl_bufs[i]);
+    msgs[i].msg_hdr.msg_control  = ctrl_bufs[i].buf;
+    msgs[i].msg_hdr.msg_controllen = sizeof(ctrl_bufs[i].buf);
   }
 
   while (1)
   {
     // Reset controllen before each call
     for (int i = 0; i < RECV_BATCH; i++)
-      msgs[i].msg_hdr.msg_controllen = sizeof(ctrl_bufs[i]);
+      msgs[i].msg_hdr.msg_controllen = sizeof(ctrl_bufs[i].buf);
 
     // Block on first packet, return up to RECV_BATCH at once
     int n = recvmmsg(listenfd, msgs, RECV_BATCH, MSG_WAITFORONE, NULL);
     if (unlikely(n <= 0))
       continue;
 
+    // Sample clock offset to convert Realtime (socket) to Monotonic (internal queue)
+    uint64_t m_now = get_monotonic_micros();
+    uint64_t r_now = get_realtime_micros();
+    int64_t r_to_m_offset = (int64_t)m_now - (int64_t)r_now;
+
     for (int i = 0; i < n; i++)
     {
       if (unlikely(msgs[i].msg_len != sizeof(VisionMeasurement)))
       {
         printf("[VisionNative-c] Warning: Received packet of unexpected size %u\n",
-               msgs[i].msg_len);
+             msgs[i].msg_len);
         continue;
       }
 
       // Get kernel-level adapter timestamp
-      uint64_t adapter_us = ts_from_cmsg(&msgs[i].msg_hdr);
+      uint64_t adapter_us_raw = ts_from_cmsg(&msgs[i].msg_hdr);
 
-      // Calculate absolute Monotonic timestamp from delay
+      // Convert Realtime adapter timestamp to Monotonic
+      uint64_t adapter_us_monotonic = (uint64_t)((int64_t)adapter_us_raw + r_to_m_offset);
+
+      // Calculate absolute Monotonic timestamp from packet processing delay
       VisionMeasurement *pkt = &recv_bufs[i];
-      uint64_t abs_ts = adapter_us - pkt->ts;
+      uint64_t abs_ts_monotonic = adapter_us_monotonic - pkt->ts;
 
       // Load current indices
       int h = atomic_load_explicit(&vq.head, memory_order_relaxed);
@@ -173,7 +192,7 @@ static void *vision_worker_thread(void *arg)
       }
 
       // Write the data to the buffer
-      pkt->ts = abs_ts;
+      pkt->ts = abs_ts_monotonic;
       vq.data[h] = *pkt;
       atomic_store_explicit(&vq.head, next_h, memory_order_release);
     }
@@ -278,18 +297,18 @@ JNIEXPORT void JNICALL Java_frc_robot_util_VisionNative_broadcastRobotHeading(JN
   }
 }
 
-// Gets all packets recieved and waiting in queue
+// Gets all packets received and waiting in queue
 JNIEXPORT jint JNICALL Java_frc_robot_util_VisionNative_drainPackets(JNIEnv *env, jclass cls, jobject byte_buffer, jlong current_hal_time)
 {
   VisionMeasurement *out_buffer =
-      (VisionMeasurement *)(*env)->GetDirectBufferAddress(env, byte_buffer);
+    (VisionMeasurement *)(*env)->GetDirectBufferAddress(env, byte_buffer);
 
   if (unlikely(out_buffer == NULL))
     return 0;
 
   // Calculate offset to sync C clock to Java clock
   uint64_t now_monotonic = get_monotonic_micros();
-  uint64_t offset = (uint64_t)current_hal_time - now_monotonic;
+  int64_t offset = (int64_t)current_hal_time - (int64_t)now_monotonic;
 
   int t = atomic_load_explicit(&vq.tail, memory_order_relaxed);
   int h = atomic_load_explicit(&vq.head, memory_order_acquire);
@@ -301,7 +320,7 @@ JNIEXPORT jint JNICALL Java_frc_robot_util_VisionNative_drainPackets(JNIEnv *env
     VisionMeasurement m = vq.data[t];
 
     // Apply offset to convert packet from Monotonic to FPGA time
-    m.ts += offset;
+    m.ts = (uint64_t)((int64_t)m.ts + offset);
 
     out_buffer[count] = m;
     t = (t + 1) & MASK;

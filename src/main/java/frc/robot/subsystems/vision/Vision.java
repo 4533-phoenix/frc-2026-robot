@@ -60,6 +60,11 @@ public class Vision extends SubsystemBase {
     double currentTime = Timer.getTimestamp();
 
     for (int i = 0; i < inputs.visionPoses.length; i++) {
+      // Ignore measurements that detected zero AprilTags
+      if (inputs.tagCounts != null && inputs.tagCounts.length > i && inputs.tagCounts[i] == 0) {
+        continue;
+      }
+
       int id = inputs.cameraIds[i];
       lastTimestampMap.put(id, currentTime);
 
