@@ -10,7 +10,6 @@
 package frc.robot.subsystems.drive;
 
 import static edu.wpi.first.units.Units.*;
-import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
