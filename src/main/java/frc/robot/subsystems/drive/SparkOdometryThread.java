@@ -34,6 +34,9 @@ public class SparkOdometryThread {
   private final List<Queue<Double>> sparkQueues = new ArrayList<>();
   private final List<Queue<Double>> genericQueues = new ArrayList<>();
   private final List<Queue<Double>> timestampQueues = new ArrayList<>();
+  // reusable buffers to avoid allocating on every sample
+  private double[] sparkValueBuffer = new double[8];
+  private double[] genericValueBuffer = new double[8];
 
   private static SparkOdometryThread instance = null;
   private Notifier notifier = new Notifier(this::run);
@@ -95,33 +98,73 @@ public class SparkOdometryThread {
   }
 
   private void run() {
-    // Save new data to queues
+    // Snapshot lists quickly under the lock, then do hardware reads outside the lock
+    final List<SparkBase> sparksSnapshot;
+    final List<DoubleSupplier> sparkSignalsSnapshot;
+    final List<DoubleSupplier> genericSignalsSnapshot;
+    final List<Queue<Double>> sparkQueuesSnapshot;
+    final List<Queue<Double>> genericQueuesSnapshot;
+    final List<Queue<Double>> timestampQueuesSnapshot;
+
     Drive.odometryLock.lock();
     try {
-      // Get sample timestamp
-      double timestamp = RobotController.getFPGATime() / 1e6;
+      sparksSnapshot = new ArrayList<>(sparks);
+      sparkSignalsSnapshot = new ArrayList<>(sparkSignals);
+      genericSignalsSnapshot = new ArrayList<>(genericSignals);
+      sparkQueuesSnapshot = new ArrayList<>(sparkQueues);
+      genericQueuesSnapshot = new ArrayList<>(genericQueues);
+      timestampQueuesSnapshot = new ArrayList<>(timestampQueues);
+    } finally {
+      Drive.odometryLock.unlock();
+    }
 
-      // Read Spark values, mark invalid in case of error
-      double[] sparkValues = new double[sparkSignals.size()];
-      boolean isValid = true;
-      for (int i = 0; i < sparkSignals.size(); i++) {
-        sparkValues[i] = sparkSignals.get(i).getAsDouble();
-        if (sparks.get(i).getLastError() != REVLibError.kOk) {
-          isValid = false;
-        }
+    // Fast exit if nothing registered
+    if (timestampQueuesSnapshot.isEmpty()
+        && sparkQueuesSnapshot.isEmpty()
+        && genericQueuesSnapshot.isEmpty()) {
+      return;
+    }
+
+    // Read timestamp and sensor values without holding the odometry lock
+    double timestamp = RobotController.getFPGATime() / 1e6;
+
+    int sCount = sparkSignalsSnapshot.size();
+    if (sparkValueBuffer.length < sCount) {
+      sparkValueBuffer = new double[Math.max(sCount, sparkValueBuffer.length * 2)];
+    }
+
+    boolean isValid = true;
+    for (int i = 0; i < sCount; i++) {
+      sparkValueBuffer[i] = sparkSignalsSnapshot.get(i).getAsDouble();
+      if (sparksSnapshot.get(i).getLastError() != REVLibError.kOk) {
+        isValid = false;
+        break; // stop early if a Spark reports an error
       }
+    }
 
-      // If valid, add values to queues
-      if (isValid) {
-        for (int i = 0; i < sparkSignals.size(); i++) {
-          sparkQueues.get(i).offer(sparkValues[i]);
-        }
-        for (int i = 0; i < genericSignals.size(); i++) {
-          genericQueues.get(i).offer(genericSignals.get(i).getAsDouble());
-        }
-        for (int i = 0; i < timestampQueues.size(); i++) {
-          timestampQueues.get(i).offer(timestamp);
-        }
+    if (!isValid) {
+      return;
+    }
+
+    int gCount = genericSignalsSnapshot.size();
+    if (genericValueBuffer.length < gCount) {
+      genericValueBuffer = new double[Math.max(gCount, genericValueBuffer.length * 2)];
+    }
+    for (int i = 0; i < gCount; i++) {
+      genericValueBuffer[i] = genericSignalsSnapshot.get(i).getAsDouble();
+    }
+
+    // Offer values into queues while holding the lock briefly to keep updates atomic
+    Drive.odometryLock.lock();
+    try {
+      for (int i = 0; i < sCount; i++) {
+        sparkQueuesSnapshot.get(i).offer(sparkValueBuffer[i]);
+      }
+      for (int i = 0; i < gCount; i++) {
+        genericQueuesSnapshot.get(i).offer(genericValueBuffer[i]);
+      }
+      for (int i = 0; i < timestampQueuesSnapshot.size(); i++) {
+        timestampQueuesSnapshot.get(i).offer(timestamp);
       }
     } finally {
       Drive.odometryLock.unlock();

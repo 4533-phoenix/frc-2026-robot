@@ -14,9 +14,7 @@ import static frc.robot.util.SparkUtil.*;
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
-import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.FeedbackSensor;
-import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
@@ -129,8 +127,10 @@ public class IntakeIOReal implements IntakeIO {
 
   @Override
   public void setArmPosition(Angle angle, Voltage arbFeedforward) {
-    armController.setSetpoint(
-        angle.in(Radians), ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFeedforward.in(Volts));
+    // armController.setSetpoint(
+    //     angle.in(Radians), ControlType.kPosition, ClosedLoopSlot.kSlot0,
+    // arbFeedforward.in(Volts));
+    armSpark.setVoltage(0.0);
   }
 
   @Override
