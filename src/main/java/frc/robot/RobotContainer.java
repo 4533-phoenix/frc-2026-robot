@@ -164,7 +164,7 @@ public class RobotContainer {
             drive,
             () -> -controller.getLeftY(),
             () -> -controller.getLeftX(),
-            () -> -controller.getRightX()));
+            () -> controller.getRightX()));
 
     // Deploy intake and spin while A is held and set the default command to retract when released
     intake.setDefaultCommand(IntakeCommands.holdRetracted(intake));
