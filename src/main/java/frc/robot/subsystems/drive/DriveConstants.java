@@ -21,8 +21,8 @@ import edu.wpi.first.units.measure.*;
 public class DriveConstants {
   public static final LinearVelocity maxLinearVelocity = MetersPerSecond.of(4.0);
   public static final Frequency odometryFrequency = Hertz.of(100);
-  public static final Distance trackWidth = Inches.of(20.5);
-  public static final Distance wheelBase = Inches.of(20.5);
+  public static final Distance trackWidth = Inches.of(19.5);
+  public static final Distance wheelBase = Inches.of(19.5);
   public static final Distance driveBaseRadius =
       Meters.of(Math.hypot(trackWidth.in(Meters) / 2.0, wheelBase.in(Meters) / 2.0));
   public static final Translation2d[] moduleTranslations =
@@ -34,10 +34,12 @@ public class DriveConstants {
       };
 
   // Zeroed rotation values for each module
-  public static final Rotation2d frontLeftZeroRotation = Rotation2d.fromDegrees(-144.49);
-  public static final Rotation2d frontRightZeroRotation = Rotation2d.fromDegrees(113.03);
-  public static final Rotation2d backLeftZeroRotation = Rotation2d.fromDegrees(-56.51);
-  public static final Rotation2d backRightZeroRotation = Rotation2d.fromDegrees(-172.27);
+  public static final Rotation2d frontLeftZeroRotation = Rotation2d.fromDegrees(263.0); // 83 + 180
+  public static final Rotation2d frontRightZeroRotation =
+      Rotation2d.fromDegrees(144.0); // 324 + 180 -> 504-360
+  public static final Rotation2d backLeftZeroRotation =
+      Rotation2d.fromDegrees(16.0); // 196 + 180 -> 376-360
+  public static final Rotation2d backRightZeroRotation = Rotation2d.fromDegrees(191.0); // 11 + 180
 
   // Device CAN IDs
   public static final int imuCanId = 14;
