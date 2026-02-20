@@ -20,7 +20,6 @@ public class Intake extends SubsystemBase {
   private final IntakeIO io;
   private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
 
-
   private final Alert armDisconnectedAlert =
       new Alert("Intake arm motor disconnected", AlertType.kWarning);
   private final Alert spinnerDisconnectedAlert =

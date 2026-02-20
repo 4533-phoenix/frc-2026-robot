@@ -4,4 +4,5 @@
 * Use the units api for safer code
 * Get rid of the global spark stick fault flag?
 * Improve hood position simulation
-* need to improve soft limits for revlib intake
+* need to add soft limits for revlib intake
+* need to make intake spinner velocity controlled

@@ -36,7 +36,7 @@ public final class IntakeConstants {
   public static final Current armMotorCurrentLimit = Amps.of(40);
   public static final Current spinnerMotorCurrentLimit = Amps.of(40);
 
-  // Arm PID configuration (on the SparkMax, in output-shaft radians)
+  // Arm PID configuration
   public static final double armKp = 1.0;
   public static final double armKi = 0.0;
   public static final double armKd = 0.0;

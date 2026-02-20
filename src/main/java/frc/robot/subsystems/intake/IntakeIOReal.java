@@ -60,7 +60,10 @@ public class IntakeIOReal implements IntakeIO {
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
         .pid(armKp, 0.0, armKd)
         .positionWrappingEnabled(true)
-        .positionWrappingInputRange(0, 2.0 * Math.PI)
+        .positionWrappingInputRange(0, 2.0 * Math.PI);
+    armConfig.closedLoop.feedForward.kV(armKv).kA(armKa).kS(armKs).kCos(armKg);
+    armConfig
+        .closedLoop
         .maxMotion
         .allowedProfileError(armPositionTolerance.in(Radians))
         .cruiseVelocity(armMaxVelocity.in(RadiansPerSecond))
