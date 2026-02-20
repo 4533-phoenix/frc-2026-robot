@@ -24,40 +24,37 @@ public final class IntakeConstants {
   // Gear ratio: 112 NEO rotations = 1 output shaft rotation
   public static final double armMotorReduction = 112.0;
 
-  // Encoder conversion factors (motor rotations -> output radians)
-  public static final double armEncoderPositionFactor = (2.0 * Math.PI) / armMotorReduction;
-  public static final double armEncoderVelocityFactor =
+  // Encoder conversion factors
+  public static final double armInternalEncoderPositionFactor = (2.0 * Math.PI) / armMotorReduction;
+  public static final double armInternalEncoderVelocityFactor =
       ((2.0 * Math.PI) / 60.0) / armMotorReduction;
 
-  // Global encoder offset (radians)
-  public static final Angle globalEncoderOffset = Degrees.of(304.8);
+  // Global encoder offset
+  public static final Angle globalEncoderOffset = Degrees.of(83.45);
 
   // Motor current limits
-  public static final Current armMotorCurrentLimit = Amps.of(40);
-  public static final Current spinnerMotorCurrentLimit = Amps.of(40);
+  public static final Current armMotorCurrentLimit = Amps.of(30);
+  public static final Current spinnerMotorCurrentLimit = Amps.of(30);
 
   // Arm PID configuration
-  public static final double armKp = 1.0;
-  public static final double armKi = 0.0;
-  public static final double armKd = 0.0;
+  public static final double armKp = 0.05;
+  public static final double armKd = 0.1;
 
   // Arm Feedforward configuration
-  public static final double armKs = 0.0;
-  public static final double armKg = 0.0;
-  public static final double armKv = 0.0;
+  public static final double armKs = 0.1;
+  public static final double armKg = 0.1;
+  public static final double armKv = 1.9;
   public static final double armKa = 0.0;
 
   // Arm Motion Profile Constraints
-  public static final AngularVelocity armMaxVelocity = RadiansPerSecond.of(Math.PI * 2);
-  public static final AngularAcceleration armMaxAcceleration =
-      RadiansPerSecondPerSecond.of(Math.PI * 4);
+  public static final AngularVelocity armCruiseVelocity = RadiansPerSecond.of(3.5);
+  public static final AngularAcceleration armMaxAcceleration = RadiansPerSecondPerSecond.of(6.0);
 
-  // Arm positions (output shaft, relative to stow = 0)
-  public static final Angle armDeployedPosition = Degrees.of(101.9);
-  public static final Angle armRetractedPosition = Degrees.of(0.0);
-
-  // MaxMotion BS
-  public static final Angle armPositionTolerance = Degrees.of(2.0);
+  // Arm positions
+  public static final Angle armDeployedPosition = Degrees.of(37.0);
+  public static final Angle armRetractedPosition = Degrees.of(131.0);
+  public static final Angle armPositionTolerance = Degrees.of(1.0);
+  public static final Angle armPositionIntakeTolerance = Degrees.of(5.0);
 
   // Spinner voltage
   public static final Voltage spinnerIntakeVoltage = Volts.of(6.0);
