@@ -14,7 +14,9 @@ import static frc.robot.util.SparkUtil.*;
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
+import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.FeedbackSensor;
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
@@ -47,18 +49,38 @@ public class IntakeIOReal implements IntakeIO {
         .idleMode(IdleMode.kBrake)
         .smartCurrentLimit((int) armMotorCurrentLimit.in(Amps))
         .voltageCompensation(12.0)
-        .inverted(true);
+        .inverted(false);
+    armConfig
+        .encoder
+        .quadratureMeasurementPeriod(16)
+        .quadratureAverageDepth(4)
+        .positionConversionFactor(armInternalEncoderPositionFactor)
+        .velocityConversionFactor(armInternalEncoderVelocityFactor);
     armConfig
         .absoluteEncoder
         .positionConversionFactor(2.0 * Math.PI)
-        .velocityConversionFactor((2.0 * Math.PI) / 60.0)
-        .zeroOffset(globalEncoderOffset.in(Radians) / (2.0 * Math.PI));
+        .zeroOffset(globalEncoderOffset.in(Rotations))
+        .inverted(true);
     armConfig
         .closedLoop
-        .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
+        .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(armKp, 0.0, armKd)
         .positionWrappingEnabled(true)
         .positionWrappingInputRange(0, 2.0 * Math.PI);
+    armConfig
+        .closedLoop
+        .feedForward
+        .kV(armKv)
+        .kA(armKa)
+        .kS(armKs)
+        .kCos(armKg)
+        .kCosRatio(1.0 / (2.0 * Math.PI));
+    armConfig
+        .closedLoop
+        .maxMotion
+        .allowedProfileError(armPositionTolerance.in(Radians))
+        .cruiseVelocity(armCruiseVelocity.in(RadiansPerSecond))
+        .maxAcceleration(armMaxAcceleration.in(RadiansPerSecondPerSecond));
     armConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
@@ -74,6 +96,13 @@ public class IntakeIOReal implements IntakeIO {
         () ->
             armSpark.configure(
                 armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+    tryUntilOk(
+        armSpark,
+        5,
+        () -> {
+          double initialPos = armEncoder.getPosition();
+          return armSpark.getEncoder().setPosition(initialPos);
+        });
 
     // Configure spinner motor
     var spinnerConfig = new SparkMaxConfig();
@@ -126,11 +155,9 @@ public class IntakeIOReal implements IntakeIO {
   }
 
   @Override
-  public void setArmPosition(Angle angle, Voltage arbFeedforward) {
-    // armController.setSetpoint(
-    //     angle.in(Radians), ControlType.kPosition, ClosedLoopSlot.kSlot0,
-    // arbFeedforward.in(Volts));
-    armSpark.setVoltage(0.0);
+  public void setArmPosition(Angle angle) {
+    armController.setSetpoint(
+        angle.in(Radians), ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
   }
 
   @Override
