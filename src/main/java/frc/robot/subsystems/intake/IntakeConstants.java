@@ -56,6 +56,9 @@ public final class IntakeConstants {
   public static final Angle armDeployedPosition = Degrees.of(101.9);
   public static final Angle armRetractedPosition = Degrees.of(0.0);
 
+  // MaxMotion BS
+  public static final Angle armPositionTolerance = Degrees.of(2.0);
+
   // Spinner voltage
   public static final Voltage spinnerIntakeVoltage = Volts.of(6.0);
 }
