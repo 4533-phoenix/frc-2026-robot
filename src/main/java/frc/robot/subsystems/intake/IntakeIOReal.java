@@ -14,7 +14,9 @@ import static frc.robot.util.SparkUtil.*;
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
+import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.FeedbackSensor;
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
@@ -58,7 +60,11 @@ public class IntakeIOReal implements IntakeIO {
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
         .pid(armKp, 0.0, armKd)
         .positionWrappingEnabled(true)
-        .positionWrappingInputRange(0, 2.0 * Math.PI);
+        .positionWrappingInputRange(0, 2.0 * Math.PI)
+        .maxMotion
+        .allowedProfileError(armPositionTolerance.in(Radians))
+        .cruiseVelocity(armMaxVelocity.in(RadiansPerSecond))
+        .maxAcceleration(armMaxAcceleration.in(RadiansPerSecondPerSecond));
     armConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
@@ -126,11 +132,9 @@ public class IntakeIOReal implements IntakeIO {
   }
 
   @Override
-  public void setArmPosition(Angle angle, Voltage arbFeedforward) {
-    // armController.setSetpoint(
-    //     angle.in(Radians), ControlType.kPosition, ClosedLoopSlot.kSlot0,
-    // arbFeedforward.in(Volts));
-    armSpark.setVoltage(0.0);
+  public void setArmPosition(Angle angle) {
+    armController.setSetpoint(
+        angle.in(Radians), ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
   }
 
   @Override

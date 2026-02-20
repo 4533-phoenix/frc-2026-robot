@@ -24,11 +24,6 @@ public class IntakeCommands {
     return Commands.runOnce(intake::retract, intake);
   }
 
-  /** Stops the spinner and holds the arm at the retracted position. */
-  public static Command stop(Intake intake) {
-    return Commands.runOnce(intake::stop, intake);
-  }
-
   /** Continuously holds the intake at the retracted position. Useful as a default command. */
   public static Command holdRetracted(Intake intake) {
     return Commands.run(intake::retract, intake);

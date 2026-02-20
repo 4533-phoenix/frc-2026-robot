@@ -35,8 +35,8 @@ public interface IntakeIO {
   /** Updates the set of loggable inputs. */
   public default void updateInputs(IntakeIOInputs inputs) {}
 
-  /** Run the arm motor to the specified position with arbitrary feedforward. */
-  public default void setArmPosition(Angle angle, Voltage arbFeedforward) {}
+  /** Run the arm motor to the specified position. */
+  public default void setArmPosition(Angle angle) {}
 
   /** Run the spinner motor at the specified open loop voltage. */
   public default void setSpinnerVoltage(Voltage voltage) {}
