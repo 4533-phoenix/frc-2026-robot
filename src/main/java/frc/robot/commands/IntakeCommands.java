@@ -16,16 +16,23 @@ public class IntakeCommands {
 
   /** Deploys the intake and runs the spinner at intake voltage. */
   public static Command deploy(Intake intake) {
-    return Commands.run(intake::deploy, intake);
-  }
-
-  /** Retracts the intake and stops the spinner. */
-  public static Command retract(Intake intake) {
-    return Commands.runOnce(intake::retract, intake);
+    return Commands.runEnd(
+        () -> {
+          intake.deploy();
+          if (intake.armDeployed()) {
+            intake.intake();
+          }
+        },
+        intake::stopSpinner);
   }
 
   /** Continuously holds the intake at the retracted position. Useful as a default command. */
   public static Command holdRetracted(Intake intake) {
-    return Commands.run(intake::retract, intake);
+    return Commands.run(
+        () -> {
+          intake.retract();
+          intake.stopSpinner();
+        },
+        intake);
   }
 }

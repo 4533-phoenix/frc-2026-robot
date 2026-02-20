@@ -10,15 +10,16 @@ package frc.robot.subsystems.intake;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.intake.IntakeConstants.*;
 
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class Intake extends SubsystemBase {
   private final IntakeIO io;
   private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
+  private Angle currentTarget = null;
 
   private final Alert armDisconnectedAlert =
       new Alert("Intake arm motor disconnected", AlertType.kWarning);
@@ -40,18 +41,35 @@ public class Intake extends SubsystemBase {
 
   /** Deploy the intake arm and spin the rollers. */
   public void deploy() {
-    io.setArmPosition(armDeployedPosition);
-    io.setSpinnerVoltage(spinnerIntakeVoltage);
+    setSetpoint(armDeployedPosition);
   }
 
   /** Retract the intake arm and stop the rollers. */
   public void retract() {
-    io.setArmPosition(armRetractedPosition);
+    setSetpoint(armRetractedPosition);
+  }
+
+  private void setSetpoint(Angle newTarget) {
+    // Only send to IO if the target is actually different
+    if (currentTarget == null || !newTarget.equals(currentTarget)) {
+      io.setArmPosition(newTarget);
+      currentTarget = newTarget;
+    }
+  }
+
+  /** Spin the spinner */
+  public void intake() {
+    io.setSpinnerVoltage(spinnerIntakeVoltage);
+  }
+
+  /** Stop the spinner */
+  public void stopSpinner() {
     io.setSpinnerVoltage(Volts.of(0.0));
   }
 
-  @AutoLogOutput(key = "Intake/ArmPositionDeg")
-  public double getArmPositionDeg() {
-    return inputs.armPosition.in(Degrees);
+  /** Check if the intake arm is deployed */
+  public boolean armDeployed() {
+    return armDeployedPosition.minus(inputs.armPosition).abs(Degrees)
+        < armPositionIntakeTolerance.in(Degrees);
   }
 }
