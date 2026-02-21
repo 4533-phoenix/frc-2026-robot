@@ -168,7 +168,7 @@ public class RobotContainer {
 
     // Deploy intake and spin while A is held and set the default command to retract when released
     intake.setDefaultCommand(IntakeCommands.holdRetracted(intake));
-    controller.a().whileTrue(IntakeCommands.deploy(intake));
+    controller.leftBumper().whileTrue(IntakeCommands.deploy(intake));
 
     // Switch to X pattern when X button is pressed
     controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));

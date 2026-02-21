@@ -57,14 +57,19 @@ public class Intake extends SubsystemBase {
     }
   }
 
-  /** Spin the spinner */
+  /** Spin the spinner to intake */
   public void intake() {
-    io.setSpinnerVoltage(spinnerIntakeVoltage);
+    io.setSpinnerAngularVelocity(spinnerIntakeVelocity);
+  }
+
+  /** Spin the spinner to extake */
+  public void extake() {
+    io.setSpinnerAngularVelocity(spinnerExtakeVelocity);
   }
 
   /** Stop the spinner */
   public void stopSpinner() {
-    io.setSpinnerVoltage(Volts.of(0.0));
+    io.setSpinnerAngularVelocity(RadiansPerSecond.of(0.0));
   }
 
   /** Check if the intake arm is deployed */
