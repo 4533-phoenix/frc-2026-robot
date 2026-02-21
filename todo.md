@@ -7,3 +7,4 @@
 * need to add soft limits for revlib intake
 * need to make intake spinner velocity controlled
 * maybe verify hood setpoint vs flywheel setpoint
+* need to recalculate trapezoid profile for when arm is renabled and its not where it thinks it is?
