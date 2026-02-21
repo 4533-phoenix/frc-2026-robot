@@ -13,6 +13,7 @@ import static frc.robot.util.SparkUtil.*;
 
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.FeedbackSensor;
@@ -34,7 +35,7 @@ public class IntakeIOReal implements IntakeIO {
   private final AbsoluteEncoder armEncoder;
   private final SparkClosedLoopController armController;
 
-  private final AbsoluteEncoder spinnerEncoder;
+  private final RelativeEncoder spinnerEncoder;
   private final SparkClosedLoopController spinnerController;
 
   private final Debouncer armConnectedDebounce =
@@ -46,7 +47,7 @@ public class IntakeIOReal implements IntakeIO {
     armEncoder = armSpark.getAbsoluteEncoder();
     armController = armSpark.getClosedLoopController();
 
-    spinnerEncoder = spinnerSpark.getAbsoluteEncoder();
+    spinnerEncoder = spinnerSpark.getEncoder();
     spinnerController = spinnerSpark.getClosedLoopController();
 
     // Configure arm motor
@@ -168,10 +169,6 @@ public class IntakeIOReal implements IntakeIO {
 
     // Spinner motor
     sparkStickyFault = false;
-    ifOk(
-        spinnerSpark,
-        spinnerEncoder::getPosition,
-        (value) -> inputs.spinnerPosition = Radians.of(value));
     ifOk(
         spinnerSpark,
         spinnerEncoder::getVelocity,
