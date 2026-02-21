@@ -53,8 +53,9 @@ public final class IntakeConstants {
   // Arm positions
   public static final Angle armDeployedPosition = Degrees.of(37.0);
   public static final Angle armRetractedPosition = Degrees.of(131.0);
-  public static final Angle armPositionTolerance = Degrees.of(1.0);
+  public static final Angle armPositionPIDTolerance = Degrees.of(1.0);
   public static final Angle armPositionIntakeTolerance = Degrees.of(5.0);
+  public static final Angle armPositionSoftLimitTolerance = Degrees.of(5.0);
 
   // Spinner voltage
   public static final Voltage spinnerIntakeVoltage = Volts.of(6.0);
