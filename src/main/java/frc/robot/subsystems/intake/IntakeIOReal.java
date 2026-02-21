@@ -61,10 +61,7 @@ public class IntakeIOReal implements IntakeIO {
         .positionConversionFactor(2.0 * Math.PI)
         .zeroOffset(globalEncoderOffset.in(Rotations))
         .inverted(true);
-    armConfig
-        .closedLoop
-        .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        .pid(armKp, 0.0, armKd);
+    armConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(armKp, 0.0, armKd);
     armConfig
         .closedLoop
         .feedForward
