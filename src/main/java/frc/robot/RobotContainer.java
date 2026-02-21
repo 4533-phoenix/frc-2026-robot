@@ -190,7 +190,7 @@ public class RobotContainer {
     indexer.setDefaultCommand(Commands.run(() -> indexer.stopIndexer(), indexer));
 
     controller
-        .leftBumper()
+        .leftTrigger()
         .whileTrue(
             Commands.run(
                 () -> {
@@ -200,7 +200,7 @@ public class RobotContainer {
                 hood,
                 flywheel));
 
-    controller.rightBumper().whileTrue(Commands.run(() -> indexer.startIndexer(), indexer));
+    controller.rightTrigger().whileTrue(Commands.run(() -> indexer.runIndexer(), indexer));
   }
 
   /**
