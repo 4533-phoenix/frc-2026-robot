@@ -20,6 +20,7 @@ import org.littletonrobotics.junction.Logger;
 public class Flywheel extends SubsystemBase {
   private final FlywheelIO io;
   private final FlywheelIOInputsAutoLogged inputs = new FlywheelIOInputsAutoLogged();
+  private AngularVelocity angularVelocitySetpoint = RadiansPerSecond.of(0.0);
 
   private final Alert disconnectedAlert = new Alert("Flywheel IO disconnected", AlertType.kWarning);
 
@@ -35,12 +36,31 @@ public class Flywheel extends SubsystemBase {
   }
 
   public void setAngularVelocity(AngularVelocity velocity) {
+    angularVelocitySetpoint = velocity;
     io.setAngularVelocity(velocity);
   }
 
   public void setLinearVelocity(LinearVelocity velocity) {
     setAngularVelocity(
         RadiansPerSecond.of(velocity.in(MetersPerSecond) / flywheelWheelRadius.in(Meters)));
+  }
+
+  public AngularVelocity getAngularVelocity() {
+    return inputs.velocity;
+  }
+
+  public LinearVelocity getLinearVelocity() {
+    return MetersPerSecond.of(
+        inputs.velocity.in(RadiansPerSecond) * flywheelWheelRadius.in(Meters));
+  }
+
+  public AngularVelocity getAngularVelocitySetpoint() {
+    return angularVelocitySetpoint;
+  }
+
+  public boolean atSetpoint() {
+    return angularVelocitySetpoint.minus(inputs.velocity).abs(RadiansPerSecond)
+        <= flywheelAngularTolerance.in(RadiansPerSecond);
   }
 
   public void stop() {
