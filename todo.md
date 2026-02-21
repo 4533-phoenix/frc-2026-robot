@@ -6,3 +6,4 @@
 * Improve hood position simulation
 * need to add soft limits for revlib intake
 * need to make intake spinner velocity controlled
+* maybe verify hood setpoint vs flywheel setpoint
