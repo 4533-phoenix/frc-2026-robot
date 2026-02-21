@@ -64,9 +64,7 @@ public class IntakeIOReal implements IntakeIO {
     armConfig
         .closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        .pid(armKp, 0.0, armKd)
-        .positionWrappingEnabled(true)
-        .positionWrappingInputRange(0, 2.0 * Math.PI);
+        .pid(armKp, 0.0, armKd);
     armConfig
         .closedLoop
         .feedForward
@@ -78,7 +76,7 @@ public class IntakeIOReal implements IntakeIO {
     armConfig
         .closedLoop
         .maxMotion
-        .allowedProfileError(armPositionTolerance.in(Radians))
+        .allowedProfileError(armPositionPIDTolerance.in(Radians))
         .cruiseVelocity(armCruiseVelocity.in(RadiansPerSecond))
         .maxAcceleration(armMaxAcceleration.in(RadiansPerSecondPerSecond));
     armConfig
@@ -90,6 +88,12 @@ public class IntakeIOReal implements IntakeIO {
         .appliedOutputPeriodMs(50)
         .busVoltagePeriodMs(50)
         .outputCurrentPeriodMs(50);
+    armConfig
+        .softLimit
+        .forwardSoftLimitEnabled(true)
+        .forwardSoftLimit(armRetractedPosition.plus(armPositionSoftLimitTolerance).in(Radians))
+        .reverseSoftLimitEnabled(true)
+        .reverseSoftLimit(armDeployedPosition.minus(armPositionSoftLimitTolerance).in(Radians));
     tryUntilOk(
         armSpark,
         5,
