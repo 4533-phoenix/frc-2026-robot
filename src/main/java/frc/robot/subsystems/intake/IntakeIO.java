@@ -28,6 +28,8 @@ public interface IntakeIO {
 
     // Spinner motor
     public boolean spinnerConnected = false;
+    public Angle spinnerPosition = Radians.of(0.0);
+    public AngularVelocity spinnerVelocity = RadiansPerSecond.of(0.0);
     public Voltage spinnerAppliedVoltage = Volts.of(0.0);
     public Current spinnerAppliedCurrent = Amps.of(0.0);
   }
@@ -39,5 +41,5 @@ public interface IntakeIO {
   public default void setArmPosition(Angle angle) {}
 
   /** Run the spinner motor at the specified open loop voltage. */
-  public default void setSpinnerVoltage(Voltage voltage) {}
+  public default void setSpinnerAngularVelocity(AngularVelocity velocity) {}
 }
