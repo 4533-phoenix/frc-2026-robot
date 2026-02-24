@@ -41,22 +41,22 @@ public final class IntakeConstants {
   public static final Current spinnerMotorCurrentLimit = Amps.of(30);
 
   // Arm PID configuration
-  public static final double armKp = 0.0;
-  public static final double armKd = 0.0;
+  public static final double armKp = 0.05;
+  public static final double armKd = 0.1;
 
   // Arm Feedforward configuration
-  public static final double armKs = 0.0;
-  public static final double armKg = 0.0;
-  public static final double armKv = 0.0;
+  public static final double armKs = 0.1;
+  public static final double armKg = 0.1;
+  public static final double armKv = 1.9;
   public static final double armKa = 0.0;
 
   // Spinner PID configuration
-  public static final double spinnerKp = 0.0;
+  public static final double spinnerKp = 0.0075;
   public static final double spinnerKd = 0.0;
 
   // Spinner Feedforward configuration
-  public static final double spinnerKs = 0.4;
-  public static final double spinnerKv = 0.056;
+  public static final double spinnerKs = 0.0;
+  public static final double spinnerKv = 0.05125;
   public static final double spinnerKa = 0.0;
 
   // Arm Motion Profile Constraints
