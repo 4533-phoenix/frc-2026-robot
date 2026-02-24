@@ -6,3 +6,4 @@
 * need to make intake spinner velocity controlled (Dawson)
 * maybe verify hood setpoint vs flywheel setpoint (Dawson)
 * need to recalculate trapezoid profile for when arm is renabled and its not where it thinks it is? (Unasigned)
+* use bang-bang algorithm to control shooter instead of PIDF (Unasigned)
