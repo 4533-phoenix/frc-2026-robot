@@ -9,6 +9,24 @@ Welcome to the official repository for **FRC Team 4533 Phoenix's 2026 Robot Code
 
 Comprehensive documentation for this project is available at [FRC 2026 Robot Docs](https://4533-phoenix.github.io/frc-2026-robot/).
 
+## Vision System Overview
+
+Our robot uses a robust vision system to localize on the field with AprilTags and other camera-based methods.
+
+**How vision works:**
+
+- The robot code connects to a coprocessor running [chalkydri](https://github.com/chalkydri/chalkydri), a Rust-based vision solution developed by our team. Chalkydri processes camera feeds on the coprocessor (e.g., Raspberry Pi, Jetson) and sends vision measurements (poses, uncertainties, timestamps, tag detections) to the robot over the network.
+- On the robot, native C code (see `src/main/native/c/vision_server.c`) implements a fast, lock-free ring buffer and JNI interface for receiving vision data from the coprocessor. This C code packs observations and exposes them efficiently to the Java code.
+- The Java-side subsystem (`Vision.java`) reads these measurements, filters/tag-counts, and integrates them into the robot's pose estimator. If cameras or coprocessor communication is lost, the system issues alerts to the drivers.
+- All vision measurements are temporally aligned and uncertainty-weighted so robot pose is updated only with quality data.
+
+**Integration benefits:**
+- High reliability and speed via Rust and C for vision data ingestion
+- Modular: you can swap coprocessors or vision algorithms with minimal changes to robot code
+- All vision logs/status are recorded for debugging and performance analysis
+
+_For details on Chalkydri, visit the [project repository](https://github.com/chalkydri/chalkydri)._
+
 ## Team Website
 
 Learn more about **FRC Team 4533 Phoenix** by visiting our [official website](https://phoenix4533.org/).
