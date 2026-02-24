@@ -62,7 +62,7 @@ public class FlywheelIOTalonFX implements FlywheelIO {
 
   @Override
   public void setAngularVelocity(AngularVelocity velocity) {
-    talon.setControl(new VelocityVoltage(velocity.in(RadiansPerSecond) / (2.0 * Math.PI)));
+    talon.setControl(new VelocityVoltage(velocity.in(RotationsPerSecond)));
   }
 
   @Override
