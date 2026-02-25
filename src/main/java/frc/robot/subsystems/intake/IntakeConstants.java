@@ -13,7 +13,6 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Voltage;
 
 /** Hardware and tuning constants for the intake subsystem. */
 public final class IntakeConstants {
@@ -23,11 +22,16 @@ public final class IntakeConstants {
 
   // Gear ratio: 112 NEO rotations = 1 output shaft rotation
   public static final double armMotorReduction = 112.0;
+  public static final double spinnerMotorReduction = 2.13;
 
   // Encoder conversion factors
   public static final double armInternalEncoderPositionFactor = (2.0 * Math.PI) / armMotorReduction;
   public static final double armInternalEncoderVelocityFactor =
       ((2.0 * Math.PI) / 60.0) / armMotorReduction;
+  public static final double spinnerInternalEncoderPositionFactor =
+      (2.0 * Math.PI) / spinnerMotorReduction;
+  public static final double spinnerInternalEncoderVelocityFactor =
+      ((2.0 * Math.PI) / 60.0) / spinnerMotorReduction;
 
   // Global encoder offset
   public static final Angle globalEncoderOffset = Degrees.of(83.45);
@@ -46,6 +50,15 @@ public final class IntakeConstants {
   public static final double armKv = 1.9;
   public static final double armKa = 0.0;
 
+  // Spinner PID configuration
+  public static final double spinnerKp = 0.0075;
+  public static final double spinnerKd = 0.0;
+
+  // Spinner Feedforward configuration
+  public static final double spinnerKs = 0.0;
+  public static final double spinnerKv = 0.05125;
+  public static final double spinnerKa = 0.0;
+
   // Arm Motion Profile Constraints
   public static final AngularVelocity armCruiseVelocity = RadiansPerSecond.of(3.5);
   public static final AngularAcceleration armMaxAcceleration = RadiansPerSecondPerSecond.of(6.0);
@@ -57,6 +70,7 @@ public final class IntakeConstants {
   public static final Angle armPositionIntakeTolerance = Degrees.of(5.0);
   public static final Angle armPositionSoftLimitTolerance = Degrees.of(5.0);
 
-  // Spinner voltage
-  public static final Voltage spinnerIntakeVoltage = Volts.of(6.0);
+  // Spinner velocities
+  public static final AngularVelocity spinnerIntakeVelocity = RadiansPerSecond.of(35.0);
+  public static final AngularVelocity spinnerExtakeVelocity = RadiansPerSecond.of(-15.0);
 }
