@@ -71,6 +71,6 @@ public final class IntakeConstants {
   public static final Angle armPositionSoftLimitTolerance = Degrees.of(5.0);
 
   // Spinner velocities
-  public static final AngularVelocity spinnerIntakeVelocity = RadiansPerSecond.of(0.1);
+  public static final AngularVelocity spinnerIntakeVelocity = RadiansPerSecond.of(35.0);
   public static final AngularVelocity spinnerExtakeVelocity = RadiansPerSecond.of(-15.0);
 }
