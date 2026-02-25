@@ -5,10 +5,10 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-package frc.robot.subsystems.shooter.indexer;
+package frc.robot.subsystems.indexer;
 
 import static edu.wpi.first.units.Units.*;
-import static frc.robot.subsystems.shooter.ShooterConstants.*;
+import static frc.robot.subsystems.indexer.IndexerConstants.*;
 import static frc.robot.util.SparkUtil.*;
 
 import com.revrobotics.PersistMode;

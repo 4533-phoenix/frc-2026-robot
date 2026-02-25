@@ -31,21 +31,21 @@ import frc.robot.subsystems.drive.GyroIODual;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSpark;
+import frc.robot.subsystems.indexer.Indexer;
+import frc.robot.subsystems.indexer.IndexerIO;
+import frc.robot.subsystems.indexer.IndexerIOSim;
+import frc.robot.subsystems.indexer.IndexerIOSpark;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOReal;
-import frc.robot.subsystems.shooter.flywheel.Flywheel;
+import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterState;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOTalonFX;
-import frc.robot.subsystems.shooter.hood.Hood;
 import frc.robot.subsystems.shooter.hood.HoodIO;
 import frc.robot.subsystems.shooter.hood.HoodIOServo;
 import frc.robot.subsystems.shooter.hood.HoodIOSim;
-import frc.robot.subsystems.shooter.indexer.Indexer;
-import frc.robot.subsystems.shooter.indexer.IndexerIO;
-import frc.robot.subsystems.shooter.indexer.IndexerIOSim;
-import frc.robot.subsystems.shooter.indexer.IndexerIOSpark;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOChalkydri;
@@ -62,8 +62,7 @@ public class RobotContainer {
   private final Drive drive;
   private final Climb climb;
   private final Intake intake;
-  private final Flywheel flywheel;
-  private final Hood hood;
+  private final Shooter shooter;
   private final Indexer indexer;
   private final Vision vision;
 
@@ -87,8 +86,7 @@ public class RobotContainer {
                 new ModuleIOSpark(3));
         climb = new Climb(new ClimbIO() {});
         intake = new Intake(new IntakeIOReal());
-        flywheel = new Flywheel(new FlywheelIOTalonFX());
-        hood = new Hood(new HoodIOServo());
+        shooter = new Shooter(new FlywheelIOTalonFX(), new HoodIOServo());
         indexer = new Indexer(new IndexerIOSpark());
         vision = new Vision(new VisionIOChalkydri(), drive);
         break;
@@ -104,8 +102,7 @@ public class RobotContainer {
                 new ModuleIOSim());
         climb = new Climb(new ClimbIOSim());
         intake = new Intake(new IntakeIO() {});
-        flywheel = new Flywheel(new FlywheelIOSim());
-        hood = new Hood(new HoodIOSim());
+        shooter = new Shooter(new FlywheelIOSim(), new HoodIOSim());
         indexer = new Indexer(new IndexerIOSim());
         vision = new Vision(new VisionIO() {}, drive);
         break;
@@ -121,8 +118,7 @@ public class RobotContainer {
                 new ModuleIO() {});
         climb = new Climb(new ClimbIO() {});
         intake = new Intake(new IntakeIO() {});
-        flywheel = new Flywheel(new FlywheelIO() {});
-        hood = new Hood(new HoodIO() {});
+        shooter = new Shooter(new FlywheelIO() {}, new HoodIO() {});
         indexer = new Indexer(new IndexerIO() {});
         vision = new Vision(new VisionIO() {}, drive);
         break;
@@ -185,8 +181,7 @@ public class RobotContainer {
                 .ignoringDisable(true));
 
     // Shooter Controls
-    hood.setDefaultCommand(Commands.run(() -> hood.retract(), hood));
-    flywheel.setDefaultCommand(Commands.run(() -> flywheel.stop(), flywheel));
+    shooter.setDefaultCommand(Commands.run(() -> shooter.stop(), shooter));
     indexer.setDefaultCommand(Commands.run(() -> indexer.stopIndexer(), indexer));
 
     controller
@@ -194,11 +189,10 @@ public class RobotContainer {
         .whileTrue(
             Commands.run(
                 () -> {
-                  hood.setHoodAngle(Degrees.of(45));
-                  flywheel.setAngularVelocity(RotationsPerSecond.of(100));
+                  shooter.setTargetState(
+                      new ShooterState(RotationsPerSecond.of(100), Degrees.of(45)));
                 },
-                hood,
-                flywheel));
+                shooter));
 
     controller.rightTrigger().whileTrue(Commands.run(() -> indexer.runIndexer(), indexer));
   }
