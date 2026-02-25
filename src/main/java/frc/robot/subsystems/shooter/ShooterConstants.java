@@ -23,6 +23,8 @@ public final class ShooterConstants {
   public static final Distance groundLinkDistance = Inches.of(7.521);
   public static final Angle crankTangentToLaunchAngle = Degrees.of(12.875);
   public static final Angle mechanismTotalAngle = Degrees.of(149.007);
+  public static final Angle incomingBallAngle = Degrees.of(85.0); // TODO: Need to get from cad?
+  public static final Distance launchHeight = Inches.of(28.0); // TODO: Need to get from cad?
 
   // Servo limits and velocity for hood
   public static final Distance servoMinLength = Inches.of(6.925);

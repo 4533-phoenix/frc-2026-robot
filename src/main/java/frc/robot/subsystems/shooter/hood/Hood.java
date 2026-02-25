@@ -30,18 +30,28 @@ public class Hood extends SubsystemBase {
     Logger.processInputs("Shooter/Hood", inputs);
   }
 
-  private static Distance convertLaunchAngleToServoLength(Angle launchAngle) {
-    // 1. Convert Launch Angle (0-90) to the Plate's angle relative to horizon
-    // If launch is 77.125, plate is 90.0 (vertical)
-    Angle plateAngle = launchAngle.plus(crankTangentToLaunchAngle);
+  /**
+   * Converts the desired launch angle (relative to horizontal) to the servo length,
+   * accounting for the ball reflecting off the hood.
+   *
+   * The hood plate angle is set to (desired_launch_angle + incoming_angle) / 2.
+   *
+   * @param desiredLaunchAngle The angle you want the ball to leave at (deg from horizontal)
+   * @return Servo length in Inches
+   */
+  private static Distance convertLaunchAngleToServoLength(Angle desiredLaunchAngle) {
+    // Calculate the required hood plate angle
+    Angle plateAngle = Degrees.of(
+      (desiredLaunchAngle.in(Degrees) + incomingBallAngle.in(Degrees)) / 2.0
+    );
 
-    // 2. Calculate the required internal triangle angle (Theta)
-    // Because extending the servo pushes the plate DOWN, the relationship is
-    // inverse:
-    // As plateAngle decreases (towards horizon), internalTheta must increase.
-    Angle internalTheta = mechanismTotalAngle.minus(plateAngle);
+    // Add mechanical offset if needed
+    Angle plateAngleWithOffset = plateAngle.plus(crankTangentToLaunchAngle);
 
-    // 3. Law of Cosines to solve for required servo length (Side c)
+    // Calculate the required internal triangle angle (Theta)
+    Angle internalTheta = mechanismTotalAngle.minus(plateAngleWithOffset);
+
+    // Law of Cosines to solve for required servo length (Side c)
     double a = groundLinkDistance.in(Inches);
     double b = crankArmLength.in(Inches);
     double cosTheta = Math.cos(internalTheta.in(Radians));
@@ -49,7 +59,7 @@ public class Hood extends SubsystemBase {
     double servoLengthSquared = (a * a) + (b * b) - (2 * a * b * cosTheta);
     double servoLength = Math.sqrt(Math.max(0, servoLengthSquared));
 
-    // 4. Clamp to valid range (100-200 duty cycle would be: 100 + (position * 100))
+    // Clamp to valid range
     return Inches.of(
         MathUtil.clamp(servoLength, servoMinLength.in(Inches), servoMaxLength.in(Inches)));
   }
