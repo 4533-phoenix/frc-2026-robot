@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems.climb;
 
+import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.subsystems.climb.ClimbConstants.*;
 
 import edu.wpi.first.wpilibj.Alert;
@@ -28,54 +29,33 @@ public class Climb extends SubsystemBase {
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Climb", inputs);
-    disconnectedAlert.set(!(inputs.liftConnected || inputs.rotateConnected));
+    disconnectedAlert.set(!inputs.connected);
   }
 
   @Override
   public void simulationPeriodic() {}
 
   public void startLiftUp() {
-    io.setLiftOpenLoop(defaultLiftVoltage);
+    io.setLiftVoltage(defaultLiftVoltage);
   }
 
   public void startLiftDown() {
-    io.setLiftOpenLoop(-defaultLiftVoltage);
+    io.setLiftVoltage(defaultLiftVoltage.unaryMinus());
   }
 
   public void stopLift() {
-    io.setLiftOpenLoop(0.0);
-  }
-
-  public void startRotateForward() {
-    io.setRotateOpenLoop(defaultRotateVoltage);
-  }
-
-  public void startRotateReverse() {
-    io.setRotateOpenLoop(-defaultRotateVoltage);
-  }
-
-  public void stopRotate() {
-    io.setRotateOpenLoop(0.0);
+    io.setLiftVoltage(Volts.of(0.0));
   }
 
   public void stop() {
     stopLift();
-    stopRotate();
   }
 
   public boolean liftUpperLimit() {
-    return inputs.liftUpperLimit || !inputs.liftConnected;
+    return inputs.upperLimit || !inputs.connected;
   }
 
   public boolean liftLowerLimit() {
-    return inputs.liftLowerLimit || !inputs.liftConnected;
-  }
-
-  public boolean rotateForwardLimit() {
-    return inputs.rotateMaxLimit || !inputs.rotateConnected;
-  }
-
-  public boolean rotateReverseLimit() {
-    return inputs.rotateMinLimit || !inputs.rotateConnected;
+    return inputs.lowerLimit || !inputs.connected;
   }
 }
