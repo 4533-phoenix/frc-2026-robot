@@ -30,28 +30,14 @@ public class Hood extends SubsystemBase {
     Logger.processInputs("Shooter/Hood", inputs);
   }
 
-  /**
-   * Converts the desired launch angle (relative to horizontal) to the servo length,
-   * accounting for the ball reflecting off the hood.
-   *
-   * The hood plate angle is set to (desired_launch_angle + incoming_angle) / 2.
-   *
-   * @param desiredLaunchAngle The angle you want the ball to leave at (deg from horizontal)
-   * @return Servo length in Inches
-   */
-  private static Distance convertLaunchAngleToServoLength(Angle desiredLaunchAngle) {
-    // Calculate the required hood plate angle
-    Angle plateAngle = Degrees.of(
-      (desiredLaunchAngle.in(Degrees) + incomingBallAngle.in(Degrees)) / 2.0
-    );
+  private static Distance convertHoodAngleToServoLength(Angle hoodAngle) {
+    // Convert Hood Angle (0-90) to the Plate's angle relative to horizon
+    Angle plateAngle = hoodAngle.plus(crankTangentToLaunchAngle);
 
-    // Add mechanical offset if needed
-    Angle plateAngleWithOffset = plateAngle.plus(crankTangentToLaunchAngle);
+    // Calculate the required internal triangle angle
+    Angle internalTheta = mechanismTotalAngle.minus(plateAngle);
 
-    // Calculate the required internal triangle angle (Theta)
-    Angle internalTheta = mechanismTotalAngle.minus(plateAngleWithOffset);
-
-    // Law of Cosines to solve for required servo length (Side c)
+    // Solve for required servo length
     double a = groundLinkDistance.in(Inches);
     double b = crankArmLength.in(Inches);
     double cosTheta = Math.cos(internalTheta.in(Radians));
@@ -64,15 +50,15 @@ public class Hood extends SubsystemBase {
         MathUtil.clamp(servoLength, servoMinLength.in(Inches), servoMaxLength.in(Inches)));
   }
 
-  public void setLaunchAngle(Angle angle) {
-    io.setLength(convertLaunchAngleToServoLength(angle));
+  public void setHoodAngle(Angle angle) {
+    io.setLength(convertHoodAngleToServoLength(angle));
   }
 
   public void retract() {
     io.setLength(servoMinLength);
   }
 
-  public boolean isAtSetpoint() {
+  public boolean atSetpoint() {
     return inputs.atSetpoint;
   }
 }
