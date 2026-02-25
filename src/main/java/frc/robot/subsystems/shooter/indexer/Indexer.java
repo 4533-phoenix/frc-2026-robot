@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems.shooter.indexer;
 
+import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
 import edu.wpi.first.wpilibj.Alert;
@@ -36,6 +37,6 @@ public class Indexer extends SubsystemBase {
   }
 
   public void stopIndexer() {
-    io.setVoltage(indexerOffVoltage);
+    io.setVoltage(Volts.of(0.0));
   }
 }
