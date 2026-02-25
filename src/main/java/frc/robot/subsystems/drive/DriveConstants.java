@@ -64,8 +64,8 @@ public class DriveConstants {
   public static final int backRightEncoderCanId = 13;
 
   // Drive motor configuration
-  public static final int driveMotorCurrentLimit = 40;
-  public static final int driveMotorSecondaryCurrentLimit = 80;
+  public static final Current driveMotorCurrentLimit = Amps.of(40);
+  public static final Current driveMotorSecondaryCurrentLimit = Amps.of(80);
   public static final Distance wheelRadius = Inches.of(1.5);
   public static final double driveMotorReduction = 6.75; // Random BS values we got from somewhere
   public static final DCMotor driveGearbox = DCMotor.getNEO(1);
@@ -118,7 +118,7 @@ public class DriveConstants {
               maxLinearVelocity.in(MetersPerSecond),
               wheelCOF,
               driveGearbox.withReduction(driveMotorReduction),
-              driveMotorCurrentLimit,
+              driveMotorCurrentLimit.in(Amps),
               1),
           moduleTranslations);
 }

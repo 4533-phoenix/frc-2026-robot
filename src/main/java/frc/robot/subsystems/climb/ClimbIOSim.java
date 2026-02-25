@@ -7,59 +7,42 @@
 
 package frc.robot.subsystems.climb;
 
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.subsystems.climb.ClimbConstants.*;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
 public class ClimbIOSim implements ClimbIO {
   private final DCMotorSim liftSim;
-  private final DCMotorSim rotateSim;
 
-  private double liftAppliedVolts = 0.0;
-  private double rotateAppliedVolts = 0.0;
+  private Voltage appliedVoltage = Volts.of(0.0);
 
   public ClimbIOSim() {
     liftSim =
         new DCMotorSim(LinearSystemId.createDCMotorSystem(liftGearbox, 0.02, 1.0), liftGearbox);
-    rotateSim =
-        new DCMotorSim(
-            LinearSystemId.createDCMotorSystem(rotateGearbox, 0.004, 1.0), rotateGearbox);
   }
 
   @Override
   public void updateInputs(ClimbIOInputs inputs) {
-    liftSim.setInputVoltage(MathUtil.clamp(liftAppliedVolts, -12.0, 12.0));
-    rotateSim.setInputVoltage(MathUtil.clamp(rotateAppliedVolts, -12.0, 12.0));
+    liftSim.setInputVoltage(MathUtil.clamp(appliedVoltage.in(Volts), -12.0, 12.0));
     liftSim.update(0.02);
-    rotateSim.update(0.02);
 
-    inputs.liftConnected = true;
-    inputs.liftAppliedVolts = liftAppliedVolts;
-    inputs.liftCurrentAmps = Math.abs(liftSim.getCurrentDrawAmps());
+    inputs.connected = true;
+    inputs.appliedVoltage = appliedVoltage;
+    inputs.appliedCurrent = Amps.of(Math.abs(liftSim.getCurrentDrawAmps()));
 
-    inputs.rotateConnected = true;
-    inputs.rotateAppliedVolts = rotateAppliedVolts;
-    inputs.rotateCurrentAmps = Math.abs(rotateSim.getCurrentDrawAmps());
-
-    inputs.liftLowerLimit =
-        liftAppliedVolts < 0.0 && Math.abs(liftSim.getAngularPositionRad()) > 10.0;
-    inputs.liftUpperLimit =
-        liftAppliedVolts > 0.0 && Math.abs(liftSim.getAngularPositionRad()) > 10.0;
-    inputs.rotateMinLimit =
-        rotateAppliedVolts < 0.0 && Math.abs(rotateSim.getAngularPositionRad()) > 10.0;
-    inputs.rotateMaxLimit =
-        rotateAppliedVolts > 0.0 && Math.abs(rotateSim.getAngularPositionRad()) > 10.0;
+    inputs.lowerLimit =
+        appliedVoltage.lt(Volts.of(0.0)) && Math.abs(liftSim.getAngularPositionRad()) > 10.0;
+    inputs.upperLimit =
+        appliedVoltage.gt(Volts.of(0.0)) && Math.abs(liftSim.getAngularPositionRad()) > 10.0;
   }
 
   @Override
-  public void setLiftOpenLoop(double volts) {
-    liftAppliedVolts = volts;
-  }
-
-  @Override
-  public void setRotateOpenLoop(double volts) {
-    rotateAppliedVolts = volts;
+  public void setLiftVoltage(Voltage voltage) {
+    appliedVoltage = voltage;
   }
 }

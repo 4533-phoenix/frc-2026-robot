@@ -13,6 +13,13 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.*;
 
 public final class ShooterConstants {
+  // ---------- Ball constants ----------
+  public static final Distance ballDiameter = Inches.of(5.91);
+  public static final Mass ballMass = Grams.of(215.0);
+  public static final MomentOfInertia ballMomentOfInertia = KilogramSquareMeters.of(4.84e-4);
+  public static final double ballCOR = 0.58;
+  public static final double ballSurfaceFriction = 1.0;
+
   // Hardware IDs
   public static final int flywheelMotorId = 18;
   public static final int indexerMotorId = 17;
@@ -23,6 +30,8 @@ public final class ShooterConstants {
   public static final Distance groundLinkDistance = Inches.of(7.521);
   public static final Angle crankTangentToLaunchAngle = Degrees.of(12.875);
   public static final Angle mechanismTotalAngle = Degrees.of(149.007);
+  public static final Angle incomingBallAngle = Degrees.of(85.0); // TODO: Need to get from cad?
+  public static final Distance launchHeight = Inches.of(28.0); // TODO: Need to get from cad?
 
   // Servo limits and velocity for hood
   public static final Distance servoMinLength = Inches.of(6.925);
@@ -51,9 +60,8 @@ public final class ShooterConstants {
 
   // ---------- Indexer constants ----------
   public static final DCMotor indexerGearbox = DCMotor.getNeo550(1);
-  public static final double indexerReduction = 1.0;
+  public static final double indexerReduction = 1.0; // TODO: Is this correct?
   public static final MomentOfInertia indexerMOI = KilogramSquareMeters.of(0.0005);
   public static final Current indexerMotorCurrentLimit = Amps.of(20.0);
-  public static final Voltage indexerOnVoltage = Volts.of(3.0);
-  public static final Voltage indexerOffVoltage = Volts.of(0.0);
+  public static final Voltage indexerOnVoltage = Volts.of(12.0);
 }
