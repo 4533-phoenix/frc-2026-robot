@@ -7,6 +7,10 @@
 
 package frc.robot.subsystems.climb;
 
+import static edu.wpi.first.units.Units.*;
+
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 import org.littletonrobotics.junction.AutoLog;
 
 /** IO interface for the climb hardware. */
@@ -14,28 +18,18 @@ public interface ClimbIO {
   @AutoLog
   public static class ClimbIOInputs {
     // Lift mechanism
-    public boolean liftConnected = false;
-    public double liftAppliedVolts = 0.0;
-    public double liftCurrentAmps = 0.0;
-
-    // Rotate mechanism
-    public boolean rotateConnected = false;
-    public double rotateAppliedVolts = 0.0;
-    public double rotateCurrentAmps = 0.0;
+    public boolean connected = false;
+    public Voltage appliedVoltage = Volts.of(0.0);
+    public Current appliedCurrent = Amps.of(0.0);
 
     // Limit switches
-    public boolean liftLowerLimit = false;
-    public boolean liftUpperLimit = false;
-    public boolean rotateMinLimit = false;
-    public boolean rotateMaxLimit = false;
+    public boolean lowerLimit = false;
+    public boolean upperLimit = false;
   }
 
   /** Updates the set of loggable inputs. */
   public default void updateInputs(ClimbIOInputs inputs) {}
 
-  /** Run the lift motors at the specified open loop voltage. */
-  public default void setLiftOpenLoop(double volts) {}
-
-  /** Run the rotate motors at the specified open loop voltage. */
-  public default void setRotateOpenLoop(double volts) {}
+  /** Run the lift motors at the specified voltage. */
+  public default void setLiftVoltage(Voltage voltage) {}
 }

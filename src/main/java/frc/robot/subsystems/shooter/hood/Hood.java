@@ -30,18 +30,14 @@ public class Hood extends SubsystemBase {
     Logger.processInputs("Shooter/Hood", inputs);
   }
 
-  private static Distance convertLaunchAngleToServoLength(Angle launchAngle) {
-    // 1. Convert Launch Angle (0-90) to the Plate's angle relative to horizon
-    // If launch is 77.125, plate is 90.0 (vertical)
-    Angle plateAngle = launchAngle.plus(crankTangentToLaunchAngle);
+  private static Distance convertHoodAngleToServoLength(Angle hoodAngle) {
+    // Convert Hood Angle (0-90) to the Plate's angle relative to horizon
+    Angle plateAngle = hoodAngle.plus(crankTangentToLaunchAngle);
 
-    // 2. Calculate the required internal triangle angle (Theta)
-    // Because extending the servo pushes the plate DOWN, the relationship is
-    // inverse:
-    // As plateAngle decreases (towards horizon), internalTheta must increase.
+    // Calculate the required internal triangle angle
     Angle internalTheta = mechanismTotalAngle.minus(plateAngle);
 
-    // 3. Law of Cosines to solve for required servo length (Side c)
+    // Solve for required servo length
     double a = groundLinkDistance.in(Inches);
     double b = crankArmLength.in(Inches);
     double cosTheta = Math.cos(internalTheta.in(Radians));
@@ -49,20 +45,20 @@ public class Hood extends SubsystemBase {
     double servoLengthSquared = (a * a) + (b * b) - (2 * a * b * cosTheta);
     double servoLength = Math.sqrt(Math.max(0, servoLengthSquared));
 
-    // 4. Clamp to valid range (100-200 duty cycle would be: 100 + (position * 100))
+    // Clamp to valid range
     return Inches.of(
         MathUtil.clamp(servoLength, servoMinLength.in(Inches), servoMaxLength.in(Inches)));
   }
 
-  public void setLaunchAngle(Angle angle) {
-    io.setLength(convertLaunchAngleToServoLength(angle));
+  public void setHoodAngle(Angle angle) {
+    io.setLength(convertHoodAngleToServoLength(angle));
   }
 
   public void retract() {
     io.setLength(servoMinLength);
   }
 
-  public boolean isAtSetpoint() {
+  public boolean atSetpoint() {
     return inputs.atSetpoint;
   }
 }

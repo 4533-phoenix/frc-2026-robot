@@ -111,8 +111,8 @@ public class ModuleIOSpark implements ModuleIO {
     var driveConfig = new SparkMaxConfig();
     driveConfig
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit(driveMotorCurrentLimit)
-        .secondaryCurrentLimit(driveMotorSecondaryCurrentLimit)
+        .smartCurrentLimit((int) driveMotorCurrentLimit.in(Amps))
+        .secondaryCurrentLimit((int) driveMotorSecondaryCurrentLimit.in(Amps))
         .voltageCompensation(12.0);
     driveConfig
         .encoder

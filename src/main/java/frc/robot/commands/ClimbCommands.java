@@ -16,16 +16,4 @@ public class ClimbCommands {
         Commands.runEnd(climb::startLiftDown, climb::stopLift, climb),
         Commands.waitUntil(climb::liftLowerLimit));
   }
-
-  public static Command rotateForward(Climb climb) {
-    return Commands.race(
-        Commands.runEnd(climb::startRotateForward, climb::stopRotate, climb),
-        Commands.waitUntil(climb::rotateForwardLimit));
-  }
-
-  public static Command rotateReverse(Climb climb) {
-    return Commands.race(
-        Commands.runEnd(climb::startRotateReverse, climb::stopRotate, climb),
-        Commands.waitUntil(climb::rotateReverseLimit));
-  }
 }
