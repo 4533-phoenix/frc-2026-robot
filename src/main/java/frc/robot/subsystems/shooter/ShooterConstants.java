@@ -22,7 +22,6 @@ public final class ShooterConstants {
 
   // Hardware IDs
   public static final int flywheelMotorId = 18;
-  public static final int indexerMotorId = 17;
   public static final int hoodServoChannel = 0;
 
   // ---------- Hood geometry & motion ----------
@@ -57,11 +56,4 @@ public final class ShooterConstants {
   // Allowed flywheel velocity range (operator control)
   public static final AngularVelocity flywheelMinRps = RotationsPerSecond.of(0.0);
   public static final AngularVelocity flywheelMaxRps = RotationsPerSecond.of(100.0);
-
-  // ---------- Indexer constants ----------
-  public static final DCMotor indexerGearbox = DCMotor.getNeo550(1);
-  public static final double indexerReduction = 1.0; // TODO: Is this correct?
-  public static final MomentOfInertia indexerMOI = KilogramSquareMeters.of(0.0005);
-  public static final Current indexerMotorCurrentLimit = Amps.of(20.0);
-  public static final Voltage indexerOnVoltage = Volts.of(12.0);
 }
