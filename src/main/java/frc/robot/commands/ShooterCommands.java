@@ -12,16 +12,11 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.shooter.Shooter;
 
 public class ShooterCommands {
-  
+
   private ShooterCommands() {}
 
-  /** 
-   * Continuously ensures the shooter is stopped. Useful as a default command. 
-   */
+  /** Continuously ensures the shooter is stopped. Useful as a default command. */
   public static Command stopShooter(Shooter shooter) {
-    return Commands.run(
-        shooter::stop, 
-        shooter
-    );
+    return Commands.run(shooter::stop, shooter);
   }
 }
