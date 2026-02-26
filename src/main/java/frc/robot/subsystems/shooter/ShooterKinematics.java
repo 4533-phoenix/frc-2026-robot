@@ -21,15 +21,11 @@ public class ShooterKinematics {
     hoodMap.put(5.0, 65.0);
   }
 
-  /**
-   * Calculates the optimal Shooter State for a given distance to the speaker.
-   */
+  /** Calculates the optimal Shooter State for a given distance to the speaker. */
   public static ShooterState calculateShooterState(Distance distanceToTarget) {
     double distMeters = distanceToTarget.in(Meters);
 
     return new ShooterState(
-        RotationsPerSecond.of(flywheelMap.get(distMeters)),
-        Degrees.of(hoodMap.get(distMeters))
-    );
+        RotationsPerSecond.of(flywheelMap.get(distMeters)), Degrees.of(hoodMap.get(distMeters)));
   }
 }
