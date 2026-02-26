@@ -19,8 +19,9 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.IndexerCommands;
 import frc.robot.commands.IntakeCommands;
-import frc.robot.commands.RobotCommands;
+import frc.robot.commands.ShooterCommands;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.climb.ClimbIO;
 import frc.robot.subsystems.climb.ClimbIOSim;
@@ -177,28 +178,14 @@ public class RobotContainer {
                 .ignoringDisable(true));
 
     // Shooter Controls
-    shooter.setDefaultCommand(Commands.run(() -> shooter.stop(), shooter));
-    indexer.setDefaultCommand(Commands.run(() -> indexer.stopIndexer(), indexer));
+    shooter.setDefaultCommand(ShooterCommands.stopShooter(shooter));
+    indexer.setDefaultCommand(IndexerCommands.stopIndexer(indexer));
 
-    controller.leftTrigger().whileTrue(RobotCommands.getAutoAimCommand(drive, shooter, controller));
+    controller.leftTrigger().whileTrue(Superstructure.getAutoAimCommand(drive, shooter, controller));
 
-    controller
-        .rightTrigger()
-        .whileTrue(
-            Commands.run(
-                () -> {
-                  Rotation2d targetAngle = RobotCommands.getTargetRotation(drive);
-                  boolean driveReady =
-                      drive.isAlignedWithTarget(targetAngle, Rotation2d.fromDegrees(2.0));
-                  boolean shooterReady = shooter.isReadyToShoot();
-
-                  if (driveReady && shooterReady) {
-                    indexer.runIndexer();
-                  } else {
-                    indexer.stopIndexer();
-                  }
-                },
-                indexer));
+    controller.rightTrigger()
+        .and(Superstructure.isReadyToFire(drive, shooter))
+        .whileTrue(IndexerCommands.runIndexer(indexer));
   }
 
   /**

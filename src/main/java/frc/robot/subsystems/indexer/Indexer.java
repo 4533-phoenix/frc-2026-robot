@@ -32,11 +32,11 @@ public class Indexer extends SubsystemBase {
     disconnectedAlert.set(!inputs.connected);
   }
 
-  public void runIndexer() {
+  public void run() {
     io.setVoltage(indexerOnVoltage);
   }
 
-  public void stopIndexer() {
+  public void stop() {
     io.setVoltage(Volts.of(0.0));
   }
 }
