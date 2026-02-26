@@ -181,9 +181,12 @@ public class RobotContainer {
     shooter.setDefaultCommand(ShooterCommands.stopShooter(shooter));
     indexer.setDefaultCommand(IndexerCommands.stopIndexer(indexer));
 
-    controller.leftTrigger().whileTrue(Superstructure.getAutoAimCommand(drive, shooter, controller));
+    controller
+        .leftTrigger()
+        .whileTrue(Superstructure.getAutoAimCommand(drive, shooter, controller));
 
-    controller.rightTrigger()
+    controller
+        .rightTrigger()
         .and(Superstructure.isReadyToFire(drive, shooter))
         .whileTrue(IndexerCommands.runIndexer(indexer));
   }
