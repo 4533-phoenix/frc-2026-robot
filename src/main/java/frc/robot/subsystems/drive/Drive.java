@@ -320,4 +320,8 @@ public class Drive extends SubsystemBase {
   public AngularVelocity getMaxAngularVelocity() {
     return RadiansPerSecond.of(maxLinearVelocity.in(MetersPerSecond) / driveBaseRadius.in(Meters));
   }
+
+  public boolean isAlignedWithTarget(Rotation2d targetAngle, Rotation2d tolerance) {
+    return Math.abs(getRotation().minus(targetAngle).getRadians()) < tolerance.getRadians();
+  }
 }

@@ -9,8 +9,6 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.*;
-
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -22,6 +20,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.IntakeCommands;
+import frc.robot.commands.RobotCommands;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.climb.ClimbIO;
 import frc.robot.subsystems.climb.ClimbIOSim;
@@ -39,7 +38,6 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOReal;
 import frc.robot.subsystems.shooter.Shooter;
-import frc.robot.subsystems.shooter.ShooterState;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOTalonFX;
@@ -162,12 +160,10 @@ public class RobotContainer {
             () -> -controller.getLeftX(),
             () -> -controller.getRightX()));
 
-    // Deploy intake and spin while A is held and set the default command to retract when released
+    // Deploy intake and spin while A is held and set the default command to retract
+    // when released
     intake.setDefaultCommand(IntakeCommands.holdRetracted(intake));
     controller.leftBumper().whileTrue(IntakeCommands.deploy(intake));
-
-    // Switch to X pattern when X button is pressed
-    controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
 
     // Reset gyro to 0° when B button is pressed
     controller
@@ -184,17 +180,25 @@ public class RobotContainer {
     shooter.setDefaultCommand(Commands.run(() -> shooter.stop(), shooter));
     indexer.setDefaultCommand(Commands.run(() -> indexer.stopIndexer(), indexer));
 
+    controller.leftTrigger().whileTrue(RobotCommands.getAutoAimCommand(drive, shooter, controller));
+
     controller
-        .leftTrigger()
+        .rightTrigger()
         .whileTrue(
             Commands.run(
                 () -> {
-                  shooter.setTargetState(
-                      new ShooterState(RotationsPerSecond.of(100), Degrees.of(45)));
-                },
-                shooter));
+                  Rotation2d targetAngle = RobotCommands.getTargetRotation(drive);
+                  boolean driveReady =
+                      drive.isAlignedWithTarget(targetAngle, Rotation2d.fromDegrees(2.0));
+                  boolean shooterReady = shooter.isReadyToShoot();
 
-    controller.rightTrigger().whileTrue(Commands.run(() -> indexer.runIndexer(), indexer));
+                  if (driveReady && shooterReady) {
+                    indexer.runIndexer();
+                  } else {
+                    indexer.stopIndexer();
+                  }
+                },
+                indexer));
   }
 
   /**
