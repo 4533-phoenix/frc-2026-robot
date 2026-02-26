@@ -31,6 +31,10 @@ import frc.robot.subsystems.drive.GyroIODual;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSpark;
+import frc.robot.subsystems.indexer.Indexer;
+import frc.robot.subsystems.indexer.IndexerIO;
+import frc.robot.subsystems.indexer.IndexerIOSim;
+import frc.robot.subsystems.indexer.IndexerIOSpark;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOReal;
@@ -42,10 +46,6 @@ import frc.robot.subsystems.shooter.hood.Hood;
 import frc.robot.subsystems.shooter.hood.HoodIO;
 import frc.robot.subsystems.shooter.hood.HoodIOServo;
 import frc.robot.subsystems.shooter.hood.HoodIOSim;
-import frc.robot.subsystems.shooter.indexer.Indexer;
-import frc.robot.subsystems.shooter.indexer.IndexerIO;
-import frc.robot.subsystems.shooter.indexer.IndexerIOSim;
-import frc.robot.subsystems.shooter.indexer.IndexerIOSpark;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOChalkydri;
@@ -194,7 +194,7 @@ public class RobotContainer {
         .whileTrue(
             Commands.run(
                 () -> {
-                  hood.setLaunchAngle(Degrees.of(45));
+                  hood.setHoodAngle(Degrees.of(45));
                   flywheel.setAngularVelocity(RotationsPerSecond.of(100));
                 },
                 hood,
