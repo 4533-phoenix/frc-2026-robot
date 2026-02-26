@@ -13,8 +13,6 @@ import static frc.robot.subsystems.indexer.IndexerConstants.*;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.shooter.indexer.IndexerIOInputsAutoLogged;
-
 import org.littletonrobotics.junction.Logger;
 
 public class Indexer extends SubsystemBase {
