@@ -13,6 +13,7 @@ import static frc.robot.util.SparkUtil.*;
 
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.FeedbackSensor;
@@ -24,7 +25,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.units.measure.AngularVelocity;
 import java.util.function.DoubleSupplier;
 
 public class IntakeIOReal implements IntakeIO {
@@ -33,6 +34,9 @@ public class IntakeIOReal implements IntakeIO {
 
   private final AbsoluteEncoder armEncoder;
   private final SparkClosedLoopController armController;
+
+  private final RelativeEncoder spinnerEncoder;
+  private final SparkClosedLoopController spinnerController;
 
   private final Debouncer armConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
@@ -43,6 +47,9 @@ public class IntakeIOReal implements IntakeIO {
     armEncoder = armSpark.getAbsoluteEncoder();
     armController = armSpark.getClosedLoopController();
 
+    spinnerEncoder = spinnerSpark.getEncoder();
+    spinnerController = spinnerSpark.getClosedLoopController();
+
     // Configure arm motor
     var armConfig = new SparkMaxConfig();
     armConfig
@@ -52,8 +59,6 @@ public class IntakeIOReal implements IntakeIO {
         .inverted(false);
     armConfig
         .encoder
-        .quadratureMeasurementPeriod(16)
-        .quadratureAverageDepth(4)
         .positionConversionFactor(armInternalEncoderPositionFactor)
         .velocityConversionFactor(armInternalEncoderVelocityFactor);
     armConfig
@@ -108,12 +113,25 @@ public class IntakeIOReal implements IntakeIO {
     // Configure spinner motor
     var spinnerConfig = new SparkMaxConfig();
     spinnerConfig
-        .idleMode(IdleMode.kCoast)
+        .idleMode(IdleMode.kBrake)
         .smartCurrentLimit((int) spinnerMotorCurrentLimit.in(Amps))
         .voltageCompensation(12.0)
         .inverted(true);
     spinnerConfig
+        .encoder
+        .positionConversionFactor(spinnerInternalEncoderPositionFactor)
+        .velocityConversionFactor(spinnerInternalEncoderVelocityFactor);
+    spinnerConfig
+        .closedLoop
+        .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+        .pid(spinnerKp, 0.0, spinnerKd);
+    spinnerConfig.closedLoop.feedForward.kV(spinnerKv).kA(spinnerKa).kS(spinnerKs);
+    spinnerConfig
         .signals
+        .primaryEncoderPositionAlwaysOn(true)
+        .primaryEncoderPositionPeriodMs(20)
+        .primaryEncoderVelocityAlwaysOn(true)
+        .primaryEncoderVelocityPeriodMs(20)
         .appliedOutputPeriodMs(50)
         .busVoltagePeriodMs(50)
         .outputCurrentPeriodMs(50);
@@ -123,6 +141,13 @@ public class IntakeIOReal implements IntakeIO {
         () ->
             spinnerSpark.configure(
                 spinnerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+    tryUntilOk(
+        spinnerSpark,
+        5,
+        () -> {
+          double initialPos = spinnerEncoder.getPosition();
+          return spinnerSpark.getEncoder().setPosition(initialPos);
+        });
   }
 
   @Override
@@ -146,6 +171,10 @@ public class IntakeIOReal implements IntakeIO {
     sparkStickyFault = false;
     ifOk(
         spinnerSpark,
+        spinnerEncoder::getVelocity,
+        (value) -> inputs.spinnerVelocity = RadiansPerSecond.of(value));
+    ifOk(
+        spinnerSpark,
         new DoubleSupplier[] {spinnerSpark::getAppliedOutput, spinnerSpark::getBusVoltage},
         (values) -> inputs.spinnerAppliedVoltage = Volts.of(values[0] * values[1]));
     ifOk(
@@ -162,7 +191,8 @@ public class IntakeIOReal implements IntakeIO {
   }
 
   @Override
-  public void setSpinnerVoltage(Voltage voltage) {
-    spinnerSpark.setVoltage(voltage.in(Volts));
+  public void setSpinnerAngularVelocity(AngularVelocity velocity) {
+    spinnerController.setSetpoint(
+        velocity.in(RadiansPerSecond), ControlType.kVelocity, ClosedLoopSlot.kSlot0);
   }
 }
