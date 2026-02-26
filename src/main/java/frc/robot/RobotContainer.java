@@ -194,7 +194,7 @@ public class RobotContainer {
         .whileTrue(
             Commands.run(
                 () -> {
-                  hood.setLaunchAngle(Degrees.of(45));
+                  hood.setHoodAngle(Degrees.of(45));
                   flywheel.setAngularVelocity(RotationsPerSecond.of(100));
                 },
                 hood,
