@@ -24,6 +24,7 @@ public class Shooter extends SubsystemBase {
   private final HoodIOInputsAutoLogged hoodInputs = new HoodIOInputsAutoLogged();
 
   private AngularVelocity targetVelocity = RadiansPerSecond.of(0.0);
+  private boolean isShooting = false;
 
   private final Alert flywheelDisconnectedAlert =
       new Alert("Flywheel IO disconnected", AlertType.kWarning);
@@ -48,6 +49,7 @@ public class Shooter extends SubsystemBase {
     targetVelocity = state.flywheelSpeed();
     flywheelIO.setAngularVelocity(state.flywheelSpeed());
     hoodIO.setLength(convertHoodAngleToServoLength(state.hoodAngle()));
+    isShooting = true;
   }
 
   /** Converts the desired Hood Angle to Servo Length based on the physical mechanism. */
@@ -73,12 +75,13 @@ public class Shooter extends SubsystemBase {
     boolean flywheelReady = Math.abs(errorRps) <= flywheelAngularTolerance.in(RadiansPerSecond);
     boolean hoodReady = hoodInputs.atSetpoint;
 
-    return flywheelReady && hoodReady;
+    return flywheelReady && hoodReady && isShooting;
   }
 
   /** Safely stops the flywheels. */
   public void stop() {
     targetVelocity = RadiansPerSecond.of(0.0);
     flywheelIO.stop();
+    isShooting = false;
   }
 }
