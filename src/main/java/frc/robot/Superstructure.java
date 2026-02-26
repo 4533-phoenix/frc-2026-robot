@@ -48,7 +48,6 @@ public class Superstructure {
             () -> -controller.getLeftX(),
             () -> Superstructure.getTargetRotation(drive)),
 
-        // 2. SHOOTER: Update RPM and Hood based on distance
         Commands.run(
             () -> {
               Translation2d targetTranslation = Util.flipAllianceIfNeeded(Constants.hubPosition);
