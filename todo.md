@@ -7,4 +7,6 @@
 * maybe verify hood setpoint vs flywheel setpoint (Dawson)
 * need to recalculate trapezoid profile for when arm is renabled and its not where it thinks it is? (Unasigned)
 * use bang-bang algorithm to control shooter instead of PIDF (Unasigned)
-* Add limits to what the launch angle can be set to
+* Add limits to what the launch angle can be set to (Unasigned)
+* Need to not cancel original drive command and instead inject angle (Unasigned)
+* Make the auto shoot auto ready (Unasigned)
