@@ -292,5 +292,5 @@ spotless {
 }
 
 javadoc {
-    options.stylesheetFile = new File(projectDir, "style.css")
+    options.stylesheetFile = file("https://github.com/4533-phoenix/javadoc-style/raw/refs/heads/main/style.css")
 }
