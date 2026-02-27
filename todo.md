@@ -12,3 +12,5 @@
 * Need to add lobbing mode over the center (Unasigned)
 * Need to make sure we are not creating objects in loops for rects? (Unasigned)
 * Documentation!!?!?!!
+* Why is measured velocities always lower than commmanded on swerve?
+* Make sure shooter tolerance is good (Otherwise fix sim)

@@ -19,7 +19,7 @@ public class VisionIOChalkydri implements VisionIO {
 
   public VisionIOChalkydri() {
     vision = Whacknet.getInstance();
-    vision.start(SERVER_PORT);
+    vision.start(serverPort);
   }
 
   @Override

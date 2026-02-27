@@ -52,6 +52,7 @@ import frc.robot.subsystems.shooter.hood.HoodIOSim;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOChalkydri;
+import frc.robot.subsystems.vision.VisionIOSim;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -108,7 +109,7 @@ public class RobotContainer {
         intake = new Intake(new IntakeIOSim());
         shooter = new Shooter(new FlywheelIOSim(), new HoodIOSim());
         indexer = new Indexer(new IndexerIOSim());
-        vision = new Vision(new VisionIO() {}, drive);
+        vision = new Vision(new VisionIOSim(drive::getPose), drive);
         break;
 
       default:

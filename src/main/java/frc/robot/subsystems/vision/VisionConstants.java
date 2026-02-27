@@ -7,15 +7,15 @@
 
 package frc.robot.subsystems.vision;
 
+import edu.wpi.first.math.geometry.Transform2d;
 import java.util.Map;
 
 public class VisionConstants {
-  /** Map of Camera IDs (from C) to Human Readable Names */
-  public static final Map<Integer, String> CAMERA_MAP = Map.of(1, "TestCamera");
+  public record CameraConfig(
+      String name, Transform2d robotToCamera, double fovDegrees, double maxRangeMeters) {}
 
-  /** Time in seconds before we consider a camera offline */
-  public static final double OFFLINE_TIMEOUT_SECONDS = 1.0;
-
-  /** What port the vision server listens on */
-  public static final int SERVER_PORT = 7001;
+  public static final Map<Integer, CameraConfig> cameraMap =
+      Map.of(1, new CameraConfig("TestCamera", Transform2d.kZero, 90.0, 10.0));
+  public static final double offlineTimeoutSeconds = 1.0;
+  public static final int serverPort = 7001;
 }
