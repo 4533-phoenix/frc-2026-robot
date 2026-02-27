@@ -58,9 +58,7 @@ public class FlywheelIOSim implements FlywheelIO {
       appliedVoltage =
           Volts.of(
               MathUtil.clamp(
-                  pid.calculate(currentRps, setpointRps) + ff.calculate(setpointRps), 
-                  -12.0, 
-                  12.0));
+                  pid.calculate(currentRps, setpointRps) + ff.calculate(setpointRps), -12.0, 12.0));
     }
 
     // Apply voltage to the physics simulation and update state over the time step (dt)
@@ -87,9 +85,7 @@ public class FlywheelIOSim implements FlywheelIO {
     pid.reset(); // Reset PID state to avoid integral windup on change
   }
 
-  /**
-   * Stops the flywheel motor by setting voltage to zero and disabling closed-loop control.
-   */
+  /** Stops the flywheel motor by setting voltage to zero and disabling closed-loop control. */
   @Override
   public void stop() {
     closedLoop = false;

@@ -24,8 +24,8 @@ import edu.wpi.first.wpilibj.RobotBase;
  */
 public final class Constants {
   /**
-   * The mode to use when running in simulation. Change to {@link Mode#REPLAY} to read from a
-   * log file instead of simulating physics.
+   * The mode to use when running in simulation. Change to {@link Mode#REPLAY} to read from a log
+   * file instead of simulating physics.
    */
   public static final Mode simMode = Mode.SIM;
 
@@ -63,7 +63,5 @@ public final class Constants {
   /** The area on the field where the robot is permitted to lob game pieces. */
   public static final Rectangle2d lobbingZone =
       new Rectangle2d(
-          new Pose2d(fieldLength.div(2.0), fieldWidth.div(2.0), null), 
-          Meters.of(6.07), 
-          fieldWidth);
+          new Pose2d(fieldLength.div(2.0), fieldWidth.div(2.0), null), Meters.of(6.07), fieldWidth);
 }

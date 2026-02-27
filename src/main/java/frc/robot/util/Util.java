@@ -101,7 +101,8 @@ public class Util {
    * @return The flipped translation.
    */
   public static Translation2d flipAlliance(Translation2d translation) {
-    return new Translation2d(Constants.fieldLength.minus(translation.getMeasureX()), translation.getMeasureY());
+    return new Translation2d(
+        Constants.fieldLength.minus(translation.getMeasureX()), translation.getMeasureY());
   }
 
   /**

@@ -18,9 +18,9 @@ import org.littletonrobotics.junction.AutoLog;
 /**
  * IO interface for the intake hardware abstraction.
  *
- * <p>This interface allows for interchangeable intake hardware (e.g., NEO, TalonFX)
- * and comprehensive simulation support by standardizing how the intake arm position
- * and spinner velocity are set and monitored.
+ * <p>This interface allows for interchangeable intake hardware (e.g., NEO, TalonFX) and
+ * comprehensive simulation support by standardizing how the intake arm position and spinner
+ * velocity are set and monitored.
  */
 public interface IntakeIO {
   /** Contains all of the inputs received from the intake hardware. */

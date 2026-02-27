@@ -16,9 +16,8 @@ import org.littletonrobotics.junction.AutoLog;
 /**
  * Interface for the shooter hood subsystem input/output abstraction.
  *
- * <p>This interface allows for interchangeable hood hardware (e.g., servo-driven linkage)
- * and comprehensive simulation support by standardizing how hood position is retrieved and
- * set.
+ * <p>This interface allows for interchangeable hood hardware (e.g., servo-driven linkage) and
+ * comprehensive simulation support by standardizing how hood position is retrieved and set.
  */
 public interface HoodIO {
   /** Contains all of the inputs received from the hood hardware. */
@@ -46,9 +45,7 @@ public interface HoodIO {
    */
   public default void setLength(Distance length) {}
 
-  /**
-   * Retracts the hood mechanism to its minimum length (default state).
-   */
+  /** Retracts the hood mechanism to its minimum length (default state). */
   public default void retract() {
     setLength(servoMinLength);
   }

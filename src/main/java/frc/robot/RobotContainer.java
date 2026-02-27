@@ -179,7 +179,7 @@ public class RobotContainer {
 
     // Intake remains retracted by default
     intake.setDefaultCommand(IntakeCommands.holdRetracted(intake));
-    
+
     // Shooter and indexer stop by default
     shooter.setDefaultCommand(ShooterCommands.stopShooter(shooter));
     indexer.setDefaultCommand(IndexerCommands.stopIndexer(indexer));

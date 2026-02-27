@@ -27,11 +27,11 @@ import frc.robot.subsystems.shooter.ShooterKinematics;
 import frc.robot.util.Util;
 
 /**
- * The Superstructure class manages complex interactions between subsystems that depend on
- * holistic field state, robot pose, or match time.
+ * The Superstructure class manages complex interactions between subsystems that depend on holistic
+ * field state, robot pose, or match time.
  *
- * <p>It provides Triggers for conditional command execution and Commands for automated
- * aiming and alliance-specific logic.
+ * <p>It provides Triggers for conditional command execution and Commands for automated aiming and
+ * alliance-specific logic.
  */
 public class Superstructure {
   /**
@@ -46,8 +46,8 @@ public class Superstructure {
   }
 
   /**
-   * Creates a trigger that activates when the robot is aligned with the target and the
-   * shooter is up to speed.
+   * Creates a trigger that activates when the robot is aligned with the target and the shooter is
+   * up to speed.
    *
    * @param drive The drive subsystem.
    * @param shooter The shooter subsystem.
@@ -153,8 +153,8 @@ public class Superstructure {
   }
 
   /**
-   * Creates a command that automatically rotates the robot to face the target while
-   * allowing for teleop translation, and concurrently aims the shooter.
+   * Creates a command that automatically rotates the robot to face the target while allowing for
+   * teleop translation, and concurrently aims the shooter.
    *
    * @param drive The drive subsystem.
    * @param shooter The shooter subsystem.
@@ -173,8 +173,8 @@ public class Superstructure {
   }
 
   /**
-   * Creates a command to constantly update the shooter target state based on the
-   * robot's distance from the target.
+   * Creates a command to constantly update the shooter target state based on the robot's distance
+   * from the target.
    *
    * @param drive The drive subsystem.
    * @param shooter The shooter subsystem.

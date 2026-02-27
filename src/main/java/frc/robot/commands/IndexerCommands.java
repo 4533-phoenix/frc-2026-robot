@@ -14,8 +14,8 @@ import frc.robot.subsystems.indexer.Indexer;
 /**
  * Factory class for creating commands related to the indexer subsystem.
  *
- * <p>Provides methods to control the conveyor rollers that transport game pieces
- * from the intake to the shooter.
+ * <p>Provides methods to control the conveyor rollers that transport game pieces from the intake to
+ * the shooter.
  */
 public class IndexerCommands {
 

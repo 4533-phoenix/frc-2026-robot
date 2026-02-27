@@ -26,8 +26,8 @@ import edu.wpi.first.units.measure.Voltage;
 /**
  * Real IO implementation for the shooter flywheel using a TalonFX motor controller (Falcon 500).
  *
- * <p>This implementation configures the motor for velocity closed-loop control and optimizes
- * CAN bus utilization by setting specific update frequencies for status signals.
+ * <p>This implementation configures the motor for velocity closed-loop control and optimizes CAN
+ * bus utilization by setting specific update frequencies for status signals.
  */
 public class FlywheelIOTalonFX implements FlywheelIO {
   private final TalonFX talon = new TalonFX(flywheelMotorId);
@@ -38,19 +38,17 @@ public class FlywheelIOTalonFX implements FlywheelIO {
   private final StatusSignal<Voltage> appliedVolts = talon.getMotorVoltage();
   private final StatusSignal<Current> current = talon.getStatorCurrent();
 
-  /**
-   * Creates a new FlywheelIOTalonFX and configures the motor controller.
-   */
+  /** Creates a new FlywheelIOTalonFX and configures the motor controller. */
   public FlywheelIOTalonFX() {
     var config = new TalonFXConfiguration();
     // Configure motor direction and neutral behavior (Coast for flywheels)
     config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
     config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
-    
+
     // Set current limits to protect the motor
     config.CurrentLimits.StatorCurrentLimit = flywheelMotorCurrentLimit.in(Amps);
     config.CurrentLimits.StatorCurrentLimitEnable = true;
-    
+
     // Configure PID gains for closed-loop velocity control
     config.Slot0.kP = flywheelKp;
     config.Slot0.kI = flywheelKi;
@@ -95,9 +93,7 @@ public class FlywheelIOTalonFX implements FlywheelIO {
     talon.setControl(new VelocityVoltage(velocity.in(RotationsPerSecond)));
   }
 
-  /**
-   * Stops the flywheel motor by setting voltage output to zero.
-   */
+  /** Stops the flywheel motor by setting voltage output to zero. */
   @Override
   public void stop() {
     talon.setControl(new VoltageOut(0));

@@ -19,8 +19,8 @@ import org.littletonrobotics.junction.Logger;
 /**
  * Subsystem for controlling the robot's intake mechanism.
  *
- * <p>Responsible for deploying/retracting the intake arm and controlling the rollers to
- * pull in or push out game pieces.
+ * <p>Responsible for deploying/retracting the intake arm and controlling the rollers to pull in or
+ * push out game pieces.
  */
 public class Intake extends SubsystemBase {
   private final IntakeIO io;

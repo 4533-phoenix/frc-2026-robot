@@ -26,14 +26,11 @@ public class VisionConstants {
    * @param maxRangeMeters The maximum distance the camera can reliably detect AprilTags.
    */
   public record CameraConfig(
-      String name, 
-      Transform2d robotToCamera, 
-      double fovDegrees, 
-      double maxRangeMeters) {}
+      String name, Transform2d robotToCamera, double fovDegrees, double maxRangeMeters) {}
 
   /**
-   * Map of Camera ID to its configuration. IDs should match those used in the native
-   * vision pipeline.
+   * Map of Camera ID to its configuration. IDs should match those used in the native vision
+   * pipeline.
    */
   public static final Map<Integer, CameraConfig> cameraMap =
       Map.of(1, new CameraConfig("TestCamera", Transform2d.kZero, 90.0, 10.0));
