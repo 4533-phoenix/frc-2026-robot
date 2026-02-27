@@ -24,24 +24,35 @@ import edu.wpi.first.units.measure.Voltage;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
-// TODO: Need to verify how spark max limits work
-
+/**
+ * Real IO implementation for the climb subsystem using a Spark Max motor controller.
+ *
+ * <p>This implementation configures the Spark Max, monitors physical limit switches connected
+ * directly to the controller, and implements software limits to prevent driving past the mechanism
+ * limits.
+ */
 public class ClimbIOReal implements ClimbIO {
   private final SparkMax spark = new SparkMax(liftMotorCanId, MotorType.kBrushed);
 
+  // References to the limit switches directly connected to the Spark Max
   private final SparkLimitSwitch upperLimit = spark.getForwardLimitSwitch();
   private final SparkLimitSwitch lowerLimit = spark.getReverseLimitSwitch();
 
+  // Debouncer to prevent rapidly toggling connection status
   private final Debouncer liftConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
+  /** Creates a new ClimbIOReal and configures the Spark Max. */
   public ClimbIOReal() {
     var liftCfg = new SparkMaxConfig();
     liftCfg
         .idleMode(IdleMode.kBrake)
         .smartCurrentLimit((int) liftMotorCurrentLimit.in(Amps))
         .voltageCompensation(12.0);
+    // Configure signal update rates for logging
     liftCfg.signals.appliedOutputPeriodMs(20).busVoltagePeriodMs(20).outputCurrentPeriodMs(20);
+
+    // Attempt to configure the Spark Max, retrying if necessary
     tryUntilOk(
         5,
         () ->
@@ -49,15 +60,20 @@ public class ClimbIOReal implements ClimbIO {
                 liftCfg, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
   }
 
+  /** Updates hardware inputs, monitors connectivity, and reads limit switch states. */
   @Override
   public void updateInputs(ClimbIOInputs inputs) {
     boolean sparkOk = true;
+
+    // Safely retrieve telemetry from the motor controller
     sparkOk &=
         ifOk(
             spark,
             new DoubleSupplier[] {spark::getAppliedOutput, spark::getBusVoltage},
             (vals) -> inputs.appliedVoltage = Volts.of(vals[0] * vals[1]));
     sparkOk &= ifOk(spark, spark::getOutputCurrent, (v) -> inputs.appliedCurrent = Amps.of(v));
+
+    // Safely retrieve limit switch states
     sparkOk &=
         ifOk(
             spark,
@@ -66,13 +82,23 @@ public class ClimbIOReal implements ClimbIO {
               inputs.upperLimit = vals[0];
               inputs.lowerLimit = vals[1];
             });
+
+    // Debounce the connection status to ensure stability
     inputs.connected = liftConnectedDebounce.calculate(sparkOk);
   }
 
+  /**
+   * Sets the lift motor voltage, enforcing limit switch safety checks.
+   *
+   * @param voltage The requested voltage to apply.
+   */
   @Override
   public void setLiftVoltage(Voltage voltage) {
-    boolean atUpper = !upperLimit.isPressed();
-    boolean atLower = !lowerLimit.isPressed();
+    // Assuming normally open switches, we stop if the switch is closed.
+    boolean atUpper = upperLimit.isPressed();
+    boolean atLower = lowerLimit.isPressed();
+
+    // Stop the motor if trying to move past a limit switch
     if ((voltage.gt(Volts.of(0.0)) && atUpper) || (voltage.lt(Volts.of(0.0)) && atLower)) {
       spark.setVoltage(0.0);
     } else {

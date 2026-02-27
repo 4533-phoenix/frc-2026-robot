@@ -39,6 +39,14 @@ import frc.robot.subsystems.drive.SparkOdometryThread;
 import java.util.Queue;
 import java.util.function.DoubleSupplier;
 
+/**
+ * Real IO implementation for a swerve drive module using Spark Max motor controllers and a CANcoder
+ * for absolute positioning.
+ *
+ * <p>This implementation configures CAN devices, registers high-frequency signals with the {@link
+ * SparkOdometryThread}, and handles drift compensation between the absolute encoder and the
+ * internal motor encoder.
+ */
 public class ModuleIOSpark implements ModuleIO {
   private final Rotation2d zeroRotation;
   private Rotation2d currentTurnPosition = new Rotation2d();
@@ -54,16 +62,25 @@ public class ModuleIOSpark implements ModuleIO {
   private final SparkClosedLoopController driveController;
   private final SparkClosedLoopController turnController;
 
+  // Queues for high-frequency data from the asynchronous thread
   private final Queue<Double> timestampQueue;
   private final Queue<Double> drivePositionQueue;
   private final Queue<Double> turnPositionQueue;
 
+  // Debouncers for connectivity monitoring
   private final Debouncer driveConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
   private final Debouncer turnConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
+  /**
+   * Creates a new ModuleIOSpark.
+   *
+   * @param module The module index (0 for front-left, 1 for front-right, 2 for back-left, 3 for
+   *     back-right).
+   */
   public ModuleIOSpark(int module) {
+    // Determine the zero offset for this specific module
     zeroRotation =
         switch (module) {
           case 0 -> frontLeftZeroRotation;
@@ -72,6 +89,7 @@ public class ModuleIOSpark implements ModuleIO {
           case 3 -> backRightZeroRotation;
           default -> Rotation2d.kZero;
         };
+    // Initialize Spark Max controllers and CANcoder based on module index
     driveSpark =
         new SparkMax(
             switch (module) {
@@ -109,6 +127,7 @@ public class ModuleIOSpark implements ModuleIO {
     turnAbsolutePositionSignal = turnEncoder.getPosition();
     turnVelocitySignal = turnEncoder.getVelocity();
 
+    // Configure Drive Spark Max
     var driveConfig = new SparkMaxConfig();
     driveConfig
         .idleMode(IdleMode.kBrake)
@@ -125,6 +144,7 @@ public class ModuleIOSpark implements ModuleIO {
         .closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(driveKp, 0.0, driveKd);
+    // Configure signal update rates for logging and odometry
     driveConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
@@ -141,6 +161,7 @@ public class ModuleIOSpark implements ModuleIO {
                 driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
     tryUntilOk(5, () -> driveEncoder.setPosition(0.0));
 
+    // Configure CANcoder
     var turnEncoderConfig = new CANcoderConfiguration();
     turnEncoderConfig.MagnetSensor.MagnetOffset = 0.0;
     turnEncoderConfig.MagnetSensor.SensorDirection =
@@ -151,6 +172,7 @@ public class ModuleIOSpark implements ModuleIO {
     turnAbsolutePositionSignal.setUpdateFrequency(odometryFrequency);
     turnVelocitySignal.setUpdateFrequency(50);
 
+    // Configure Turn Spark Max
     var turnConfig = new SparkMaxConfig();
     turnConfig
         .inverted(turnInverted)
@@ -182,6 +204,7 @@ public class ModuleIOSpark implements ModuleIO {
             turnSpark.configure(
                 turnConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
 
+    // Sync internal turn encoder with CANcoder absolute position on startup
     tryUntilOk(
         5,
         () -> {
@@ -197,6 +220,7 @@ public class ModuleIOSpark implements ModuleIO {
           }
         });
 
+    // Register signals with the asynchronous odometry thread
     timestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
     drivePositionQueue =
         SparkOdometryThread.getInstance().registerSignal(driveSpark, driveEncoder::getPosition);
@@ -208,9 +232,10 @@ public class ModuleIOSpark implements ModuleIO {
                         * turnEncoderPositionFactor);
   }
 
+  /** Updates hardware inputs, monitors connectivity, and manages turn encoder drift. */
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
-    // Drive Motor
+    // Drive Motor Inputs
     boolean driveOk = true;
     driveOk &=
         ifOk(
@@ -235,17 +260,19 @@ public class ModuleIOSpark implements ModuleIO {
 
     inputs.driveConnected = driveConnectedDebounce.calculate(driveOk);
 
-    // Turn Encoder
+    // Turn Encoder Inputs
     BaseStatusSignal.refreshAll(turnAbsolutePositionSignal, turnVelocitySignal);
     boolean turnCoderOk = turnAbsolutePositionSignal.getStatus().isOK();
 
     if (turnCoderOk) {
+      // Calculate position relative to the zero offset
       currentTurnPosition =
           new Rotation2d(turnAbsolutePositionSignal.getValueAsDouble() * turnEncoderPositionFactor)
               .minus(zeroRotation);
       inputs.turnVelocity =
           RadiansPerSecond.of(turnVelocitySignal.getValueAsDouble() * turnEncoderVelocityFactor);
 
+      // Drift Compensation: Sync internal encoder to CANcoder if still and error is high
       double internalPos = turnInternalEncoder.getPosition();
       double absolutePos = currentTurnPosition.getRadians();
       double turnError = Math.abs(internalPos - absolutePos);
@@ -262,7 +289,7 @@ public class ModuleIOSpark implements ModuleIO {
     }
     inputs.turnPosition = Radians.of(currentTurnPosition.getRadians());
 
-    // Turn Motor
+    // Turn Motor Inputs
     boolean turnSparkOk = true;
     turnSparkOk &=
         ifOk(
@@ -272,11 +299,11 @@ public class ModuleIOSpark implements ModuleIO {
     turnSparkOk &=
         ifOk(
             turnSpark, turnSpark::getOutputCurrent, (value) -> inputs.turnCurrent = Amps.of(value));
-    inputs.turnConnected =
-        turnConnectedDebounce.calculate(
-            turnSparkOk && turnCoderOk); // TODO: Separate motor and encoder connectivity?
 
-    // High-Frequency Queues
+    // TODO: Separate motor and encoder connectivity status
+    inputs.turnConnected = turnConnectedDebounce.calculate(turnSparkOk && turnCoderOk);
+
+    // High-Frequency Queues: Empty queues into the inputs object for odometry processing
     int count = timestampQueue.size();
     inputs.odometryTimestamps = new double[count];
     inputs.odometryDrivePositionsRad = new double[count];
@@ -297,6 +324,7 @@ public class ModuleIOSpark implements ModuleIO {
       inputs.odometryTurnPositions[i++] = new Rotation2d(position).minus(zeroRotation);
     }
 
+    // Clear queues to ensure data is only processed once
     timestampQueue.clear();
     drivePositionQueue.clear();
     turnPositionQueue.clear();
@@ -314,9 +342,11 @@ public class ModuleIOSpark implements ModuleIO {
 
   @Override
   public void setDriveVelocity(AngularVelocity velocity) {
+    // Calculate Feedforward voltage based on velocity
     double ffVolts =
         driveKs * Math.signum(velocity.in(RadiansPerSecond))
             + driveKv * velocity.in(RadiansPerSecond);
+    // Use closed-loop velocity control with feedforward
     driveController.setSetpoint(
         velocity.in(RadiansPerSecond),
         ControlType.kVelocity,
@@ -327,6 +357,7 @@ public class ModuleIOSpark implements ModuleIO {
 
   @Override
   public void setTurnPosition(Angle rotation) {
+    // Use closed-loop position control
     turnController.setSetpoint(rotation.in(Radians), ControlType.kPosition, ClosedLoopSlot.kSlot0);
   }
 }

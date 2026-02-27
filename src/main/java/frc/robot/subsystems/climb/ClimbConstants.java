@@ -14,14 +14,22 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.util.ExtraMotors;
 
-/** Hardware and tuning constants for the climb subsystem. */
+/**
+ * Hardware and tuning constants for the climb subsystem.
+ *
+ * <p>Contains CAN IDs, current limits, and gearbox models for the climb mechanism.
+ */
 public final class ClimbConstants {
   // CAN IDs
+  /** CAN ID for the lift mechanism motor. */
   public static final int liftMotorCanId = 19;
 
   // Motor and current limits
+  /** Maximum current limit for the lift motor to prevent thermal damage. */
   public static final Current liftMotorCurrentLimit = Amps.of(30);
+  /** The gearbox model for the lift motor (e.g., AndyMark Snow Blower). */
   public static final DCMotor liftGearbox = ExtraMotors.getSnowBlower(1);
 
+  /** Default voltage used for lifting and lowering the mechanism. */
   public static final Voltage defaultLiftVoltage = Volts.of(6.0);
 }

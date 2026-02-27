@@ -14,15 +14,44 @@ import static edu.wpi.first.units.Units.*;
 import edu.wpi.first.units.measure.*;
 import org.littletonrobotics.junction.AutoLog;
 
+/**
+ * Interface for the gyroscope input/output abstraction.
+ *
+ * <p>This interface allows for interchangeable gyroscope hardware (e.g., Pigeon 2, NavX) and
+ * simulation support.
+ */
 public interface GyroIO {
+  /** Contains all of the inputs received from the gyro hardware. */
   @AutoLog
   public static class GyroIOInputs {
+    /** Whether the gyro is currently connected and communicating. */
     public boolean connected = false;
+
+    /** The current yaw position from the gyro. */
     public Angle yawPosition = Radians.of(0.0);
+
+    /** The current angular velocity around the yaw axis. */
     public AngularVelocity yawVelocity = RadiansPerSecond.of(0.0);
+
+    /**
+     * Timestamps for high-frequency yaw measurements used for odometry.
+     *
+     * <p>Measured in seconds via {@link edu.wpi.first.wpilibj.RobotController#getFPGATime()}.
+     */
     public double[] odometryYawTimestamps = new double[] {};
+
+    /**
+     * Yaw positions corresponding to the timestamps in {@link #odometryYawTimestamps}.
+     *
+     * <p>Measured in radians.
+     */
     public double[] odometryYawPositions = new double[] {};
   }
 
+  /**
+   * Updates the set of loggable inputs.
+   *
+   * @param inputs The inputs object to update.
+   */
   public default void updateInputs(GyroIOInputs inputs) {}
 }
