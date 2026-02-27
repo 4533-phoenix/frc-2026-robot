@@ -78,8 +78,8 @@ public class Shooter extends SubsystemBase {
   }
 
   /**
-   * Converts the desired Hood Angle to Servo Length based on the physical mechanism.
-   * Uses the Law of Cosines to determine the required servo length.
+   * Converts the desired Hood Angle to Servo Length based on the physical mechanism. Uses the Law
+   * of Cosines to determine the required servo length.
    *
    * @param hoodAngle The desired launch angle.
    * @return The required length for the hood actuator.
@@ -111,7 +111,7 @@ public class Shooter extends SubsystemBase {
     double errorRps =
         targetVelocity.in(RadiansPerSecond) - flywheelInputs.velocity.in(RadiansPerSecond);
     boolean flywheelReady = Math.abs(errorRps) <= flywheelAngularTolerance.in(RadiansPerSecond);
-    
+
     // Check if hood actuator has reached setpoint
     boolean hoodReady = hoodInputs.atSetpoint;
 

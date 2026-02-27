@@ -18,8 +18,8 @@ import frc.robot.util.Whacknet;
  * Real IO implementation for the vision subsystem using the 'Whacknet' JNI wrapper.
  *
  * <p>This implementation communicates with a high-performance native vision pipeline to retrieve
- * AprilTag pose estimations. It maps raw data from a shared direct byte buffer into WPILib
- * geometry objects.
+ * AprilTag pose estimations. It maps raw data from a shared direct byte buffer into WPILib geometry
+ * objects.
  */
 public class VisionIOChalkydri implements VisionIO {
   private final Whacknet vision;
@@ -54,10 +54,7 @@ public class VisionIOChalkydri implements VisionIO {
     // Populate loggable inputs from the direct byte buffer
     for (int i = 0; i < count; i++) {
       inputs.visionPoses[i] =
-          new Pose2d(
-              vision.getX(i),
-              vision.getY(i),
-              Rotation2d.fromRadians(vision.getRot(i)));
+          new Pose2d(vision.getX(i), vision.getY(i), Rotation2d.fromRadians(vision.getRot(i)));
       // Convert microsecond FPGA time to seconds
       inputs.timestamps[i] = vision.getTimestamp(i) * 1.0e-6;
       inputs.cameraIds[i] = vision.getCameraId(i);
@@ -70,8 +67,8 @@ public class VisionIOChalkydri implements VisionIO {
   }
 
   /**
-   * Broadcasts the current robot heading back to the native vision pipeline to assist with
-   * pose estimation.
+   * Broadcasts the current robot heading back to the native vision pipeline to assist with pose
+   * estimation.
    *
    * @param heading The current robot heading in radians, normalized.
    */

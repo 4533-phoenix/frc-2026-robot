@@ -311,9 +311,8 @@ javadoc {
     dependsOn downloadJavadocStyle
     options.stylesheetFile = file("${buildDir}/style.css")
 
-    def wpiVersion = project.wpi.wpilibVersion.get()
     options {
-        links "https://github.wpilib.org/allwpilib/docs/${wpiVersion}/java/"
+        links "https://github.wpilib.org/allwpilib/docs/release/java/" // Need to change this to auto-detect version
         links "https://docs.oracle.com/en/java/javase/17/docs/api/"
     }
 }

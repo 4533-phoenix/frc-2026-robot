@@ -26,8 +26,8 @@ import org.littletonrobotics.junction.Logger;
  * Subsystem for processing vision data, specifically from AprilTag cameras.
  *
  * <p>Receives raw camera detections, filters them based on quality (tag count), and feeds valid
- * measurements into the Drive subsystem's pose estimator to refine the robot's field position.
- * Also monitors camera health and status.
+ * measurements into the Drive subsystem's pose estimator to refine the robot's field position. Also
+ * monitors camera health and status.
  */
 public class Vision extends SubsystemBase {
   private final VisionIO io;
@@ -65,8 +65,8 @@ public class Vision extends SubsystemBase {
   }
 
   /**
-   * Processes vision measurements, filters invalid data, updates the drive pose estimator,
-   * and checks camera status.
+   * Processes vision measurements, filters invalid data, updates the drive pose estimator, and
+   * checks camera status.
    */
   @Override
   public void periodic() {

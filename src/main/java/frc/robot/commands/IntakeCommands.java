@@ -14,8 +14,8 @@ import frc.robot.subsystems.intake.Intake;
 /**
  * Factory class for creating commands related to the intake subsystem.
  *
- * <p>Provides methods to control the intake arm position and the spinner rollers
- * for collecting or ejecting game pieces.
+ * <p>Provides methods to control the intake arm position and the spinner rollers for collecting or
+ * ejecting game pieces.
  */
 public class IntakeCommands {
   private IntakeCommands() {}
@@ -23,8 +23,7 @@ public class IntakeCommands {
   /**
    * Deploys the intake arm and runs the spinner rollers for intaking.
    *
-   * <p>The rollers will only spin if the arm is within the deployed tolerance to
-   * prevent damage.
+   * <p>The rollers will only spin if the arm is within the deployed tolerance to prevent damage.
    *
    * @param intake The intake subsystem.
    * @return A command that deploys the intake and activates the spinners.
@@ -42,8 +41,8 @@ public class IntakeCommands {
   }
 
   /**
-   * Continuously holds the intake arm at the retracted position and stops the rollers.
-   * Useful as a default command to ensure the intake is stowed.
+   * Continuously holds the intake arm at the retracted position and stops the rollers. Useful as a
+   * default command to ensure the intake is stowed.
    *
    * @param intake The intake subsystem.
    * @return A command to hold the intake retracted.

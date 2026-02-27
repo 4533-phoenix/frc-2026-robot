@@ -39,7 +39,6 @@ public class ShooterKinematics {
 
     // Get interpolated values from the maps based on current distance
     return new ShooterState(
-        RotationsPerSecond.of(flywheelMap.get(distMeters)), 
-        Degrees.of(hoodMap.get(distMeters)));
+        RotationsPerSecond.of(flywheelMap.get(distMeters)), Degrees.of(hoodMap.get(distMeters)));
   }
 }

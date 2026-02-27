@@ -15,9 +15,9 @@ import org.littletonrobotics.junction.AutoLog;
 /**
  * Interface for the shooter flywheel subsystem input/output abstraction.
  *
- * <p>This interface allows for interchangeable flywheel hardware (e.g., Falcon 500, SparkMax)
- * and comprehensive simulation support by standardizing how motor velocity is set and how
- * electrical data is retrieved.
+ * <p>This interface allows for interchangeable flywheel hardware (e.g., Falcon 500, SparkMax) and
+ * comprehensive simulation support by standardizing how motor velocity is set and how electrical
+ * data is retrieved.
  */
 public interface FlywheelIO {
   /** Contains all of the inputs received from the flywheel hardware. */
@@ -47,8 +47,6 @@ public interface FlywheelIO {
    */
   public default void setAngularVelocity(AngularVelocity velocity) {}
 
-  /**
-   * Stops the flywheel motor.
-   */
+  /** Stops the flywheel motor. */
   public default void stop() {}
 }

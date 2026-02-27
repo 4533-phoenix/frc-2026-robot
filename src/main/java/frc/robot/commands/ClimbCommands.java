@@ -7,8 +7,8 @@ import frc.robot.subsystems.climb.Climb;
 /**
  * Factory class for creating commands related to the climbing subsystem.
  *
- * <p>Uses WPILib's Command composition factory methods to create safe,
- * race-conditioned commands that stop when limit switches are triggered.
+ * <p>Uses WPILib's Command composition factory methods to create safe, race-conditioned commands
+ * that stop when limit switches are triggered.
  */
 public class ClimbCommands {
   /**

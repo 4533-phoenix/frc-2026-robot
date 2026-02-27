@@ -41,7 +41,7 @@ public class HoodIOSim implements HoodIO {
     // Kinematic Model: Move currentLength toward targetLength based on max velocity
     double errorMeters = targetLength.minus(currentLength).in(Meters);
     double maxStepMeters = maxServoVelocity.in(MetersPerSecond) * dt;
-    
+
     // Calculate distance to move this frame
     double moveMeters = MathUtil.clamp(errorMeters, -maxStepMeters, maxStepMeters);
     currentLength = currentLength.plus(Meters.of(moveMeters));

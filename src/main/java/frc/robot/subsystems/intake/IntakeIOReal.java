@@ -51,9 +51,7 @@ public class IntakeIOReal implements IntakeIO {
   private final Debouncer spinnerConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
-  /**
-   * Creates a new IntakeIOReal and configures the SparkMax controllers.
-   */
+  /** Creates a new IntakeIOReal and configures the SparkMax controllers. */
   public IntakeIOReal() {
     armEncoder = armSpark.getAbsoluteEncoder();
     armController = armSpark.getClosedLoopController();
@@ -68,20 +66,20 @@ public class IntakeIOReal implements IntakeIO {
         .smartCurrentLimit((int) armMotorCurrentLimit.in(Amps))
         .voltageCompensation(12.0)
         .inverted(false);
-    
+
     // Set conversion factors for internal motor encoder
     armConfig
         .encoder
         .positionConversionFactor(armInternalEncoderPositionFactor)
         .velocityConversionFactor(armInternalEncoderVelocityFactor);
-    
+
     // Configure absolute encoder feedback for arm position
     armConfig
         .absoluteEncoder
         .positionConversionFactor(2.0 * Math.PI)
         .zeroOffset(globalEncoderOffset.in(Rotations))
         .inverted(true);
-    
+
     // Set PID and Feedforward gains for arm control
     armConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(armKp, 0.0, armKd);
     armConfig
@@ -92,7 +90,7 @@ public class IntakeIOReal implements IntakeIO {
         .kS(armKs)
         .kCos(armKg)
         .kCosRatio(1.0 / (2.0 * Math.PI));
-    
+
     // Configure motion profiling for smooth movement
     armConfig
         .closedLoop
@@ -100,7 +98,7 @@ public class IntakeIOReal implements IntakeIO {
         .allowedProfileError(armPositionPIDTolerance.in(Radians))
         .cruiseVelocity(armCruiseVelocity.in(RadiansPerSecond))
         .maxAcceleration(armMaxAcceleration.in(RadiansPerSecondPerSecond));
-    
+
     // Optimize CAN traffic: set periodic frame rates for required signals
     armConfig
         .signals
@@ -111,7 +109,7 @@ public class IntakeIOReal implements IntakeIO {
         .appliedOutputPeriodMs(50)
         .busVoltagePeriodMs(50)
         .outputCurrentPeriodMs(50);
-    
+
     // Define soft limits for arm motion safety
     armConfig
         .softLimit
@@ -119,14 +117,14 @@ public class IntakeIOReal implements IntakeIO {
         .forwardSoftLimit(armRetractedPosition.plus(armPositionSoftLimitTolerance).in(Radians))
         .reverseSoftLimitEnabled(true)
         .reverseSoftLimit(armDeployedPosition.minus(armPositionSoftLimitTolerance).in(Radians));
-    
+
     // Apply configuration to spark with retry logic
     tryUntilOk(
         5,
         () ->
             armSpark.configure(
                 armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
-    
+
     // Initialize internal encoder position from absolute encoder
     tryUntilOk(
         5,
@@ -142,20 +140,20 @@ public class IntakeIOReal implements IntakeIO {
         .smartCurrentLimit((int) spinnerMotorCurrentLimit.in(Amps))
         .voltageCompensation(12.0)
         .inverted(true);
-    
+
     // Set conversion factors for spinner encoder
     spinnerConfig
         .encoder
         .positionConversionFactor(spinnerInternalEncoderPositionFactor)
         .velocityConversionFactor(spinnerInternalEncoderVelocityFactor);
-    
+
     // Set PID and Feedforward gains for spinner velocity control
     spinnerConfig
         .closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(spinnerKp, 0.0, spinnerKd);
     spinnerConfig.closedLoop.feedForward.kV(spinnerKv).kA(spinnerKa).kS(spinnerKs);
-    
+
     // Optimize CAN traffic for spinner signals
     spinnerConfig
         .signals
@@ -166,14 +164,14 @@ public class IntakeIOReal implements IntakeIO {
         .appliedOutputPeriodMs(50)
         .busVoltagePeriodMs(50)
         .outputCurrentPeriodMs(50);
-    
+
     // Apply configuration with retry logic
     tryUntilOk(
         5,
         () ->
             spinnerSpark.configure(
                 spinnerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
-    
+
     // Initialize spinner encoder position
     tryUntilOk(
         5,
@@ -209,7 +207,7 @@ public class IntakeIOReal implements IntakeIO {
             armSpark,
             armSpark::getOutputCurrent,
             (value) -> inputs.armAppliedCurrent = Amps.of(value));
-    
+
     // Debounce the connection status
     inputs.armConnected = armConnectedDebounce.calculate(armSparkOk);
 
@@ -230,7 +228,7 @@ public class IntakeIOReal implements IntakeIO {
             spinnerSpark,
             spinnerSpark::getOutputCurrent,
             (value) -> inputs.spinnerAppliedCurrent = Amps.of(value));
-    
+
     // Debounce the connection status
     inputs.spinnerConnected = spinnerConnectedDebounce.calculate(spinnerSparkOk);
   }

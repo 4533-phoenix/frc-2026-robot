@@ -22,9 +22,9 @@ import java.util.function.Supplier;
 /**
  * Simulation implementation of {@link VisionIO}.
  *
- * <p>This class simulates camera detection of AprilTags based on the robot's current pose
- * and the configured camera FOV and range limits. It calculates dummy pose estimates and
- * standard deviations for simulation testing.
+ * <p>This class simulates camera detection of AprilTags based on the robot's current pose and the
+ * configured camera FOV and range limits. It calculates dummy pose estimates and standard
+ * deviations for simulation testing.
  */
 public class VisionIOSim implements VisionIO {
   /** Supplier to get the current robot pose from the physics simulator. */

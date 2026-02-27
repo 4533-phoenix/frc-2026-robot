@@ -17,9 +17,9 @@ import edu.wpi.first.wpilibj.Servo;
 /**
  * Real IO implementation for the shooter hood using a PWM servo.
  *
- * <p>This implementation maps the desired hood length to a servo position, and models the
- * servo's movement in {@link #updateInputs(HoodIOInputs)} to provide realistic feedback
- * for simulation and logging.
+ * <p>This implementation maps the desired hood length to a servo position, and models the servo's
+ * movement in {@link #updateInputs(HoodIOInputs)} to provide realistic feedback for simulation and
+ * logging.
  */
 public class HoodIOServo implements HoodIO {
   private final Servo servo = new Servo(hoodServoChannel);
@@ -27,9 +27,7 @@ public class HoodIOServo implements HoodIO {
   private Distance targetLength = servoMinLength;
   private double lastTimestamp = 0.0;
 
-  /**
-   * Creates a new HoodIOServo and configures the servo PWM bounds.
-   */
+  /** Creates a new HoodIOServo and configures the servo PWM bounds. */
   public HoodIOServo() {
     // Configure PWM bounds for specific servo hardware
     servo.setBoundsMicroseconds(2000, 1500, 1500, 1500, 1000);

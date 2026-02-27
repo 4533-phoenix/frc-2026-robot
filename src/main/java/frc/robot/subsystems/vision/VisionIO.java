@@ -13,9 +13,9 @@ import org.littletonrobotics.junction.AutoLog;
 /**
  * Interface for the vision subsystem input/output abstraction.
  *
- * <p>This interface allows for interchangeable vision hardware (e.g., Limelight, PhotonVision)
- * and comprehensive simulation support by standardizing how pose data is retrieved and how
- * robot state is broadcasted back to the vision pipeline.
+ * <p>This interface allows for interchangeable vision hardware (e.g., Limelight, PhotonVision) and
+ * comprehensive simulation support by standardizing how pose data is retrieved and how robot state
+ * is broadcasted back to the vision pipeline.
  */
 public interface VisionIO {
   /** Contains all of the inputs received from the vision hardware. */
@@ -29,8 +29,8 @@ public interface VisionIO {
     /** Array of timestamps (seconds) corresponding to when each pose was captured. */
     public double[] timestamps = new double[] {};
     /**
-     * Array of standard deviation vectors for the pose estimates (x, y, rotation).
-     * Used for weighting the measurement in the Kalman Filter.
+     * Array of standard deviation vectors for the pose estimates (x, y, rotation). Used for
+     * weighting the measurement in the Kalman Filter.
      */
     public double[][] stdDevs = new double[][] {};
     /** Array of IDs corresponding to the camera that produced each pose estimate. */
@@ -47,8 +47,7 @@ public interface VisionIO {
   public default void updateInputs(VisionIOInputs inputs) {}
 
   /**
-   * Broadcasts the current robot heading to the vision system to assist in
-   * 3D pose estimation.
+   * Broadcasts the current robot heading to the vision system to assist in 3D pose estimation.
    *
    * @param heading The current robot heading in radians.
    */

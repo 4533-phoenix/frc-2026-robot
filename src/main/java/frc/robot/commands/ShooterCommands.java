@@ -21,8 +21,8 @@ public class ShooterCommands {
   private ShooterCommands() {}
 
   /**
-   * Continuously ensures the shooter is stopped. Useful as a default command to
-   * ensure safety when not actively shooting.
+   * Continuously ensures the shooter is stopped. Useful as a default command to ensure safety when
+   * not actively shooting.
    *
    * @param shooter The shooter subsystem.
    * @return A command that stops the shooter motors.

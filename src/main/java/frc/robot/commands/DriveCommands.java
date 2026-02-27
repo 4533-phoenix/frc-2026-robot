@@ -40,8 +40,8 @@ import java.util.function.Supplier;
 /**
  * Factory class for creating commands related to the drivetrain subsystem.
  *
- * <p>Provides methods for joystick control, PID-assisted rotation, and characterization
- * routines to tune motor controllers.
+ * <p>Provides methods for joystick control, PID-assisted rotation, and characterization routines to
+ * tune motor controllers.
  */
 public class DriveCommands {
   private static final double DEADBAND = 0.1;
@@ -50,7 +50,7 @@ public class DriveCommands {
   private static final double ANGLE_KD = 0.4;
   private static final double ANGLE_MAX_VELOCITY = 8.0; // Rad/Sec
   private static final double ANGLE_MAX_ACCELERATION = 20.0; // Rad/Sec^2
-  
+
   // Characterization constants
   private static final double FF_START_DELAY = 2.0; // Seconds to let modules align
   private static final double FF_RAMP_RATE = 0.1; // Volts/Second
@@ -60,8 +60,8 @@ public class DriveCommands {
   private DriveCommands() {}
 
   /**
-   * Processes joystick inputs to determine linear velocity, applying deadband and squaring
-   * inputs for fine control.
+   * Processes joystick inputs to determine linear velocity, applying deadband and squaring inputs
+   * for fine control.
    */
   private static Translation2d getLinearVelocityFromJoysticks(double x, double y) {
     // Apply deadband
@@ -78,7 +78,7 @@ public class DriveCommands {
   }
 
   /**
-   * Field relative drive command using two joysticks for linear and angular control.                
+   * Field relative drive command using two joysticks for linear and angular control.
    *
    * @param drive The drive subsystem.
    * @param xSupplier Supplier for forward/backward input (-1.0 to 1.0).
@@ -109,7 +109,7 @@ public class DriveCommands {
                   drive.getMaxLinearVelocity().times(linearVelocity.getX()),
                   drive.getMaxLinearVelocity().times(linearVelocity.getY()),
                   drive.getMaxAngularVelocity().times(omega));
-          
+
           // Flip controls if on the Red alliance
           boolean isFlipped =
               DriverStation.getAlliance().isPresent()
@@ -168,7 +168,7 @@ public class DriveCommands {
                       drive.getMaxLinearVelocity().times(linearVelocity.getX()),
                       drive.getMaxLinearVelocity().times(linearVelocity.getY()),
                       RadiansPerSecond.of(omega));
-              
+
               // Flip controls if on the Red alliance
               boolean isFlipped =
                   DriverStation.getAlliance().isPresent()
@@ -259,8 +259,8 @@ public class DriveCommands {
   }
 
   /**
-   * Measures the robot's wheel radius by spinning in a circle and comparing gyro
-   * rotation to encoder rotation.
+   * Measures the robot's wheel radius by spinning in a circle and comparing gyro rotation to
+   * encoder rotation.
    *
    * @param drive The drive subsystem.
    * @return A command that spins the robot to calculate effective wheel radius.
@@ -316,7 +316,7 @@ public class DriveCommands {
                       for (int i = 0; i < 4; i++) {
                         wheelDelta += Math.abs(positions[i] - state.positions[i]) / 4.0;
                       }
-                      
+
                       // Calculate radius: (Angle Delta * Dist to Module) / Wheel Dist Delta
                       double wheelRadius =
                           (state.gyroDelta * DriveConstants.driveBaseRadius.in(Meters))

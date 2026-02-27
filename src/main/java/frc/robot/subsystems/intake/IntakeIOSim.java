@@ -26,8 +26,8 @@ import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
  * Simulation implementation of {@link IntakeIO}.
  *
  * <p>This class simulates the physical behavior of the intake arm and spinner rollers using
- * WPILib's simulation models. It calculates necessary voltages based on PID controllers
- * and feedforward models to mimic real hardware response.
+ * WPILib's simulation models. It calculates necessary voltages based on PID controllers and
+ * feedforward models to mimic real hardware response.
  */
 public class IntakeIOSim implements IntakeIO {
   // Physics model for the rotating intake arm
@@ -72,9 +72,7 @@ public class IntakeIOSim implements IntakeIO {
   private Voltage armAppliedVoltage = Volts.of(0.0);
   private Voltage spinnerAppliedVoltage = Volts.of(0.0);
 
-  /**
-   * Creates a new IntakeIOSim.
-   */
+  /** Creates a new IntakeIOSim. */
   public IntakeIOSim() {
     armController.reset(armRetractedPosition.in(Radians));
   }
