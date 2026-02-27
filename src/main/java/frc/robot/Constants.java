@@ -9,8 +9,13 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meters;
+
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.RobotBase;
 
 /**
@@ -33,7 +38,13 @@ public final class Constants {
     REPLAY
   }
 
-  public static final Translation2d hubPosition = new Translation2d(4.625, 4.035);
+  public static final Distance fieldLength = Inches.of(651.25);
+  public static final Distance fieldWidth = Inches.of(315.5);
+  public static final Translation2d outpostPosition =
+      new Translation2d(Meters.of(4.625), fieldWidth.div(2.0));
   public static final Rectangle2d shootingZone =
-      new Rectangle2d(new Translation2d(0.0, 0.0), new Translation2d(4.015, 8.100));
+      new Rectangle2d(Translation2d.kZero, new Translation2d(Meters.of(4.02), fieldWidth));
+  public static final Rectangle2d lobbingZone =
+      new Rectangle2d(
+          new Pose2d(fieldLength.div(2.0), fieldWidth.div(2.0), null), Meters.of(6.07), fieldWidth);
 }

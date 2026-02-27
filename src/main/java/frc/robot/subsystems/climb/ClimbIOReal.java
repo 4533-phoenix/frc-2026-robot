@@ -35,8 +35,6 @@ public class ClimbIOReal implements ClimbIO {
   private final Debouncer liftConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
-  private boolean sparkStickyFault = false;
-
   public ClimbIOReal() {
     var liftCfg = new SparkMaxConfig();
     liftCfg
@@ -45,7 +43,6 @@ public class ClimbIOReal implements ClimbIO {
         .voltageCompensation(12.0);
     liftCfg.signals.appliedOutputPeriodMs(20).busVoltagePeriodMs(20).outputCurrentPeriodMs(20);
     tryUntilOk(
-        spark,
         5,
         () ->
             spark.configure(
@@ -54,20 +51,20 @@ public class ClimbIOReal implements ClimbIO {
 
   @Override
   public void updateInputs(ClimbIOInputs inputs) {
-    sparkStickyFault = false;
-    ifOk(
+    boolean sparkOk = true;
+    sparkOk &= ifOk(
         spark,
         new DoubleSupplier[] {spark::getAppliedOutput, spark::getBusVoltage},
         (vals) -> inputs.appliedVoltage = Volts.of(vals[0] * vals[1]));
-    ifOk(spark, spark::getOutputCurrent, (v) -> inputs.appliedCurrent = Amps.of(v));
-    ifOk(
+    sparkOk &= ifOk(spark, spark::getOutputCurrent, (v) -> inputs.appliedCurrent = Amps.of(v));
+    sparkOk &= ifOk(
         spark,
         new BooleanSupplier[] {upperLimit::isPressed, lowerLimit::isPressed},
         (vals) -> {
           inputs.upperLimit = vals[0];
           inputs.lowerLimit = vals[1];
         });
-    inputs.connected = liftConnectedDebounce.calculate(!sparkStickyFault);
+    inputs.connected = liftConnectedDebounce.calculate(sparkOk);
   }
 
   @Override

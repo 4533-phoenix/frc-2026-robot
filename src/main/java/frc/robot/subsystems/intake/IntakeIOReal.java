@@ -97,13 +97,11 @@ public class IntakeIOReal implements IntakeIO {
         .reverseSoftLimitEnabled(true)
         .reverseSoftLimit(armDeployedPosition.minus(armPositionSoftLimitTolerance).in(Radians));
     tryUntilOk(
-        armSpark,
         5,
         () ->
             armSpark.configure(
                 armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
     tryUntilOk(
-        armSpark,
         5,
         () -> {
           double initialPos = armEncoder.getPosition();
@@ -136,13 +134,11 @@ public class IntakeIOReal implements IntakeIO {
         .busVoltagePeriodMs(50)
         .outputCurrentPeriodMs(50);
     tryUntilOk(
-        spinnerSpark,
         5,
         () ->
             spinnerSpark.configure(
                 spinnerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
     tryUntilOk(
-        spinnerSpark,
         5,
         () -> {
           double initialPos = spinnerEncoder.getPosition();
@@ -153,35 +149,35 @@ public class IntakeIOReal implements IntakeIO {
   @Override
   public void updateInputs(IntakeIOInputs inputs) {
     // Arm motor
-    sparkStickyFault = false;
-    ifOk(armSpark, armEncoder::getPosition, (value) -> inputs.armPosition = Radians.of(value));
-    ifOk(
+    boolean armSparkOk = true;
+    armSparkOk &= ifOk(armSpark, armEncoder::getPosition, (value) -> inputs.armPosition = Radians.of(value));
+    armSparkOk &= ifOk(
         armSpark,
         armEncoder::getVelocity,
         (value) -> inputs.armVelocity = RadiansPerSecond.of(value));
-    ifOk(
+    armSparkOk &= ifOk(
         armSpark,
         new DoubleSupplier[] {armSpark::getAppliedOutput, armSpark::getBusVoltage},
         (values) -> inputs.armAppliedVoltage = Volts.of(values[0] * values[1]));
-    ifOk(
+    armSparkOk &= ifOk(
         armSpark, armSpark::getOutputCurrent, (value) -> inputs.armAppliedCurrent = Amps.of(value));
-    inputs.armConnected = armConnectedDebounce.calculate(!sparkStickyFault);
+    inputs.armConnected = armConnectedDebounce.calculate(armSparkOk);
 
     // Spinner motor
-    sparkStickyFault = false;
-    ifOk(
+    boolean spinnerSparkOk = true;
+    spinnerSparkOk &= ifOk(
         spinnerSpark,
         spinnerEncoder::getVelocity,
         (value) -> inputs.spinnerVelocity = RadiansPerSecond.of(value));
-    ifOk(
+    spinnerSparkOk &= ifOk(
         spinnerSpark,
         new DoubleSupplier[] {spinnerSpark::getAppliedOutput, spinnerSpark::getBusVoltage},
         (values) -> inputs.spinnerAppliedVoltage = Volts.of(values[0] * values[1]));
-    ifOk(
+    spinnerSparkOk &= ifOk(
         spinnerSpark,
         spinnerSpark::getOutputCurrent,
         (value) -> inputs.spinnerAppliedCurrent = Amps.of(value));
-    inputs.spinnerConnected = spinnerConnectedDebounce.calculate(!sparkStickyFault);
+    inputs.spinnerConnected = spinnerConnectedDebounce.calculate(spinnerSparkOk);
   }
 
   @Override

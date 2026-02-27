@@ -19,66 +19,62 @@ import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class SparkUtil {
-  /** Stores whether any error was has been detected by other utility methods. */
-  public static boolean sparkStickyFault = false;
-
   /** Processes a value from a Spark only if the value is valid. */
-  public static void ifOk(SparkBase spark, DoubleSupplier supplier, DoubleConsumer consumer) {
+  public static boolean ifOk(SparkBase spark, DoubleSupplier supplier, DoubleConsumer consumer) {
     double value = supplier.getAsDouble();
     if (spark.getLastError() == REVLibError.kOk) {
       consumer.accept(value);
-    } else {
-      sparkStickyFault = true;
+      return true;
     }
+    return false;
   }
 
   /** Processes a value from a Spark only if the value is valid. */
-  public static void ifOk(
+  public static boolean ifOk(
       SparkBase spark, DoubleSupplier[] suppliers, Consumer<double[]> consumer) {
     double[] values = new double[suppliers.length];
     for (int i = 0; i < suppliers.length; i++) {
       values[i] = suppliers[i].getAsDouble();
       if (spark.getLastError() != REVLibError.kOk) {
-        sparkStickyFault = true;
-        return;
+        return false;
       }
     }
     consumer.accept(values);
+    return true;
   }
 
   /** Processes a value from a Spark only if the value is valid. */
-  public static void ifOk(SparkBase spark, BooleanSupplier supplier, BooleanConsumer consumer) {
+  public static boolean ifOk(SparkBase spark, BooleanSupplier supplier, BooleanConsumer consumer) {
     boolean value = supplier.getAsBoolean();
     if (spark.getLastError() == REVLibError.kOk) {
       consumer.accept(value);
-    } else {
-      sparkStickyFault = true;
+      return true;
     }
+    return false;
   }
 
   /** Processes a value from a Spark only if the value is valid. */
-  public static void ifOk(
+  public static boolean ifOk(
       SparkBase spark, BooleanSupplier[] suppliers, Consumer<boolean[]> consumer) {
     boolean[] values = new boolean[suppliers.length];
     for (int i = 0; i < suppliers.length; i++) {
       values[i] = suppliers[i].getAsBoolean();
       if (spark.getLastError() != REVLibError.kOk) {
-        sparkStickyFault = true;
-        return;
+        return false;
       }
     }
     consumer.accept(values);
+    return true;
   }
 
   /** Attempts to run the command until no error is produced. */
-  public static void tryUntilOk(SparkBase spark, int maxAttempts, Supplier<REVLibError> command) {
+  public static boolean tryUntilOk(int maxAttempts, Supplier<REVLibError> command) {
     for (int i = 0; i < maxAttempts; i++) {
       var error = command.get();
       if (error == REVLibError.kOk) {
-        break;
-      } else {
-        sparkStickyFault = true;
+        return true;
       }
     }
+    return false;
   }
 }

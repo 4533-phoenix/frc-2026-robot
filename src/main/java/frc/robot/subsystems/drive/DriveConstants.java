@@ -67,7 +67,7 @@ public class DriveConstants {
   public static final Current driveMotorCurrentLimit = Amps.of(40);
   public static final Current driveMotorSecondaryCurrentLimit = Amps.of(80);
   public static final Distance wheelRadius = Inches.of(1.5);
-  public static final double driveMotorReduction = 6.75; // Random BS values we got from somewhere
+  public static final double driveMotorReduction = 6.75;
   public static final DCMotor driveGearbox = DCMotor.getNEO(1);
 
   // Drive encoder configuration
@@ -89,7 +89,7 @@ public class DriveConstants {
   public static final boolean turnInverted = false;
   public static final Current turnMotorCurrentLimit = Amps.of(40);
   public static final Current turnMotorSecondaryCurrentLimit = Amps.of(80);
-  public static final double turnMotorReduction = 12.8; // Random BS values we got from somewhere
+  public static final double turnMotorReduction = 12.8;
   public static final DCMotor turnGearbox = DCMotor.getNEO(1);
 
   // Turn encoder configuration
