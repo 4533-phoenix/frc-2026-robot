@@ -9,6 +9,7 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.RobotBase;
 
@@ -33,4 +34,6 @@ public final class Constants {
   }
 
   public static final Translation2d hubPosition = new Translation2d(4.625, 4.035);
+  public static final Rectangle2d shootingZone =
+      new Rectangle2d(new Translation2d(0.0, 0.0), new Translation2d(4.015, 8.100));
 }

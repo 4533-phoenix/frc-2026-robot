@@ -63,7 +63,7 @@ typedef struct
   atomic_int tail __attribute__((aligned(CACHE_LINE)));
   char _pad_tail[CACHE_LINE - sizeof(atomic_int)];
 
-  // New: Atomic counter to track drops without blocking printf
+  // Atomic counter to track drops without blocking printf
   atomic_ulong dropped_packets;
 } LockFreeQueue;
 

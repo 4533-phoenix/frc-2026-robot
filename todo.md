@@ -10,3 +10,4 @@
 * Add limits to what the launch angle can be set to (Unasigned)
 * Need to not cancel original drive command and instead inject angle (Unasigned)
 * Make the auto shoot auto ready (Unasigned)
+* Need to add lobbing mode over the center
