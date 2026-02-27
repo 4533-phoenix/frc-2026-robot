@@ -5,30 +5,41 @@ import static edu.wpi.first.units.Units.*;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.units.measure.Distance;
 
+/**
+ * Calculates optimal shooter settings based on the distance to the target.
+ *
+ * <p>Uses {@link InterpolatingDoubleTreeMap} to interpolate between known good shooter states
+ * (flywheel speed and hood angle) for specific distances, ensuring smooth transitions as the robot
+ * moves.
+ */
 public class ShooterKinematics {
+  // Maps to store calibrated distances and corresponding motor speeds/angles
   private static final InterpolatingDoubleTreeMap flywheelMap = new InterpolatingDoubleTreeMap();
   private static final InterpolatingDoubleTreeMap hoodMap = new InterpolatingDoubleTreeMap();
 
   static {
-    // TODO: Tune these
-    // flywheelMap.put(1.5, 50.0);
-    // hoodMap.put(1.5, 45.0);
+    // TODO: Tune these calibration points based on real robot data
+    // Example format:
+    // flywheelMap.put(distanceInMeters, flywheelSpeedInRotationsPerSecond);
+    // hoodMap.put(distanceInMeters, hoodAngleInDegrees);
 
-    // flywheelMap.put(3.0, 70.0);
-    // hoodMap.put(3.0, 55.0);
-
-    // flywheelMap.put(5.0, 90.0);
-    // hoodMap.put(5.0, 65.0);
-
+    // Initial dummy values
     flywheelMap.put(0.0, 50.0);
     hoodMap.put(0.0, 85.0);
   }
 
-  /** Calculates the optimal Shooter State for a given distance to the speaker. */
+  /**
+   * Calculates the optimal {@link ShooterState} for a given distance to the speaker.
+   *
+   * @param distanceToTarget The distance from the robot to the target in meters.
+   * @return The calculated ShooterState containing target flywheel speed and hood angle.
+   */
   public static ShooterState calculateShooterState(Distance distanceToTarget) {
     double distMeters = distanceToTarget.in(Meters);
 
+    // Get interpolated values from the maps based on current distance
     return new ShooterState(
-        RotationsPerSecond.of(flywheelMap.get(distMeters)), Degrees.of(hoodMap.get(distMeters)));
+        RotationsPerSecond.of(flywheelMap.get(distMeters)), 
+        Degrees.of(hoodMap.get(distMeters)));
   }
 }

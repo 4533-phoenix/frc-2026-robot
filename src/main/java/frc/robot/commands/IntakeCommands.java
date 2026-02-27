@@ -11,14 +11,29 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.intake.Intake;
 
+/**
+ * Factory class for creating commands related to the intake subsystem.
+ *
+ * <p>Provides methods to control the intake arm position and the spinner rollers
+ * for collecting or ejecting game pieces.
+ */
 public class IntakeCommands {
   private IntakeCommands() {}
 
-  /** Deploys the intake and runs the spinner at intake voltage. */
+  /**
+   * Deploys the intake arm and runs the spinner rollers for intaking.
+   *
+   * <p>The rollers will only spin if the arm is within the deployed tolerance to
+   * prevent damage.
+   *
+   * @param intake The intake subsystem.
+   * @return A command that deploys the intake and activates the spinners.
+   */
   public static Command deploy(Intake intake) {
     return Commands.runEnd(
         () -> {
           intake.deploy();
+          // Safety check: only run rollers if the arm is actually down
           if (intake.armDeployed()) {
             intake.intake();
           }
@@ -26,7 +41,13 @@ public class IntakeCommands {
         intake::stopSpinner);
   }
 
-  /** Continuously holds the intake at the retracted position. Useful as a default command. */
+  /**
+   * Continuously holds the intake arm at the retracted position and stops the rollers.
+   * Useful as a default command to ensure the intake is stowed.
+   *
+   * @param intake The intake subsystem.
+   * @return A command to hold the intake retracted.
+   */
   public static Command holdRetracted(Intake intake) {
     return Commands.run(
         () -> {

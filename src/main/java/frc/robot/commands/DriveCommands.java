@@ -37,25 +37,38 @@ import java.util.List;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
+/**
+ * Factory class for creating commands related to the drivetrain subsystem.
+ *
+ * <p>Provides methods for joystick control, PID-assisted rotation, and characterization
+ * routines to tune motor controllers.
+ */
 public class DriveCommands {
   private static final double DEADBAND = 0.1;
+  // PID constants for rotational control
   private static final double ANGLE_KP = 5.0;
   private static final double ANGLE_KD = 0.4;
-  private static final double ANGLE_MAX_VELOCITY = 8.0;
-  private static final double ANGLE_MAX_ACCELERATION = 20.0;
-  private static final double FF_START_DELAY = 2.0; // Secs
-  private static final double FF_RAMP_RATE = 0.1; // Volts/Sec
+  private static final double ANGLE_MAX_VELOCITY = 8.0; // Rad/Sec
+  private static final double ANGLE_MAX_ACCELERATION = 20.0; // Rad/Sec^2
+  
+  // Characterization constants
+  private static final double FF_START_DELAY = 2.0; // Seconds to let modules align
+  private static final double FF_RAMP_RATE = 0.1; // Volts/Second
   private static final double WHEEL_RADIUS_MAX_VELOCITY = 0.25; // Rad/Sec
   private static final double WHEEL_RADIUS_RAMP_RATE = 0.05; // Rad/Sec^2
 
   private DriveCommands() {}
 
+  /**
+   * Processes joystick inputs to determine linear velocity, applying deadband and squaring
+   * inputs for fine control.
+   */
   private static Translation2d getLinearVelocityFromJoysticks(double x, double y) {
     // Apply deadband
     double linearMagnitude = MathUtil.applyDeadband(Math.hypot(x, y), DEADBAND);
     Rotation2d linearDirection = new Rotation2d(Math.atan2(y, x));
 
-    // Square magnitude for more precise control
+    // Square magnitude for more precise control at low speeds
     linearMagnitude = linearMagnitude * linearMagnitude;
 
     // Return new linear velocity
@@ -65,7 +78,13 @@ public class DriveCommands {
   }
 
   /**
-   * Field relative drive command using two joysticks (controlling linear and angular velocities).
+   * Field relative drive command using two joysticks for linear and angular control.                
+   *
+   * @param drive The drive subsystem.
+   * @param xSupplier Supplier for forward/backward input (-1.0 to 1.0).
+   * @param ySupplier Supplier for strafe left/right input (-1.0 to 1.0).
+   * @param omegaSupplier Supplier for rotation input (-1.0 to 1.0).
+   * @return A command to run the drivetrain based on joystick inputs.
    */
   public static Command joystickDrive(
       Drive drive,
@@ -90,6 +109,8 @@ public class DriveCommands {
                   drive.getMaxLinearVelocity().times(linearVelocity.getX()),
                   drive.getMaxLinearVelocity().times(linearVelocity.getY()),
                   drive.getMaxAngularVelocity().times(omega));
+          
+          // Flip controls if on the Red alliance
           boolean isFlipped =
               DriverStation.getAlliance().isPresent()
                   && DriverStation.getAlliance().get() == Alliance.Red;
@@ -107,6 +128,12 @@ public class DriveCommands {
    * Field relative drive command using joystick for linear control and PID for angular control.
    * Possible use cases include snapping to an angle, aiming at a vision target, or controlling
    * absolute rotation with a joystick.
+   *
+   * @param drive The drive subsystem.
+   * @param xSupplier Supplier for forward/backward input (-1.0 to 1.0).
+   * @param ySupplier Supplier for strafe left/right input (-1.0 to 1.0).
+   * @param rotationSupplier Supplier for target rotation (absolute angle).
+   * @return A command to run the drivetrain with PID-controlled rotation.
    */
   public static Command joystickDriveAtAngle(
       Drive drive,
@@ -114,7 +141,7 @@ public class DriveCommands {
       DoubleSupplier ySupplier,
       Supplier<Rotation2d> rotationSupplier) {
 
-    // Create PID controller
+    // Create PID controller with motion profiling for rotation
     ProfiledPIDController angleController =
         new ProfiledPIDController(
             ANGLE_KP,
@@ -130,7 +157,7 @@ public class DriveCommands {
               Translation2d linearVelocity =
                   getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
 
-              // Calculate angular speed
+              // Calculate angular speed using PID
               double omega =
                   angleController.calculate(
                       drive.getRotation().getRadians(), rotationSupplier.get().getRadians());
@@ -141,6 +168,8 @@ public class DriveCommands {
                       drive.getMaxLinearVelocity().times(linearVelocity.getX()),
                       drive.getMaxLinearVelocity().times(linearVelocity.getY()),
                       RadiansPerSecond.of(omega));
+              
+              // Flip controls if on the Red alliance
               boolean isFlipped =
                   DriverStation.getAlliance().isPresent()
                       && DriverStation.getAlliance().get() == Alliance.Red;
@@ -153,14 +182,17 @@ public class DriveCommands {
             },
             drive)
 
-        // Reset PID controller when command starts
+        // Reset PID controller when command starts to prevent erratic movement
         .beforeStarting(() -> angleController.reset(drive.getRotation().getRadians()));
   }
 
   /**
-   * Measures the velocity feedforward constants for the drive motors.
+   * Measures the velocity feedforward constants (kS and kV) for the drive motors.
    *
-   * <p>This command should only be used in voltage control mode.
+   * <p>This command should only be used in voltage control mode to collect raw data.
+   *
+   * @param drive The drive subsystem.
+   * @return A command that ramps voltage to collect characterization data.
    */
   public static Command feedforwardCharacterization(Drive drive) {
     List<AngularVelocity> velocitySamples = new LinkedList<>();
@@ -175,7 +207,7 @@ public class DriveCommands {
               voltageSamples.clear();
             }),
 
-        // Allow modules to orient
+        // Allow modules to orient and hold voltage at 0 before starting
         Commands.run(
                 () -> {
                   drive.runCharacterization(Volts.of(0.0));
@@ -189,6 +221,7 @@ public class DriveCommands {
         // Accelerate and gather data
         Commands.run(
                 () -> {
+                  // Ramp voltage linearly over time
                   Voltage voltage = Volts.of(timer.get() * FF_RAMP_RATE);
                   drive.runCharacterization(voltage);
                   velocitySamples.add(drive.getFFCharacterizationVelocity());
@@ -196,7 +229,7 @@ public class DriveCommands {
                 },
                 drive)
 
-            // When cancelled, calculate and print results
+            // When cancelled, calculate kS and kV using linear regression
             .finallyDo(
                 () -> {
                   int n = velocitySamples.size();
@@ -214,6 +247,7 @@ public class DriveCommands {
                         velocitySamples.get(i).in(RadiansPerSecond)
                             * velocitySamples.get(i).in(RadiansPerSecond);
                   }
+                  // Linear regression formulas
                   double kS = (sumY * sumX2 - sumX * sumXY) / (n * sumX2 - sumX * sumX);
                   double kV = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
 
@@ -224,7 +258,13 @@ public class DriveCommands {
                 }));
   }
 
-  /** Measures the robot's wheel radius by spinning in a circle. */
+  /**
+   * Measures the robot's wheel radius by spinning in a circle and comparing gyro
+   * rotation to encoder rotation.
+   *
+   * @param drive The drive subsystem.
+   * @return A command that spins the robot to calculate effective wheel radius.
+   */
   public static Command wheelRadiusCharacterization(Drive drive) {
     SlewRateLimiter limiter = new SlewRateLimiter(WHEEL_RADIUS_RAMP_RATE);
     WheelRadiusCharacterizationState state = new WheelRadiusCharacterizationState();
@@ -259,7 +299,7 @@ public class DriveCommands {
                   state.gyroDelta = 0.0;
                 }),
 
-            // Update gyro delta
+            // Update gyro delta continuously
             Commands.run(
                     () -> {
                       var rotation = drive.getRotation();
@@ -272,9 +312,12 @@ public class DriveCommands {
                     () -> {
                       double[] positions = drive.getWheelRadiusCharacterizationPositions();
                       double wheelDelta = 0.0;
+                      // Calculate average change in wheel position
                       for (int i = 0; i < 4; i++) {
                         wheelDelta += Math.abs(positions[i] - state.positions[i]) / 4.0;
                       }
+                      
+                      // Calculate radius: (Angle Delta * Dist to Module) / Wheel Dist Delta
                       double wheelRadius =
                           (state.gyroDelta * DriveConstants.driveBaseRadius.in(Meters))
                               / wheelDelta;
@@ -295,6 +338,7 @@ public class DriveCommands {
                     })));
   }
 
+  /** Holds state information for wheel radius characterization. */
   private static class WheelRadiusCharacterizationState {
     double[] positions = new double[4];
     Rotation2d lastAngle = Rotation2d.kZero;
