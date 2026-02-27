@@ -189,6 +189,7 @@ public class RobotContainer {
     controller
         .rightTrigger()
         .and(Superstructure.isReadyToFire(drive, shooter))
+        .and(Superstructure.isOutpostEnabled())
         .whileTrue(IndexerCommands.runIndexer(indexer));
   }
 
