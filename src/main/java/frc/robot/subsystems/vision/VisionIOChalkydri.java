@@ -12,13 +12,13 @@ import static frc.robot.subsystems.vision.VisionConstants.*;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import frc.robot.util.VisionNative;
+import frc.robot.util.Whacknet;
 
 public class VisionIOChalkydri implements VisionIO {
-  private final VisionNative vision;
+  private final Whacknet vision;
 
   public VisionIOChalkydri() {
-    vision = VisionNative.getInstance();
+    vision = Whacknet.getInstance();
     vision.start(SERVER_PORT);
   }
 

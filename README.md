@@ -16,7 +16,7 @@ Our robot uses a robust vision system to localize on the field with AprilTags an
 **How vision works:**
 
 - The robot code connects to a coprocessor running [chalkydri](https://github.com/chalkydri/chalkydri), a Rust-based vision solution developed by our team. Chalkydri processes camera feeds on the coprocessor (e.g., Raspberry Pi, Jetson) and sends vision measurements (poses, uncertainties, timestamps, tag detections) to the robot over the network.
-- On the robot, native C code (see `src/main/native/c/vision_server.c`) implements a fast, lock-free ring buffer and JNI interface for receiving vision data from the coprocessor. This C code packs observations and exposes them efficiently to the Java code.
+- On the robot, native C code (see `src/main/native/c/whacknet.c`) implements a fast, lock-free ring buffer and JNI interface for receiving vision data from the coprocessor. This C code packs observations and exposes them efficiently to the Java code.
 - The Java-side subsystem (`Vision.java`) reads these measurements, filters/tag-counts, and integrates them into the robot's pose estimator. If cameras or coprocessor communication is lost, the system issues alerts to the drivers.
 - All vision measurements are temporally aligned and uncertainty-weighted so robot pose is updated only with quality data.
 
