@@ -14,3 +14,5 @@
 * Documentation!!?!?!!
 * Why is measured velocities always lower than commmanded on swerve?
 * Make sure shooter tolerance is good (Otherwise fix sim)
+* Add velocity to shooter aim?
+* Should I prefer double vibrate or sustained?
