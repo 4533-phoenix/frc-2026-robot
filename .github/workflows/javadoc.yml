@@ -56,12 +56,6 @@ jobs:
         with:
           bun-version: latest
 
-      # Define string replacements
-      - name: Define string replacements
-        id: define-replacements
-        run: |
-          echo "REPLACEMENTS=s/&nbsp;|&nbsp;//g;s/Package:&nbsp;/<b>Package<\/b>/g;s/<label for=\"search-input\">SEARCH:<\/label>//g;s/Summary:&nbsp;/<b>Summary<\/b>/g;s/Detail:&nbsp;/<b>Detail<\/b>/g" >> $GITHUB_ENV
-
       # Clean HTML files
       - name: Clean HTML files
         env:
