@@ -291,26 +291,7 @@ spotless {
     }
 }
 
-task downloadJavadocStyle {
-    def cssFile = file("${buildDir}/style.css")
-
-    doFirst {
-        buildDir.mkdirs()
-    }
-
-    doLast {
-        if (!cssFile.exists()) {
-            println "Downloading Javadoc stylesheet..."
-            new URL('https://github.com/4533-phoenix/javadoc-style/raw/refs/heads/main/style.css')
-                    .withInputStream { i -> cssFile.withOutputStream { it << i } }
-        }
-    }
-}
-
 javadoc {
-    dependsOn downloadJavadocStyle
-    options.stylesheetFile = file("${buildDir}/style.css")
-
     options {
         links "https://github.wpilib.org/allwpilib/docs/release/java/" // Need to change this to auto-detect version
         links "https://docs.oracle.com/en/java/javase/17/docs/api/"
