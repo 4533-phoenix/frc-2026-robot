@@ -21,7 +21,7 @@ public final class IndexerConstants {
   /** The gearbox model for the indexer motor (e.g., REV NEO 550). */
   public static final DCMotor indexerGearbox = DCMotor.getNeo550(1);
   /** The gear reduction between the indexer motor and the conveyor mechanism. */
-  public static final double indexerReduction = 1.0; // TODO: Verify this ratio
+  public static final double indexerReduction = 17.0; 
   /** The moment of inertia of the indexer mechanism, used for simulation. */
   public static final MomentOfInertia indexerMOI = KilogramSquareMeters.of(0.0005);
   /** Maximum current limit for the indexer motor to prevent overheating. */

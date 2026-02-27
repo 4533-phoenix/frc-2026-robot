@@ -32,8 +32,8 @@ public class GyroIOCanAndGyro implements GyroIO {
     final CanandgyroSettings settings = new CanandgyroSettings();
     // Configure hardware frames to match the desired odometry frequency
     settings.setYawFramePeriod(1 / odometryFrequency.in(Hertz));
-    // Set standard 50Hz for less critical velocity data
-    settings.setAngularVelocityFramePeriod(1 / 50.0);
+    // Set standard less critical velocity data
+    settings.setAngularVelocityFramePeriod(1 / odometryLowFrequency.in(Hertz));
     canandgyro.setSettings(settings);
     canandgyro.setYaw(0.0);
 

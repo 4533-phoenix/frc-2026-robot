@@ -1,4 +1,3 @@
-* Generaly need to move magic constants out of places into constants files (Dawson)
 * Configure to minimize can bus usages (Drake)
 * Attempt to unify coding style/structure (Drake)
 * Get rid of the global spark stick fault flag? (Drake)

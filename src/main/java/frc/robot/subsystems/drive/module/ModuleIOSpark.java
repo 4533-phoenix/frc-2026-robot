@@ -170,7 +170,7 @@ public class ModuleIOSpark implements ModuleIO {
             : SensorDirectionValue.CounterClockwise_Positive;
     turnEncoder.getConfigurator().apply(turnEncoderConfig);
     turnAbsolutePositionSignal.setUpdateFrequency(odometryFrequency);
-    turnVelocitySignal.setUpdateFrequency(50);
+    turnVelocitySignal.setUpdateFrequency(odometryLowFrequency);
 
     // Configure Turn Spark Max
     var turnConfig = new SparkMaxConfig();
