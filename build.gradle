@@ -291,14 +291,23 @@ spotless {
     }
 }
 
-javadoc {
+task downloadJavadocStyle {
     def cssFile = file("${buildDir}/style.css")
     
-    if (!cssFile.exists()) {
-        println "Downloading Javadoc stylesheet..."
-        new URL('https://github.com/4533-phoenix/javadoc-style/raw/refs/heads/main/style.css')
-            .withInputStream { i -> cssFile.withOutputStream { it << i } }
+    doFirst {
+        buildDir.mkdirs()
     }
-    
-    options.stylesheetFile = cssFile
+
+    doLast {
+        if (!cssFile.exists()) {
+            println "Downloading Javadoc stylesheet..."
+            new URL('https://github.com/4533-phoenix/javadoc-style/raw/refs/heads/main/style.css')
+                .withInputStream { i -> cssFile.withOutputStream { it << i } }
+        }
+    }
+}
+
+javadoc {
+    dependsOn downloadJavadocStyle
+    options.stylesheetFile = file("${buildDir}/style.css")
 }
