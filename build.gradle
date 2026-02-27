@@ -293,7 +293,7 @@ spotless {
 
 task downloadJavadocStyle {
     def cssFile = file("${buildDir}/style.css")
-    
+
     doFirst {
         buildDir.mkdirs()
     }
@@ -302,7 +302,7 @@ task downloadJavadocStyle {
         if (!cssFile.exists()) {
             println "Downloading Javadoc stylesheet..."
             new URL('https://github.com/4533-phoenix/javadoc-style/raw/refs/heads/main/style.css')
-                .withInputStream { i -> cssFile.withOutputStream { it << i } }
+                    .withInputStream { i -> cssFile.withOutputStream { it << i } }
         }
     }
 }
