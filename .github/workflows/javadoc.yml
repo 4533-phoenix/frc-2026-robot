@@ -43,6 +43,10 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
+      # Install Toolchain
+      - name: Install toolchain
+        run: ./gradlew installRoboRioToolchain
+
       # Generate Javadoc
       - name: Generate Javadoc
         run: ./gradlew javadoc
