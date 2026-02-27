@@ -25,7 +25,7 @@ import frc.robot.util.Util;
 
 public class Superstructure {
   public static Rotation2d getTargetRotation(Drive drive) {
-    Translation2d targetTranslation = Util.flipAllianceIfNeeded(Constants.hubPosition);
+    Translation2d targetTranslation = Util.flipAllianceIfNeeded(Constants.outpostPosition);
     return targetTranslation.minus(drive.getPose().getTranslation()).getAngle();
   }
 
@@ -48,6 +48,13 @@ public class Superstructure {
         });
   }
 
+  public static Trigger isInLobbingZone(Drive drive) {
+    return new Trigger(
+        () -> {
+          return Constants.lobbingZone.contains(drive.getPose().getTranslation());
+        });
+  }
+
   public static Command getAutoAimCommand(
       Drive drive, Shooter shooter, CommandXboxController controller) {
     return Commands.parallel(
@@ -62,7 +69,7 @@ public class Superstructure {
   public static Command getShooterAimCommand(Drive drive, Shooter shooter) {
     return Commands.run(
         () -> {
-          Translation2d targetTranslation = Util.flipAllianceIfNeeded(Constants.hubPosition);
+          Translation2d targetTranslation = Util.flipAllianceIfNeeded(Constants.outpostPosition);
           Distance distanceToHub =
               Meters.of(drive.getPose().getTranslation().getDistance(targetTranslation));
           shooter.setTargetState(ShooterKinematics.calculateShooterState(distanceToHub));

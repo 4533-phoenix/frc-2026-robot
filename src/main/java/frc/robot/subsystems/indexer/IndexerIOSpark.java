@@ -35,7 +35,6 @@ public class IndexerIOSpark implements IndexerIO {
     config.signals.appliedOutputPeriodMs(40).busVoltagePeriodMs(40).outputCurrentPeriodMs(40);
 
     tryUntilOk(
-        spark,
         5,
         () ->
             spark.configure(
@@ -44,13 +43,13 @@ public class IndexerIOSpark implements IndexerIO {
 
   @Override
   public void updateInputs(IndexerIOInputs inputs) {
-    sparkStickyFault = false;
-    ifOk(
+    boolean sparkOk = true;
+    sparkOk &= ifOk(
         spark,
         new DoubleSupplier[] {spark::getAppliedOutput, spark::getBusVoltage},
         (values) -> inputs.appliedVoltage = Volts.of(values[0] * values[1]));
-    ifOk(spark, spark::getOutputCurrent, (value) -> inputs.appliedCurrent = Amps.of(value));
-    inputs.connected = sparkDebouncer.calculate(!sparkStickyFault);
+    sparkOk &= ifOk(spark, spark::getOutputCurrent, (value) -> inputs.appliedCurrent = Amps.of(value));
+    inputs.connected = sparkDebouncer.calculate(sparkOk);
   }
 
   @Override
