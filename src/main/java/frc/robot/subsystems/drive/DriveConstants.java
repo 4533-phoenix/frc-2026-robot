@@ -30,6 +30,8 @@ public class DriveConstants {
   public static final LinearVelocity maxLinearVelocity = MetersPerSecond.of(4.0);
   /** The frequency at which odometry calculations are updated. */
   public static final Frequency odometryFrequency = Hertz.of(100);
+  /** Less critacal odometry frequency */
+  public static final Frequency odometryLowFrequency = Hertz.of(50);
   /** The distance between the left and right wheels. */
   public static final Distance trackWidth = Inches.of(20.5);
   /** The distance between the front and back wheels. */
