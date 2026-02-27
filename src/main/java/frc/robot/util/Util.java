@@ -10,6 +10,7 @@
 package frc.robot.util;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -22,6 +23,10 @@ public class Util {
     return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red;
   }
 
+  public static Rectangle2d flipAllianceIfNeeded(Rectangle2d rectangle) {
+    return shouldFlip() ? flipAlliance(rectangle) : rectangle;
+  }
+
   public static Pose2d flipAllianceIfNeeded(Pose2d pose) {
     return shouldFlip() ? flipAlliance(pose) : pose;
   }
@@ -32,6 +37,11 @@ public class Util {
 
   public static Rotation2d flipAllianceIfNeeded(Rotation2d rotation) {
     return shouldFlip() ? flipAlliance(rotation) : rotation;
+  }
+
+  public static Rectangle2d flipAlliance(Rectangle2d rectangle) {
+    return new Rectangle2d(
+        flipAlliance(rectangle.getCenter()), rectangle.getXWidth(), rectangle.getYWidth());
   }
 
   public static Pose2d flipAlliance(Pose2d pose) {

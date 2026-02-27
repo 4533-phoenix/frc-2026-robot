@@ -9,6 +9,7 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Meters;
 
+import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Distance;
@@ -39,6 +40,14 @@ public class Superstructure {
         });
   }
 
+  public static Trigger isInShootingZone(Drive drive) {
+    return new Trigger(
+        () -> {
+          Rectangle2d shootingZone = Util.flipAllianceIfNeeded(Constants.shootingZone);
+          return shootingZone.contains(drive.getPose().getTranslation());
+        });
+  }
+
   public static Command getAutoAimCommand(
       Drive drive, Shooter shooter, CommandXboxController controller) {
     return Commands.parallel(
@@ -47,14 +56,17 @@ public class Superstructure {
             () -> -controller.getLeftY(),
             () -> -controller.getLeftX(),
             () -> Superstructure.getTargetRotation(drive)),
+        getShooterAimCommand(drive, shooter));
+  }
 
-        Commands.run(
-            () -> {
-              Translation2d targetTranslation = Util.flipAllianceIfNeeded(Constants.hubPosition);
-              Distance distanceToHub =
-                  Meters.of(drive.getPose().getTranslation().getDistance(targetTranslation));
-              shooter.setTargetState(ShooterKinematics.calculateShooterState(distanceToHub));
-            },
-            shooter));
+  public static Command getShooterAimCommand(Drive drive, Shooter shooter) {
+    return Commands.run(
+        () -> {
+          Translation2d targetTranslation = Util.flipAllianceIfNeeded(Constants.hubPosition);
+          Distance distanceToHub =
+              Meters.of(drive.getPose().getTranslation().getDistance(targetTranslation));
+          shooter.setTargetState(ShooterKinematics.calculateShooterState(distanceToHub));
+        },
+        shooter);
   }
 }

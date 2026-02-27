@@ -183,6 +183,7 @@ public class RobotContainer {
 
     controller
         .leftTrigger()
+        .and(Superstructure.isInShootingZone(drive))
         .whileTrue(Superstructure.getAutoAimCommand(drive, shooter, controller));
 
     controller
