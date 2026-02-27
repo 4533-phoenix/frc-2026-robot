@@ -12,8 +12,8 @@ import edu.wpi.first.wpilibj.RobotBase;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-public class VisionNative {
-  private static VisionNative instance;
+public class Whacknet {
+  private static Whacknet instance;
   private static final int MAX_QUEUE_SIZE = 64;
   public static final int STRUCT_SIZE = 64;
 
@@ -23,9 +23,9 @@ public class VisionNative {
   // Cache for current packet count to avoid recalculating offsets
   private int currentPacketCount = 0;
 
-  public static synchronized VisionNative getInstance() {
+  public static synchronized Whacknet getInstance() {
     if (instance == null) {
-      instance = new VisionNative();
+      instance = new Whacknet();
     }
     return instance;
   }
@@ -33,17 +33,17 @@ public class VisionNative {
   static {
     if (RobotBase.isReal()) {
       try {
-        System.loadLibrary("vision_server");
+        System.loadLibrary("whacknet");
         loaded = true;
       } catch (UnsatisfiedLinkError e) {
         System.err.println(
-            "[VisionNative-java] Failed to load vision_server library: " + e.getMessage());
+            "[VisionNative-java] Failed to load whacknet library: " + e.getMessage());
         loaded = false;
       }
     }
   }
 
-  private VisionNative() {
+  private Whacknet() {
     buffer = ByteBuffer.allocateDirect(MAX_QUEUE_SIZE * STRUCT_SIZE);
     buffer.order(ByteOrder.nativeOrder());
   }

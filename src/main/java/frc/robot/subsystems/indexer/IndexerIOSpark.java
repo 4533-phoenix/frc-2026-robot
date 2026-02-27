@@ -44,11 +44,13 @@ public class IndexerIOSpark implements IndexerIO {
   @Override
   public void updateInputs(IndexerIOInputs inputs) {
     boolean sparkOk = true;
-    sparkOk &= ifOk(
-        spark,
-        new DoubleSupplier[] {spark::getAppliedOutput, spark::getBusVoltage},
-        (values) -> inputs.appliedVoltage = Volts.of(values[0] * values[1]));
-    sparkOk &= ifOk(spark, spark::getOutputCurrent, (value) -> inputs.appliedCurrent = Amps.of(value));
+    sparkOk &=
+        ifOk(
+            spark,
+            new DoubleSupplier[] {spark::getAppliedOutput, spark::getBusVoltage},
+            (values) -> inputs.appliedVoltage = Volts.of(values[0] * values[1]));
+    sparkOk &=
+        ifOk(spark, spark::getOutputCurrent, (value) -> inputs.appliedCurrent = Amps.of(value));
     inputs.connected = sparkDebouncer.calculate(sparkOk);
   }
 

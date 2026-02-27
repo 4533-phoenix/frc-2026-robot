@@ -52,18 +52,20 @@ public class ClimbIOReal implements ClimbIO {
   @Override
   public void updateInputs(ClimbIOInputs inputs) {
     boolean sparkOk = true;
-    sparkOk &= ifOk(
-        spark,
-        new DoubleSupplier[] {spark::getAppliedOutput, spark::getBusVoltage},
-        (vals) -> inputs.appliedVoltage = Volts.of(vals[0] * vals[1]));
+    sparkOk &=
+        ifOk(
+            spark,
+            new DoubleSupplier[] {spark::getAppliedOutput, spark::getBusVoltage},
+            (vals) -> inputs.appliedVoltage = Volts.of(vals[0] * vals[1]));
     sparkOk &= ifOk(spark, spark::getOutputCurrent, (v) -> inputs.appliedCurrent = Amps.of(v));
-    sparkOk &= ifOk(
-        spark,
-        new BooleanSupplier[] {upperLimit::isPressed, lowerLimit::isPressed},
-        (vals) -> {
-          inputs.upperLimit = vals[0];
-          inputs.lowerLimit = vals[1];
-        });
+    sparkOk &=
+        ifOk(
+            spark,
+            new BooleanSupplier[] {upperLimit::isPressed, lowerLimit::isPressed},
+            (vals) -> {
+              inputs.upperLimit = vals[0];
+              inputs.lowerLimit = vals[1];
+            });
     inputs.connected = liftConnectedDebounce.calculate(sparkOk);
   }
 

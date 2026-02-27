@@ -150,33 +150,42 @@ public class IntakeIOReal implements IntakeIO {
   public void updateInputs(IntakeIOInputs inputs) {
     // Arm motor
     boolean armSparkOk = true;
-    armSparkOk &= ifOk(armSpark, armEncoder::getPosition, (value) -> inputs.armPosition = Radians.of(value));
-    armSparkOk &= ifOk(
-        armSpark,
-        armEncoder::getVelocity,
-        (value) -> inputs.armVelocity = RadiansPerSecond.of(value));
-    armSparkOk &= ifOk(
-        armSpark,
-        new DoubleSupplier[] {armSpark::getAppliedOutput, armSpark::getBusVoltage},
-        (values) -> inputs.armAppliedVoltage = Volts.of(values[0] * values[1]));
-    armSparkOk &= ifOk(
-        armSpark, armSpark::getOutputCurrent, (value) -> inputs.armAppliedCurrent = Amps.of(value));
+    armSparkOk &=
+        ifOk(armSpark, armEncoder::getPosition, (value) -> inputs.armPosition = Radians.of(value));
+    armSparkOk &=
+        ifOk(
+            armSpark,
+            armEncoder::getVelocity,
+            (value) -> inputs.armVelocity = RadiansPerSecond.of(value));
+    armSparkOk &=
+        ifOk(
+            armSpark,
+            new DoubleSupplier[] {armSpark::getAppliedOutput, armSpark::getBusVoltage},
+            (values) -> inputs.armAppliedVoltage = Volts.of(values[0] * values[1]));
+    armSparkOk &=
+        ifOk(
+            armSpark,
+            armSpark::getOutputCurrent,
+            (value) -> inputs.armAppliedCurrent = Amps.of(value));
     inputs.armConnected = armConnectedDebounce.calculate(armSparkOk);
 
     // Spinner motor
     boolean spinnerSparkOk = true;
-    spinnerSparkOk &= ifOk(
-        spinnerSpark,
-        spinnerEncoder::getVelocity,
-        (value) -> inputs.spinnerVelocity = RadiansPerSecond.of(value));
-    spinnerSparkOk &= ifOk(
-        spinnerSpark,
-        new DoubleSupplier[] {spinnerSpark::getAppliedOutput, spinnerSpark::getBusVoltage},
-        (values) -> inputs.spinnerAppliedVoltage = Volts.of(values[0] * values[1]));
-    spinnerSparkOk &= ifOk(
-        spinnerSpark,
-        spinnerSpark::getOutputCurrent,
-        (value) -> inputs.spinnerAppliedCurrent = Amps.of(value));
+    spinnerSparkOk &=
+        ifOk(
+            spinnerSpark,
+            spinnerEncoder::getVelocity,
+            (value) -> inputs.spinnerVelocity = RadiansPerSecond.of(value));
+    spinnerSparkOk &=
+        ifOk(
+            spinnerSpark,
+            new DoubleSupplier[] {spinnerSpark::getAppliedOutput, spinnerSpark::getBusVoltage},
+            (values) -> inputs.spinnerAppliedVoltage = Volts.of(values[0] * values[1]));
+    spinnerSparkOk &=
+        ifOk(
+            spinnerSpark,
+            spinnerSpark::getOutputCurrent,
+            (value) -> inputs.spinnerAppliedCurrent = Amps.of(value));
     inputs.spinnerConnected = spinnerConnectedDebounce.calculate(spinnerSparkOk);
   }
 

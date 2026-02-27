@@ -211,19 +211,28 @@ public class ModuleIOSpark implements ModuleIO {
   public void updateInputs(ModuleIOInputs inputs) {
     // Drive Motor
     boolean driveOk = true;
-    driveOk &= ifOk(
-        driveSpark, driveEncoder::getPosition, (value) -> inputs.drivePosition = Radians.of(value));
-    driveOk &= ifOk(
-        driveSpark, driveEncoder::getVelocity, (value) -> inputs.driveVelocity = RadiansPerSecond.of(value));
-    driveOk &= ifOk(
-        driveSpark, 
-        new DoubleSupplier[] {driveSpark::getAppliedOutput, driveSpark::getBusVoltage},
-        (values) -> inputs.driveAppliedVoltage = Volts.of(values[0] * values[1]));
-    driveOk &= ifOk(
-        driveSpark, driveSpark::getOutputCurrent, (value) -> inputs.driveCurrent = Amps.of(value));
-    
-    inputs.driveConnected = driveConnectedDebounce.calculate(driveOk);
+    driveOk &=
+        ifOk(
+            driveSpark,
+            driveEncoder::getPosition,
+            (value) -> inputs.drivePosition = Radians.of(value));
+    driveOk &=
+        ifOk(
+            driveSpark,
+            driveEncoder::getVelocity,
+            (value) -> inputs.driveVelocity = RadiansPerSecond.of(value));
+    driveOk &=
+        ifOk(
+            driveSpark,
+            new DoubleSupplier[] {driveSpark::getAppliedOutput, driveSpark::getBusVoltage},
+            (values) -> inputs.driveAppliedVoltage = Volts.of(values[0] * values[1]));
+    driveOk &=
+        ifOk(
+            driveSpark,
+            driveSpark::getOutputCurrent,
+            (value) -> inputs.driveCurrent = Amps.of(value));
 
+    inputs.driveConnected = driveConnectedDebounce.calculate(driveOk);
 
     // Turn Encoder
     BaseStatusSignal.refreshAll(turnAbsolutePositionSignal, turnVelocitySignal);
@@ -254,13 +263,17 @@ public class ModuleIOSpark implements ModuleIO {
 
     // Turn Motor
     boolean turnSparkOk = true;
-    turnSparkOk &= ifOk(
-        turnSpark,
-        new DoubleSupplier[] {turnSpark::getAppliedOutput, turnSpark::getBusVoltage},
-        (values) -> inputs.turnAppliedVoltage = Volts.of(values[0] * values[1]));
-    turnSparkOk &= ifOk(
-        turnSpark, turnSpark::getOutputCurrent, (value) -> inputs.turnCurrent = Amps.of(value));
-    inputs.turnConnected = turnConnectedDebounce.calculate(turnSparkOk && turnCoderOk); // TODO: Separate motor and encoder connectivity?
+    turnSparkOk &=
+        ifOk(
+            turnSpark,
+            new DoubleSupplier[] {turnSpark::getAppliedOutput, turnSpark::getBusVoltage},
+            (values) -> inputs.turnAppliedVoltage = Volts.of(values[0] * values[1]));
+    turnSparkOk &=
+        ifOk(
+            turnSpark, turnSpark::getOutputCurrent, (value) -> inputs.turnCurrent = Amps.of(value));
+    inputs.turnConnected =
+        turnConnectedDebounce.calculate(
+            turnSparkOk && turnCoderOk); // TODO: Separate motor and encoder connectivity?
 
     // High-Frequency Queues
     int count = timestampQueue.size();
