@@ -76,9 +76,9 @@ public class Module {
   /**
    * Runs the module with the specified setpoint state.
    *
-   * <p>Optimizes the state to minimize turn angle (turning < 90 degrees instead of > 90) and scales
-   * the drive velocity based on the cosine of the error between the setpoint angle and current
-   * angle.
+   * <p>Optimizes the state to minimize turn angle (turning &lt; 90 degrees instead of &gt; 90) and
+   * scales the drive velocity based on the cosine of the error between the setpoint angle and
+   * current angle.
    *
    * @param state The desired state (angle and velocity) for the module.
    */

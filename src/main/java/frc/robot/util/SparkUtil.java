@@ -18,8 +18,23 @@ import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
+/**
+ * Utility class for safely interacting with REVLib Spark devices.
+ *
+ * <p>Provides methods to check for errors before processing data and to retry configuration
+ * commands until successful.
+ */
 public class SparkUtil {
-  /** Processes a value from a Spark only if the value is valid. */
+  private SparkUtil() {} // Prevent instantiation
+
+  /**
+   * Processes a double value from a Spark only if the last operation was successful.
+   *
+   * @param spark The Spark device to check for errors.
+   * @param supplier A function to supply the value.
+   * @param consumer A function to consume the value if the device is error-free.
+   * @return True if the operation was successful, false otherwise.
+   */
   public static boolean ifOk(SparkBase spark, DoubleSupplier supplier, DoubleConsumer consumer) {
     double value = supplier.getAsDouble();
     if (spark.getLastError() == REVLibError.kOk) {
@@ -29,7 +44,14 @@ public class SparkUtil {
     return false;
   }
 
-  /** Processes a value from a Spark only if the value is valid. */
+  /**
+   * Processes multiple double values from a Spark only if all operations were successful.
+   *
+   * @param spark The Spark device to check for errors.
+   * @param suppliers An array of functions to supply the values.
+   * @param consumer A function to consume the values if the device is error-free.
+   * @return True if all operations were successful, false otherwise.
+   */
   public static boolean ifOk(
       SparkBase spark, DoubleSupplier[] suppliers, Consumer<double[]> consumer) {
     double[] values = new double[suppliers.length];
@@ -43,7 +65,14 @@ public class SparkUtil {
     return true;
   }
 
-  /** Processes a value from a Spark only if the value is valid. */
+  /**
+   * Processes a boolean value from a Spark only if the last operation was successful.
+   *
+   * @param spark The Spark device to check for errors.
+   * @param supplier A function to supply the value.
+   * @param consumer A function to consume the value if the device is error-free.
+   * @return True if the operation was successful, false otherwise.
+   */
   public static boolean ifOk(SparkBase spark, BooleanSupplier supplier, BooleanConsumer consumer) {
     boolean value = supplier.getAsBoolean();
     if (spark.getLastError() == REVLibError.kOk) {
@@ -53,7 +82,14 @@ public class SparkUtil {
     return false;
   }
 
-  /** Processes a value from a Spark only if the value is valid. */
+  /**
+   * Processes multiple boolean values from a Spark only if all operations were successful.
+   *
+   * @param spark The Spark device to check for errors.
+   * @param suppliers An array of functions to supply the values.
+   * @param consumer A function to consume the values if the device is error-free.
+   * @return True if all operations were successful, false otherwise.
+   */
   public static boolean ifOk(
       SparkBase spark, BooleanSupplier[] suppliers, Consumer<boolean[]> consumer) {
     boolean[] values = new boolean[suppliers.length];
@@ -67,7 +103,13 @@ public class SparkUtil {
     return true;
   }
 
-  /** Attempts to run the command until no error is produced. */
+  /**
+   * Attempts to run a configuration command until no error is produced or max attempts are reached.
+   *
+   * @param maxAttempts The maximum number of times to retry the command.
+   * @param command A function to execute and check for errors.
+   * @return True if the command succeeded within the attempt limit, false otherwise.
+   */
   public static boolean tryUntilOk(int maxAttempts, Supplier<REVLibError> command) {
     for (int i = 0; i < maxAttempts; i++) {
       var error = command.get();
