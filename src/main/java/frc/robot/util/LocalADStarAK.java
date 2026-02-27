@@ -27,38 +27,48 @@ import org.littletonrobotics.junction.inputs.LoggableInputs;
 // NOTE: This file is available at
 // https://gist.github.com/mjansen4857/a8024b55eb427184dbd10ae8923bd57d
 
+/**
+ * AdvantageKit wrapper for the PathPlanner LocalADStar pathfinder.
+ *
+ * <p>This wrapper handles logging path data to AdvantageKit, allowing for recording, replaying, and
+ * analyzing pathfinding results in simulation or via log files.
+ */
 public class LocalADStarAK implements Pathfinder {
   private final ADStarIO io = new ADStarIO();
 
   /**
-   * Get if a new path has been calculated since the last time a path was retrieved
+   * Checks if a new path has been calculated since the last retrieval.
    *
-   * @return True if a new path is available
+   * @return True if a new path is available.
    */
   @Override
   public boolean isNewPathAvailable() {
+    // Only update if not in replay mode
     if (!Logger.hasReplaySource()) {
       io.updateIsNewPathAvailable();
     }
 
+    // Process inputs (handles logging when recording, reading when replaying)
     Logger.processInputs("LocalADStarAK", io);
 
     return io.isNewPathAvailable;
   }
 
   /**
-   * Get the most recently calculated path
+   * Retrieves the most recently calculated path.
    *
-   * @param constraints The path constraints to use when creating the path
-   * @param goalEndState The goal end state to use when creating the path
-   * @return The PathPlannerPath created from the points calculated by the pathfinder
+   * @param constraints The path constraints to use when creating the path.
+   * @param goalEndState The goal end state to use when creating the path.
+   * @return The PathPlannerPath created from the points calculated by the pathfinder, or null.
    */
   @Override
   public PathPlannerPath getCurrentPath(PathConstraints constraints, GoalEndState goalEndState) {
+    // Only update if not in replay mode
     if (!Logger.hasReplaySource()) {
       io.updateCurrentPathPoints(constraints, goalEndState);
     }
 
+    // Process inputs (handles logging when recording, reading when replaying)
     Logger.processInputs("LocalADStarAK", io);
 
     if (io.currentPathPoints.isEmpty()) {
@@ -69,10 +79,9 @@ public class LocalADStarAK implements Pathfinder {
   }
 
   /**
-   * Set the start position to pathfind from
+   * Sets the start position to pathfind from.
    *
-   * @param startPosition Start position on the field. If this is within an obstacle it will be
-   *     moved to the nearest non-obstacle node.
+   * @param startPosition Start position on the field.
    */
   @Override
   public void setStartPosition(Translation2d startPosition) {
@@ -82,10 +91,9 @@ public class LocalADStarAK implements Pathfinder {
   }
 
   /**
-   * Set the goal position to pathfind to
+   * Sets the goal position to pathfind to.
    *
-   * @param goalPosition Goal position on the field. f this is within an obstacle it will be moved
-   *     to the nearest non-obstacle node.
+   * @param goalPosition Goal position on the field.
    */
   @Override
   public void setGoalPosition(Translation2d goalPosition) {
@@ -95,12 +103,10 @@ public class LocalADStarAK implements Pathfinder {
   }
 
   /**
-   * Set the dynamic obstacles that should be avoided while pathfinding.
+   * Sets the dynamic obstacles that should be avoided while pathfinding.
    *
-   * @param obs A List of Translation2d pairs representing obstacles. Each Translation2d represents
-   *     opposite corners of a bounding box.
-   * @param currentRobotPos The current position of the robot. This is needed to change the start
-   *     position of the path to properly avoid obstacles
+   * @param obs A List of Translation2d pairs representing obstacles.
+   * @param currentRobotPos The current position of the robot.
    */
   @Override
   public void setDynamicObstacles(
@@ -110,15 +116,22 @@ public class LocalADStarAK implements Pathfinder {
     }
   }
 
+  /** IO implementation for logging ADStar data. */
   private static class ADStarIO implements LoggableInputs {
     public LocalADStar adStar = new LocalADStar();
     public boolean isNewPathAvailable = false;
     public List<PathPoint> currentPathPoints = Collections.emptyList();
 
+    /**
+     * Serializes the current path points into the log table.
+     *
+     * @param table The log table to write to.
+     */
     @Override
     public void toLog(LogTable table) {
       table.put("IsNewPathAvailable", isNewPathAvailable);
 
+      // Serialize path points to a double array (x, y pairs)
       double[] pointsLogged = new double[currentPathPoints.size() * 2];
       int idx = 0;
       for (PathPoint point : currentPathPoints) {
@@ -130,10 +143,16 @@ public class LocalADStarAK implements Pathfinder {
       table.put("CurrentPathPoints", pointsLogged);
     }
 
+    /**
+     * Deserializes path points from the log table.
+     *
+     * @param table The log table to read from.
+     */
     @Override
     public void fromLog(LogTable table) {
       isNewPathAvailable = table.get("IsNewPathAvailable", false);
 
+      // Deserialize double array back into path points
       double[] pointsLogged = table.get("CurrentPathPoints", new double[0]);
 
       List<PathPoint> pathPoints = new ArrayList<>();
@@ -145,10 +164,17 @@ public class LocalADStarAK implements Pathfinder {
       currentPathPoints = pathPoints;
     }
 
+    /** Updates the flag indicating if a new path has been generated. */
     public void updateIsNewPathAvailable() {
       isNewPathAvailable = adStar.isNewPathAvailable();
     }
 
+    /**
+     * Updates the current path points based on the constraints and goal end state.
+     *
+     * @param constraints The path constraints.
+     * @param goalEndState The goal end state.
+     */
     public void updateCurrentPathPoints(PathConstraints constraints, GoalEndState goalEndState) {
       PathPlannerPath currentPath = adStar.getCurrentPath(constraints, goalEndState);
 

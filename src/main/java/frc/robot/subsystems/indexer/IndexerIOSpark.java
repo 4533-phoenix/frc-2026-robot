@@ -21,19 +21,29 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Voltage;
 import java.util.function.DoubleSupplier;
 
+/**
+ * Real IO implementation for the indexer subsystem using a Spark Max motor controller.
+ *
+ * <p>This implementation configures the Spark Max with specific current limits and idle modes, and
+ * monitors connectivity via a debouncer.
+ */
 public class IndexerIOSpark implements IndexerIO {
   private final SparkMax spark = new SparkMax(indexerMotorId, MotorType.kBrushless);
 
+  // Debouncer to prevent rapidly toggling connection status
   private final Debouncer sparkDebouncer = new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
+  /** Creates a new IndexerIOSpark and configures the Spark Max. */
   public IndexerIOSpark() {
     var config = new SparkMaxConfig();
     config
         .idleMode(IdleMode.kBrake)
         .smartCurrentLimit((int) indexerMotorCurrentLimit.in(Amps))
         .voltageCompensation(12.0);
+    // Configure signal update rates for logging (40ms period)
     config.signals.appliedOutputPeriodMs(40).busVoltagePeriodMs(40).outputCurrentPeriodMs(40);
 
+    // Attempt to configure the Spark Max, retrying if necessary
     tryUntilOk(
         5,
         () ->
@@ -41,9 +51,12 @@ public class IndexerIOSpark implements IndexerIO {
                 config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
   }
 
+  /** Updates hardware inputs and monitors connectivity. */
   @Override
   public void updateInputs(IndexerIOInputs inputs) {
     boolean sparkOk = true;
+
+    // Safely retrieve telemetry from the motor controller
     sparkOk &=
         ifOk(
             spark,
@@ -51,9 +64,16 @@ public class IndexerIOSpark implements IndexerIO {
             (values) -> inputs.appliedVoltage = Volts.of(values[0] * values[1]));
     sparkOk &=
         ifOk(spark, spark::getOutputCurrent, (value) -> inputs.appliedCurrent = Amps.of(value));
+
+    // Debounce the connection status to ensure stability
     inputs.connected = sparkDebouncer.calculate(sparkOk);
   }
 
+  /**
+   * Sets the indexer motor voltage.
+   *
+   * @param voltage The requested voltage to apply.
+   */
   @Override
   public void setVoltage(Voltage voltage) {
     spark.setVoltage(voltage.in(Volts));
