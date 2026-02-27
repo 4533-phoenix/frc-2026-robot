@@ -77,8 +77,13 @@ public class RobotContainer {
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
 
-  /** The container for the robot. Contains subsystems, OI devices, and commands. */
+  /**
+   * The container for the robot. Contains subsystems, OI devices, and commands.
+   *
+   * <p>Configures IO implementations based on the current mode (Real, Sim, or Replay).
+   */
   public RobotContainer() {
+    // Instantiate subsystems based on the running mode
     switch (Constants.currentMode) {
       case REAL:
         // Real robot, instantiate hardware IO implementations
@@ -89,7 +94,7 @@ public class RobotContainer {
                 new ModuleIOSpark(1),
                 new ModuleIOSpark(2),
                 new ModuleIOSpark(3));
-        climb = new Climb(new ClimbIO() {});
+        climb = new Climb(new ClimbIO() {}); // Assuming placeholder IO
         intake = new Intake(new IntakeIOReal());
         shooter = new Shooter(new FlywheelIOTalonFX(), new HoodIOServo());
         indexer = new Indexer(new IndexerIOSpark());
@@ -129,10 +134,10 @@ public class RobotContainer {
         break;
     }
 
-    // Set up auto routines
+    // Set up auto routines via PathPlanner
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
-    // Set up SysId routines
+    // Set up characterization routines for SysId
     autoChooser.addOption(
         "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
     autoChooser.addOption(
@@ -159,12 +164,12 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    // Get common triggers
+    // Get common triggers from the superstructure
     Trigger outpostEnabled = Superstructure.isOutpostEnabled();
     Trigger readyToFire = Superstructure.isReadyToFire(drive, shooter);
     Trigger endgame = Superstructure.isEndgame();
 
-    // Default command, normal field-relative drive
+    // Normal field-relative drive
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
@@ -172,12 +177,17 @@ public class RobotContainer {
             () -> -driverController.getLeftX(),
             () -> -driverController.getRightX()));
 
-    // Deploy intake and spin while A is held and set the default command to retract
-    // when released
+    // Intake remains retracted by default
     intake.setDefaultCommand(IntakeCommands.holdRetracted(intake));
+    
+    // Shooter and indexer stop by default
+    shooter.setDefaultCommand(ShooterCommands.stopShooter(shooter));
+    indexer.setDefaultCommand(IndexerCommands.stopIndexer(indexer));
+
+    // Deploy intake and spin while Left Bumper is held
     driverController.leftBumper().whileTrue(IntakeCommands.deploy(intake));
 
-    // Reset gyro to 0° when B button is pressed
+    // Reset gyro to 0° when B button is pressed
     driverController
         .b()
         .onTrue(
@@ -188,33 +198,33 @@ public class RobotContainer {
                     drive)
                 .ignoringDisable(true));
 
-    // Shooter Controls
-    shooter.setDefaultCommand(ShooterCommands.stopShooter(shooter));
-    indexer.setDefaultCommand(IndexerCommands.stopIndexer(indexer));
-
+    // Auto-aim while holding Left Trigger and in shooting zone
     driverController
         .leftTrigger()
         .and(Superstructure.isInShootingZone(drive))
         .whileTrue(Superstructure.getAutoAimCommand(drive, shooter, driverController));
 
+    // Fire game piece while holding Right Trigger, ready to fire, and outpost enabled
     driverController
         .rightTrigger()
         .and(readyToFire)
         .and(outpostEnabled)
         .whileTrue(IndexerCommands.runIndexer(indexer));
 
-    // Vibration controls
+    // Rumble when outpost becomes enabled
     outpostEnabled.onTrue(
         Superstructure.rumbleCommand(driverController, RumbleType.kLeftRumble, 0.5, 0.2)
             .andThen(Commands.waitSeconds(0.1))
             .andThen(
                 Superstructure.rumbleCommand(driverController, RumbleType.kLeftRumble, 0.5, 0.2)));
 
+    // Rumble when shooter is ready
     readyToFire.whileTrue(
         Commands.startEnd(
             () -> driverController.setRumble(RumbleType.kRightRumble, 0.4),
             () -> driverController.setRumble(RumbleType.kRightRumble, 0.0)));
 
+    // Rumble hard during endgame
     endgame.onTrue(
         Superstructure.rumbleCommand(driverController, RumbleType.kBothRumble, 1.0, 1.5));
   }
