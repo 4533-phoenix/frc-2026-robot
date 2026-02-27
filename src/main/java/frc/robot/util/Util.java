@@ -15,6 +15,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import frc.robot.Constants;
 
 /**
  * Utility class for common robot math and field geometry operations.
@@ -23,9 +24,6 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
  * color.
  */
 public class Util {
-  /** The length of the FRC field in meters. */
-  public static final double FIELD_LENGTH = 16.5413;
-
   /**
    * Checks if the robot needs to flip its coordinate system for the Red alliance.
    *
@@ -103,7 +101,7 @@ public class Util {
    * @return The flipped translation.
    */
   public static Translation2d flipAlliance(Translation2d translation) {
-    return new Translation2d(FIELD_LENGTH - translation.getX(), translation.getY());
+    return new Translation2d(Constants.fieldLength.minus(translation.getMeasureX()), translation.getMeasureY());
   }
 
   /**
