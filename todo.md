@@ -2,15 +2,10 @@
 * Attempt to unify coding style/structure (Drake)
 * Get rid of the global spark stick fault flag? (Drake)
 * Improve hood position simulation (Dawson)
-* maybe verify hood setpoint vs flywheel setpoint (Dawson)
 * need to recalculate trapezoid profile for when arm is renabled and its not where it thinks it is? (Unasigned)
-* use bang-bang algorithm to control shooter instead of PIDF (Unasigned)
-* Add limits to what the launch angle can be set to (Unasigned)
 * Need to not cancel original drive command and instead inject angle (Unasigned)
-* Make the auto shoot auto ready (Unasigned)
 * Need to add lobbing mode over the center (Unasigned)
 * Need to make sure we are not creating objects in loops for rects? (Unasigned)
-* Documentation!!?!?!!
 * Why is measured velocities always lower than commmanded on swerve?
 * Make sure shooter tolerance is good (Otherwise fix sim)
 * Add velocity to shooter aim?
