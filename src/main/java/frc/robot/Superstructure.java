@@ -14,8 +14,10 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.DriveCommands;
@@ -53,6 +55,21 @@ public class Superstructure {
     return new Trigger(
         () -> {
           return Constants.lobbingZone.contains(drive.getPose().getTranslation());
+        });
+  }
+
+  public static Trigger isEndgame() {
+    return new Trigger(
+        () -> {
+          if (DriverStation.isDisabled()) return false;
+          if (DriverStation.isAutonomous()) return false;
+
+          // Check if we are in a timed session (FMS or Practice Mode)
+          double time = DriverStation.getMatchTime();
+          boolean isTimedMatch = DriverStation.isFMSAttached() || time > 0;
+
+          // Return true only if a timer is running and we are at or below 30s.
+          return isTimedMatch && time <= 30.0 && time > 0;
         });
   }
 
@@ -110,5 +127,12 @@ public class Superstructure {
           shooter.setTargetState(ShooterKinematics.calculateShooterState(distanceToHub));
         },
         shooter);
+  }
+
+  public static Command rumbleCommand(
+      CommandGenericHID controller, RumbleType type, double intensity, double duration) {
+    return Commands.startEnd(
+            () -> controller.setRumble(type, intensity), () -> controller.setRumble(type, 0.0))
+        .withTimeout(duration);
   }
 }
