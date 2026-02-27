@@ -311,9 +311,7 @@ javadoc {
     dependsOn downloadJavadocStyle
     options.stylesheetFile = file("${buildDir}/style.css")
 
-    def grioPlugin = plugins.findPlugin("edu.wpi.first.GradleRIO")
-    def wpiVersion = grioPlugin ? grioPlugin.getClass().getPackage().getImplementationVersion() : "release"
-
+    def wpiVersion = project.wpi.wpilibVersion.get()
     options {
         links "https://github.wpilib.org/allwpilib/docs/${wpiVersion}/java/"
         links "https://docs.oracle.com/en/java/javase/17/docs/api/"
