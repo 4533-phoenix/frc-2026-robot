@@ -17,7 +17,7 @@ import frc.robot.util.ExtraMotors;
 /** Hardware and tuning constants for the climb subsystem. */
 public final class ClimbConstants {
   // CAN IDs
-  public static final int liftMotorCanId = 60;
+  public static final int liftMotorCanId = 19;
 
   // Motor and current limits
   public static final Current liftMotorCurrentLimit = Amps.of(30);
