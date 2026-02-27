@@ -40,7 +40,7 @@ public class Vision extends SubsystemBase {
     this.io = io;
     this.drive = drive;
 
-    for (var entry : CAMERA_MAP.entrySet()) {
+    for (var entry : cameraMap.entrySet()) {
       lastTimestampMap.put(entry.getKey(), Timer.getTimestamp());
       alertMap.put(
           entry.getKey(),
@@ -75,9 +75,9 @@ public class Vision extends SubsystemBase {
       drive.addVisionMeasurement(inputs.visionPoses[i], inputs.timestamps[i], stdVector);
     }
 
-    for (int id : CAMERA_MAP.keySet()) {
+    for (int id : cameraMap.keySet()) {
       double lastSeen = lastTimestampMap.getOrDefault(id, 0.0);
-      boolean isOffline = (currentTime - lastSeen) > OFFLINE_TIMEOUT_SECONDS;
+      boolean isOffline = (currentTime - lastSeen) > offlineTimeoutSeconds;
 
       alertMap.get(id).set(isOffline);
       Logger.recordOutput(logPaths.get(id), !isOffline);
