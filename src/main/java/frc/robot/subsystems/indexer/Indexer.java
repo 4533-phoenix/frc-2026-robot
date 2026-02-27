@@ -28,7 +28,7 @@ public class Indexer extends SubsystemBase {
   @Override
   public void periodic() {
     io.updateInputs(inputs);
-    Logger.processInputs("Shooter/Indexer", inputs);
+    Logger.processInputs("Indexer", inputs);
     disconnectedAlert.set(!inputs.connected);
   }
 

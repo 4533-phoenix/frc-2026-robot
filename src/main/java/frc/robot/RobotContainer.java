@@ -13,10 +13,13 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.IndexerCommands;
@@ -38,6 +41,7 @@ import frc.robot.subsystems.indexer.IndexerIOSpark;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOReal;
+import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
@@ -65,8 +69,9 @@ public class RobotContainer {
   private final Indexer indexer;
   private final Vision vision;
 
-  // Controller
-  private final CommandXboxController controller = new CommandXboxController(0);
+  // Controllers
+  public final CommandXboxController driverController = new CommandXboxController(0);
+  public final CommandGenericHID operatorController = new CommandGenericHID(1);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -100,7 +105,7 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim());
         climb = new Climb(new ClimbIOSim());
-        intake = new Intake(new IntakeIO() {});
+        intake = new Intake(new IntakeIOSim());
         shooter = new Shooter(new FlywheelIOSim(), new HoodIOSim());
         indexer = new Indexer(new IndexerIOSim());
         vision = new Vision(new VisionIO() {}, drive);
@@ -153,21 +158,26 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
+    // Get common triggers
+    Trigger outpostEnabled = Superstructure.isOutpostEnabled();
+    Trigger readyToFire = Superstructure.isReadyToFire(drive, shooter);
+    Trigger endgame = Superstructure.isEndgame();
+
     // Default command, normal field-relative drive
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> -controller.getLeftY(),
-            () -> -controller.getLeftX(),
-            () -> -controller.getRightX()));
+            () -> -driverController.getLeftY(),
+            () -> -driverController.getLeftX(),
+            () -> -driverController.getRightX()));
 
     // Deploy intake and spin while A is held and set the default command to retract
     // when released
     intake.setDefaultCommand(IntakeCommands.holdRetracted(intake));
-    controller.leftBumper().whileTrue(IntakeCommands.deploy(intake));
+    driverController.leftBumper().whileTrue(IntakeCommands.deploy(intake));
 
     // Reset gyro to 0° when B button is pressed
-    controller
+    driverController
         .b()
         .onTrue(
             Commands.runOnce(
@@ -181,16 +191,31 @@ public class RobotContainer {
     shooter.setDefaultCommand(ShooterCommands.stopShooter(shooter));
     indexer.setDefaultCommand(IndexerCommands.stopIndexer(indexer));
 
-    controller
+    driverController
         .leftTrigger()
         .and(Superstructure.isInShootingZone(drive))
-        .whileTrue(Superstructure.getAutoAimCommand(drive, shooter, controller));
+        .whileTrue(Superstructure.getAutoAimCommand(drive, shooter, driverController));
 
-    controller
+    driverController
         .rightTrigger()
-        .and(Superstructure.isReadyToFire(drive, shooter))
-        .and(Superstructure.isOutpostEnabled())
+        .and(readyToFire)
+        .and(outpostEnabled)
         .whileTrue(IndexerCommands.runIndexer(indexer));
+
+    // Vibration controls
+    outpostEnabled.onTrue(
+        Superstructure.rumbleCommand(driverController, RumbleType.kLeftRumble, 0.5, 0.2)
+            .andThen(Commands.waitSeconds(0.1))
+            .andThen(
+                Superstructure.rumbleCommand(driverController, RumbleType.kLeftRumble, 0.5, 0.2)));
+
+    readyToFire.whileTrue(
+        Commands.startEnd(
+            () -> driverController.setRumble(RumbleType.kRightRumble, 0.4),
+            () -> driverController.setRumble(RumbleType.kRightRumble, 0.0)));
+
+    endgame.onTrue(
+        Superstructure.rumbleCommand(driverController, RumbleType.kBothRumble, 1.0, 1.5));
   }
 
   /**

@@ -40,7 +40,7 @@ public final class ShooterConstants {
   public static final double flywheelReduction = 1.0;
   public static final MomentOfInertia flywheelMOI = KilogramSquareMeters.of(0.0042);
   public static final Distance flywheelWheelRadius = Inches.of(2.05);
-  public static final AngularVelocity flywheelAngularTolerance = RadiansPerSecond.of(0.5);
+  public static final AngularVelocity flywheelAngularTolerance = RadiansPerSecond.of(5.0);
   public static final Current flywheelMotorCurrentLimit = Amps.of(60.0);
 
   // PID constants for flywheel velocity control

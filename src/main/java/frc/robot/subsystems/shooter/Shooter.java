@@ -82,6 +82,7 @@ public class Shooter extends SubsystemBase {
   public void stop() {
     targetVelocity = RadiansPerSecond.of(0.0);
     flywheelIO.stop();
+    hoodIO.retract();
     isShooting = false;
   }
 }
