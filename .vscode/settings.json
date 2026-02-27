@@ -68,7 +68,7 @@
     "editor.defaultFormatter": "richardwillis.vscode-spotless-gradle"
   },
   "[java]": {
-    "editor.defaultFormatter": "redhat.java"
+    "editor.defaultFormatter": "richardwillis.vscode-spotless-gradle"
   },
   "[github-actions-workflow]": {
     "editor.defaultFormatter": "redhat.vscode-yaml"

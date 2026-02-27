@@ -17,23 +17,38 @@ import com.studica.frc.AHRS.NavXUpdateRate;
 import frc.robot.subsystems.drive.SparkOdometryThread;
 import java.util.Queue;
 
-/** IO implementation for NavX. */
+/**
+ * IO implementation for the Studica NavX gyro.
+ *
+ * <p>This implementation configures the NavX to update at 200Hz via USB and registers its signals
+ * with the {@link SparkOdometryThread} for accurate, high-frequency odometry. Note that the NavX
+ * returns angles in degrees, which are converted to radians for standard units usage.
+ */
 public class GyroIONavX implements GyroIO {
   private final AHRS navX = new AHRS(NavXComType.kUSB1, NavXUpdateRate.k200Hz);
   private final Queue<Double> yawPositionQueue;
   private final Queue<Double> yawTimestampQueue;
 
+  /** Creates a new GyroIONavX. */
   public GyroIONavX() {
+    // Register signals with the asynchronous odometry thread
     yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
     yawPositionQueue = SparkOdometryThread.getInstance().registerSignal(navX::getAngle);
   }
 
+  /**
+   * Updates the set of loggable inputs, reading from the high-frequency queues.
+   *
+   * @param inputs The inputs object to update.
+   */
   @Override
   public void updateInputs(GyroIOInputs inputs) {
     inputs.connected = navX.isConnected();
+    // Hardware returns degrees (with reversed sign), convert to radians
     inputs.yawPosition = Radians.of(Math.toRadians(-navX.getAngle()));
     inputs.yawVelocity = RadiansPerSecond.of(Math.toRadians(-navX.getRawGyroZ()));
 
+    // Empty the queues into the inputs object for logging and odometry processing
     int count = yawTimestampQueue.size();
     inputs.odometryYawTimestamps = new double[count];
     inputs.odometryYawPositions = new double[count];
@@ -48,6 +63,7 @@ public class GyroIONavX implements GyroIO {
       inputs.odometryYawPositions[i++] = Math.toRadians(-angle);
     }
 
+    // Clear queues to ensure data is only processed once
     yawTimestampQueue.clear();
     yawPositionQueue.clear();
   }

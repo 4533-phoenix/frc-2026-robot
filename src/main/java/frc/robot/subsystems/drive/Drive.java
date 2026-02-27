@@ -53,8 +53,16 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
+/**
+ * Subsystem for the robot's swerve drive.
+ *
+ * <p>Handles kinematics, odometry estimation (incorporating gyro, modules, and vision), and
+ * interfacing with PathPlanner for autonomous paths.
+ */
 public class Drive extends SubsystemBase {
+  /** Lock used to synchronize access to odometry data between the main loop and sampling thread. */
   static final Lock odometryLock = new ReentrantLock();
+
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
   private final Module[] modules = new Module[4]; // FL, FR, BL, BR
@@ -74,6 +82,15 @@ public class Drive extends SubsystemBase {
   private SwerveDrivePoseEstimator poseEstimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
 
+  /**
+   * Creates a new Drive subsystem.
+   *
+   * @param gyroIO The abstraction layer for the gyroscope.
+   * @param flModuleIO The abstraction layer for the front-left module.
+   * @param frModuleIO The abstraction layer for the front-right module.
+   * @param blModuleIO The abstraction layer for the back-left module.
+   * @param brModuleIO The abstraction layer for the back-right module.
+   */
   public Drive(
       GyroIO gyroIO,
       ModuleIO flModuleIO,
@@ -186,7 +203,7 @@ public class Drive extends SubsystemBase {
   /**
    * Runs the drive at the desired velocity.
    *
-   * @param speeds Speeds in meters/sec
+   * @param speeds Speeds in meters/sec, relative to the robot's field-centric perspective.
    */
   public void runVelocity(ChassisSpeeds speeds) {
     // Calculate module setpoints
@@ -208,7 +225,11 @@ public class Drive extends SubsystemBase {
     Logger.recordOutput("SwerveStates/SetpointsOptimized", setpointStates);
   }
 
-  /** Runs the drive in a straight line with the specified drive output. */
+  /**
+   * Runs the drive in a straight line with the specified drive output. Used for SysId.
+   *
+   * @param output The voltage to apply to the drive motors.
+   */
   public void runCharacterization(Voltage output) {
     for (int i = 0; i < 4; i++) {
       modules[i].runCharacterization(output);
@@ -233,21 +254,35 @@ public class Drive extends SubsystemBase {
     stop();
   }
 
-  /** Returns a command to run a quasistatic test in the specified direction. */
+  /**
+   * Returns a command to run a quasistatic test in the specified direction for characterization.
+   *
+   * @param direction The direction to run the test.
+   * @return A Command to execute the test.
+   */
   public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
     return run(() -> runCharacterization(Volts.of(0.0)))
         .withTimeout(1.0)
         .andThen(sysId.quasistatic(direction));
   }
 
-  /** Returns a command to run a dynamic test in the specified direction. */
+  /**
+   * Returns a command to run a dynamic test in the specified direction for characterization.
+   *
+   * @param direction The direction to run the test.
+   * @return A Command to execute the test.
+   */
   public Command sysIdDynamic(SysIdRoutine.Direction direction) {
     return run(() -> runCharacterization(Volts.of(0.0)))
         .withTimeout(1.0)
         .andThen(sysId.dynamic(direction));
   }
 
-  /** Returns the module states (turn angles and drive velocities) for all of the modules. */
+  /**
+   * Returns the module states (turn angles and drive velocities) for all of the modules.
+   *
+   * @return The current state of each module.
+   */
   @AutoLogOutput(key = "SwerveStates/Measured")
   private SwerveModuleState[] getModuleStates() {
     SwerveModuleState[] states = new SwerveModuleState[4];
@@ -257,7 +292,11 @@ public class Drive extends SubsystemBase {
     return states;
   }
 
-  /** Returns the module positions (turn angles and drive positions) for all of the modules. */
+  /**
+   * Returns the module positions (turn angles and drive positions) for all of the modules.
+   *
+   * @return The current position of each module.
+   */
   private SwerveModulePosition[] getModulePositions() {
     SwerveModulePosition[] states = new SwerveModulePosition[4];
     for (int i = 0; i < 4; i++) {
@@ -266,13 +305,21 @@ public class Drive extends SubsystemBase {
     return states;
   }
 
-  /** Returns the measured chassis speeds of the robot. */
+  /**
+   * Returns the measured chassis speeds of the robot based on module states.
+   *
+   * @return The current robot chassis speeds.
+   */
   @AutoLogOutput(key = "SwerveChassisSpeeds/Measured")
   private ChassisSpeeds getChassisSpeeds() {
     return kinematics.toChassisSpeeds(getModuleStates());
   }
 
-  /** Returns the position of each module in radians. */
+  /**
+   * Returns the position of each module in radians for characterization.
+   *
+   * @return An array of module positions in radians.
+   */
   public double[] getWheelRadiusCharacterizationPositions() {
     double[] values = new double[4];
     for (int i = 0; i < 4; i++) {
@@ -281,7 +328,11 @@ public class Drive extends SubsystemBase {
     return values;
   }
 
-  /** Returns the average velocity of the modules. */
+  /**
+   * Returns the average velocity of the modules for characterization.
+   *
+   * @return The average module velocity in radians per second.
+   */
   public AngularVelocity getFFCharacterizationVelocity() {
     double output = 0.0;
     for (int i = 0; i < 4; i++) {
@@ -290,23 +341,41 @@ public class Drive extends SubsystemBase {
     return RadiansPerSecond.of(output);
   }
 
-  /** Returns the current odometry pose. */
+  /**
+   * Returns the current odometry pose.
+   *
+   * @return The estimated pose of the robot on the field.
+   */
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
     return poseEstimator.getEstimatedPosition();
   }
 
-  /** Returns the current odometry rotation. */
+  /**
+   * Returns the current odometry rotation.
+   *
+   * @return The estimated rotation of the robot.
+   */
   public Rotation2d getRotation() {
     return getPose().getRotation();
   }
 
-  /** Resets the current odometry pose. */
+  /**
+   * Resets the current odometry pose to a specific position.
+   *
+   * @param pose The new pose to set the robot to.
+   */
   public void setPose(Pose2d pose) {
     poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
   }
 
-  /** Adds a new timestamped vision measurement. */
+  /**
+   * Adds a new timestamped vision measurement to the pose estimator.
+   *
+   * @param visionRobotPoseMeters The pose reported by the vision system.
+   * @param timestampSeconds The timestamp of the vision measurement in seconds.
+   * @param visionMeasurementStdDevs The standard deviations of the vision measurement.
+   */
   public void addVisionMeasurement(
       Pose2d visionRobotPoseMeters,
       double timestampSeconds,
@@ -315,16 +384,31 @@ public class Drive extends SubsystemBase {
         visionRobotPoseMeters, timestampSeconds, visionMeasurementStdDevs);
   }
 
-  /** Returns the maximum linear velocity. */
+  /**
+   * Returns the maximum linear velocity.
+   *
+   * @return The maximum linear velocity.
+   */
   public LinearVelocity getMaxLinearVelocity() {
     return maxLinearVelocity;
   }
 
-  /** Returns the maximum angular velocity. */
+  /**
+   * Returns the maximum angular velocity.
+   *
+   * @return The maximum angular velocity.
+   */
   public AngularVelocity getMaxAngularVelocity() {
     return RadiansPerSecond.of(maxLinearVelocity.in(MetersPerSecond) / driveBaseRadius.in(Meters));
   }
 
+  /**
+   * Checks if the robot is aligned within a certain tolerance to a target angle.
+   *
+   * @param targetAngle The angle to check against.
+   * @param tolerance The allowed angular error.
+   * @return True if within tolerance, false otherwise.
+   */
   public boolean isAlignedWithTarget(Rotation2d targetAngle, Rotation2d tolerance) {
     return Math.abs(getRotation().minus(targetAngle).getRadians()) < tolerance.getRadians();
   }
