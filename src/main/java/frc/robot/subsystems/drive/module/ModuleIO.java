@@ -49,6 +49,10 @@ public interface ModuleIO {
     /** The current being drawn by the turn motor. */
     public Current turnCurrent = Amps.of(0.0);
 
+    // Turn Encoder Inputs
+    /** Whether the turn encoder is currently connected. */
+    public boolean turnEncoderConnected = false;
+
     // High-Frequency Odometry Inputs
     /**
      * Timestamps for high-frequency measurements used for odometry.

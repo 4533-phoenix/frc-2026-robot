@@ -30,6 +30,8 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.Angle;
@@ -73,6 +75,8 @@ public class ModuleIOSpark implements ModuleIO {
   private final Debouncer driveConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
   private final Debouncer turnConnectedDebounce =
+      new Debouncer(0.5, Debouncer.DebounceType.kFalling);
+  private final Debouncer turnEncoderConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
   /**
@@ -245,9 +249,9 @@ public class ModuleIOSpark implements ModuleIO {
 
     // Turn Encoder Inputs
     BaseStatusSignal.refreshAll(turnAbsolutePositionSignal, turnVelocitySignal);
-    boolean turnCoderOk = turnAbsolutePositionSignal.getStatus().isOK();
+    boolean turnEncoderOk = turnAbsolutePositionSignal.getStatus().isOK();
 
-    if (turnCoderOk) {
+    if (turnEncoderOk) {
       // Calculate position relative to the zero offset
       currentTurnPosition =
           new Rotation2d(turnAbsolutePositionSignal.getValueAsDouble() * turnEncoderPositionFactor)
@@ -255,10 +259,10 @@ public class ModuleIOSpark implements ModuleIO {
       inputs.turnVelocity =
           RadiansPerSecond.of(turnVelocitySignal.getValueAsDouble() * turnEncoderVelocityFactor);
 
-      // Drift Compensation: Sync internal encoder to CANcoder if still and error is high
+      // Sync internal encoder to CANcoder if still and error is high
       double internalPos = turnInternalEncoder.getPosition();
       double absolutePos = currentTurnPosition.getRadians();
-      double turnError = Math.abs(internalPos - absolutePos);
+      double turnError = Math.abs(MathUtil.angleModulus(internalPos - absolutePos));
       boolean isStill =
           inputs.turnVelocity.abs(RadiansPerSecond) < velocityGate.in(RadiansPerSecond);
 
@@ -283,36 +287,40 @@ public class ModuleIOSpark implements ModuleIO {
         ifOk(
             turnSpark, turnSpark::getOutputCurrent, (value) -> inputs.turnCurrent = Amps.of(value));
 
-    // TODO: Separate motor and encoder connectivity status
-    inputs.turnConnected = turnConnectedDebounce.calculate(turnSparkOk && turnCoderOk);
+    inputs.turnConnected = turnConnectedDebounce.calculate(turnSparkOk);
+    inputs.turnEncoderConnected = turnEncoderConnectedDebounce.calculate(turnEncoderOk);
 
-    // High-Frequency Queues: Empty queues into the inputs object for odometry processing
-    frc.robot.subsystems.drive.Drive.odometryLock.lock();
+    // Empty queues into the inputs object for odometry processing
+    Drive.odometryLock.lock();
     try {
-      int count = timestampQueue.size();
+      // Drain queues into temporary lists
+      java.util.List<Double> tempTimestamps = new java.util.ArrayList<>();
+      java.util.List<Double> tempDrivePositions = new java.util.ArrayList<>();
+      java.util.List<Double> tempTurnPositions = new java.util.ArrayList<>();
+
+      Double val;
+      while ((val = timestampQueue.poll()) != null) {
+        tempTimestamps.add(val);
+      }
+      while ((val = drivePositionQueue.poll()) != null) {
+        tempDrivePositions.add(val);
+      }
+      while ((val = turnPositionQueue.poll()) != null) {
+        tempTurnPositions.add(val);
+      }
+
+      // Map lists to inputs arrays
+      int count = tempTimestamps.size();
       inputs.odometryTimestamps = new double[count];
       inputs.odometryDrivePositionsRad = new double[count];
       inputs.odometryTurnPositions = new Rotation2d[count];
 
-      int i = 0;
-      for (Double timestamp : timestampQueue) {
-        inputs.odometryTimestamps[i++] = timestamp;
+      for (int i = 0; i < count; i++) {
+        inputs.odometryTimestamps[i] = tempTimestamps.get(i);
+        inputs.odometryDrivePositionsRad[i] = tempDrivePositions.get(i);
+        inputs.odometryTurnPositions[i] = new Rotation2d(tempTurnPositions.get(i)).minus(zeroRotation);
       }
 
-      i = 0;
-      for (Double position : drivePositionQueue) {
-        inputs.odometryDrivePositionsRad[i++] = position;
-      }
-
-      i = 0;
-      for (Double position : turnPositionQueue) {
-        inputs.odometryTurnPositions[i++] = new Rotation2d(position).minus(zeroRotation);
-      }
-
-      // Clear queues to ensure data is only processed once
-      timestampQueue.clear();
-      drivePositionQueue.clear();
-      turnPositionQueue.clear();
     } finally {
       Drive.odometryLock.unlock();
     }
