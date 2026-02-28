@@ -33,9 +33,9 @@ public class DriveConstants {
   /** Less critacal odometry frequency */
   public static final Frequency odometryLowFrequency = Hertz.of(50);
   /** The distance between the left and right wheels. */
-  public static final Distance trackWidth = Inches.of(20.5);
+  public static final Distance trackWidth = Inches.of(19.5);
   /** The distance between the front and back wheels. */
-  public static final Distance wheelBase = Inches.of(20.5);
+  public static final Distance wheelBase = Inches.of(19.5);
   /** The radius of the circle defined by the module locations. */
   public static final Distance driveBaseRadius =
       Meters.of(Math.hypot(trackWidth.in(Meters) / 2.0, wheelBase.in(Meters) / 2.0));
@@ -53,10 +53,10 @@ public class DriveConstants {
       };
 
   // Zeroed rotation values for each module (absolute encoder angle at physical zero)
-  public static final Rotation2d frontLeftZeroRotation = Rotation2d.fromDegrees(35.51);
-  public static final Rotation2d frontRightZeroRotation = Rotation2d.fromDegrees(293.03);
-  public static final Rotation2d backLeftZeroRotation = Rotation2d.fromDegrees(123.49);
-  public static final Rotation2d backRightZeroRotation = Rotation2d.fromDegrees(7.73);
+  public static final Rotation2d frontLeftZeroRotation = Rotation2d.fromDegrees(263.0);
+  public static final Rotation2d frontRightZeroRotation = Rotation2d.fromDegrees(144.0);
+  public static final Rotation2d backLeftZeroRotation = Rotation2d.fromDegrees(16.0);
+  public static final Rotation2d backRightZeroRotation = Rotation2d.fromDegrees(191.0);
 
   // Device CAN IDs
   /** CAN ID for the IMU (gyroscope). */
