@@ -59,8 +59,7 @@ public class Whacknet {
         System.loadLibrary("whacknet");
         loaded = true;
       } catch (UnsatisfiedLinkError e) {
-        System.err.println(
-            "[Whacknet-java] Failed to load whacknet library: " + e.getMessage());
+        System.err.println("[Whacknet-java] Failed to load whacknet library: " + e.getMessage());
         loaded = false;
       }
     }
