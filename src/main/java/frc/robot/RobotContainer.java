@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.commands.ClimbCommands;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.IndexerCommands;
 import frc.robot.commands.IntakeCommands;
@@ -203,6 +204,10 @@ public class RobotContainer {
         .leftTrigger()
         .and(Superstructure.isInShootingZone(drive))
         .whileTrue(Superstructure.getAutoAimCommand(drive, shooter, driverController));
+
+    // When we press up or down dpad
+    driverController.povUp().onTrue(ClimbCommands.liftUp(climb));
+    driverController.povDown().onTrue(ClimbCommands.liftDown(climb));
 
     // Fire game piece while holding Right Trigger, ready to fire, and outpost enabled
     driverController
