@@ -17,7 +17,7 @@ def ROBOT_MAIN_CLASS = "frc.robot.Main"
 model {
     components {
         // Define a Shared Library for the Vision Server
-        vision_server(NativeLibrarySpec) {
+        whacknet(NativeLibrarySpec) {
             targetPlatform wpi.platforms.roborio
 
             // Define C sources
@@ -54,10 +54,10 @@ model {
 
 // Custom task to flatten the native library for deployment
 task stageNativeLib(type: Copy) {
-    dependsOn 'vision_serverReleaseSharedLibrary'
+    dependsOn 'whacknetReleaseSharedLibrary'
 
-    from fileTree('build/libs/vision_server/shared') {
-        include '**/libvision_server.so'
+    from fileTree('build/libs/whacknet/shared') {
+        include '**/libwhacknet.so'
         exclude '**/*.debug'
     }
     into 'build/staged_lib'
@@ -292,5 +292,8 @@ spotless {
 }
 
 javadoc {
-    options.stylesheetFile = new File(projectDir, "style.css")
+    options {
+        links "https://github.wpilib.org/allwpilib/docs/release/java/" // Need to change this to auto-detect version
+        links "https://docs.oracle.com/en/java/javase/17/docs/api/"
+    }
 }

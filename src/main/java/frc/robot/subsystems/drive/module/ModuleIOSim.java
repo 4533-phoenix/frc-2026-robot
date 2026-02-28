@@ -7,7 +7,7 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-package frc.robot.subsystems.drive;
+package frc.robot.subsystems.drive.module;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
@@ -20,7 +20,13 @@ import edu.wpi.first.units.measure.*;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
-/** Physics sim implementation of module IO. */
+/**
+ * Physics simulation implementation of {@link ModuleIO}.
+ *
+ * <p>This class uses {@link DCMotorSim} to model the drive and turn motors based on physical
+ * constants defined in {@link frc.robot.subsystems.drive.DriveConstants}. It emulates PID control
+ * and updates the simulation state on every {@link #updateInputs(ModuleIOInputs)} call.
+ */
 public class ModuleIOSim implements ModuleIO {
   private final DCMotorSim driveSim;
   private final DCMotorSim turnSim;
@@ -33,8 +39,9 @@ public class ModuleIOSim implements ModuleIO {
   private Voltage driveAppliedVoltage = Volts.of(0.0);
   private Voltage turnAppliedVoltage = Volts.of(0.0);
 
+  /** Creates a new ModuleIOSim and initializes the motor simulation models. */
   public ModuleIOSim() {
-    // Create drive and turn sim models
+    // Create drive and turn sim models using physical parameters
     driveSim =
         new DCMotorSim(
             LinearSystemId.createDCMotorSystem(driveGearbox, 0.025, driveMotorReduction),
@@ -44,13 +51,18 @@ public class ModuleIOSim implements ModuleIO {
             LinearSystemId.createDCMotorSystem(turnGearbox, 0.004, turnMotorReduction),
             turnGearbox);
 
-    // Enable wrapping for turn PID
+    // Enable continuous input wrapping for the turn PID controller (-PI to PI)
     turnController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
+  /**
+   * Updates the simulation state, runs PID control loops, and updates loggable inputs.
+   *
+   * @param inputs The inputs object to update with simulated data.
+   */
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
-    // Run closed-loop control
+    // Run closed-loop control to calculate required voltage
     if (driveClosedLoop) {
       driveAppliedVoltage =
           driveFFVolts.plus(
@@ -64,28 +76,28 @@ public class ModuleIOSim implements ModuleIO {
       turnController.reset();
     }
 
-    // Update simulation state
+    // Update simulation state based on applied voltage
     driveSim.setInputVoltage(MathUtil.clamp(driveAppliedVoltage.in(Volts), -12.0, 12.0));
     turnSim.setInputVoltage(MathUtil.clamp(turnAppliedVoltage.in(Volts), -12.0, 12.0));
+    // Advance simulation by 20ms (standard robot loop time)
     driveSim.update(0.02);
     turnSim.update(0.02);
 
-    // Update drive inputs
+    // Update drive inputs with simulated data
     inputs.driveConnected = true;
     inputs.drivePosition = driveSim.getAngularPosition();
     inputs.driveVelocity = driveSim.getAngularVelocity();
     inputs.driveAppliedVoltage = driveAppliedVoltage;
     inputs.driveCurrent = Amps.of(Math.abs(driveSim.getCurrentDrawAmps()));
 
-    // Update turn inputs
+    // Update turn inputs with simulated data
     inputs.turnConnected = true;
     inputs.turnPosition = turnSim.getAngularPosition();
     inputs.turnVelocity = turnSim.getAngularVelocity();
     inputs.turnAppliedVoltage = turnAppliedVoltage;
     inputs.turnCurrent = Amps.of(Math.abs(turnSim.getCurrentDrawAmps()));
 
-    // Update odometry inputs (50Hz because high-frequency odometry in sim doesn't
-    // matter)
+    // Update odometry inputs (50Hz because high-frequency odometry in sim doesn't matter)
     inputs.odometryTimestamps = new double[] {Timer.getFPGATimestamp()};
     inputs.odometryDrivePositionsRad = new double[] {inputs.drivePosition.in(Radians)};
     inputs.odometryTurnPositions =
@@ -107,6 +119,7 @@ public class ModuleIOSim implements ModuleIO {
   @Override
   public void setDriveVelocity(AngularVelocity velocity) {
     driveClosedLoop = true;
+    // Calculate simple Feedforward voltage based on velocity
     driveFFVolts =
         Volts.of(
             driveSimKs * Math.signum(velocity.in(RadiansPerSecond))

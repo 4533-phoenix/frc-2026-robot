@@ -18,13 +18,32 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.*;
 
+/**
+ * Hardware and tuning constants for the drive subsystem.
+ *
+ * <p>Contains physical dimensions, CAN IDs, gear ratios, motor current limits, and PID tuning
+ * values for both real and simulated hardware.
+ */
 public class DriveConstants {
+  // Physical constants
+  /** The maximum achievable linear velocity of the robot in meters per second. */
   public static final LinearVelocity maxLinearVelocity = MetersPerSecond.of(4.0);
+  /** The frequency at which odometry calculations are updated. */
   public static final Frequency odometryFrequency = Hertz.of(100);
-  public static final Distance trackWidth = Inches.of(19.5);
-  public static final Distance wheelBase = Inches.of(19.5);
+  /** Less critacal odometry frequency */
+  public static final Frequency odometryLowFrequency = Hertz.of(50);
+  /** The distance between the left and right wheels. */
+  public static final Distance trackWidth = Inches.of(20.5);
+  /** The distance between the front and back wheels. */
+  public static final Distance wheelBase = Inches.of(20.5);
+  /** The radius of the circle defined by the module locations. */
   public static final Distance driveBaseRadius =
       Meters.of(Math.hypot(trackWidth.in(Meters) / 2.0, wheelBase.in(Meters) / 2.0));
+  /**
+   * The locations of the modules relative to the center of the robot.
+   *
+   * <p>Order: Front Left, Front Right, Back Left, Back Right
+   */
   public static final Translation2d[] moduleTranslations =
       new Translation2d[] {
         new Translation2d(trackWidth.in(Meters) / 2.0, wheelBase.in(Meters) / 2.0),
@@ -33,84 +52,115 @@ public class DriveConstants {
         new Translation2d(-trackWidth.in(Meters) / 2.0, -wheelBase.in(Meters) / 2.0)
       };
 
-  // Zeroed rotation values for each module
-  public static final Rotation2d frontLeftZeroRotation = Rotation2d.fromDegrees(263.0); // 83 + 180
-  public static final Rotation2d frontRightZeroRotation =
-      Rotation2d.fromDegrees(144.0); // 324 + 180 -> 504-360
-  public static final Rotation2d backLeftZeroRotation =
-      Rotation2d.fromDegrees(16.0); // 196 + 180 -> 376-360
-  public static final Rotation2d backRightZeroRotation = Rotation2d.fromDegrees(191.0); // 11 + 180
+  // Zeroed rotation values for each module (absolute encoder angle at physical zero)
+  public static final Rotation2d frontLeftZeroRotation = Rotation2d.fromDegrees(35.51);
+  public static final Rotation2d frontRightZeroRotation = Rotation2d.fromDegrees(293.03);
+  public static final Rotation2d backLeftZeroRotation = Rotation2d.fromDegrees(123.49);
+  public static final Rotation2d backRightZeroRotation = Rotation2d.fromDegrees(7.73);
 
   // Device CAN IDs
+  /** CAN ID for the IMU (gyroscope). */
   public static final int imuCanId = 14;
 
-  // Dual gyro parameters
+  // Dual gyro parameters for drift compensation
+  /** The gain for correcting drift based on the secondary gyro. */
   public static final double driftGain = 0.01;
+  /** The threshold for angular error before correction is applied. */
   public static final Angle errorThreshold = Degrees.of(0.5);
+  /** The maximum angular correction allowed per control frame. */
   public static final Angle maxCorrectionPerFrame = Degrees.of(0.1);
+  /** The velocity threshold below which the robot is considered stationary. */
   public static final AngularVelocity velocityGate = DegreesPerSecond.of(1.0);
 
+  // Module Drive CAN IDs
   public static final int frontLeftDriveCanId = 2;
   public static final int backLeftDriveCanId = 8;
   public static final int frontRightDriveCanId = 5;
   public static final int backRightDriveCanId = 11;
 
+  // Module Turn CAN IDs
   public static final int frontLeftTurnCanId = 3;
   public static final int backLeftTurnCanId = 9;
   public static final int frontRightTurnCanId = 6;
   public static final int backRightTurnCanId = 12;
 
+  // Module Encoder CAN IDs
   public static final int frontLeftEncoderCanId = 4;
   public static final int backLeftEncoderCanId = 10;
   public static final int frontRightEncoderCanId = 7;
   public static final int backRightEncoderCanId = 13;
 
   // Drive motor configuration
-  public static final int driveMotorCurrentLimit = 40;
-  public static final int driveMotorSecondaryCurrentLimit = 80;
+  /** Maximum current limit for the drive motors. */
+  public static final Current driveMotorCurrentLimit = Amps.of(40);
+  /** Secondary current limit for the drive motors. */
+  public static final Current driveMotorSecondaryCurrentLimit = Amps.of(80);
+  /** The radius of the drive wheels. */
   public static final Distance wheelRadius = Inches.of(1.5);
-  public static final double driveMotorReduction = 6.75; // Random BS values we got from somewhere
+  /** The gear reduction between the drive motor and the wheel. */
+  public static final double driveMotorReduction = 6.75;
+  /** The gearbox model for the drive motor. */
   public static final DCMotor driveGearbox = DCMotor.getNEO(1);
 
   // Drive encoder configuration
+  /** Conversion factor for drive position from motor rotations to meters. */
   public static final double driveEncoderPositionFactor = 2 * Math.PI / driveMotorReduction;
+  /** Conversion factor for drive velocity from motor RPM to meters per second. */
   public static final double driveEncoderVelocityFactor =
       (2 * Math.PI) / 60.0 / driveMotorReduction;
 
-  // Drive PID configuration
+  // Drive PID configuration (Real)
   public static final double driveKp = 0.01;
   public static final double driveKd = 0.0;
   public static final double driveKs = 0.0;
   public static final double driveKv = 0.1;
+
+  // Drive PID configuration (Simulation)
   public static final double driveSimP = 0.05;
   public static final double driveSimD = 0.0;
   public static final double driveSimKs = 0.0;
   public static final double driveSimKv = 0.0789;
 
   // Turn motor configuration
+  /** Whether the turn motor is inverted. */
   public static final boolean turnInverted = false;
+  /** Maximum current limit for the turn motors. */
   public static final Current turnMotorCurrentLimit = Amps.of(40);
+  /** Secondary current limit for the turn motors. */
   public static final Current turnMotorSecondaryCurrentLimit = Amps.of(80);
-  public static final double turnMotorReduction = 12.8; // Random BS values we got from somewhere
+  /** The gear reduction between the turn motor and the module. */
+  public static final double turnMotorReduction = 12.8;
+  /** The gearbox model for the turn motor. */
   public static final DCMotor turnGearbox = DCMotor.getNEO(1);
 
   // Turn encoder configuration
+  /** Whether the turn encoder is inverted. */
   public static final boolean turnEncoderInverted = false;
+  /** Conversion factor for turn position from encoder rotations to radians. */
   public static final double turnEncoderPositionFactor = 2 * Math.PI; // Rotations -> Radians
+  /** Conversion factor for turn velocity from encoder RPM to radians per second. */
   public static final double turnEncoderVelocityFactor = 2 * Math.PI; // Rotations/Sec -> Rad/Sec
 
-  // Turn PID configuration
+  // Turn PID configuration (Real)
   public static final double turnKp = 0.4;
   public static final double turnKd = 0.01;
+
+  // Turn PID configuration (Simulation)
   public static final double turnSimP = 8.0;
   public static final double turnSimD = 0.0;
-  public static final double turnPIDMinInput = -Math.PI; // Radians
-  public static final double turnPIDMaxInput = Math.PI; // Radians
+  /** Minimum input range for turn PID (in radians). */
+  public static final double turnPIDMinInput = -Math.PI;
+  /** Maximum input range for turn PID (in radians). */
+  public static final double turnPIDMaxInput = Math.PI;
 
-  // PathPlanner configuration (TODO: Tune these values)
+  // PathPlanner configuration
+  /** Total mass of the robot in kilograms. */
   public static final Mass robotMass = Kilograms.of(74.088);
+  /** Moment of inertia of the robot in kilogram-square meters. */
   public static final MomentOfInertia robotMOI = KilogramSquareMeters.of(6.883);
+  /** Coefficient of friction for the wheels. */
   public static final double wheelCOF = 1.1;
+  /** PathPlanner configuration object. */
   public static final RobotConfig ppConfig =
       new RobotConfig(
           robotMass,
@@ -120,7 +170,7 @@ public class DriveConstants {
               maxLinearVelocity.in(MetersPerSecond),
               wheelCOF,
               driveGearbox.withReduction(driveMotorReduction),
-              driveMotorCurrentLimit,
+              driveMotorCurrentLimit.in(Amps),
               1),
           moduleTranslations);
 }

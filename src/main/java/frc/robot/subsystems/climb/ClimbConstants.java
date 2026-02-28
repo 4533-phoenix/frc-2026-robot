@@ -7,21 +7,29 @@
 
 package frc.robot.subsystems.climb;
 
+import static edu.wpi.first.units.Units.*;
+
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 import frc.robot.util.ExtraMotors;
 
-/** Hardware and tuning constants for the climb subsystem. */
+/**
+ * Hardware and tuning constants for the climb subsystem.
+ *
+ * <p>Contains CAN IDs, current limits, and gearbox models for the climb mechanism.
+ */
 public final class ClimbConstants {
   // CAN IDs
-  public static final int liftMotorCanId = 60;
-  public static final int rotateMotorCanId = 61;
+  /** CAN ID for the lift mechanism motor. */
+  public static final int liftMotorCanId = 19;
 
   // Motor and current limits
-  public static final int liftMotorCurrentLimit = 30;
-  public static final int rotateMotorCurrentLimit = 30;
+  /** Maximum current limit for the lift motor to prevent thermal damage. */
+  public static final Current liftMotorCurrentLimit = Amps.of(30);
+  /** The gearbox model for the lift motor (e.g., AndyMark Snow Blower). */
   public static final DCMotor liftGearbox = ExtraMotors.getSnowBlower(1);
-  public static final DCMotor rotateGearbox = ExtraMotors.getSnowBlower(1);
 
-  public static final double defaultLiftVoltage = 6.0;
-  public static final double defaultRotateVoltage = 6.0;
+  /** Default voltage used for lifting and lowering the mechanism. */
+  public static final Voltage defaultLiftVoltage = Volts.of(6.0);
 }

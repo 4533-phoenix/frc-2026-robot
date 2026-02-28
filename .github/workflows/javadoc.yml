@@ -1,19 +1,14 @@
 name: Deploy Javadoc to GitHub Pages
 
 on:
-  # Runs on pushes targeting the default branch
   push:
     branches: ["main"]
-  # Allows manual triggering
-  workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
-  contents: write # Needed for Javadoc generation and deployment
-  pages: write # Needed for Pages deployment
-  id-token: write # Needed for Pages deployment
+  contents: read
+  pages: write
+  id-token: write
 
-# Cancel any in-progress job or run
 concurrency:
   group: "pages-${{ github.workflow }}"
   cancel-in-progress: true
@@ -33,26 +28,33 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      # Generate and Deploy Javadoc
-      - uses: MathieuSoysal/Javadoc-publisher.yml@v2.5.0
+      # Setup Java
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          java-version: 17
-          project: gradle
-          java-distribution: temurin
-          javadoc-source-folder: build/docs/javadoc
-          target-folder: .
+          java-version: '17'
+          distribution: 'temurin'
+
+      # Setup Gradle
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Make Gradle wrapper executable
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      # Install Toolchain
+      - name: Install toolchain
+        run: ./gradlew installRoboRioToolchain
+
+      # Generate Javadoc
+      - name: Generate Javadoc
+        run: ./gradlew javadoc
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-
-      # Define string replacements
-      - name: Define string replacements
-        id: define-replacements
-        run: |
-          echo "REPLACEMENTS=s/&nbsp;|&nbsp;//g;s/Package:&nbsp;/<b>Package<\/b>/g;s/<label for=\"search-input\">SEARCH:<\/label>//g;s/Summary:&nbsp;/<b>Summary<\/b>/g;s/Detail:&nbsp;/<b>Detail<\/b>/g" >> $GITHUB_ENV
 
       # Clean HTML files
       - name: Clean HTML files

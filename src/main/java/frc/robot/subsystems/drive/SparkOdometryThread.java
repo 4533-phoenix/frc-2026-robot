@@ -24,6 +24,9 @@ import java.util.function.DoubleSupplier;
 /**
  * Provides an interface for asynchronously reading high-frequency measurements to a set of queues.
  *
+ * <p>This class uses a {@link Notifier} to sample sensors at a high rate independently of the main
+ * robot loop. This is crucial for accurate odometry, as it reduces sampling jitter.
+ *
  * <p>This version includes an overload for Spark signals, which checks for errors to ensure that
  * all measurements in the sample are valid.
  */
@@ -41,6 +44,11 @@ public class SparkOdometryThread {
   private static SparkOdometryThread instance = null;
   private Notifier notifier = new Notifier(this::run);
 
+  /**
+   * Returns the singleton instance of the SparkOdometryThread.
+   *
+   * @return The singleton instance.
+   */
   public static SparkOdometryThread getInstance() {
     if (instance == null) {
       instance = new SparkOdometryThread();
@@ -52,13 +60,27 @@ public class SparkOdometryThread {
     notifier.setName("OdometryThread");
   }
 
+  /**
+   * Starts the high-frequency sampling thread.
+   *
+   * <p>If no signals have been registered, the thread will not start.
+   */
   public void start() {
     if (timestampQueues.size() > 0) {
       notifier.startPeriodic(1.0 / DriveConstants.odometryFrequency.in(Hertz));
     }
   }
 
-  /** Registers a Spark signal to be read from the thread. */
+  /**
+   * Registers a {@link SparkBase} signal to be read from the thread.
+   *
+   * <p>The thread checks the {@link SparkBase#getLastError()} for this device. If an error is
+   * detected, the entire sample set for that iteration is discarded to ensure validity.
+   *
+   * @param spark The Spark device to check for errors.
+   * @param signal A supplier for the data value (e.g., position or velocity).
+   * @return A queue containing the sampled data.
+   */
   public Queue<Double> registerSignal(SparkBase spark, DoubleSupplier signal) {
     Queue<Double> queue = new ArrayBlockingQueue<>(20);
     Drive.odometryLock.lock();
@@ -72,7 +94,14 @@ public class SparkOdometryThread {
     return queue;
   }
 
-  /** Registers a generic signal to be read from the thread. */
+  /**
+   * Registers a generic signal to be read from the thread.
+   *
+   * <p>This is used for sensors not connected directly to a Spark MAX/FLEX.
+   *
+   * @param signal A supplier for the data value.
+   * @return A queue containing the sampled data.
+   */
   public Queue<Double> registerSignal(DoubleSupplier signal) {
     Queue<Double> queue = new ArrayBlockingQueue<>(20);
     Drive.odometryLock.lock();
@@ -85,7 +114,13 @@ public class SparkOdometryThread {
     return queue;
   }
 
-  /** Returns a new queue that returns timestamp values for each sample. */
+  /**
+   * Registers a new queue that will receive timestamp values for each sample.
+   *
+   * <p>Timestamps are taken via {@link RobotController#getFPGATime()}.
+   *
+   * @return A queue containing the sample timestamps in seconds.
+   */
   public Queue<Double> makeTimestampQueue() {
     Queue<Double> queue = new ArrayBlockingQueue<>(20);
     Drive.odometryLock.lock();
@@ -97,6 +132,12 @@ public class SparkOdometryThread {
     return queue;
   }
 
+  /**
+   * The main logic loop executed by the {@link Notifier} thread.
+   *
+   * <p>This method snapshots registered signals, reads hardware values without holding the odometry
+   * lock (to minimize impact on the main thread), and then offers data to the queues.
+   */
   private void run() {
     // Snapshot lists quickly under the lock, then do hardware reads outside the lock
     final List<SparkBase> sparksSnapshot;
