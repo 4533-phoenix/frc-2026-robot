@@ -26,6 +26,7 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import frc.robot.util.HardwareConfigManager;
 import java.util.function.DoubleSupplier;
 
 /**
@@ -55,32 +56,31 @@ public class IntakeIOReal implements IntakeIO {
   public IntakeIOReal() {
     armEncoder = armSpark.getAbsoluteEncoder();
     armController = armSpark.getClosedLoopController();
-
     spinnerEncoder = spinnerSpark.getEncoder();
     spinnerController = spinnerSpark.getClosedLoopController();
 
-    // ---------- Configure Arm Motor ----------
+    // Register async config task
+    HardwareConfigManager.registerTask(this::configureHardware);
+  }
+
+  // Runs on background thread!
+  private void configureHardware() {
+    // Configure Arm Motor
     var armConfig = new SparkMaxConfig();
     armConfig
         .idleMode(IdleMode.kBrake)
         .smartCurrentLimit((int) armMotorCurrentLimit.in(Amps))
         .voltageCompensation(12.0)
         .inverted(false);
-
-    // Set conversion factors for internal motor encoder
     armConfig
         .encoder
         .positionConversionFactor(armInternalEncoderPositionFactor)
         .velocityConversionFactor(armInternalEncoderVelocityFactor);
-
-    // Configure absolute encoder feedback for arm position
     armConfig
         .absoluteEncoder
         .positionConversionFactor(2.0 * Math.PI)
         .zeroOffset(globalEncoderOffset.in(Rotations))
         .inverted(true);
-
-    // Set PID and Feedforward gains for arm control
     armConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(armKp, 0.0, armKd);
     armConfig
         .closedLoop
@@ -90,16 +90,12 @@ public class IntakeIOReal implements IntakeIO {
         .kS(armKs)
         .kCos(armKg)
         .kCosRatio(1.0 / (2.0 * Math.PI));
-
-    // Configure motion profiling for smooth movement
     armConfig
         .closedLoop
         .maxMotion
         .allowedProfileError(armPositionPIDTolerance.in(Radians))
         .cruiseVelocity(armCruiseVelocity.in(RadiansPerSecond))
         .maxAcceleration(armMaxAcceleration.in(RadiansPerSecondPerSecond));
-
-    // Optimize CAN traffic: set periodic frame rates for required signals
     armConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
@@ -109,23 +105,17 @@ public class IntakeIOReal implements IntakeIO {
         .appliedOutputPeriodMs(50)
         .busVoltagePeriodMs(50)
         .outputCurrentPeriodMs(50);
-
-    // Define soft limits for arm motion safety
     armConfig
         .softLimit
         .forwardSoftLimitEnabled(true)
         .forwardSoftLimit(armRetractedPosition.plus(armPositionSoftLimitTolerance).in(Radians))
         .reverseSoftLimitEnabled(true)
         .reverseSoftLimit(armDeployedPosition.minus(armPositionSoftLimitTolerance).in(Radians));
-
-    // Apply configuration to spark with retry logic
     tryUntilOk(
         5,
         () ->
             armSpark.configure(
                 armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
-
-    // Initialize internal encoder position from absolute encoder
     tryUntilOk(
         5,
         () -> {
@@ -133,28 +123,22 @@ public class IntakeIOReal implements IntakeIO {
           return armSpark.getEncoder().setPosition(initialPos);
         });
 
-    // ---------- Configure Spinner Motor ----------
+    // Configure Spinner Motor
     var spinnerConfig = new SparkMaxConfig();
     spinnerConfig
         .idleMode(IdleMode.kBrake)
         .smartCurrentLimit((int) spinnerMotorCurrentLimit.in(Amps))
         .voltageCompensation(12.0)
         .inverted(true);
-
-    // Set conversion factors for spinner encoder
     spinnerConfig
         .encoder
         .positionConversionFactor(spinnerInternalEncoderPositionFactor)
         .velocityConversionFactor(spinnerInternalEncoderVelocityFactor);
-
-    // Set PID and Feedforward gains for spinner velocity control
     spinnerConfig
         .closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(spinnerKp, 0.0, spinnerKd);
     spinnerConfig.closedLoop.feedForward.kV(spinnerKv).kA(spinnerKa).kS(spinnerKs);
-
-    // Optimize CAN traffic for spinner signals
     spinnerConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
@@ -164,15 +148,11 @@ public class IntakeIOReal implements IntakeIO {
         .appliedOutputPeriodMs(50)
         .busVoltagePeriodMs(50)
         .outputCurrentPeriodMs(50);
-
-    // Apply configuration with retry logic
     tryUntilOk(
         5,
         () ->
             spinnerSpark.configure(
                 spinnerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
-
-    // Initialize spinner encoder position
     tryUntilOk(
         5,
         () -> {
@@ -188,6 +168,7 @@ public class IntakeIOReal implements IntakeIO {
    */
   @Override
   public void updateInputs(IntakeIOInputs inputs) {
+    if (!HardwareConfigManager.isReady()) return;
     // ---------- Arm Motor Inputs ----------
     boolean armSparkOk = true;
     armSparkOk &=
@@ -240,6 +221,7 @@ public class IntakeIOReal implements IntakeIO {
    */
   @Override
   public void setArmPosition(Angle angle) {
+    if (!HardwareConfigManager.isReady()) return;
     armController.setSetpoint(
         angle.in(Radians), ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
   }
@@ -251,6 +233,7 @@ public class IntakeIOReal implements IntakeIO {
    */
   @Override
   public void setSpinnerAngularVelocity(AngularVelocity velocity) {
+    if (!HardwareConfigManager.isReady()) return;
     spinnerController.setSetpoint(
         velocity.in(RadiansPerSecond), ControlType.kVelocity, ClosedLoopSlot.kSlot0);
   }

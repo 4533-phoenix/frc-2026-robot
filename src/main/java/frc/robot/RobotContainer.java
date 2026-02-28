@@ -31,24 +31,20 @@ import frc.robot.subsystems.climb.ClimbIO;
 import frc.robot.subsystems.climb.ClimbIOSim;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.gyro.GyroIO;
-import frc.robot.subsystems.drive.gyro.GyroIODual;
+import frc.robot.subsystems.drive.gyro.GyroIONavX;
 import frc.robot.subsystems.drive.module.ModuleIO;
 import frc.robot.subsystems.drive.module.ModuleIOSim;
 import frc.robot.subsystems.drive.module.ModuleIOSpark;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.indexer.IndexerIO;
 import frc.robot.subsystems.indexer.IndexerIOSim;
-import frc.robot.subsystems.indexer.IndexerIOSpark;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
-import frc.robot.subsystems.intake.IntakeIOReal;
 import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
-import frc.robot.subsystems.shooter.flywheel.FlywheelIOTalonFX;
 import frc.robot.subsystems.shooter.hood.HoodIO;
-import frc.robot.subsystems.shooter.hood.HoodIOServo;
 import frc.robot.subsystems.shooter.hood.HoodIOSim;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
@@ -90,16 +86,18 @@ public class RobotContainer {
         // Real robot, instantiate hardware IO implementations
         drive =
             new Drive(
-                new GyroIODual(),
+                new GyroIONavX(),
                 new ModuleIOSpark(0),
                 new ModuleIOSpark(1),
                 new ModuleIOSpark(2),
                 new ModuleIOSpark(3));
-        climb = new Climb(new ClimbIO() {}); // Assuming placeholder IO
-        intake = new Intake(new IntakeIOReal());
-        shooter = new Shooter(new FlywheelIOTalonFX(), new HoodIOServo());
-        indexer = new Indexer(new IndexerIOSpark());
+        climb = new Climb(new ClimbIOSim()); // Assuming placeholder IO
+        intake = new Intake(new IntakeIOSim());
+        shooter = new Shooter(new FlywheelIOSim(), new HoodIOSim());
+        indexer = new Indexer(new IndexerIOSim());
         vision = new Vision(new VisionIOChalkydri(), drive);
+        // Start hardware config thread after all subsystems are created
+        frc.robot.util.HardwareConfigManager.startConfigThread();
         break;
 
       case SIM:
