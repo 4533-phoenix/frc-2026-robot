@@ -50,9 +50,9 @@ public class GyroIOCanAndGyro implements GyroIO {
   @Override
   public void updateInputs(GyroIOInputs inputs) {
     inputs.connected = canandgyro.isConnected();
-    // Hardware returns rotations, convert to radians
-    inputs.yawPosition = Radians.of(canandgyro.getYaw() * 2 * Math.PI);
-    inputs.yawVelocity = RadiansPerSecond.of(canandgyro.getAngularVelocityYaw() * 2 * Math.PI);
+    // Hardware returns rotations
+    inputs.yawPosition = Rotations.of(canandgyro.getYaw());
+    inputs.yawVelocity = RotationsPerSecond.of(canandgyro.getAngularVelocityYaw());
 
     // Empty the queues into the inputs object for logging and odometry processing
     int count = yawTimestampQueue.size();
