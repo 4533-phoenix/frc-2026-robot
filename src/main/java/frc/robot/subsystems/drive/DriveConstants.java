@@ -33,9 +33,9 @@ public class DriveConstants {
   /** Less critacal odometry frequency */
   public static final Frequency odometryLowFrequency = Hertz.of(50);
   /** The distance between the left and right wheels. */
-  public static final Distance trackWidth = Inches.of(19.5);
+  public static final Distance trackWidth = Inches.of(20.5);
   /** The distance between the front and back wheels. */
-  public static final Distance wheelBase = Inches.of(19.5);
+  public static final Distance wheelBase = Inches.of(20.5);
   /** The radius of the circle defined by the module locations. */
   public static final Distance driveBaseRadius =
       Meters.of(Math.hypot(trackWidth.in(Meters) / 2.0, wheelBase.in(Meters) / 2.0));
@@ -67,28 +67,28 @@ public class DriveConstants {
         2,
         3,
         4,
-        Rotation2d.fromDegrees(263.0),
+        Rotation2d.fromDegrees(35.51),
         new Translation2d(trackWidth.in(Meters) / 2.0, wheelBase.in(Meters) / 2.0)),
     // Front Right (Module 1)
     new SwerveModuleConfig(
         5,
         6,
         7,
-        Rotation2d.fromDegrees(144.0),
+        Rotation2d.fromDegrees(293.03),
         new Translation2d(trackWidth.in(Meters) / 2.0, -wheelBase.in(Meters) / 2.0)),
     // Back Left (Module 2)
     new SwerveModuleConfig(
         8,
         9,
         10,
-        Rotation2d.fromDegrees(16.0),
+        Rotation2d.fromDegrees(123.49),
         new Translation2d(-trackWidth.in(Meters) / 2.0, wheelBase.in(Meters) / 2.0)),
     // Back Right (Module 3)
     new SwerveModuleConfig(
         11,
         12,
         13,
-        Rotation2d.fromDegrees(191.0),
+        Rotation2d.fromDegrees(7.73),
         new Translation2d(-trackWidth.in(Meters) / 2.0, -wheelBase.in(Meters) / 2.0))
   };
 
