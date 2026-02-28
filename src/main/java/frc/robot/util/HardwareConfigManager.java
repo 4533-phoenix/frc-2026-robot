@@ -34,7 +34,7 @@ public class HardwareConfigManager {
     Thread configThread =
         new Thread(
             () -> {
-              DriverStation.reportWarning("Starting Hardware Configuration...", false);
+              System.out.println("Starting Hardware Configuration...");
 
               for (int i = 0; i < configTasks.size(); i++) {
                 try {
@@ -50,7 +50,7 @@ public class HardwareConfigManager {
 
               // Unblock the robot!
               isConfigured.set(true);
-              DriverStation.reportWarning("Hardware Configuration COMPLETE!", false);
+              System.out.println("Hardware Configuration COMPLETE!");
             });
 
     configThread.setName("HardwareConfigThread");

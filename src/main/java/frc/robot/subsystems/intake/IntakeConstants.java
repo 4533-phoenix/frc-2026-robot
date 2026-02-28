@@ -53,17 +53,17 @@ public final class IntakeConstants {
 
   // ---------- Arm PID Configuration ----------
   /** Proportional gain for arm position control. */
-  public static final double armKp = 0.05;
+  public static final double armKp = 0.0;
   /** Derivative gain for arm position control. */
-  public static final double armKd = 0.1;
+  public static final double armKd = 0.0;
 
   // ---------- Arm Feedforward Configuration ----------
   /** Static friction feedforward gain for the arm. */
-  public static final double armKs = 0.1;
+  public static final double armKs = 0.0;
   /** Gravity feedforward gain for the arm. */
-  public static final double armKg = 0.1;
+  public static final double armKg = 0.0;
   /** Velocity feedforward gain for the arm. */
-  public static final double armKv = 1.9;
+  public static final double armKv = 0.0;
   /** Acceleration feedforward gain for the arm. */
   public static final double armKa = 0.0;
 

@@ -143,10 +143,15 @@ public class Drive extends SubsystemBase {
 
   @Override
   public void periodic() {
-    gyroIO.updateInputs(gyroInputs);
-    Logger.processInputs("Drive/Gyro", gyroInputs);
-    for (var module : modules) {
-      module.periodic();
+    odometryLock.lock();
+    try {
+      gyroIO.updateInputs(gyroInputs);
+      Logger.processInputs("Drive/Gyro", gyroInputs);
+      for (var module : modules) {
+        module.periodic();
+      }
+    } finally {
+      odometryLock.unlock();
     }
 
     // Stop moving when disabled
@@ -166,6 +171,12 @@ public class Drive extends SubsystemBase {
     double[] sampleTimestamps =
         modules[0].getOdometryTimestamps(); // All signals are sampled together
     int sampleCount = sampleTimestamps.length;
+    // Defensive bounds checking: ensure we don't exceed the bounds of any array if there's a
+    // hardware desynchronization
+    sampleCount = Math.min(sampleCount, gyroInputs.odometryYawPositions.length);
+    for (int i = 0; i < 4; i++) {
+      sampleCount = Math.min(sampleCount, modules[i].getOdometryPositions().length);
+    }
     for (int i = 0; i < sampleCount; i++) {
       // Read wheel positions and deltas from each module
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
