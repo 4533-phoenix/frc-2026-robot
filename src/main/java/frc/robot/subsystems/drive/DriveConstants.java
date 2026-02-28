@@ -39,6 +39,59 @@ public class DriveConstants {
   /** The radius of the circle defined by the module locations. */
   public static final Distance driveBaseRadius =
       Meters.of(Math.hypot(trackWidth.in(Meters) / 2.0, wheelBase.in(Meters) / 2.0));
+
+  /**
+   * Represents the hardware configuration for a single swerve module.
+   *
+   * @param driveCanId The CAN ID of the drive motor controller.
+   * @param turnCanId The CAN ID of the turn motor controller.
+   * @param encoderCanId The CAN ID of the absolute CANcoder.
+   * @param zeroOffset The absolute encoder offset to read zero when the wheel is facing forward.
+   * @param translation The physical location of the module relative to the center of the robot.
+   */
+  public record SwerveModuleConfig(
+      int driveCanId,
+      int turnCanId,
+      int encoderCanId,
+      Rotation2d zeroOffset,
+      Translation2d translation) {}
+
+  /**
+   * Hardware configurations for all four swerve modules.
+   *
+   * <p>Index Order: Front Left (0), Front Right (1), Back Left (2), Back Right (3)
+   */
+  public static final SwerveModuleConfig[] moduleConfigs = {
+    // Front Left (Module 0)
+    new SwerveModuleConfig(
+        2,
+        3,
+        4,
+        Rotation2d.fromDegrees(263.0),
+        new Translation2d(trackWidth.in(Meters) / 2.0, wheelBase.in(Meters) / 2.0)),
+    // Front Right (Module 1)
+    new SwerveModuleConfig(
+        5,
+        6,
+        7,
+        Rotation2d.fromDegrees(144.0),
+        new Translation2d(trackWidth.in(Meters) / 2.0, -wheelBase.in(Meters) / 2.0)),
+    // Back Left (Module 2)
+    new SwerveModuleConfig(
+        8,
+        9,
+        10,
+        Rotation2d.fromDegrees(16.0),
+        new Translation2d(-trackWidth.in(Meters) / 2.0, wheelBase.in(Meters) / 2.0)),
+    // Back Right (Module 3)
+    new SwerveModuleConfig(
+        11,
+        12,
+        13,
+        Rotation2d.fromDegrees(191.0),
+        new Translation2d(-trackWidth.in(Meters) / 2.0, -wheelBase.in(Meters) / 2.0))
+  };
+
   /**
    * The locations of the modules relative to the center of the robot.
    *
@@ -46,17 +99,11 @@ public class DriveConstants {
    */
   public static final Translation2d[] moduleTranslations =
       new Translation2d[] {
-        new Translation2d(trackWidth.in(Meters) / 2.0, wheelBase.in(Meters) / 2.0),
-        new Translation2d(trackWidth.in(Meters) / 2.0, -wheelBase.in(Meters) / 2.0),
-        new Translation2d(-trackWidth.in(Meters) / 2.0, wheelBase.in(Meters) / 2.0),
-        new Translation2d(-trackWidth.in(Meters) / 2.0, -wheelBase.in(Meters) / 2.0)
+        moduleConfigs[0].translation(),
+        moduleConfigs[1].translation(),
+        moduleConfigs[2].translation(),
+        moduleConfigs[3].translation()
       };
-
-  // Zeroed rotation values for each module (absolute encoder angle at physical zero)
-  public static final Rotation2d frontLeftZeroRotation = Rotation2d.fromDegrees(263.0);
-  public static final Rotation2d frontRightZeroRotation = Rotation2d.fromDegrees(144.0);
-  public static final Rotation2d backLeftZeroRotation = Rotation2d.fromDegrees(16.0);
-  public static final Rotation2d backRightZeroRotation = Rotation2d.fromDegrees(191.0);
 
   // Device CAN IDs
   /** CAN ID for the IMU (gyroscope). */
@@ -71,24 +118,6 @@ public class DriveConstants {
   public static final Angle maxCorrectionPerFrame = Degrees.of(0.1);
   /** The velocity threshold below which the robot is considered stationary. */
   public static final AngularVelocity velocityGate = DegreesPerSecond.of(1.0);
-
-  // Module Drive CAN IDs
-  public static final int frontLeftDriveCanId = 2;
-  public static final int backLeftDriveCanId = 8;
-  public static final int frontRightDriveCanId = 5;
-  public static final int backRightDriveCanId = 11;
-
-  // Module Turn CAN IDs
-  public static final int frontLeftTurnCanId = 3;
-  public static final int backLeftTurnCanId = 9;
-  public static final int frontRightTurnCanId = 6;
-  public static final int backRightTurnCanId = 12;
-
-  // Module Encoder CAN IDs
-  public static final int frontLeftEncoderCanId = 4;
-  public static final int backLeftEncoderCanId = 10;
-  public static final int frontRightEncoderCanId = 7;
-  public static final int backRightEncoderCanId = 13;
 
   // Drive motor configuration
   /** Maximum current limit for the drive motors. */

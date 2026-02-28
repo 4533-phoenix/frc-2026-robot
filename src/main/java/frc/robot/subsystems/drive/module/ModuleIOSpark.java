@@ -82,43 +82,12 @@ public class ModuleIOSpark implements ModuleIO {
    *     back-right).
    */
   public ModuleIOSpark(int module) {
-    zeroRotation =
-        switch (module) {
-          case 0 -> frontLeftZeroRotation;
-          case 1 -> frontRightZeroRotation;
-          case 2 -> backLeftZeroRotation;
-          case 3 -> backRightZeroRotation;
-          default -> Rotation2d.kZero;
-        };
-    driveSpark =
-        new SparkMax(
-            switch (module) {
-              case 0 -> frontLeftDriveCanId;
-              case 1 -> frontRightDriveCanId;
-              case 2 -> backLeftDriveCanId;
-              case 3 -> backRightDriveCanId;
-              default -> 0;
-            },
-            MotorType.kBrushless);
-    turnSpark =
-        new SparkMax(
-            switch (module) {
-              case 0 -> frontLeftTurnCanId;
-              case 1 -> frontRightTurnCanId;
-              case 2 -> backLeftTurnCanId;
-              case 3 -> backRightTurnCanId;
-              default -> 0;
-            },
-            MotorType.kBrushless);
-    turnEncoder =
-        new CANcoder(
-            switch (module) {
-              case 0 -> frontLeftEncoderCanId;
-              case 1 -> frontRightEncoderCanId;
-              case 2 -> backLeftEncoderCanId;
-              case 3 -> backRightEncoderCanId;
-              default -> 0;
-            });
+    var config = moduleConfigs[module];
+
+    zeroRotation = config.zeroOffset();
+    driveSpark = new SparkMax(config.driveCanId(), MotorType.kBrushless);
+    turnSpark = new SparkMax(config.turnCanId(), MotorType.kBrushless);
+    turnEncoder = new CANcoder(config.encoderCanId());
 
     driveEncoder = driveSpark.getEncoder();
     turnInternalEncoder = turnSpark.getEncoder();
