@@ -61,7 +61,7 @@ import org.littletonrobotics.junction.Logger;
  */
 public class Drive extends SubsystemBase {
   /** Lock used to synchronize access to odometry data between the main loop and sampling thread. */
-  static final Lock odometryLock = new ReentrantLock();
+  public static final Lock odometryLock = new ReentrantLock();
 
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
@@ -143,13 +143,11 @@ public class Drive extends SubsystemBase {
 
   @Override
   public void periodic() {
-    odometryLock.lock(); // Prevents odometry updates while reading data
     gyroIO.updateInputs(gyroInputs);
     Logger.processInputs("Drive/Gyro", gyroInputs);
     for (var module : modules) {
       module.periodic();
     }
-    odometryLock.unlock();
 
     // Stop moving when disabled
     if (DriverStation.isDisabled()) {

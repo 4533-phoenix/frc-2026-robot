@@ -55,22 +55,27 @@ public class GyroIOCanAndGyro implements GyroIO {
     inputs.yawVelocity = RotationsPerSecond.of(canandgyro.getAngularVelocityYaw());
 
     // Empty the queues into the inputs object for logging and odometry processing
-    int count = yawTimestampQueue.size();
-    inputs.odometryYawTimestamps = new double[count];
-    inputs.odometryYawPositions = new double[count];
+    frc.robot.subsystems.drive.Drive.odometryLock.lock();
+    try {
+      int count = yawTimestampQueue.size();
+      inputs.odometryYawTimestamps = new double[count];
+      inputs.odometryYawPositions = new double[count];
 
-    int i = 0;
-    for (Double timestamp : yawTimestampQueue) {
-      inputs.odometryYawTimestamps[i++] = timestamp;
+      int i = 0;
+      for (Double timestamp : yawTimestampQueue) {
+        inputs.odometryYawTimestamps[i++] = timestamp;
+      }
+
+      i = 0;
+      for (Double angle : yawPositionQueue) {
+        inputs.odometryYawPositions[i++] = angle * 2 * Math.PI;
+      }
+
+      // Clear queues to ensure data is only processed once
+      yawTimestampQueue.clear();
+      yawPositionQueue.clear();
+    } finally {
+      frc.robot.subsystems.drive.Drive.odometryLock.unlock();
     }
-
-    i = 0;
-    for (Double angle : yawPositionQueue) {
-      inputs.odometryYawPositions[i++] = angle * 2 * Math.PI;
-    }
-
-    // Clear queues to ensure data is only processed once
-    yawTimestampQueue.clear();
-    yawPositionQueue.clear();
   }
 }

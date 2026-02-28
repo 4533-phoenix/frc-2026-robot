@@ -21,6 +21,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Voltage;
+import frc.robot.util.HardwareConfigManager;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
@@ -44,15 +45,16 @@ public class ClimbIOReal implements ClimbIO {
 
   /** Creates a new ClimbIOReal and configures the Spark Max. */
   public ClimbIOReal() {
+    HardwareConfigManager.registerTask(this::configureHardware);
+  }
+
+  private void configureHardware() {
     var liftCfg = new SparkMaxConfig();
     liftCfg
         .idleMode(IdleMode.kBrake)
         .smartCurrentLimit((int) liftMotorCurrentLimit.in(Amps))
         .voltageCompensation(12.0);
-    // Configure signal update rates for logging
     liftCfg.signals.appliedOutputPeriodMs(20).busVoltagePeriodMs(20).outputCurrentPeriodMs(20);
-
-    // Attempt to configure the Spark Max, retrying if necessary
     tryUntilOk(
         5,
         () ->
@@ -63,6 +65,7 @@ public class ClimbIOReal implements ClimbIO {
   /** Updates hardware inputs, monitors connectivity, and reads limit switch states. */
   @Override
   public void updateInputs(ClimbIOInputs inputs) {
+    if (!HardwareConfigManager.isReady()) return;
     boolean sparkOk = true;
 
     // Safely retrieve telemetry from the motor controller
@@ -94,6 +97,7 @@ public class ClimbIOReal implements ClimbIO {
    */
   @Override
   public void setLiftVoltage(Voltage voltage) {
+    if (!HardwareConfigManager.isReady()) return;
     // Assuming normally open switches, we stop if the switch is closed.
     boolean atUpper = upperLimit.isPressed();
     boolean atLower = lowerLimit.isPressed();

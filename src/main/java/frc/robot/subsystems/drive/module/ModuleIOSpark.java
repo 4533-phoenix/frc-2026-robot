@@ -35,7 +35,9 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
+import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.SparkOdometryThread;
+import frc.robot.util.HardwareConfigManager;
 import java.util.Queue;
 import java.util.function.DoubleSupplier;
 
@@ -80,7 +82,6 @@ public class ModuleIOSpark implements ModuleIO {
    *     back-right).
    */
   public ModuleIOSpark(int module) {
-    // Determine the zero offset for this specific module
     zeroRotation =
         switch (module) {
           case 0 -> frontLeftZeroRotation;
@@ -89,7 +90,6 @@ public class ModuleIOSpark implements ModuleIO {
           case 3 -> backRightZeroRotation;
           default -> Rotation2d.kZero;
         };
-    // Initialize Spark Max controllers and CANcoder based on module index
     driveSpark =
         new SparkMax(
             switch (module) {
@@ -127,7 +127,23 @@ public class ModuleIOSpark implements ModuleIO {
     turnAbsolutePositionSignal = turnEncoder.getPosition();
     turnVelocitySignal = turnEncoder.getVelocity();
 
-    // Configure Drive Spark Max
+    // Register signals with the asynchronous odometry thread immediately
+    timestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
+    drivePositionQueue =
+        SparkOdometryThread.getInstance().registerSignal(driveSpark, driveEncoder::getPosition);
+    turnPositionQueue =
+        SparkOdometryThread.getInstance()
+            .registerSignal(
+                () ->
+                    turnAbsolutePositionSignal.refresh().getValueAsDouble()
+                        * turnEncoderPositionFactor);
+
+    // Queue CAN configuration for background thread
+    HardwareConfigManager.registerTask(() -> configureHardware(module));
+  }
+
+  // Runs on background thread!
+  private void configureHardware(int module) {
     var driveConfig = new SparkMaxConfig();
     driveConfig
         .idleMode(IdleMode.kBrake)
@@ -144,7 +160,6 @@ public class ModuleIOSpark implements ModuleIO {
         .closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(driveKp, 0.0, driveKd);
-    // Configure signal update rates for logging and odometry
     driveConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
@@ -219,22 +234,21 @@ public class ModuleIOSpark implements ModuleIO {
             return turnInternalEncoder.setPosition(0.0);
           }
         });
-
-    // Register signals with the asynchronous odometry thread
-    timestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
-    drivePositionQueue =
-        SparkOdometryThread.getInstance().registerSignal(driveSpark, driveEncoder::getPosition);
-    turnPositionQueue =
-        SparkOdometryThread.getInstance()
-            .registerSignal(
-                () ->
-                    turnAbsolutePositionSignal.refresh().getValueAsDouble()
-                        * turnEncoderPositionFactor);
   }
 
   /** Updates hardware inputs, monitors connectivity, and manages turn encoder drift. */
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
+    // Gate all IO on hardware config ready
+    if (!HardwareConfigManager.isReady()) {
+      inputs.driveConnected = false;
+      inputs.turnConnected = false;
+      timestampQueue.clear();
+      drivePositionQueue.clear();
+      turnPositionQueue.clear();
+      return;
+    }
+
     // Drive Motor Inputs
     boolean driveOk = true;
     driveOk &=
@@ -304,44 +318,52 @@ public class ModuleIOSpark implements ModuleIO {
     inputs.turnConnected = turnConnectedDebounce.calculate(turnSparkOk && turnCoderOk);
 
     // High-Frequency Queues: Empty queues into the inputs object for odometry processing
-    int count = timestampQueue.size();
-    inputs.odometryTimestamps = new double[count];
-    inputs.odometryDrivePositionsRad = new double[count];
-    inputs.odometryTurnPositions = new Rotation2d[count];
+    frc.robot.subsystems.drive.Drive.odometryLock.lock();
+    try {
+      int count = timestampQueue.size();
+      inputs.odometryTimestamps = new double[count];
+      inputs.odometryDrivePositionsRad = new double[count];
+      inputs.odometryTurnPositions = new Rotation2d[count];
 
-    int i = 0;
-    for (Double timestamp : timestampQueue) {
-      inputs.odometryTimestamps[i++] = timestamp;
+      int i = 0;
+      for (Double timestamp : timestampQueue) {
+        inputs.odometryTimestamps[i++] = timestamp;
+      }
+
+      i = 0;
+      for (Double position : drivePositionQueue) {
+        inputs.odometryDrivePositionsRad[i++] = position;
+      }
+
+      i = 0;
+      for (Double position : turnPositionQueue) {
+        inputs.odometryTurnPositions[i++] = new Rotation2d(position).minus(zeroRotation);
+      }
+
+      // Clear queues to ensure data is only processed once
+      timestampQueue.clear();
+      drivePositionQueue.clear();
+      turnPositionQueue.clear();
+    } finally {
+      Drive.odometryLock.unlock();
     }
-
-    i = 0;
-    for (Double position : drivePositionQueue) {
-      inputs.odometryDrivePositionsRad[i++] = position;
-    }
-
-    i = 0;
-    for (Double position : turnPositionQueue) {
-      inputs.odometryTurnPositions[i++] = new Rotation2d(position).minus(zeroRotation);
-    }
-
-    // Clear queues to ensure data is only processed once
-    timestampQueue.clear();
-    drivePositionQueue.clear();
-    turnPositionQueue.clear();
   }
 
   @Override
   public void setDriveOpenLoop(Voltage output) {
+    if (!HardwareConfigManager.isReady()) return;
     driveSpark.setVoltage(output);
   }
 
   @Override
   public void setTurnOpenLoop(Voltage output) {
+    if (!HardwareConfigManager.isReady()) return;
     turnSpark.setVoltage(output);
   }
 
   @Override
   public void setDriveVelocity(AngularVelocity velocity) {
+    if (!HardwareConfigManager.isReady()) return;
     // Calculate Feedforward voltage based on velocity
     double ffVolts =
         driveKs * Math.signum(velocity.in(RadiansPerSecond))
@@ -357,6 +379,7 @@ public class ModuleIOSpark implements ModuleIO {
 
   @Override
   public void setTurnPosition(Angle rotation) {
+    if (!HardwareConfigManager.isReady()) return;
     // Use closed-loop position control
     turnController.setSetpoint(rotation.in(Radians), ControlType.kPosition, ClosedLoopSlot.kSlot0);
   }

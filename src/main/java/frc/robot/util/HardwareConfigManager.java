@@ -1,0 +1,58 @@
+package frc.robot.util;
+
+import edu.wpi.first.wpilibj.DriverStation;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+public class HardwareConfigManager {
+  // Thread-safe boolean so the main loop knows when hardware is ready
+  private static final AtomicBoolean isConfigured = new AtomicBoolean(false);
+
+  // List of configuration tasks
+  private static final List<Runnable> configTasks = new ArrayList<>();
+
+  /** IO classes call this in their constructor to queue their configuration. */
+  public static void registerTask(Runnable task) {
+    if (isConfigured.get()) {
+      DriverStation.reportWarning(
+          "Tried to register a hardware config task after initialization!", true);
+      return;
+    }
+    configTasks.add(task);
+  }
+
+  /** Call this exactly ONCE at the end of RobotContainer's constructor. */
+  public static void startConfigThread() {
+    Thread configThread =
+        new Thread(
+            () -> {
+              DriverStation.reportWarning("Starting Hardware Configuration...", false);
+
+              for (int i = 0; i < configTasks.size(); i++) {
+                try {
+                  // Run each task sequentially
+                  configTasks.get(i).run();
+                } catch (Exception e) {
+                  // Catch silent failures and print them to the Driver Station!
+                  DriverStation.reportError(
+                      "Hardware Config Exception in task " + i + ": " + e.getMessage(),
+                      e.getStackTrace());
+                }
+              }
+
+              // Unblock the robot!
+              isConfigured.set(true);
+              DriverStation.reportWarning("Hardware Configuration COMPLETE!", false);
+            });
+
+    configThread.setName("HardwareConfigThread");
+    configThread.setPriority(Thread.MIN_PRIORITY); // Don't interrupt the main robot loop
+    configThread.start();
+  }
+
+  /** Used by IO classes to check if they are allowed to read/write to motors. */
+  public static boolean isReady() {
+    return isConfigured.get();
+  }
+}
