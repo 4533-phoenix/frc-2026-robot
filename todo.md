@@ -11,3 +11,4 @@
 * Should I prefer double vibrate or sustained?
 * Need to know estimated time of flight to calculate the added velocity of the bot
 * Need to prefer rotation over translation when aimed in
+* Vibrate harder when shoot motor is strained?
