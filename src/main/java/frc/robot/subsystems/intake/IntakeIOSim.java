@@ -97,7 +97,7 @@ public class IntakeIOSim implements IntakeIO {
       armAppliedVoltage = Volts.of(0.0);
     }
 
-    // ---------- Calculate Spinner Control Effort ----------
+    // Calculate Spinner Control Effort
     if (spinnerClosedLoop) {
       double pidVal =
           spinnerController.calculate(
@@ -110,16 +110,16 @@ public class IntakeIOSim implements IntakeIO {
       spinnerAppliedVoltage = Volts.of(0.0);
     }
 
-    // ---------- Apply Inputs to Simulation Models ----------
+    // Apply Inputs to Simulation Models
     armSim.setInputVoltage(armAppliedVoltage.in(Volts));
     spinnerSim.setInputVoltage(spinnerAppliedVoltage.in(Volts));
 
-    // ---------- Update Simulation State ----------
+    // Update Simulation State
     final double dt = 0.02; // 20ms time step
     armSim.update(dt);
     spinnerSim.update(dt);
 
-    // ---------- Populate Logged Inputs ----------
+    // Populate Logged Inputs
     inputs.armConnected = true;
     inputs.armPosition = Radians.of(armSim.getAngleRads());
     inputs.armVelocity = RadiansPerSecond.of(armSim.getVelocityRadPerSec());
