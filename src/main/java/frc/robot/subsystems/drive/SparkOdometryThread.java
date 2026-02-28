@@ -37,9 +37,23 @@ public class SparkOdometryThread {
   private final List<Queue<Double>> sparkQueues = new ArrayList<>();
   private final List<Queue<Double>> genericQueues = new ArrayList<>();
   private final List<Queue<Double>> timestampQueues = new ArrayList<>();
+
+  // Baked arrays for zero-allocation iteration in the high-frequency loop
+  private SparkBase[] bakedSparks = new SparkBase[0];
+  private DoubleSupplier[] bakedSparkSignals = new DoubleSupplier[0];
+  private DoubleSupplier[] bakedGenericSignals = new DoubleSupplier[0];
+  @SuppressWarnings("unchecked")
+  private Queue<Double>[] bakedSparkQueues = new Queue[0];
+  @SuppressWarnings("unchecked")
+  private Queue<Double>[] bakedGenericQueues = new Queue[0];
+  @SuppressWarnings("unchecked")
+  private Queue<Double>[] bakedTimestampQueues = new Queue[0];
+
   // reusable buffers to avoid allocating on every sample
-  private double[] sparkValueBuffer = new double[8];
-  private double[] genericValueBuffer = new double[8];
+  private double[] sparkValueBuffer = new double[0];
+  private double[] genericValueBuffer = new double[0];
+
+  private boolean isStarted = false;
 
   private static SparkOdometryThread instance = null;
   private Notifier notifier = new Notifier(this::run);
@@ -66,7 +80,37 @@ public class SparkOdometryThread {
    * <p>If no signals have been registered, the thread will not start.
    */
   public void start() {
-    if (timestampQueues.size() > 0) {
+    Drive.odometryLock.lock();
+    try {
+      if (isStarted) return;
+
+      // Bake lists into arrays to prevent GC allocations in the run loop
+      bakedSparks = sparks.toArray(new SparkBase[0]);
+      bakedSparkSignals = sparkSignals.toArray(new DoubleSupplier[0]);
+      bakedGenericSignals = genericSignals.toArray(new DoubleSupplier[0]);
+      
+      @SuppressWarnings("unchecked")
+      Queue<Double>[] sq = sparkQueues.toArray(new Queue[0]);
+      bakedSparkQueues = sq;
+      
+      @SuppressWarnings("unchecked")
+      Queue<Double>[] gq = genericQueues.toArray(new Queue[0]);
+      bakedGenericQueues = gq;
+      
+      @SuppressWarnings("unchecked")
+      Queue<Double>[] tq = timestampQueues.toArray(new Queue[0]);
+      bakedTimestampQueues = tq;
+
+      // Size buffers exactly to the registered components
+      sparkValueBuffer = new double[bakedSparks.length];
+      genericValueBuffer = new double[bakedGenericSignals.length];
+
+      isStarted = true;
+    } finally {
+      Drive.odometryLock.unlock();
+    }
+
+    if (bakedTimestampQueues.length > 0) {
       notifier.startPeriodic(1.0 / DriveConstants.odometryFrequency.in(Hertz));
     }
   }
@@ -82,6 +126,9 @@ public class SparkOdometryThread {
    * @return A queue containing the sampled data.
    */
   public Queue<Double> registerSignal(SparkBase spark, DoubleSupplier signal) {
+    if (isStarted) {
+      throw new IllegalStateException("Cannot register signals after the thread has started.");
+    }
     Queue<Double> queue = new ArrayBlockingQueue<>(20);
     Drive.odometryLock.lock();
     try {
@@ -103,6 +150,9 @@ public class SparkOdometryThread {
    * @return A queue containing the sampled data.
    */
   public Queue<Double> registerSignal(DoubleSupplier signal) {
+    if (isStarted) {
+      throw new IllegalStateException("Cannot register signals after the thread has started.");
+    }
     Queue<Double> queue = new ArrayBlockingQueue<>(20);
     Drive.odometryLock.lock();
     try {
@@ -122,6 +172,9 @@ public class SparkOdometryThread {
    * @return A queue containing the sample timestamps in seconds.
    */
   public Queue<Double> makeTimestampQueue() {
+    if (isStarted) {
+      throw new IllegalStateException("Cannot register signals after the thread has started.");
+    }
     Queue<Double> queue = new ArrayBlockingQueue<>(20);
     Drive.odometryLock.lock();
     try {
@@ -139,45 +192,20 @@ public class SparkOdometryThread {
    * lock (to minimize impact on the main thread), and then offers data to the queues.
    */
   private void run() {
-    // Snapshot lists quickly under the lock, then do hardware reads outside the lock
-    final List<SparkBase> sparksSnapshot;
-    final List<DoubleSupplier> sparkSignalsSnapshot;
-    final List<DoubleSupplier> genericSignalsSnapshot;
-    final List<Queue<Double>> sparkQueuesSnapshot;
-    final List<Queue<Double>> genericQueuesSnapshot;
-    final List<Queue<Double>> timestampQueuesSnapshot;
-
-    Drive.odometryLock.lock();
-    try {
-      sparksSnapshot = new ArrayList<>(sparks);
-      sparkSignalsSnapshot = new ArrayList<>(sparkSignals);
-      genericSignalsSnapshot = new ArrayList<>(genericSignals);
-      sparkQueuesSnapshot = new ArrayList<>(sparkQueues);
-      genericQueuesSnapshot = new ArrayList<>(genericQueues);
-      timestampQueuesSnapshot = new ArrayList<>(timestampQueues);
-    } finally {
-      Drive.odometryLock.unlock();
-    }
-
     // Fast exit if nothing registered
-    if (timestampQueuesSnapshot.isEmpty()
-        && sparkQueuesSnapshot.isEmpty()
-        && genericQueuesSnapshot.isEmpty()) {
+    if (bakedTimestampQueues.length == 0
+        && bakedSparkQueues.length == 0
+        && bakedGenericQueues.length == 0) {
       return;
     }
 
     // Read timestamp and sensor values without holding the odometry lock
     double timestamp = RobotController.getFPGATime() / 1e6;
 
-    int sCount = sparkSignalsSnapshot.size();
-    if (sparkValueBuffer.length < sCount) {
-      sparkValueBuffer = new double[Math.max(sCount, sparkValueBuffer.length * 2)];
-    }
-
     boolean isValid = true;
-    for (int i = 0; i < sCount; i++) {
-      sparkValueBuffer[i] = sparkSignalsSnapshot.get(i).getAsDouble();
-      if (sparksSnapshot.get(i).getLastError() != REVLibError.kOk) {
+    for (int i = 0; i < bakedSparkSignals.length; i++) {
+      sparkValueBuffer[i] = bakedSparkSignals[i].getAsDouble();
+      if (bakedSparks[i].getLastError() != REVLibError.kOk) {
         isValid = false;
         break; // stop early if a Spark reports an error
       }
@@ -187,25 +215,21 @@ public class SparkOdometryThread {
       return;
     }
 
-    int gCount = genericSignalsSnapshot.size();
-    if (genericValueBuffer.length < gCount) {
-      genericValueBuffer = new double[Math.max(gCount, genericValueBuffer.length * 2)];
-    }
-    for (int i = 0; i < gCount; i++) {
-      genericValueBuffer[i] = genericSignalsSnapshot.get(i).getAsDouble();
+    for (int i = 0; i < bakedGenericSignals.length; i++) {
+      genericValueBuffer[i] = bakedGenericSignals[i].getAsDouble();
     }
 
     // Offer values into queues while holding the lock briefly to keep updates atomic
     Drive.odometryLock.lock();
     try {
-      for (int i = 0; i < sCount; i++) {
-        sparkQueuesSnapshot.get(i).offer(sparkValueBuffer[i]);
+      for (int i = 0; i < bakedSparkQueues.length; i++) {
+        bakedSparkQueues[i].offer(sparkValueBuffer[i]);
       }
-      for (int i = 0; i < gCount; i++) {
-        genericQueuesSnapshot.get(i).offer(genericValueBuffer[i]);
+      for (int i = 0; i < bakedGenericQueues.length; i++) {
+        bakedGenericQueues[i].offer(genericValueBuffer[i]);
       }
-      for (int i = 0; i < timestampQueuesSnapshot.size(); i++) {
-        timestampQueuesSnapshot.get(i).offer(timestamp);
+      for (int i = 0; i < bakedTimestampQueues.length; i++) {
+        bakedTimestampQueues[i].offer(timestamp);
       }
     } finally {
       Drive.odometryLock.unlock();
