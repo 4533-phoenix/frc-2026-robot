@@ -89,7 +89,6 @@ public class Vision extends SubsystemBase {
 
     // Process all detections received this frame
     for (int i = 0; i < inputs.visionPoses.length; i++) {
-      // Quality Filter: Ignore measurements that detected zero or one AprilTag
       // Single-tag detections are often unreliable for field position
       if (inputs.tagCounts[i] <= 1) {
         continue;
@@ -120,6 +119,10 @@ public class Vision extends SubsystemBase {
       // Update Alerts for drivers and log status
       alerts[id].set(isOffline);
       Logger.recordOutput(logPaths[id], !isOffline);
+      // Expose AdvantageKit boolean for 'seen in past second' for each camera
+      String seenPath = "Vision/CameraSeen/" + cameraMap.get(id).name();
+      boolean seen = (currentTime - lastTimestamps[id]) <= offlineTimeoutSeconds;
+      Logger.recordOutput(seenPath, seen);
     }
   }
 }
