@@ -8,6 +8,7 @@
 package frc.robot.subsystems.vision;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import org.littletonrobotics.junction.AutoLog;
 
 /**
@@ -25,18 +26,20 @@ public interface VisionIO {
     public boolean serverLoaded = false;
 
     /** Array of robot poses estimated by the vision system. */
-    public Pose2d[] visionPoses = new Pose2d[] {};
+    public Pose2d[] visionPoses = new Pose2d[0];
     /** Array of timestamps (seconds) corresponding to when each pose was captured. */
-    public double[] timestamps = new double[] {};
-    /**
-     * Array of standard deviation vectors for the pose estimates (x, y, rotation). Used for
-     * weighting the measurement in the Kalman Filter.
-     */
-    public double[][] stdDevs = new double[][] {};
+    public double[] timestamps = new double[0];
+    /** Array of standard deviations for the X axis estimate (meters). */
+    public double[] stdDevX = new double[0];
+    /** Array of standard deviations for the Y axis estimate (meters). */
+    public double[] stdDevY = new double[0];
+    /** Array of standard deviations for the rotation estimate (radians). */
+    public double[] stdDevRot = new double[0];
+
     /** Array of IDs corresponding to the camera that produced each pose estimate. */
-    public int[] cameraIds = new int[] {};
+    public int[] cameraIds = new int[0];
     /** Array of the number of AprilTags used to calculate each pose estimate. */
-    public int[] tagCounts = new int[] {};
+    public int[] tagCounts = new int[0];
   }
 
   /**
@@ -49,7 +52,7 @@ public interface VisionIO {
   /**
    * Broadcasts the current robot heading to the vision system to assist in 3D pose estimation.
    *
-   * @param heading The current robot heading in radians.
+   * @param heading The current robot heading.
    */
-  public default void broadcastRobotHeading(double heading) {}
+  public default void broadcastRobotHeading(Rotation2d heading) {}
 }

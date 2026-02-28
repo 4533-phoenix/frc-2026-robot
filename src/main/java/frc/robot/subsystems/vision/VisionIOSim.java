@@ -15,8 +15,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.subsystems.vision.VisionConstants.CameraConfig;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -24,13 +22,14 @@ import java.util.function.Supplier;
  *
  * <p>This class simulates camera detection of AprilTags based on the robot's current pose and the
  * configured camera FOV and range limits. It calculates dummy pose estimates and standard
- * deviations for simulation testing.
+ * deviations for simulation testing, utilizing zero-allocation arrays to maintain performance.
  */
 public class VisionIOSim implements VisionIO {
-  /** Supplier to get the current robot pose from the physics simulator. */
   private final Supplier<Pose2d> poseSupplier;
-  /** Layout of AprilTags on the field. */
   private final AprilTagFieldLayout layout;
+
+  // Pre-allocated empty pose to avoid creating 'new Pose2d()' constantly when no tags are seen
+  private static final Pose2d EMPTY_POSE = new Pose2d();
 
   /**
    * Creates a new VisionIOSim.
@@ -54,11 +53,22 @@ public class VisionIOSim implements VisionIO {
     Pose2d robotPose = poseSupplier.get();
     double timestamp = Timer.getFPGATimestamp();
 
-    List<Pose2d> poses = new ArrayList<>();
-    List<Double> timestamps = new ArrayList<>();
-    List<double[]> stdDevs = new ArrayList<>();
-    List<Integer> ids = new ArrayList<>();
-    List<Integer> tags = new ArrayList<>();
+    int cameraCount = VisionConstants.cameraMap.size();
+
+    // OPTIMIZATION: Resize arrays once. Removed ArrayLists and Java Streams to prevent
+    // Autoboxing and continuous memory allocation during simulation.
+    if (inputs.visionPoses.length != cameraCount) {
+      inputs.visionPoses = new Pose2d[cameraCount];
+      inputs.timestamps = new double[cameraCount];
+      inputs.cameraIds = new int[cameraCount];
+      inputs.tagCounts = new int[cameraCount];
+
+      inputs.stdDevX = new double[cameraCount];
+      inputs.stdDevY = new double[cameraCount];
+      inputs.stdDevRot = new double[cameraCount];
+    }
+
+    int index = 0;
 
     // Iterate through all configured cameras to simulate their detections
     for (var entry : VisionConstants.cameraMap.entrySet()) {
@@ -76,7 +86,7 @@ public class VisionIOSim implements VisionIO {
         Translation2d diff = tagPose.getTranslation().minus(cameraPose.getTranslation());
         double distance = diff.getNorm();
 
-        // Check if tag is within range and within camera field of view (FOV)
+        // Check if tag is within range and within camera field of view
         if (distance <= config.maxRangeMeters()) {
           Rotation2d angleToTag = diff.getAngle().minus(cameraPose.getRotation());
           if (Math.abs(angleToTag.getDegrees()) <= config.fovDegrees() / 2.0) {
@@ -86,37 +96,37 @@ public class VisionIOSim implements VisionIO {
         }
       }
 
-      // ALWAYS add an entry for the heartbeat, even if visibleTags is 0
-      ids.add(camId);
-      timestamps.add(timestamp);
-      tags.add(visibleTags);
+      // Populate parallel arrays
+      inputs.cameraIds[index] = camId;
+      inputs.timestamps[index] = timestamp;
+      inputs.tagCounts[index] = visibleTags;
 
       if (visibleTags > 0) {
         // Generate dummy pose and standard deviations based on average distance
         double avgDist = totalDistance / visibleTags;
-        // Simple noise model: standard deviation increases with distance
+
+        // Simple noise model where standard deviation increases with distance
         double xyStd = 0.01 * (avgDist * avgDist) / visibleTags;
         double thetaStd = 0.01 * (avgDist * avgDist) / visibleTags;
 
-        poses.add(robotPose); // In real life this would be a noisy measurement
-        stdDevs.add(new double[] {xyStd, xyStd, thetaStd});
+        inputs.visionPoses[index] = robotPose;
+        inputs.stdDevX[index] = xyStd;
+        inputs.stdDevY[index] = xyStd;
+        inputs.stdDevRot[index] = thetaStd;
       } else {
-        // No tags visible, send dummy data
-        poses.add(new Pose2d());
-        stdDevs.add(new double[] {0.0, 0.0, 0.0});
+        // No tags visible send no data
+        inputs.visionPoses[index] = EMPTY_POSE;
+        inputs.stdDevX[index] = 0.0;
+        inputs.stdDevY[index] = 0.0;
+        inputs.stdDevRot[index] = 0.0;
       }
-    }
 
-    // Convert lists to arrays for AdvantageKit logging
-    inputs.visionPoses = poses.toArray(new Pose2d[0]);
-    inputs.timestamps = timestamps.stream().mapToDouble(Double::doubleValue).toArray();
-    inputs.cameraIds = ids.stream().mapToInt(Integer::intValue).toArray();
-    inputs.tagCounts = tags.stream().mapToInt(Integer::intValue).toArray();
-    inputs.stdDevs = stdDevs.toArray(new double[0][0]);
+      index++;
+    }
   }
 
   @Override
-  public void broadcastRobotHeading(double heading) {
+  public void broadcastRobotHeading(Rotation2d heading) {
     // No-op in simulation
   }
 }
