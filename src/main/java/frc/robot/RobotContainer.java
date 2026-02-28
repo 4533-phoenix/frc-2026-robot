@@ -95,6 +95,8 @@ public class RobotContainer {
         shooter = new Shooter(new FlywheelIOSim(), new HoodIOSim());
         indexer = new Indexer(new IndexerIOSim());
         vision = new Vision(new VisionIOChalkydri(), drive);
+        // Start hardware config thread after all subsystems are created
+        frc.robot.util.HardwareConfigManager.startConfigThread();
         break;
 
       case SIM:

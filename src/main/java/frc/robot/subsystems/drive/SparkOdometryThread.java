@@ -42,10 +42,13 @@ public class SparkOdometryThread {
   private SparkBase[] bakedSparks = new SparkBase[0];
   private DoubleSupplier[] bakedSparkSignals = new DoubleSupplier[0];
   private DoubleSupplier[] bakedGenericSignals = new DoubleSupplier[0];
+
   @SuppressWarnings("unchecked")
   private Queue<Double>[] bakedSparkQueues = new Queue[0];
+
   @SuppressWarnings("unchecked")
   private Queue<Double>[] bakedGenericQueues = new Queue[0];
+
   @SuppressWarnings("unchecked")
   private Queue<Double>[] bakedTimestampQueues = new Queue[0];
 
@@ -88,15 +91,15 @@ public class SparkOdometryThread {
       bakedSparks = sparks.toArray(new SparkBase[0]);
       bakedSparkSignals = sparkSignals.toArray(new DoubleSupplier[0]);
       bakedGenericSignals = genericSignals.toArray(new DoubleSupplier[0]);
-      
+
       @SuppressWarnings("unchecked")
       Queue<Double>[] sq = sparkQueues.toArray(new Queue[0]);
       bakedSparkQueues = sq;
-      
+
       @SuppressWarnings("unchecked")
       Queue<Double>[] gq = genericQueues.toArray(new Queue[0]);
       bakedGenericQueues = gq;
-      
+
       @SuppressWarnings("unchecked")
       Queue<Double>[] tq = timestampQueues.toArray(new Queue[0]);
       bakedTimestampQueues = tq;
