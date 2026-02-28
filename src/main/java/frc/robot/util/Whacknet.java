@@ -60,7 +60,7 @@ public class Whacknet {
         loaded = true;
       } catch (UnsatisfiedLinkError e) {
         System.err.println(
-            "[VisionNative-java] Failed to load whacknet library: " + e.getMessage());
+            "[Whacknet-java] Failed to load whacknet library: " + e.getMessage());
         loaded = false;
       }
     }
@@ -107,11 +107,11 @@ public class Whacknet {
    */
   public void start(int port) {
     if (!loaded) {
-      System.err.println("[VisionNative-java] Cannot start server: native library not loaded.");
+      System.err.println("[Whacknet-java] Cannot start server: native library not loaded.");
       return;
     }
     startServer(port);
-    System.out.println("[VisionNative-java] Vision server started on port " + port);
+    System.out.println("[Whacknet-java] Vision server started on port " + port);
   }
 
   /**
