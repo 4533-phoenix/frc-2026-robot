@@ -55,7 +55,6 @@ import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOChalkydri;
 import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.util.HardwareConfigManager;
-
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
