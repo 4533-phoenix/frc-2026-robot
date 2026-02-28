@@ -5,37 +5,52 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-package frc.robot.subsystems.shooter.indexer;
+package frc.robot.subsystems.indexer;
 
-import static frc.robot.subsystems.shooter.ShooterConstants.*;
+import static edu.wpi.first.units.Units.Volts;
+import static frc.robot.subsystems.indexer.IndexerConstants.*;
 
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
+/**
+ * Subsystem for the robot's indexer mechanism.
+ *
+ * <p>Responsible for controlling the speed of the motor driving the indexer to transfer game pieces
+ * from the intake to the shooter.
+ */
 public class Indexer extends SubsystemBase {
   private final IndexerIO io;
   private final IndexerIOInputsAutoLogged inputs = new IndexerIOInputsAutoLogged();
 
   private final Alert disconnectedAlert = new Alert("Indexer IO disconnected", AlertType.kWarning);
 
+  /**
+   * Creates a new Indexer subsystem.
+   *
+   * @param io The abstraction layer for the indexer hardware.
+   */
   public Indexer(IndexerIO io) {
     this.io = io;
   }
 
+  /** Updates hardware inputs, logs data, and updates status alerts. */
   @Override
   public void periodic() {
     io.updateInputs(inputs);
-    Logger.processInputs("Shooter/Indexer", inputs);
+    Logger.processInputs("Indexer", inputs);
     disconnectedAlert.set(!inputs.connected);
   }
 
-  public void startIndexer() {
+  /** Runs the indexer at the configured voltage. */
+  public void run() {
     io.setVoltage(indexerOnVoltage);
   }
 
-  public void stopIndexer() {
-    io.setVoltage(indexerOffVoltage);
+  /** Stops the indexer motor. */
+  public void stop() {
+    io.setVoltage(Volts.of(0.0));
   }
 }

@@ -5,7 +5,7 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-package frc.robot.subsystems.drive;
+package frc.robot.subsystems.drive.gyro;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
@@ -13,17 +13,25 @@ import static frc.robot.subsystems.drive.DriveConstants.*;
 import edu.wpi.first.units.measure.Angle;
 import org.littletonrobotics.junction.Logger;
 
+/**
+ * IO implementation that combines inputs from a {@link GyroIONavX} and a {@link GyroIOCanAndGyro}.
+ *
+ * <p>This implementation prioritizes the NavX (for latency) for raw data but utilizes the
+ * CanAndGyro to calculate and correct for gyro drift when the robot is detected to be stationary.
+ */
 public class GyroIODual implements GyroIO {
   private final GyroIONavX navx = new GyroIONavX();
   private final GyroIOCanAndGyro canandgyro = new GyroIOCanAndGyro();
 
   private Angle driftOffset = Radians.of(0.0);
 
+  /** Updates the combined gyro inputs and manages drift compensation. */
   @Override
   public void updateInputs(GyroIOInputs inputs) {
     GyroIOInputs navxIn = new GyroIOInputs();
     GyroIOInputs canIn = new GyroIOInputs();
 
+    // Update inputs from both physical sensors
     navx.updateInputs(navxIn);
     canandgyro.updateInputs(canIn);
 
@@ -32,12 +40,16 @@ public class GyroIODual implements GyroIO {
       Angle currentCorrectedPos = navxIn.yawPosition.plus(driftOffset);
 
       if (canIn.connected) {
+        // Calculate error between NavX (corrected) and CanAndGyro
         Angle error = canIn.yawPosition.minus(currentCorrectedPos);
+        // Determine if the robot is effectively stationary
         boolean isStill =
             navxIn.yawVelocity.abs(RadiansPerSecond) < velocityGate.in(RadiansPerSecond);
 
+        // If stationary and error is significant, adjust the drift offset
         if (isStill && (error.abs(Radians) > errorThreshold.in(Radians))) {
           Angle step = error.times(driftGain);
+          // Clamp the correction step to a maximum value to prevent sudden jumps
           step =
               Radians.of(
                   Math.max(
@@ -47,24 +59,29 @@ public class GyroIODual implements GyroIO {
         }
       }
 
+      // Apply the accumulated drift offset to the NavX data
       inputs.yawPosition = navxIn.yawPosition.plus(driftOffset);
       inputs.yawVelocity = navxIn.yawVelocity;
       inputs.odometryYawTimestamps = navxIn.odometryYawTimestamps;
 
+      // Apply drift offset to all high-frequency samples for consistent odometry
       inputs.odometryYawPositions = new double[navxIn.odometryYawPositions.length];
       for (int i = 0; i < navxIn.odometryYawPositions.length; i++) {
         inputs.odometryYawPositions[i] = navxIn.odometryYawPositions[i] + driftOffset.in(Radians);
       }
     } else if (canIn.connected) {
+      // Fallback to CanAndGyro if NavX is disconnected
       inputs.connected = true;
       inputs.yawPosition = canIn.yawPosition;
       inputs.yawVelocity = canIn.yawVelocity;
       inputs.odometryYawTimestamps = canIn.odometryYawTimestamps;
       inputs.odometryYawPositions = canIn.odometryYawPositions;
     } else {
+      // No gyro data available
       inputs.connected = false;
     }
 
+    // Log the current drift offset for debugging
     Logger.recordOutput("Drive/Gyro/DriftOffset", driftOffset);
   }
 }

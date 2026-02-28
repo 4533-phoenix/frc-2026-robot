@@ -1,33 +1,33 @@
-// package frc.robot.commands;
+// Copyright (c) 2026 FRC Team 4533 (Phoenix)
+// Derived from the AdvantageKit framework by Littleton Robotics
+//
+// Use of this source code is governed by a BSD
+// license that can be found in the LICENSE file
+// at the root directory of this project.
 
-// import edu.wpi.first.wpilibj2.command.Command;
-// import edu.wpi.first.wpilibj2.command.Commands;
-// import frc.robot.subsystems.shooter.Shooter;
-// import frc.robot.subsystems.shooter.ShooterConstants;
+package frc.robot.commands;
 
-// public class ShooterCommands {
-//   private ShooterCommands() {}
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.subsystems.shooter.Shooter;
 
-//   public static Command runFlywheel(Shooter shooter) {
-//     return Commands.runEnd(
-//         () -> shooter.runFlywheel(ShooterConstants.defaultFlywheelVoltage),
-//         shooter::stopFlywheel,
-//         shooter);
-//   }
+/**
+ * Factory class for creating commands related to the shooter subsystem.
+ *
+ * <p>Provides methods to control the speed of the shooter flywheels and kicker rollers.
+ */
+public class ShooterCommands {
 
-//   public static Command runFlywheel(Shooter shooter, double volts) {
-//     return Commands.runEnd(() -> shooter.runFlywheel(volts), shooter::stopFlywheel, shooter);
-//   }
+  private ShooterCommands() {}
 
-//   public static Command setHoodPosition(Shooter shooter, double position) {
-//     return Commands.runOnce(() -> shooter.setHoodPosition(position), shooter);
-//   }
-
-//   public static Command aimHood(Shooter shooter) {
-//     return setHoodPosition(shooter, ShooterConstants.hoodExtendPosition);
-//   }
-
-//   public static Command stowHood(Shooter shooter) {
-//     return setHoodPosition(shooter, ShooterConstants.hoodRetractPosition);
-//   }
-// }
+  /**
+   * Continuously ensures the shooter is stopped. Useful as a default command to ensure safety when
+   * not actively shooting.
+   *
+   * @param shooter The shooter subsystem.
+   * @return A command that stops the shooter motors.
+   */
+  public static Command stopShooter(Shooter shooter) {
+    return Commands.run(shooter::stop, shooter);
+  }
+}

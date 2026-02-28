@@ -9,42 +9,49 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.*;
-
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.IndexerCommands;
 import frc.robot.commands.IntakeCommands;
+import frc.robot.commands.ShooterCommands;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.climb.ClimbIO;
 import frc.robot.subsystems.climb.ClimbIOSim;
 import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.drive.GyroIO;
-import frc.robot.subsystems.drive.GyroIONavX;
-import frc.robot.subsystems.drive.ModuleIO;
-import frc.robot.subsystems.drive.ModuleIOSim;
-import frc.robot.subsystems.drive.ModuleIOSpark;
+import frc.robot.subsystems.drive.gyro.GyroIO;
+import frc.robot.subsystems.drive.gyro.GyroIODual;
+import frc.robot.subsystems.drive.module.ModuleIO;
+import frc.robot.subsystems.drive.module.ModuleIOSim;
+import frc.robot.subsystems.drive.module.ModuleIOSpark;
+import frc.robot.subsystems.indexer.Indexer;
+import frc.robot.subsystems.indexer.IndexerIO;
+import frc.robot.subsystems.indexer.IndexerIOSim;
+import frc.robot.subsystems.indexer.IndexerIOSpark;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
-import frc.robot.subsystems.shooter.flywheel.Flywheel;
+import frc.robot.subsystems.intake.IntakeIOReal;
+import frc.robot.subsystems.intake.IntakeIOSim;
+import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
-import frc.robot.subsystems.shooter.hood.Hood;
+import frc.robot.subsystems.shooter.flywheel.FlywheelIOTalonFX;
 import frc.robot.subsystems.shooter.hood.HoodIO;
 import frc.robot.subsystems.shooter.hood.HoodIOSim;
-import frc.robot.subsystems.shooter.indexer.Indexer;
-import frc.robot.subsystems.shooter.indexer.IndexerIO;
-import frc.robot.subsystems.shooter.indexer.IndexerIOSim;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOChalkydri;
+import frc.robot.subsystems.vision.VisionIOSim;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -58,19 +65,24 @@ public class RobotContainer {
   private final Drive drive;
   private final Climb climb;
   private final Intake intake;
-  private final Flywheel flywheel;
-  private final Hood hood;
+  private final Shooter shooter;
   private final Indexer indexer;
   private final Vision vision;
 
-  // Controller
-  private final CommandXboxController controller = new CommandXboxController(0);
+  // Controllers
+  public final CommandXboxController driverController = new CommandXboxController(0);
+  public final CommandGenericHID operatorController = new CommandGenericHID(1);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
 
-  /** The container for the robot. Contains subsystems, OI devices, and commands. */
+  /**
+   * The container for the robot. Contains subsystems, OI devices, and commands.
+   *
+   * <p>Configures IO implementations based on the current mode (Real, Sim, or Replay).
+   */
   public RobotContainer() {
+    // Instantiate subsystems based on the running mode
     switch (Constants.currentMode) {
       case REAL:
         // Real robot, instantiate hardware IO implementations
@@ -81,11 +93,10 @@ public class RobotContainer {
                 new ModuleIOSpark(1),
                 new ModuleIOSpark(2),
                 new ModuleIOSpark(3));
-        climb = new Climb(new ClimbIO() {});
-        intake = new Intake(new IntakeIO() {});
-        flywheel = new Flywheel(new FlywheelIO() {});
-        hood = new Hood(new HoodIO() {});
-        indexer = new Indexer(new IndexerIO() {});
+        climb = new Climb(new ClimbIO() {}); // Assuming placeholder IO
+        intake = new Intake(new IntakeIOReal());
+        shooter = new Shooter(new FlywheelIOTalonFX(), new HoodIOServo());
+        indexer = new Indexer(new IndexerIOSpark());
         vision = new Vision(new VisionIOChalkydri(), drive);
         break;
 
@@ -99,11 +110,10 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim());
         climb = new Climb(new ClimbIOSim());
-        intake = new Intake(new IntakeIO() {});
-        flywheel = new Flywheel(new FlywheelIOSim());
-        hood = new Hood(new HoodIOSim());
+        intake = new Intake(new IntakeIOSim());
+        shooter = new Shooter(new FlywheelIOSim(), new HoodIOSim());
         indexer = new Indexer(new IndexerIOSim());
-        vision = new Vision(new VisionIO() {}, drive);
+        vision = new Vision(new VisionIOSim(drive::getPose), drive);
         break;
 
       default:
@@ -117,17 +127,16 @@ public class RobotContainer {
                 new ModuleIO() {});
         climb = new Climb(new ClimbIO() {});
         intake = new Intake(new IntakeIO() {});
-        flywheel = new Flywheel(new FlywheelIO() {});
-        hood = new Hood(new HoodIO() {});
+        shooter = new Shooter(new FlywheelIO() {}, new HoodIO() {});
         indexer = new Indexer(new IndexerIO() {});
         vision = new Vision(new VisionIO() {}, drive);
         break;
     }
 
-    // Set up auto routines
+    // Set up auto routines via PathPlanner
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
-    // Set up SysId routines
+    // Set up characterization routines for SysId
     autoChooser.addOption(
         "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
     autoChooser.addOption(
@@ -154,23 +163,31 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    // Default command, normal field-relative drive
+    // Get common triggers from the superstructure
+    Trigger outpostEnabled = Superstructure.isOutpostEnabled();
+    Trigger readyToFire = Superstructure.isReadyToFire(drive, shooter);
+    Trigger endgame = Superstructure.isEndgame();
+
+    // Normal field-relative drive
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> -controller.getLeftY(),
-            () -> -controller.getLeftX(),
-            () -> -controller.getRightX()));
+            () -> -driverController.getLeftY(),
+            () -> -driverController.getLeftX(),
+            () -> -driverController.getRightX()));
 
-    // Deploy intake and spin while A is held and set the default command to retract when released
+    // Intake remains retracted by default
     intake.setDefaultCommand(IntakeCommands.holdRetracted(intake));
-    controller.a().whileTrue(IntakeCommands.deploy(intake));
 
-    // Switch to X pattern when X button is pressed
-    controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
+    // Shooter and indexer stop by default
+    shooter.setDefaultCommand(ShooterCommands.stopShooter(shooter));
+    indexer.setDefaultCommand(IndexerCommands.stopIndexer(indexer));
 
-    // Reset gyro to 0° when B button is pressed
-    controller
+    // Deploy intake and spin while Left Bumper is held
+    driverController.leftBumper().whileTrue(IntakeCommands.deploy(intake));
+
+    // Reset gyro to 0° when B button is pressed
+    driverController
         .b()
         .onTrue(
             Commands.runOnce(
@@ -180,23 +197,35 @@ public class RobotContainer {
                     drive)
                 .ignoringDisable(true));
 
-    // Shooter Controls
-    hood.setDefaultCommand(Commands.run(() -> hood.retract(), hood));
-    flywheel.setDefaultCommand(Commands.run(() -> flywheel.stop(), flywheel));
-    indexer.setDefaultCommand(Commands.run(() -> indexer.stopIndexer(), indexer));
+    // Auto-aim while holding Left Trigger and in shooting zone
+    driverController
+        .leftTrigger()
+        .and(Superstructure.isInShootingZone(drive))
+        .whileTrue(Superstructure.getAutoAimCommand(drive, shooter, driverController));
 
-    controller
-        .leftBumper()
-        .whileTrue(
-            Commands.run(
-                () -> {
-                  hood.setLaunchAngle(Degrees.of(45));
-                  flywheel.setAngularVelocity(RotationsPerSecond.of(100));
-                },
-                hood,
-                flywheel));
+    // Fire game piece while holding Right Trigger, ready to fire, and outpost enabled
+    driverController
+        .rightTrigger()
+        .and(readyToFire)
+        .and(outpostEnabled)
+        .whileTrue(IndexerCommands.runIndexer(indexer));
 
-    controller.rightBumper().whileTrue(Commands.run(() -> indexer.startIndexer(), indexer));
+    // Rumble when outpost becomes enabled
+    outpostEnabled.onTrue(
+        Superstructure.rumbleCommand(driverController, RumbleType.kLeftRumble, 0.5, 0.2)
+            .andThen(Commands.waitSeconds(0.1))
+            .andThen(
+                Superstructure.rumbleCommand(driverController, RumbleType.kLeftRumble, 0.5, 0.2)));
+
+    // Rumble when shooter is ready
+    readyToFire.whileTrue(
+        Commands.startEnd(
+            () -> driverController.setRumble(RumbleType.kRightRumble, 0.4),
+            () -> driverController.setRumble(RumbleType.kRightRumble, 0.0)));
+
+    // Rumble hard during endgame
+    endgame.onTrue(
+        Superstructure.rumbleCommand(driverController, RumbleType.kBothRumble, 1.0, 1.5));
   }
 
   /**

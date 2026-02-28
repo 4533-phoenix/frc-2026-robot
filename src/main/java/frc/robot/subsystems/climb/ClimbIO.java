@@ -7,35 +7,48 @@
 
 package frc.robot.subsystems.climb;
 
+import static edu.wpi.first.units.Units.*;
+
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 import org.littletonrobotics.junction.AutoLog;
 
-/** IO interface for the climb hardware. */
+/**
+ * Interface for the climb mechanism input/output abstraction.
+ *
+ * <p>This interface allows for interchangeable climb hardware (e.g., different motor controllers)
+ * and comprehensive simulation support.
+ */
 public interface ClimbIO {
+  /** Contains all of the inputs received from the climb hardware. */
   @AutoLog
   public static class ClimbIOInputs {
     // Lift mechanism
-    public boolean liftConnected = false;
-    public double liftAppliedVolts = 0.0;
-    public double liftCurrentAmps = 0.0;
-
-    // Rotate mechanism
-    public boolean rotateConnected = false;
-    public double rotateAppliedVolts = 0.0;
-    public double rotateCurrentAmps = 0.0;
+    /** Whether the lift motor controller is currently connected and communicating. */
+    public boolean connected = false;
+    /** The voltage currently being applied to the lift motor. */
+    public Voltage appliedVoltage = Volts.of(0.0);
+    /** The current being drawn by the lift motor. */
+    public Current appliedCurrent = Amps.of(0.0);
 
     // Limit switches
-    public boolean liftLowerLimit = false;
-    public boolean liftUpperLimit = false;
-    public boolean rotateMinLimit = false;
-    public boolean rotateMaxLimit = false;
+    /** Whether the lower limit switch is currently pressed. */
+    public boolean lowerLimit = false;
+    /** Whether the upper limit switch is currently pressed. */
+    public boolean upperLimit = false;
   }
 
-  /** Updates the set of loggable inputs. */
+  /**
+   * Updates the set of loggable inputs.
+   *
+   * @param inputs The inputs object to update.
+   */
   public default void updateInputs(ClimbIOInputs inputs) {}
 
-  /** Run the lift motors at the specified open loop voltage. */
-  public default void setLiftOpenLoop(double volts) {}
-
-  /** Run the rotate motors at the specified open loop voltage. */
-  public default void setRotateOpenLoop(double volts) {}
+  /**
+   * Run the lift motors at the specified voltage.
+   *
+   * @param voltage The voltage to apply to the motor controller.
+   */
+  public default void setLiftVoltage(Voltage voltage) {}
 }

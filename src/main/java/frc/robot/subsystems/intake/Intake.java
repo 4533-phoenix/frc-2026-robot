@@ -10,90 +10,94 @@ package frc.robot.subsystems.intake;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.intake.IntakeConstants.*;
 
-import edu.wpi.first.math.controller.ArmFeedforward;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
+/**
+ * Subsystem for controlling the robot's intake mechanism.
+ *
+ * <p>Responsible for deploying/retracting the intake arm and controlling the rollers to pull in or
+ * push out game pieces.
+ */
 public class Intake extends SubsystemBase {
   private final IntakeIO io;
   private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
+  private Angle currentTarget = null;
 
-  private final ArmFeedforward feedforward = new ArmFeedforward(armKs, armKg, armKv, armKa);
-  private final TrapezoidProfile profile =
-      new TrapezoidProfile(
-          new TrapezoidProfile.Constraints(
-              armMaxVelocity.in(RadiansPerSecond),
-              armMaxAcceleration.in(RadiansPerSecondPerSecond)));
-  private TrapezoidProfile.State setpoint = new TrapezoidProfile.State();
-  private TrapezoidProfile.State goal = new TrapezoidProfile.State();
-  private double lastTime = 0.0;
-
+  // Alerts for hardware monitoring
   private final Alert armDisconnectedAlert =
       new Alert("Intake arm motor disconnected", AlertType.kWarning);
   private final Alert spinnerDisconnectedAlert =
       new Alert("Intake spinner motor disconnected", AlertType.kWarning);
 
+  /**
+   * Creates a new Intake subsystem.
+   *
+   * @param io The abstraction layer for the intake hardware.
+   */
   public Intake(IntakeIO io) {
     this.io = io;
-    lastTime = Timer.getFPGATimestamp();
-    setpoint = new TrapezoidProfile.State(armRetractedPosition.in(Radians), 0.0);
-    goal = new TrapezoidProfile.State(armRetractedPosition.in(Radians), 0.0);
   }
 
+  /** Updates hardware inputs, logs data, and updates status alerts. */
   @Override
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Intake", inputs);
 
+    // Update connection alerts based on hardware feedback
     armDisconnectedAlert.set(!inputs.armConnected);
     spinnerDisconnectedAlert.set(!inputs.spinnerConnected);
-
-    // Calculate next setpoint using FPGA timestamp for actual loop dt
-    double now = Timer.getFPGATimestamp();
-    double dt = now - lastTime;
-    // Fallback to 20ms for non-positive or extremely large dt; clamp to a reasonable max
-    if (dt <= 0.0 || Double.isNaN(dt) || dt > 0.5) {
-      dt = 0.020;
-    }
-    lastTime = now;
-    setpoint = profile.calculate(Math.min(dt, 0.1), setpoint, goal);
-
-    // Calculate feedforward
-    double feedforwardOutput = feedforward.calculate(setpoint.position, setpoint.velocity);
-
-    // Send to SparkMax (Position PID on SparkMax, Profile on RIO)
-    io.setArmPosition(Radians.of(setpoint.position), Volts.of(feedforwardOutput));
-
-    Logger.recordOutput("Intake/SetpointPositionDeg", Math.toDegrees(setpoint.position));
-    Logger.recordOutput("Intake/GoalPositionDeg", Math.toDegrees(goal.position));
-    Logger.recordOutput("Intake/FeedforwardVolts", feedforwardOutput);
   }
 
-  /** Deploy the intake arm and spin the rollers. */
+  /** Deploys the intake arm to the operational position. */
   public void deploy() {
-    goal = new TrapezoidProfile.State(armDeployedPosition.in(Radians), 0.0);
-    io.setSpinnerVoltage(spinnerIntakeVoltage);
+    setSetpoint(armDeployedPosition);
   }
 
-  /** Retract the intake arm and stop the rollers. */
+  /** Retracts the intake arm to the stowed position. */
   public void retract() {
-    goal = new TrapezoidProfile.State(armRetractedPosition.in(Radians), 0.0);
-    io.setSpinnerVoltage(Volts.of(0.0));
+    setSetpoint(armRetractedPosition);
   }
 
-  /** Stop everything (arm holds position at retracted, spinner off). */
-  public void stop() {
-    goal = new TrapezoidProfile.State(armRetractedPosition.in(Radians), 0.0);
-    io.setSpinnerVoltage(Volts.of(0.0));
+  /**
+   * Sets the target position for the arm actuator.
+   *
+   * @param newTarget The target angle for the arm.
+   */
+  private void setSetpoint(Angle newTarget) {
+    // Only send to IO if the target is actually different to reduce CAN traffic
+    if (currentTarget == null || !newTarget.equals(currentTarget)) {
+      io.setArmPosition(newTarget);
+      currentTarget = newTarget;
+    }
   }
 
-  @AutoLogOutput(key = "Intake/ArmPositionDeg")
-  public double getArmPositionDeg() {
-    return inputs.armPosition.in(Degrees);
+  /** Spins the spinner rollers to bring game pieces into the robot. */
+  public void intake() {
+    io.setSpinnerAngularVelocity(spinnerIntakeVelocity);
+  }
+
+  /** Spins the spinner rollers in reverse to eject game pieces. */
+  public void extake() {
+    io.setSpinnerAngularVelocity(spinnerExtakeVelocity);
+  }
+
+  /** Stops the spinner rollers. */
+  public void stopSpinner() {
+    io.setSpinnerAngularVelocity(RadiansPerSecond.of(0.0));
+  }
+
+  /**
+   * Checks if the intake arm is close enough to the deployed position to start intaking.
+   *
+   * @return True if the arm is within tolerance of the deployed position.
+   */
+  public boolean armDeployed() {
+    return armDeployedPosition.minus(inputs.armPosition).abs(Degrees)
+        < armPositionIntakeTolerance.in(Degrees);
   }
 }
