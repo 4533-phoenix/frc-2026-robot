@@ -30,7 +30,6 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -318,7 +317,8 @@ public class ModuleIOSpark implements ModuleIO {
       for (int i = 0; i < count; i++) {
         inputs.odometryTimestamps[i] = tempTimestamps.get(i);
         inputs.odometryDrivePositionsRad[i] = tempDrivePositions.get(i);
-        inputs.odometryTurnPositions[i] = new Rotation2d(tempTurnPositions.get(i)).minus(zeroRotation);
+        inputs.odometryTurnPositions[i] =
+            new Rotation2d(tempTurnPositions.get(i)).minus(zeroRotation);
       }
 
     } finally {

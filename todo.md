@@ -8,5 +8,6 @@
 * Need to make sure we are not creating objects in loops for rects? (Unasigned)
 * Why is measured velocities always lower than commmanded on swerve?
 * Make sure shooter tolerance is good (Otherwise fix sim)
-* Add velocity to shooter aim?
 * Should I prefer double vibrate or sustained?
+* Need to know estimated time of flight to calculate the added velocity of the bot
+* Need to prefer rotation over translation when aimed in
