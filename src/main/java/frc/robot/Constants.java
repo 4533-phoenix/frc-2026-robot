@@ -48,12 +48,12 @@ public final class Constants {
   /** Total length of the field. */
   public static final Distance fieldLength = Inches.of(651.25);
   /** Total width of the field. */
-  public static final Distance fieldWidth = Inches.of(315.5);
+  public static final Distance fieldWidth = Inches.of(317.5);
 
   // Field Objects
   /** The location of the center of the field outpost mechanism. */
   public static final Translation2d outpostPosition =
-      new Translation2d(Meters.of(4.625), fieldWidth.div(2.0));
+      new Translation2d(Meters.of(4.65), fieldWidth.div(2.0));
 
   // Game Specific Zones
   /** The area on the field where the robot is permitted to shoot game pieces. */

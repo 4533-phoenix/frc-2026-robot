@@ -30,9 +30,9 @@ public class ShooterKinematics {
   }
 
   /**
-   * Calculates the optimal {@link ShooterState} for a given distance to the speaker.
+   * Calculates the optimal {@link ShooterState} for a given distance to the target.
    *
-   * @param distanceToTarget The distance from the robot to the target in meters.
+   * @param distanceToTarget The distance from the shooter to the target.
    * @return The calculated ShooterState containing target flywheel speed and hood angle.
    */
   public static ShooterState calculateShooterState(Distance distanceToTarget) {

@@ -173,8 +173,34 @@ public class DriveConstants {
   public static final double turnPIDMaxInput = Math.PI;
 
   // PathPlanner configuration
-  /** Total mass of the robot in kilograms. */
-  public static final Mass robotMass = Kilograms.of(74.088);
+  /** Total mass of the robot. */
+  public static final Mass robotMass = Pounds.of(130);
+
+  // ---------- Drive Command Configuration ----------
+  /** Joystick deadband for linear and rotational inputs. */
+  public static final double joystickDeadband = 0.1;
+
+  // Angle PID configuration (for rotation-locked drive commands)
+  /** Proportional gain for rotational PID control. */
+  public static final double angleKp = 7.0;
+  /** Derivative gain for rotational PID control. */
+  public static final double angleKd = 0.0;
+  /** Maximum angular velocity for the rotation motion profile in radians per second. */
+  public static final double angleMaxVelocity = 16.0;
+  /** Maximum angular acceleration for the rotation motion profile in radians per second squared. */
+  public static final double angleMaxAcceleration = 40.0;
+
+  // Feedforward characterization configuration
+  /** Delay in seconds before feedforward characterization starts ramping voltage. */
+  public static final double ffStartDelay = 2.0;
+  /** Voltage ramp rate in volts per second for feedforward characterization. */
+  public static final double ffRampRate = 0.1;
+
+  // Wheel radius characterization configuration
+  /** Maximum angular velocity in radians per second for wheel radius characterization. */
+  public static final double wheelRadiusMaxVelocity = 0.25;
+  /** Angular velocity ramp rate in radians per second squared for wheel radius characterization. */
+  public static final double wheelRadiusRampRate = 0.05;
   /** Moment of inertia of the robot in kilogram-square meters. */
   public static final MomentOfInertia robotMOI = KilogramSquareMeters.of(6.883);
   /** Coefficient of friction for the wheels. */
