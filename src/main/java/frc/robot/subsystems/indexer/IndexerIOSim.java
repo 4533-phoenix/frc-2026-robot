@@ -10,27 +10,49 @@ package frc.robot.subsystems.indexer;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.indexer.IndexerConstants.*;
 
-import edu.wpi.first.math.MathUtil;
+import com.revrobotics.PersistMode;
+import com.revrobotics.ResetMode;
+import com.revrobotics.sim.SparkMaxSim;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 
 /**
  * Physics simulation implementation of {@link IndexerIO}.
  *
- * <p>This class uses {@link DCMotorSim} to model the indexer motor based on physical constants
- * defined in {@link IndexerConstants}. It updates the simulation state on every {@link
- * #updateInputs(IndexerIOInputs)} call.
+ * <p>This class uses {@link SparkMaxSim} to simulate the Spark MAX motor controller for the
+ * indexer, backed by a {@link DCMotorSim} physics model. Configuration mirrors {@link
+ * IndexerIOSpark}.
  */
 public class IndexerIOSim implements IndexerIO {
-  // Simulates the physical mechanics of the indexer
-  private final DCMotorSim sim =
-      new DCMotorSim(
-          LinearSystemId.createDCMotorSystem(
-              indexerGearbox, indexerMOI.in(KilogramSquareMeters), indexerReduction),
-          indexerGearbox);
+  private final SparkMax spark;
+  private final SparkMaxSim sparkSim;
+  private final DCMotorSim physicsSim;
 
-  private Voltage appliedVoltage = Volts.of(0.0);
+  /** Creates a new IndexerIOSim and initializes the simulated Spark MAX. */
+  public IndexerIOSim() {
+    spark = new SparkMax(indexerMotorId, MotorType.kBrushless);
+    sparkSim = new SparkMaxSim(spark, indexerGearbox);
+
+    physicsSim =
+        new DCMotorSim(
+            LinearSystemId.createDCMotorSystem(
+                indexerGearbox, indexerMOI.in(KilogramSquareMeters), indexerReduction),
+            indexerGearbox);
+
+    // Configure Spark MAX (mirrors IndexerIOSpark)
+    var config = new SparkMaxConfig();
+    config
+        .idleMode(IdleMode.kBrake)
+        .smartCurrentLimit((int) indexerMotorCurrentLimit.in(Amps))
+        .voltageCompensation(12.0);
+    spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+  }
 
   /**
    * Updates the simulation state and updates loggable inputs.
@@ -39,24 +61,29 @@ public class IndexerIOSim implements IndexerIO {
    */
   @Override
   public void updateInputs(IndexerIOInputs inputs) {
-    // Advance simulation by 20ms (standard robot loop time)
-    sim.update(0.020);
+    // Update physics model with voltage from Spark sim
+    physicsSim.setInputVoltage(sparkSim.getAppliedOutput() * RoboRioSim.getVInVoltage());
 
-    // Update loggable inputs with simulated data
+    // Advance simulation by 20ms
+    physicsSim.update(0.02);
+
+    // Update SparkMaxSim with physics results
+    // No conversion factor set, so iterate() expects RPM (default)
+    sparkSim.iterate(physicsSim.getAngularVelocityRPM(), RoboRioSim.getVInVoltage(), 0.02);
+
+    // Update loggable inputs
     inputs.connected = true;
-    inputs.appliedVoltage = appliedVoltage;
-    inputs.appliedCurrent = Amps.of(sim.getCurrentDrawAmps());
+    inputs.appliedVoltage = Volts.of(spark.getAppliedOutput() * spark.getBusVoltage());
+    inputs.appliedCurrent = Amps.of(spark.getOutputCurrent());
   }
 
   /**
    * Sets the voltage to be applied to the simulated motor.
    *
-   * @param voltage The voltage to apply, clamped between -12V and 12V.
+   * @param voltage The voltage to apply.
    */
   @Override
   public void setVoltage(Voltage voltage) {
-    // Clamp voltage to battery limits
-    this.appliedVoltage = Volts.of(MathUtil.clamp(voltage.in(Volts), -12.0, 12.0));
-    sim.setInputVoltage(appliedVoltage.in(Volts));
+    spark.setVoltage(voltage.in(Volts));
   }
 }

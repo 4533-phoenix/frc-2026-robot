@@ -173,7 +173,9 @@ public class Drive extends SubsystemBase {
     int sampleCount = sampleTimestamps.length;
     // Defensive bounds checking: ensure we don't exceed the bounds of any array if there's a
     // hardware desynchronization
-    sampleCount = Math.min(sampleCount, gyroInputs.odometryYawPositions.length);
+    if (gyroInputs.connected) {
+      sampleCount = Math.min(sampleCount, gyroInputs.odometryYawPositions.length);
+    }
     for (int i = 0; i < 4; i++) {
       sampleCount = Math.min(sampleCount, modules[i].getOdometryPositions().length);
     }
