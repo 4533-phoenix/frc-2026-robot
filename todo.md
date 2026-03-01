@@ -12,3 +12,4 @@
 * Get better physical constants for sim
 * Manual override for outpost enabling
 * Continue to optimize code
+* Flywhell responsetime is abysmal (Brake mode?)

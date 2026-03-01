@@ -14,6 +14,7 @@ import static edu.wpi.first.units.Units.Meters;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -63,5 +64,5 @@ public final class Constants {
   /** The area on the field where the robot is permitted to lob game pieces. */
   public static final Rectangle2d lobbingZone =
       new Rectangle2d(
-          new Pose2d(fieldLength.div(2.0), fieldWidth.div(2.0), null), Meters.of(6.07), fieldWidth);
+          new Pose2d(fieldLength.div(2.0), fieldWidth.div(2.0), Rotation2d.kZero), Meters.of(6.07), fieldWidth);
 }

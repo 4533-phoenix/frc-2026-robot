@@ -78,6 +78,12 @@ public class ModuleIOSpark implements ModuleIO {
   private final Debouncer turnEncoderConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
+  // Pre-allocated buffers for draining odometry queues without GC pressure (sized to queue capacity)
+  private static final int ODOMETRY_BUFFER_SIZE = 20;
+  private final double[] odometryTimestampBuffer = new double[ODOMETRY_BUFFER_SIZE];
+  private final double[] odometryDrivePositionBuffer = new double[ODOMETRY_BUFFER_SIZE];
+  private final double[] odometryTurnPositionBuffer = new double[ODOMETRY_BUFFER_SIZE];
+
   /**
    * Creates a new ModuleIOSpark.
    *
@@ -292,33 +298,33 @@ public class ModuleIOSpark implements ModuleIO {
     // Empty queues into the inputs object for odometry processing
     Drive.odometryLock.lock();
     try {
-      // Drain queues into temporary lists
-      java.util.List<Double> tempTimestamps = new java.util.ArrayList<>();
-      java.util.List<Double> tempDrivePositions = new java.util.ArrayList<>();
-      java.util.List<Double> tempTurnPositions = new java.util.ArrayList<>();
-
+      // Drain queues into pre-allocated buffers to avoid ArrayList/boxing allocations
+      int count = 0;
       Double val;
-      while ((val = timestampQueue.poll()) != null) {
-        tempTimestamps.add(val);
-      }
-      while ((val = drivePositionQueue.poll()) != null) {
-        tempDrivePositions.add(val);
-      }
-      while ((val = turnPositionQueue.poll()) != null) {
-        tempTurnPositions.add(val);
+      while (count < ODOMETRY_BUFFER_SIZE && (val = timestampQueue.poll()) != null) {
+        odometryTimestampBuffer[count++] = val;
       }
 
-      // Map lists to inputs arrays
-      int count = tempTimestamps.size();
+      // Drain drive and turn queues to match the timestamp count
+      for (int i = 0; i < count; i++) {
+        val = drivePositionQueue.poll();
+        odometryDrivePositionBuffer[i] = (val != null) ? val : 0.0;
+      }
+      for (int i = 0; i < count; i++) {
+        val = turnPositionQueue.poll();
+        odometryTurnPositionBuffer[i] = (val != null) ? val : 0.0;
+      }
+
+      // Copy from buffers into inputs arrays (arrays must be exact-sized for downstream code)
       inputs.odometryTimestamps = new double[count];
       inputs.odometryDrivePositionsRad = new double[count];
       inputs.odometryTurnPositions = new Rotation2d[count];
 
       for (int i = 0; i < count; i++) {
-        inputs.odometryTimestamps[i] = tempTimestamps.get(i);
-        inputs.odometryDrivePositionsRad[i] = tempDrivePositions.get(i);
+        inputs.odometryTimestamps[i] = odometryTimestampBuffer[i];
+        inputs.odometryDrivePositionsRad[i] = odometryDrivePositionBuffer[i];
         inputs.odometryTurnPositions[i] =
-            new Rotation2d(tempTurnPositions.get(i)).minus(zeroRotation);
+            new Rotation2d(odometryTurnPositionBuffer[i]).minus(zeroRotation);
       }
 
     } finally {
