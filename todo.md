@@ -1,5 +1,4 @@
 * Configure to minimize can bus usages (Drake)
-* Attempt to unify coding style/structure (Drake)
 * Get rid of the global spark stick fault flag? (Drake)
 * Improve hood position simulation (Dawson)
 * need to recalculate trapezoid profile for when arm is renabled and its not where it thinks it is? (Unasigned)
@@ -9,9 +8,7 @@
 * Why is measured velocities always lower than commmanded on swerve?
 * Make sure shooter tolerance is good (Otherwise fix sim)
 * Should I prefer double vibrate or sustained?
-* Need to know estimated time of flight to calculate the added velocity of the bot
-* Need to prefer rotation over translation when aimed in
-* Vibrate harder when shoot motor is strained?
 * Need to retune intake kv
-* Move constants out of DriveCommands.java
 * Get better physical constants for sim
+* Manual override for outpost enabling
+* Continue to optimize code
