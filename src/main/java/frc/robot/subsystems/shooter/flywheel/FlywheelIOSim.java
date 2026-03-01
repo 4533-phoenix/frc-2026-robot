@@ -10,85 +10,104 @@ package frc.robot.subsystems.shooter.flywheel;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.controls.VoltageOut;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.sim.TalonFXSimState;
 import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.wpilibj.simulation.FlywheelSim;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
 /**
  * Simulation implementation of {@link FlywheelIO}.
  *
- * <p>This class simulates the physical behavior of a flywheel using WPILib's {@link FlywheelSim}.
- * It calculates the necessary voltage to achieve a target velocity using a closed-loop PID
- * controller combined with a feedforward model.
+ * <p>This class uses a real {@link TalonFX} device with its {@link TalonFXSimState} to simulate the
+ * flywheel motor controller, backed by a {@link DCMotorSim} physics model. The TalonFX's built-in
+ * closed-loop PID is used for velocity control, matching the real robot's {@link
+ * FlywheelIOTalonFX}.
  */
 public class FlywheelIOSim implements FlywheelIO {
-  // Physics model based on gearbox type, moment of inertia, and gear reduction
-  private final FlywheelSim sim =
-      new FlywheelSim(
-          LinearSystemId.createFlywheelSystem(
+  private final TalonFX talon = new TalonFX(flywheelMotorId);
+  private final TalonFXSimState talonSim = talon.getSimState();
+
+  // Status signals for retrieving data
+  private final StatusSignal<Angle> position = talon.getPosition();
+  private final StatusSignal<AngularVelocity> velocity = talon.getVelocity();
+  private final StatusSignal<Voltage> appliedVolts = talon.getMotorVoltage();
+  private final StatusSignal<Current> current = talon.getStatorCurrent();
+
+  // Physics model for the flywheel
+  private final DCMotorSim physicsSim =
+      new DCMotorSim(
+          LinearSystemId.createDCMotorSystem(
               flywheelGearbox, flywheelMOI.in(KilogramSquareMeters), flywheelReduction),
-          flywheelGearbox,
-          flywheelReduction);
+          flywheelGearbox);
 
-  // Closed-loop controller for velocity precision
-  private final PIDController pid = new PIDController(flywheelKp, flywheelKi, flywheelKd);
-  // Feedforward model to predict required voltage based on desired speed
-  private final SimpleMotorFeedforward ff = new SimpleMotorFeedforward(flywheelKs, flywheelKv);
+  /** Creates a new FlywheelIOSim and configures the TalonFX (identical to FlywheelIOTalonFX). */
+  public FlywheelIOSim() {
+    var config = new TalonFXConfiguration();
+    config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+    config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
 
-  private Voltage appliedVoltage = Volts.of(0.0);
-  private boolean closedLoop = false;
-  private AngularVelocity velocitySetpoint = RadiansPerSecond.of(0.0);
+    config.CurrentLimits.StatorCurrentLimit = flywheelMotorCurrentLimit.in(Amps);
+    config.CurrentLimits.StatorCurrentLimitEnable = true;
+
+    config.Slot0.kP = flywheelKp;
+    config.Slot0.kI = flywheelKi;
+    config.Slot0.kD = flywheelKd;
+    config.Slot0.kS = flywheelKs;
+    config.Slot0.kV = flywheelKv;
+    config.Slot0.kA = flywheelKa;
+    talon.getConfigurator().apply(config);
+
+    BaseStatusSignal.setUpdateFrequencyForAll(50.0, position, velocity, appliedVolts, current);
+    talon.optimizeBusUtilization();
+  }
 
   /**
-   * Updates inputs by simulating the flywheel physics model and calculating control efforts.
+   * Updates the physics simulation and populates inputs from the TalonFX sim state.
    *
    * @param inputs The inputs object to update.
    */
   @Override
   public void updateInputs(FlywheelIOInputs inputs) {
-    if (closedLoop) {
-      // Calculate voltage based on PID error and feedforward prediction
-      double currentRps = sim.getAngularVelocityRadPerSec() / (2.0 * Math.PI);
-      double setpointRps = velocitySetpoint.in(RotationsPerSecond);
+    // Set supply voltage for the sim
+    talonSim.setSupplyVoltage(RobotController.getBatteryVoltage());
 
-      appliedVoltage =
-          Volts.of(
-              MathUtil.clamp(
-                  pid.calculate(currentRps, setpointRps) + ff.calculate(setpointRps), -12.0, 12.0));
-    }
+    // Get the motor voltage output and feed it into the physics model
+    physicsSim.setInputVoltage(talonSim.getMotorVoltageMeasure().in(Volts));
+    physicsSim.update(0.02);
 
-    // Apply voltage to the physics simulation and update state over the time step (dt)
-    sim.setInputVoltage(appliedVoltage.in(Volts));
-    final double dt = 0.02; // 20ms simulation step
-    sim.update(dt);
+    // Feed physics results back into TalonFX sim state
+    // DCMotorSim returns mechanism position/velocity (after gear ratio),
+    // but TalonFX expects raw rotor position/velocity (before gear ratio)
+    talonSim.setRawRotorPosition(physicsSim.getAngularPosition().times(flywheelReduction));
+    talonSim.setRotorVelocity(physicsSim.getAngularVelocity().times(flywheelReduction));
 
-    // Populate logged inputs
-    inputs.connected = true;
-    inputs.velocity = RadiansPerSecond.of(sim.getAngularVelocityRadPerSec());
-    inputs.appliedVoltage = appliedVoltage;
-    inputs.appliedCurrent = Amps.of(sim.getCurrentDrawAmps());
+    // Refresh status signals and populate inputs
+    BaseStatusSignal.refreshAll(position, velocity, appliedVolts, current);
+    inputs.connected = BaseStatusSignal.isAllGood(position, velocity, appliedVolts, current);
+    inputs.velocity = velocity.getValue();
+    inputs.appliedVoltage = appliedVolts.getValue();
+    inputs.appliedCurrent = current.getValue();
   }
 
-  /**
-   * Enables closed-loop velocity control for the flywheel.
-   *
-   * @param velocity The target angular velocity.
-   */
   @Override
   public void setAngularVelocity(AngularVelocity velocity) {
-    closedLoop = true;
-    velocitySetpoint = velocity;
-    pid.reset(); // Reset PID state to avoid integral windup on change
+    talon.setControl(new VelocityVoltage(velocity.in(RotationsPerSecond)));
   }
 
-  /** Stops the flywheel motor by setting voltage to zero and disabling closed-loop control. */
   @Override
   public void stop() {
-    closedLoop = false;
-    appliedVoltage = Volts.of(0.0);
+    talon.setControl(new VoltageOut(0));
   }
 }

@@ -12,7 +12,9 @@ package frc.robot.subsystems.drive.module;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
+import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.ResetMode;
 import com.revrobotics.sim.SparkMaxSim;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.FeedbackSensor;
@@ -96,9 +98,7 @@ public class ModuleIOSim implements ModuleIO {
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(driveKp, 0.0, driveKd);
     driveSpark.configure(
-        driveConfig,
-        com.revrobotics.ResetMode.kResetSafeParameters,
-        com.revrobotics.PersistMode.kPersistParameters);
+        driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     // Configure turn Spark MAX
     var turnConfig = new SparkMaxConfig();
@@ -117,10 +117,7 @@ public class ModuleIOSim implements ModuleIO {
         .pid(turnKp, 0.0, turnKd)
         .positionWrappingEnabled(true)
         .positionWrappingInputRange(turnPIDMinInput, turnPIDMaxInput);
-    turnSpark.configure(
-        turnConfig,
-        com.revrobotics.ResetMode.kResetSafeParameters,
-        com.revrobotics.PersistMode.kPersistParameters);
+    turnSpark.configure(turnConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
   /**
@@ -140,8 +137,13 @@ public class ModuleIOSim implements ModuleIO {
     turnMotorSim.update(0.02);
 
     // Update SparkMaxSim with physics model results
-    driveSparkSim.iterate(driveMotorSim.getAngularVelocityRPM(), RoboRioSim.getVInVoltage(), 0.02);
-    turnSparkSim.iterate(turnMotorSim.getAngularVelocityRPM(), RoboRioSim.getVInVoltage(), 0.02);
+    // iterate() expects velocity in units AFTER the encoder conversion factor.
+    // Our conversion factors convert motor RPM to mechanism-side rad/s,
+    // so we pass mechanism-side rad/s from the DCMotorSim.
+    driveSparkSim.iterate(
+        driveMotorSim.getAngularVelocityRadPerSec(), RoboRioSim.getVInVoltage(), 0.02);
+    turnSparkSim.iterate(
+        turnMotorSim.getAngularVelocityRadPerSec(), RoboRioSim.getVInVoltage(), 0.02);
 
     // Update drive inputs with simulated data
     inputs.driveConnected = true;
