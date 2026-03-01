@@ -138,17 +138,11 @@ public class DriveConstants {
   public static final double driveEncoderVelocityFactor =
       (2 * Math.PI) / 60.0 / driveMotorReduction;
 
-  // Drive PID configuration (Real)
+  // Drive PID configuration
   public static final double driveKp = 0.015;
   public static final double driveKd = 0.0;
   public static final double driveKs = 0.0;
   public static final double driveKv = 0.1;
-
-  // Drive PID configuration (Simulation)
-  public static final double driveSimP = 0.05;
-  public static final double driveSimD = 0.0;
-  public static final double driveSimKs = 0.0;
-  public static final double driveSimKv = 0.0789;
 
   // Turn motor configuration
   /** Whether the turn motor is inverted. */
@@ -170,13 +164,9 @@ public class DriveConstants {
   /** Conversion factor for turn velocity from encoder RPM to radians per second. */
   public static final double turnEncoderVelocityFactor = 2 * Math.PI; // Rotations/Sec -> Rad/Sec
 
-  // Turn PID configuration (Real)
+  // Turn PID configuration
   public static final double turnKp = 0.4;
   public static final double turnKd = 0.01;
-
-  // Turn PID configuration (Simulation)
-  public static final double turnSimP = 8.0;
-  public static final double turnSimD = 0.0;
   /** Minimum input range for turn PID (in radians). */
   public static final double turnPIDMinInput = -Math.PI;
   /** Maximum input range for turn PID (in radians). */
