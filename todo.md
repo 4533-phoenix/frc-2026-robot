@@ -13,3 +13,5 @@
 * Need to prefer rotation over translation when aimed in
 * Vibrate harder when shoot motor is strained?
 * Need to retune intake kv
+* Move constants out of DriveCommands.java
+* Change everything to use SparkMaxSim to tune in sim
