@@ -204,8 +204,8 @@ public class DriveCommands {
             new TrapezoidProfile.Constraints(angleMaxVelocity, angleMaxAcceleration));
     angleController.enableContinuousInput(-Math.PI, Math.PI);
 
-    // Build a kinematics instance to test module speeds against the budget
-    SwerveDriveKinematics kinematics = new SwerveDriveKinematics(moduleTranslations);
+    // Reuse the kinematics instance from Drive to test module speeds against the budget
+    SwerveDriveKinematics kinematics = drive.getKinematics();
 
     return Commands.run(
             () -> {

@@ -8,16 +8,16 @@
 package frc.robot.util;
 
 import edu.wpi.first.wpilibj.DriverStation;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HardwareConfigManager {
   // Thread-safe boolean so the main loop knows when hardware is ready
   private static final AtomicBoolean isConfigured = new AtomicBoolean(false);
 
-  // List of configuration tasks
-  private static final List<Runnable> configTasks = new ArrayList<>();
+  // Thread-safe list of configuration tasks so registrations are visible to the config thread
+  private static final List<Runnable> configTasks = new CopyOnWriteArrayList<>();
 
   /** IO classes call this in their constructor to queue their configuration. */
   public static void registerTask(Runnable task) {

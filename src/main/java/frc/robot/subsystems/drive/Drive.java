@@ -427,6 +427,15 @@ public class Drive extends SubsystemBase {
   }
 
   /**
+   * Returns the swerve drive kinematics instance for this drivetrain.
+   *
+   * @return The SwerveDriveKinematics used by the drive subsystem.
+   */
+  public SwerveDriveKinematics getKinematics() {
+    return kinematics;
+  }
+
+  /**
    * Checks if the robot is aligned within a certain tolerance to a target angle.
    *
    * @param targetAngle The angle to check against.

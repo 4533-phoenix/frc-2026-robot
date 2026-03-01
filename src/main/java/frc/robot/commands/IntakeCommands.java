@@ -36,7 +36,7 @@ public class IntakeCommands {
             intake.intake();
           }
         },
-        intake::stopSpinner);
+        intake::stopSpinner, intake);
   }
 
   /**
@@ -55,7 +55,7 @@ public class IntakeCommands {
             intake.extake();
           }
         },
-        intake::stopSpinner);
+        intake::stopSpinner, intake);
   }
 
   /**

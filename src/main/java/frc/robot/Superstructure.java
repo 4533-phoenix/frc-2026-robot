@@ -174,7 +174,8 @@ public class Superstructure {
   public static Trigger isInLobbingZone(Drive drive) {
     return new Trigger(
         () -> {
-          return Constants.lobbingZone.contains(drive.getPose().getTranslation());
+          Rectangle2d lobbingZone = Util.flipAllianceIfNeeded(Constants.lobbingZone);
+          return lobbingZone.contains(drive.getPose().getTranslation());
         });
   }
 
