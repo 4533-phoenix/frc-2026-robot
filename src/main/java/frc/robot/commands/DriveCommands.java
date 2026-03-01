@@ -8,8 +8,10 @@
 package frc.robot.commands;
 
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Volts;
+import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -19,6 +21,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -29,7 +33,6 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.drive.DriveConstants;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.LinkedList;
@@ -44,18 +47,6 @@ import java.util.function.Supplier;
  * tune motor controllers.
  */
 public class DriveCommands {
-  private static final double DEADBAND = 0.1;
-  // PID constants for rotational control
-  private static final double ANGLE_KP = 5.0;
-  private static final double ANGLE_KD = 0.0;
-  private static final double ANGLE_MAX_VELOCITY = 16.0; // Rad/Sec
-  private static final double ANGLE_MAX_ACCELERATION = 40.0; // Rad/Sec^2
-
-  // Characterization constants
-  private static final double FF_START_DELAY = 2.0; // Seconds to let modules align
-  private static final double FF_RAMP_RATE = 0.1; // Volts/Second
-  private static final double WHEEL_RADIUS_MAX_VELOCITY = 0.25; // Rad/Sec
-  private static final double WHEEL_RADIUS_RAMP_RATE = 0.05; // Rad/Sec^2
 
   private DriveCommands() {}
 
@@ -65,7 +56,7 @@ public class DriveCommands {
    */
   private static Translation2d getLinearVelocityFromJoysticks(double x, double y) {
     // Apply deadband
-    double linearMagnitude = MathUtil.applyDeadband(Math.hypot(x, y), DEADBAND);
+    double linearMagnitude = MathUtil.applyDeadband(Math.hypot(x, y), joystickDeadband);
     Rotation2d linearDirection = new Rotation2d(Math.atan2(y, x));
 
     // Square magnitude for more precise control at low speeds
@@ -98,7 +89,7 @@ public class DriveCommands {
               getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
 
           // Apply rotation deadband
-          double omega = MathUtil.applyDeadband(omegaSupplier.getAsDouble(), DEADBAND);
+          double omega = MathUtil.applyDeadband(omegaSupplier.getAsDouble(), joystickDeadband);
 
           // Square rotation value for more precise control
           omega = Math.copySign(omega * omega, omega);
@@ -144,10 +135,10 @@ public class DriveCommands {
     // Create PID controller with motion profiling for rotation
     ProfiledPIDController angleController =
         new ProfiledPIDController(
-            ANGLE_KP,
+            angleKp,
             0.0,
-            ANGLE_KD,
-            new TrapezoidProfile.Constraints(ANGLE_MAX_VELOCITY, ANGLE_MAX_ACCELERATION));
+            angleKd,
+            new TrapezoidProfile.Constraints(angleMaxVelocity, angleMaxAcceleration));
     angleController.enableContinuousInput(-Math.PI, Math.PI);
 
     // Construct command
@@ -187,6 +178,91 @@ public class DriveCommands {
   }
 
   /**
+   * Field relative drive command with rotation-priority desaturation. The PID-controlled rotation
+   * is given as much of the module speed budget as it needs, and translation is scaled to fill
+   * whatever capacity remains. This guarantees the robot will always rotate to the target heading at
+   * the speed the PID requests, while still translating as fast as physically possible.
+   *
+   * @param drive The drive subsystem.
+   * @param xSupplier Supplier for forward/backward input (-1.0 to 1.0).
+   * @param ySupplier Supplier for strafe left/right input (-1.0 to 1.0).
+   * @param rotationSupplier Supplier for target rotation (absolute angle).
+   * @return A command to run the drivetrain with rotation-prioritized control.
+   */
+  public static Command joystickDriveWithRotationPriority(
+      Drive drive,
+      DoubleSupplier xSupplier,
+      DoubleSupplier ySupplier,
+      Supplier<Rotation2d> rotationSupplier) {
+
+    // Create PID controller with motion profiling for rotation
+    ProfiledPIDController angleController =
+        new ProfiledPIDController(
+            angleKp,
+            0.0,
+            angleKd,
+            new TrapezoidProfile.Constraints(angleMaxVelocity, angleMaxAcceleration));
+    angleController.enableContinuousInput(-Math.PI, Math.PI);
+
+    // Build a kinematics instance to test module speeds against the budget
+    SwerveDriveKinematics kinematics = new SwerveDriveKinematics(moduleTranslations);
+
+    return Commands.run(
+            () -> {
+              // Get linear velocity from joysticks
+              Translation2d linearVelocity =
+                  getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
+
+              // Calculate angular speed from PID — this is our priority demand
+              double omega =
+                  angleController.calculate(
+                      drive.getRotation().getRadians(), rotationSupplier.get().getRadians());
+
+              double maxSpeed = maxLinearVelocity.in(MetersPerSecond);
+
+              // 1. Determine how much module speed rotation alone requires
+              ChassisSpeeds rotationOnly = new ChassisSpeeds(0.0, 0.0, omega);
+              SwerveModuleState[] rotStates = kinematics.toSwerveModuleStates(rotationOnly);
+              double maxRotModule = 0.0;
+              for (SwerveModuleState s : rotStates) {
+                maxRotModule = Math.max(maxRotModule, Math.abs(s.speedMetersPerSecond));
+              }
+
+              // 2. Calculate leftover budget for translation
+              double remainingBudget = Math.max(0.0, maxSpeed - maxRotModule);
+
+              // 3. Scale translation to fit within the remaining budget
+              double desiredVx = maxSpeed * linearVelocity.getX();
+              double desiredVy = maxSpeed * linearVelocity.getY();
+              double desiredTransSpeed = Math.hypot(desiredVx, desiredVy);
+
+              double translationScale =
+                  desiredTransSpeed > 1e-6
+                      ? Math.min(1.0, remainingBudget / desiredTransSpeed)
+                      : 1.0;
+
+              ChassisSpeeds speeds =
+                  new ChassisSpeeds(
+                      desiredVx * translationScale,
+                      desiredVy * translationScale,
+                      omega);
+
+              // Flip controls if on the Red alliance
+              boolean isFlipped =
+                  DriverStation.getAlliance().isPresent()
+                      && DriverStation.getAlliance().get() == Alliance.Red;
+              drive.runVelocity(
+                  ChassisSpeeds.fromFieldRelativeSpeeds(
+                      speeds,
+                      isFlipped
+                          ? drive.getRotation().plus(new Rotation2d(Math.PI))
+                          : drive.getRotation()));
+            },
+            drive)
+        .beforeStarting(() -> angleController.reset(drive.getRotation().getRadians()));
+  }
+
+  /**
    * Measures the velocity feedforward constants (kS and kV) for the drive motors.
    *
    * <p>This command should only be used in voltage control mode to collect raw data.
@@ -213,7 +289,7 @@ public class DriveCommands {
                   drive.runCharacterization(Volts.of(0.0));
                 },
                 drive)
-            .withTimeout(FF_START_DELAY),
+            .withTimeout(ffStartDelay),
 
         // Start timer
         Commands.runOnce(timer::restart),
@@ -222,7 +298,7 @@ public class DriveCommands {
         Commands.run(
                 () -> {
                   // Ramp voltage linearly over time
-                  Voltage voltage = Volts.of(timer.get() * FF_RAMP_RATE);
+                  Voltage voltage = Volts.of(timer.get() * ffRampRate);
                   drive.runCharacterization(voltage);
                   velocitySamples.add(drive.getFFCharacterizationVelocity());
                   voltageSamples.add(voltage);
@@ -266,7 +342,7 @@ public class DriveCommands {
    * @return A command that spins the robot to calculate effective wheel radius.
    */
   public static Command wheelRadiusCharacterization(Drive drive) {
-    SlewRateLimiter limiter = new SlewRateLimiter(WHEEL_RADIUS_RAMP_RATE);
+    SlewRateLimiter limiter = new SlewRateLimiter(wheelRadiusRampRate);
     WheelRadiusCharacterizationState state = new WheelRadiusCharacterizationState();
 
     return Commands.parallel(
@@ -281,7 +357,7 @@ public class DriveCommands {
             // Turn in place, accelerating up to full speed
             Commands.run(
                 () -> {
-                  double speed = limiter.calculate(WHEEL_RADIUS_MAX_VELOCITY);
+                  double speed = limiter.calculate(wheelRadiusMaxVelocity);
                   drive.runVelocity(new ChassisSpeeds(0.0, 0.0, speed));
                 },
                 drive)),
@@ -319,8 +395,7 @@ public class DriveCommands {
 
                       // Calculate radius: (Angle Delta * Dist to Module) / Wheel Dist Delta
                       double wheelRadius =
-                          (state.gyroDelta * DriveConstants.driveBaseRadius.in(Meters))
-                              / wheelDelta;
+                          (state.gyroDelta * driveBaseRadius.in(Meters)) / wheelDelta;
 
                       NumberFormat formatter = new DecimalFormat("#0.000");
                       System.out.println(

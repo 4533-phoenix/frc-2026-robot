@@ -9,6 +9,7 @@ package frc.robot.subsystems.shooter;
 
 import static edu.wpi.first.units.Units.*;
 
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.*;
 
@@ -87,4 +88,14 @@ public final class ShooterConstants {
   public static final AngularVelocity flywheelMinRps = RotationsPerSecond.of(0.0);
   /** Maximum allowable flywheel speed. */
   public static final AngularVelocity flywheelMaxRps = RotationsPerSecond.of(100.0);
+
+  // ---------- Aiming / lead constants ----------
+  /** Estimated time of flight for the game piece from shooter to target. */
+  public static final Time estimatedTimeOfFlight = Seconds.of(1.0);
+  /**
+   * Position of the shooter on the robot relative to the robot center (robot-frame). X is forward,
+   * Y is left.
+   */
+  public static final Translation2d shooterRobotOffset =
+      new Translation2d(Inches.of(-19.0), Inches.of(19.0));
 }
