@@ -28,6 +28,7 @@ import frc.robot.commands.IntakeCommands;
 import frc.robot.commands.ShooterCommands;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.climb.ClimbIO;
+import frc.robot.subsystems.climb.ClimbIOReal;
 import frc.robot.subsystems.climb.ClimbIOSim;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.gyro.GyroIO;
@@ -96,7 +97,7 @@ public class RobotContainer {
                 new ModuleIOSpark(1),
                 new ModuleIOSpark(2),
                 new ModuleIOSpark(3));
-        climb = new Climb(new ClimbIOSim());
+        climb = new Climb(new ClimbIOReal());
         intake = new Intake(new IntakeIOReal());
         shooter = new Shooter(new FlywheelIOTalonFX(), new HoodIOServo());
         indexer = new Indexer(new IndexerIOSpark());
@@ -173,12 +174,18 @@ public class RobotContainer {
     Trigger endgame = Superstructure.isEndgame();
 
     // Normal field-relative drive
+    // drive.setDefaultCommand(
+    //     DriveCommands.joystickDrive(
+    //         drive,
+    //         () -> -driverController.getLeftY(),
+    //         () -> -driverController.getLeftX(),
+    //         () -> -driverController.getRightX()));
     drive.setDefaultCommand(
-        DriveCommands.joystickDrive(
+        DriveCommands.joystickDriveAtAngle(
             drive,
             () -> -driverController.getLeftY(),
             () -> -driverController.getLeftX(),
-            () -> -driverController.getRightX()));
+            () -> new Rotation2d(-driverController.getRightX(), -driverController.getRightY())));
 
     // Intake remains retracted by default
     intake.setDefaultCommand(IntakeCommands.holdRetracted(intake));
@@ -188,7 +195,8 @@ public class RobotContainer {
     indexer.setDefaultCommand(IndexerCommands.stopIndexer(indexer));
 
     // Deploy intake and spin while Left Bumper is held
-    driverController.leftBumper().whileTrue(IntakeCommands.deploy(intake));
+    driverController.leftBumper().whileTrue(IntakeCommands.intake(intake));
+    driverController.rightBumper().whileTrue(IntakeCommands.extake(intake));
 
     // Reset gyro to 0° when B button is pressed
     driverController
@@ -202,10 +210,11 @@ public class RobotContainer {
                 .ignoringDisable(true));
 
     // Auto-aim while holding Left Trigger and in shooting zone
-    driverController
-        .leftTrigger()
-        .and(Superstructure.isInShootingZone(drive))
-        .whileTrue(Superstructure.getAutoAimCommand(drive, shooter, driverController));
+    // driverController
+    //     .leftTrigger()
+    //     .and(Superstructure.isInShootingZone(drive))
+    //     .whileTrue(Superstructure.getAutoAimCommand(drive, shooter, driverController));
+    driverController.leftTrigger().whileTrue(Superstructure.getShooterAimCommand(drive, shooter));
 
     // When we press up or down dpad
     driverController.povUp().onTrue(ClimbCommands.liftUp(climb));
@@ -214,8 +223,8 @@ public class RobotContainer {
     // Fire game piece while holding Right Trigger, ready to fire, and outpost enabled
     driverController
         .rightTrigger()
-        .and(readyToFire)
-        .and(outpostEnabled)
+        // .and(readyToFire)
+        // .and(outpostEnabled)
         .whileTrue(IndexerCommands.runIndexer(indexer));
 
     // Rumble when outpost becomes enabled

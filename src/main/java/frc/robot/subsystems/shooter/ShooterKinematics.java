@@ -18,14 +18,15 @@ public class ShooterKinematics {
   private static final InterpolatingDoubleTreeMap hoodMap = new InterpolatingDoubleTreeMap();
 
   static {
-    // TODO: Tune these calibration points based on real robot data
-    // Example format:
-    // flywheelMap.put(distanceInMeters, flywheelSpeedInRotationsPerSecond);
-    // hoodMap.put(distanceInMeters, hoodAngleInDegrees);
+    // Rough shooter tune (342 Scrimage 2/28/26)
+    flywheelMap.put(2.159, 50.0);
+    hoodMap.put(2.159, 85.0);
 
-    // Initial dummy values
-    flywheelMap.put(0.0, 50.0);
-    hoodMap.put(0.0, 85.0);
+    flywheelMap.put(3.02895, 75.0);
+    hoodMap.put(3.02895, 85.0);
+
+    flywheelMap.put(4.0513, 100.0);
+    hoodMap.put(4.0513, 55.0);
   }
 
   /**
