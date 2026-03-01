@@ -47,9 +47,9 @@ public class DriveCommands {
   private static final double DEADBAND = 0.1;
   // PID constants for rotational control
   private static final double ANGLE_KP = 5.0;
-  private static final double ANGLE_KD = 0.4;
-  private static final double ANGLE_MAX_VELOCITY = 8.0; // Rad/Sec
-  private static final double ANGLE_MAX_ACCELERATION = 20.0; // Rad/Sec^2
+  private static final double ANGLE_KD = 0.0;
+  private static final double ANGLE_MAX_VELOCITY = 16.0; // Rad/Sec
+  private static final double ANGLE_MAX_ACCELERATION = 40.0; // Rad/Sec^2
 
   // Characterization constants
   private static final double FF_START_DELAY = 2.0; // Seconds to let modules align

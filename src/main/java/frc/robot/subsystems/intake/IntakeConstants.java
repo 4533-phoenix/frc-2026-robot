@@ -69,7 +69,7 @@ public final class IntakeConstants {
 
   // ---------- Spinner PID Configuration ----------
   /** Proportional gain for spinner velocity control. */
-  public static final double spinnerKp = 0.0075;
+  public static final double spinnerKp = 0.0;
   /** Derivative gain for spinner velocity control. */
   public static final double spinnerKd = 0.0;
 
@@ -77,7 +77,7 @@ public final class IntakeConstants {
   /** Static friction feedforward gain for the spinner. */
   public static final double spinnerKs = 0.0;
   /** Velocity feedforward gain for the spinner. */
-  public static final double spinnerKv = 0.05125;
+  public static final double spinnerKv = 0.0375;
   /** Acceleration feedforward gain for the spinner. */
   public static final double spinnerKa = 0.0;
 
@@ -101,7 +101,7 @@ public final class IntakeConstants {
 
   // ---------- Spinner Velocities ----------
   /** Velocity for pulling game pieces in. */
-  public static final AngularVelocity spinnerIntakeVelocity = RadiansPerSecond.of(35.0);
+  public static final AngularVelocity spinnerIntakeVelocity = RadiansPerSecond.of(180.0);
   /** Velocity for pushing game pieces out. */
-  public static final AngularVelocity spinnerExtakeVelocity = RadiansPerSecond.of(-15.0);
+  public static final AngularVelocity spinnerExtakeVelocity = RadiansPerSecond.of(-180.0);
 }

@@ -28,13 +28,31 @@ public class IntakeCommands {
    * @param intake The intake subsystem.
    * @return A command that deploys the intake and activates the spinners.
    */
-  public static Command deploy(Intake intake) {
+  public static Command intake(Intake intake) {
     return Commands.runEnd(
         () -> {
           intake.deploy();
-          // Safety check: only run rollers if the arm is actually down
           if (intake.armDeployed()) {
             intake.intake();
+          }
+        },
+        intake::stopSpinner);
+  }
+
+  /**
+   * Deploys the intake arm and runs the spinner rollers for intaking.
+   *
+   * <p>The rollers will only spin if the arm is within the deployed tolerance to prevent damage.
+   *
+   * @param intake The intake subsystem.
+   * @return A command that deploys the intake and activates the spinners.
+   */
+  public static Command extake(Intake intake) {
+    return Commands.runEnd(
+        () -> {
+          intake.deploy();
+          if (intake.armDeployed()) {
+            intake.extake();
           }
         },
         intake::stopSpinner);

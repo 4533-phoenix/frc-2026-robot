@@ -34,6 +34,7 @@ public class GyroIONavX implements GyroIO {
     // Register signals with the asynchronous odometry thread
     yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
     yawPositionQueue = SparkOdometryThread.getInstance().registerSignal(navX::getAngle);
+    navX.zeroYaw();
   }
 
   /**

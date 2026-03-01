@@ -125,7 +125,7 @@ public class DriveConstants {
   /** Secondary current limit for the drive motors. */
   public static final Current driveMotorSecondaryCurrentLimit = Amps.of(80);
   /** The radius of the drive wheels. */
-  public static final Distance wheelRadius = Inches.of(1.5);
+  public static final Distance wheelRadius = Inches.of(1.807);
   /** The gear reduction between the drive motor and the wheel. */
   public static final double driveMotorReduction = 6.75;
   /** The gearbox model for the drive motor. */
@@ -139,7 +139,7 @@ public class DriveConstants {
       (2 * Math.PI) / 60.0 / driveMotorReduction;
 
   // Drive PID configuration (Real)
-  public static final double driveKp = 0.01;
+  public static final double driveKp = 0.015;
   public static final double driveKd = 0.0;
   public static final double driveKs = 0.0;
   public static final double driveKv = 0.1;
