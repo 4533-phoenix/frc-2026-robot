@@ -110,10 +110,10 @@ public class RobotContainer {
         drive =
             new Drive(
                 new GyroIO() {},
-                new ModuleIOSim(),
-                new ModuleIOSim(),
-                new ModuleIOSim(),
-                new ModuleIOSim());
+                new ModuleIOSim(0),
+                new ModuleIOSim(1),
+                new ModuleIOSim(2),
+                new ModuleIOSim(3));
         climb = new Climb(new ClimbIOSim());
         intake = new Intake(new IntakeIOSim());
         shooter = new Shooter(new FlywheelIOSim(), new HoodIOSim());
@@ -214,7 +214,8 @@ public class RobotContainer {
         .leftTrigger()
         .and(Superstructure.isInShootingZone(drive))
         .whileTrue(Superstructure.getAutoAimCommand(drive, shooter, driverController));
-    // driverController.leftTrigger().whileTrue(Superstructure.getShooterAimCommand(drive, shooter));
+    // driverController.leftTrigger().whileTrue(Superstructure.getShooterAimCommand(drive,
+    // shooter));
 
     // When we press up or down dpad
     driverController.povUp().onTrue(ClimbCommands.liftUp(climb));
