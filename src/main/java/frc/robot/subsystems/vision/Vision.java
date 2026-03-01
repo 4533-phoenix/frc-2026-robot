@@ -33,7 +33,6 @@ public class Vision extends SubsystemBase {
   private final VisionIOInputsAutoLogged inputs = new VisionIOInputsAutoLogged();
   private final Drive drive;
 
-  // OPTIMIZATION: Replaced HashMaps with flat arrays to prevent "Autoboxing" memory leaks.
   // We size the arrays based on the highest camera ID in the map to ensure direct index mapping.
   private final int maxCameraId;
   private final double[] lastTimestamps;
