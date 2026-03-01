@@ -174,18 +174,18 @@ public class RobotContainer {
     Trigger endgame = Superstructure.isEndgame();
 
     // Normal field-relative drive
-    // drive.setDefaultCommand(
-    //     DriveCommands.joystickDrive(
-    //         drive,
-    //         () -> -driverController.getLeftY(),
-    //         () -> -driverController.getLeftX(),
-    //         () -> -driverController.getRightX()));
     drive.setDefaultCommand(
-        DriveCommands.joystickDriveAtAngle(
+        DriveCommands.joystickDrive(
             drive,
             () -> -driverController.getLeftY(),
             () -> -driverController.getLeftX(),
-            () -> new Rotation2d(-driverController.getRightX(), -driverController.getRightY())));
+            () -> -driverController.getRightX()));
+    // drive.setDefaultCommand(
+    //     DriveCommands.joystickDriveAtAngle(
+    //         drive,
+    //         () -> -driverController.getLeftY(),
+    //         () -> -driverController.getLeftX(),
+    //         () -> new Rotation2d(-driverController.getRightX(), -driverController.getRightY())));
 
     // Intake remains retracted by default
     intake.setDefaultCommand(IntakeCommands.holdRetracted(intake));
@@ -210,11 +210,11 @@ public class RobotContainer {
                 .ignoringDisable(true));
 
     // Auto-aim while holding Left Trigger and in shooting zone
-    // driverController
-    //     .leftTrigger()
-    //     .and(Superstructure.isInShootingZone(drive))
-    //     .whileTrue(Superstructure.getAutoAimCommand(drive, shooter, driverController));
-    driverController.leftTrigger().whileTrue(Superstructure.getShooterAimCommand(drive, shooter));
+    driverController
+        .leftTrigger()
+        .and(Superstructure.isInShootingZone(drive))
+        .whileTrue(Superstructure.getAutoAimCommand(drive, shooter, driverController));
+    // driverController.leftTrigger().whileTrue(Superstructure.getShooterAimCommand(drive, shooter));
 
     // When we press up or down dpad
     driverController.povUp().onTrue(ClimbCommands.liftUp(climb));
@@ -223,8 +223,8 @@ public class RobotContainer {
     // Fire game piece while holding Right Trigger, ready to fire, and outpost enabled
     driverController
         .rightTrigger()
-        // .and(readyToFire)
-        // .and(outpostEnabled)
+        .and(readyToFire)
+        .and(outpostEnabled)
         .whileTrue(IndexerCommands.runIndexer(indexer));
 
     // Rumble when outpost becomes enabled
