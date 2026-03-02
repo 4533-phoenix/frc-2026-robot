@@ -10,9 +10,9 @@
 * Should I prefer double vibrate or sustained?
 * Need to retune intake kv
 * Get better physical constants for sim
-* Manual override for outpost enabling
 * Continue to optimize code
 * Merge code more between lobbing and shooting
+* Overhaul rumble
 
 URGENT
 * Figure out how to do auto in the most efficient way possible
