@@ -32,8 +32,31 @@ public class VisionConstants {
    * Map of Camera ID to its configuration. IDs should match those used in the native vision
    * pipeline.
    */
-  public static final Map<Integer, CameraConfig> cameraMap =
-      Map.of(1, new CameraConfig("TestCamera", Transform2d.kZero, 90.0, 10.0));
+  public static final Map<Integer, CameraConfig> cameraMap = Map.of(
+      1,
+      new CameraConfig(
+          "FrontLeft",
+          new Transform2d(0.5, 0.5, edu.wpi.first.math.geometry.Rotation2d.fromDegrees(45)),
+          90.0,
+          10.0),
+      2,
+      new CameraConfig(
+          "BackLeft",
+          new Transform2d(-0.5, 0.5, edu.wpi.first.math.geometry.Rotation2d.fromDegrees(135)),
+          90.0,
+          10.0),
+      3,
+      new CameraConfig(
+          "BackRight",
+          new Transform2d(-0.5, -0.5, edu.wpi.first.math.geometry.Rotation2d.fromDegrees(225)),
+          90.0,
+          10.0),
+      4,
+      new CameraConfig(
+          "FrontRight",
+          new Transform2d(0.5, -0.5, edu.wpi.first.math.geometry.Rotation2d.fromDegrees(315)),
+          90.0,
+          10.0));
 
   /** Time in seconds before a camera is considered offline if no data is received. */
   public static final double offlineTimeoutSeconds = 1.0;
