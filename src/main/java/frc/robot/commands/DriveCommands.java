@@ -180,8 +180,8 @@ public class DriveCommands {
   /**
    * Field relative drive command with rotation-priority desaturation. The PID-controlled rotation
    * is given as much of the module speed budget as it needs, and translation is scaled to fill
-   * whatever capacity remains. This guarantees the robot will always rotate to the target heading at
-   * the speed the PID requests, while still translating as fast as physically possible.
+   * whatever capacity remains. This guarantees the robot will always rotate to the target heading
+   * at the speed the PID requests, while still translating as fast as physically possible.
    *
    * @param drive The drive subsystem.
    * @param xSupplier Supplier for forward/backward input (-1.0 to 1.0).
@@ -243,9 +243,7 @@ public class DriveCommands {
 
               ChassisSpeeds speeds =
                   new ChassisSpeeds(
-                      desiredVx * translationScale,
-                      desiredVy * translationScale,
-                      omega);
+                      desiredVx * translationScale, desiredVy * translationScale, omega);
 
               // Flip controls if on the Red alliance
               boolean isFlipped =

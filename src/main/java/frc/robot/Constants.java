@@ -56,6 +56,17 @@ public final class Constants {
   public static final Translation2d outpostPosition =
       new Translation2d(Meters.of(4.65), fieldWidth.div(2.0));
 
+  /** Center of the left lobbing target line (blue alliance coordinates). */
+  public static final Translation2d lobbingTargetLeftCenter =
+      new Translation2d(Meters.of(2.159), Meters.of(5.558));
+
+  /** Center of the right lobbing target line (blue alliance coordinates). */
+  public static final Translation2d lobbingTargetRightCenter =
+      new Translation2d(Meters.of(2.159), fieldWidth.minus(Meters.of(5.558)));
+
+  /** Half-length of each lobbing target line segment (0.5m in each direction from center). */
+  public static final Distance lobbingTargetHalfLength = Meters.of(0.5);
+
   // Game Specific Zones
   /** The area on the field where the robot is permitted to shoot game pieces. */
   public static final Rectangle2d shootingZone =
@@ -64,5 +75,7 @@ public final class Constants {
   /** The area on the field where the robot is permitted to lob game pieces. */
   public static final Rectangle2d lobbingZone =
       new Rectangle2d(
-          new Pose2d(fieldLength.div(2.0), fieldWidth.div(2.0), Rotation2d.kZero), Meters.of(6.07), fieldWidth);
+          new Pose2d(fieldLength.div(2.0), fieldWidth.div(2.0), Rotation2d.kZero),
+          Meters.of(6.07),
+          fieldWidth);
 }

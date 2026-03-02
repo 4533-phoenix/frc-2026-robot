@@ -14,56 +14,55 @@ import frc.robot.subsystems.intake.Intake;
 /**
  * Factory class for creating commands related to the intake subsystem.
  *
- * <p>Provides methods to control the intake arm position and the spinner rollers for collecting or
- * ejecting game pieces.
+ * <p>The intake arm deploys once and stays deployed for the entire match. These commands only
+ * control the spinner rollers. Arm retraction is handled exclusively by the climbing transition.
  */
 public class IntakeCommands {
   private IntakeCommands() {}
 
   /**
-   * Deploys the intake arm and runs the spinner rollers for intaking.
-   *
-   * <p>The rollers will only spin if the arm is within the deployed tolerance to prevent damage.
+   * Runs the intake spinners inward to collect game pieces. The spinners stop when the command
+   * ends.
    *
    * @param intake The intake subsystem.
-   * @return A command that deploys the intake and activates the spinners.
+   * @return A command that runs the spinners inward while held.
    */
-  public static Command intake(Intake intake) {
-    return Commands.runEnd(
-        () -> {
-          intake.deploy();
-          if (intake.armDeployed()) {
-            intake.intake();
-          }
-        },
-        intake::stopSpinner, intake);
+  public static Command runSpinnersIn(Intake intake) {
+    return Commands.runEnd(intake::intake, intake::stopSpinner, intake);
   }
 
   /**
-   * Deploys the intake arm and runs the spinner rollers for intaking.
-   *
-   * <p>The rollers will only spin if the arm is within the deployed tolerance to prevent damage.
+   * Runs the intake spinners outward to eject game pieces. The spinners stop when the command ends.
    *
    * @param intake The intake subsystem.
-   * @return A command that deploys the intake and activates the spinners.
+   * @return A command that runs the spinners outward while held.
    */
-  public static Command extake(Intake intake) {
-    return Commands.runEnd(
-        () -> {
-          intake.deploy();
-          if (intake.armDeployed()) {
-            intake.extake();
-          }
-        },
-        intake::stopSpinner, intake);
+  public static Command runSpinnersOut(Intake intake) {
+    return Commands.runEnd(intake::extake, intake::stopSpinner, intake);
   }
 
   /**
-   * Continuously holds the intake arm at the retracted position and stops the rollers. Useful as a
-   * default command to ensure the intake is stowed.
+   * Holds the intake arm at the deployed position with spinners off. Intended as the default
+   * command for the intake subsystem during normal match play.
    *
    * @param intake The intake subsystem.
-   * @return A command to hold the intake retracted.
+   * @return A command that continuously holds the arm deployed.
+   */
+  public static Command holdDeployed(Intake intake) {
+    return Commands.run(
+        () -> {
+          intake.deploy();
+          intake.stopSpinner();
+        },
+        intake);
+  }
+
+  /**
+   * Holds the intake arm at the retracted position with spinners off. Used only during the climbing
+   * state to clear the arm for the climb mechanism.
+   *
+   * @param intake The intake subsystem.
+   * @return A command that continuously holds the arm retracted.
    */
   public static Command holdRetracted(Intake intake) {
     return Commands.run(
