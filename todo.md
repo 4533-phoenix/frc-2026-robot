@@ -14,6 +14,8 @@
 * Merge code more between lobbing and shooting
 * Overhaul rumble
 * Make TOF not hardcoded
+* Figure out the locking situation in drive odometry
 
 URGENT
 * Figure out how to do auto in the most efficient way possible
+* Figure out climb mode and its state changes
