@@ -17,6 +17,10 @@ public class ShooterKinematics {
   private static final InterpolatingDoubleTreeMap flywheelMap = new InterpolatingDoubleTreeMap();
   private static final InterpolatingDoubleTreeMap hoodMap = new InterpolatingDoubleTreeMap();
 
+  // Separate maps for lobbing shots (lower power, higher arc)
+  private static final InterpolatingDoubleTreeMap lobFlywheelMap = new InterpolatingDoubleTreeMap();
+  private static final InterpolatingDoubleTreeMap lobHoodMap = new InterpolatingDoubleTreeMap();
+
   static {
     // Rough shooter tune (342 Scrimage 2/28/26)
     flywheelMap.put(2.159, 50.0);
@@ -27,6 +31,16 @@ public class ShooterKinematics {
 
     flywheelMap.put(4.0513, 100.0);
     hoodMap.put(4.0513, 55.0);
+
+    // Placeholder lob tune (needs field calibration)
+    lobFlywheelMap.put(4.0, 35.0);
+    lobHoodMap.put(4.0, 60.0);
+
+    lobFlywheelMap.put(6.0, 45.0);
+    lobHoodMap.put(6.0, 55.0);
+
+    lobFlywheelMap.put(8.0, 55.0);
+    lobHoodMap.put(8.0, 50.0);
   }
 
   /**
@@ -41,5 +55,22 @@ public class ShooterKinematics {
     // Get interpolated values from the maps based on current distance
     return new ShooterState(
         RotationsPerSecond.of(flywheelMap.get(distMeters)), Degrees.of(hoodMap.get(distMeters)));
+  }
+
+  /**
+   * Calculates the optimal {@link ShooterState} for a lobbing shot at a given distance.
+   *
+   * <p>Lobbing uses lower flywheel speeds and steeper hood angles to produce a high-arc trajectory
+   * that lands in the lobbing targets on the far side of the field.
+   *
+   * @param distanceToTarget The distance from the shooter to the lobbing target.
+   * @return The calculated ShooterState for a lob shot.
+   */
+  public static ShooterState calculateLobState(Distance distanceToTarget) {
+    double distMeters = distanceToTarget.in(Meters);
+
+    return new ShooterState(
+        RotationsPerSecond.of(lobFlywheelMap.get(distMeters)),
+        Degrees.of(lobHoodMap.get(distMeters)));
   }
 }

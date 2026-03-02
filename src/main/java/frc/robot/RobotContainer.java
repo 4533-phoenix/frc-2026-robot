@@ -13,8 +13,6 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
-import edu.wpi.first.wpilibj.GenericHID.RumbleType;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
@@ -23,9 +21,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.ClimbCommands;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.IndexerCommands;
 import frc.robot.commands.IntakeCommands;
-import frc.robot.commands.ShooterCommands;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.climb.ClimbIO;
 import frc.robot.subsystems.climb.ClimbIOReal;
@@ -59,10 +55,11 @@ import frc.robot.util.HardwareConfigManager;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
- * subsystems, commands, and button mappings) should be declared here.
+ * Declares the robot's subsystems, operator interface devices, and command bindings.
+ *
+ * <p>Scoring logic (shooter, indexer, auto-aim) is delegated to the {@link Superstructure} state
+ * machine. Bindings here express driver intent as simple boolean signals that the superstructure
+ * reads each cycle.
  */
 public class RobotContainer {
   // Subsystems
@@ -72,6 +69,12 @@ public class RobotContainer {
   private final Shooter shooter;
   private final Indexer indexer;
   private final Vision vision;
+
+  // Superstructure coordinator
+  private final Superstructure superstructure;
+
+  // Tracks whether the driver has initiated a climb (latching)
+  private boolean climbRequested = false;
 
   // Controllers
   public final CommandXboxController driverController = new CommandXboxController(0);
@@ -159,46 +162,57 @@ public class RobotContainer {
 
     // Configure the button bindings
     configureButtonBindings();
+
+    // Build the superstructure coordinator after subsystems and bindings are initialized
+    superstructure =
+        new Superstructure(
+            drive,
+            shooter,
+            indexer,
+            intake,
+            driverController,
+            () -> -driverController.getLeftY(),
+            () -> -driverController.getLeftX(),
+            () -> driverController.getLeftTriggerAxis() > 0.5,
+            () -> driverController.getRightTriggerAxis() > 0.5,
+            () -> climbRequested);
+
+    // The superstructure periodic command owns the shooter and indexer subsystems, replacing
+    // the old per-subsystem default commands for those mechanisms.
+    shooter.setDefaultCommand(superstructure.getPeriodicCommand());
+
+    // Intake default command is driven by the superstructure state (deployed normally,
+    // retracted during climbing).
+    intake.setDefaultCommand(superstructure.getIntakeDefaultCommand());
+
+    // Schedule auto-aim drive whenever the superstructure requests it
+    new Trigger(superstructure::wantsAutoAim).whileTrue(superstructure.getAutoAimDriveCommand());
+
+    // Endgame rumble alert when the match enters its last 30 seconds
+    new Trigger(superstructure::isEndgame)
+        .onTrue(
+            Superstructure.rumbleCommand(
+                driverController, GenericHID.RumbleType.kBothRumble, 1.0, 0.5));
   }
 
   /**
-   * Use this method to define your button->command mappings. Buttons can be created by
-   * instantiating a {@link GenericHID} or one of its subclasses ({@link
-   * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
-   * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
+   * Defines button-to-command mappings. Most scoring logic is handled by the {@link Superstructure}
+   * state machine. Bindings here express driver intent as simple input signals.
    */
   private void configureButtonBindings() {
-    // Get common triggers from the superstructure
-    Trigger outpostEnabled = Superstructure.isOutpostEnabled();
-    Trigger readyToFire = Superstructure.isReadyToFire(drive, shooter);
-    Trigger endgame = Superstructure.isEndgame();
-
-    // Normal field-relative drive
+    // Normal field-relative drive (default command, overridden by auto-aim when active)
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
             () -> -driverController.getLeftY(),
             () -> -driverController.getLeftX(),
             () -> -driverController.getRightX()));
-    // drive.setDefaultCommand(
-    //     DriveCommands.joystickDriveAtAngle(
-    //         drive,
-    //         () -> -driverController.getLeftY(),
-    //         () -> -driverController.getLeftX(),
-    //         () -> new Rotation2d(-driverController.getRightX(), -driverController.getRightY())));
 
-    // Intake remains retracted by default
-    intake.setDefaultCommand(IntakeCommands.holdRetracted(intake));
+    // Intake spinner overlay (orthogonal to the state machine)
+    driverController.leftBumper().whileTrue(IntakeCommands.runSpinnersIn(intake));
+    driverController.rightBumper().whileTrue(IntakeCommands.runSpinnersOut(intake));
 
-    // Shooter and indexer stop by default
-    shooter.setDefaultCommand(ShooterCommands.stopShooter(shooter));
-    indexer.setDefaultCommand(IndexerCommands.stopIndexer(indexer));
-
-    // Deploy intake and spin while Left Bumper is held
-    driverController.leftBumper().whileTrue(IntakeCommands.intake(intake));
-    driverController.rightBumper().whileTrue(IntakeCommands.extake(intake));
-
-    // Reset gyro to 0° when B button is pressed
+    // Reset gyro heading
     driverController
         .b()
         .onTrue(
@@ -209,41 +223,14 @@ public class RobotContainer {
                     drive)
                 .ignoringDisable(true));
 
-    // Auto-aim while holding Left Trigger and in shooting zone
+    // Climb controls (latching state transition)
     driverController
-        .leftTrigger()
-        .and(Superstructure.isInShootingZone(drive))
-        .whileTrue(Superstructure.getAutoAimCommand(drive, shooter, driverController));
-    // driverController.leftTrigger().whileTrue(Superstructure.getShooterAimCommand(drive,
-    // shooter));
-
-    // When we press up or down dpad
-    driverController.povUp().onTrue(ClimbCommands.liftUp(climb));
-    driverController.povDown().onTrue(ClimbCommands.liftDown(climb));
-
-    // Fire game piece while holding Right Trigger, ready to fire, and outpost enabled
+        .povUp()
+        .onTrue(Commands.runOnce(() -> climbRequested = true).andThen(ClimbCommands.liftUp(climb)));
     driverController
-        .rightTrigger()
-        .and(readyToFire)
-        .and(outpostEnabled)
-        .whileTrue(IndexerCommands.runIndexer(indexer));
-
-    // Rumble when outpost becomes enabled
-    outpostEnabled.onTrue(
-        Superstructure.rumbleCommand(driverController, RumbleType.kLeftRumble, 0.5, 0.2)
-            .andThen(Commands.waitSeconds(0.1))
-            .andThen(
-                Superstructure.rumbleCommand(driverController, RumbleType.kLeftRumble, 0.5, 0.2)));
-
-    // Rumble when shooter is ready
-    readyToFire.whileTrue(
-        Commands.startEnd(
-            () -> driverController.setRumble(RumbleType.kRightRumble, 0.4),
-            () -> driverController.setRumble(RumbleType.kRightRumble, 0.0)));
-
-    // Rumble hard during endgame
-    endgame.onTrue(
-        Superstructure.rumbleCommand(driverController, RumbleType.kBothRumble, 1.0, 1.5));
+        .povDown()
+        .onTrue(
+            Commands.runOnce(() -> climbRequested = true).andThen(ClimbCommands.liftDown(climb)));
   }
 
   /**

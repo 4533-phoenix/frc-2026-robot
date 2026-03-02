@@ -72,9 +72,19 @@ public class Shooter extends SubsystemBase {
   public void setTargetState(ShooterState state) {
     targetVelocity = state.flywheelSpeed();
     flywheelIO.setAngularVelocity(state.flywheelSpeed());
-    // Convert angle to servo length for the physical mechanism
     hoodIO.setLength(convertHoodAngleToServoLength(state.hoodAngle()));
     isShooting = true;
+  }
+
+  /**
+   * Spins the flywheel at a low idle speed and retracts the hood. Used by the WARMING state to
+   * reduce spin-up latency without full target tracking.
+   */
+  public void setIdleSpeed() {
+    targetVelocity = flywheelIdleSpeed;
+    flywheelIO.setAngularVelocity(flywheelIdleSpeed);
+    hoodIO.retract();
+    isShooting = false;
   }
 
   /**
@@ -107,15 +117,29 @@ public class Shooter extends SubsystemBase {
    * @return True if the flywheels are spun up, the hood is in position, and the shooter is active.
    */
   public boolean isReadyToShoot() {
-    // Check if flywheel is within tolerance of target velocity
+    return isFlywheelReady() && isHoodReady() && isShooting;
+  }
+
+  /** Returns true if the flywheel velocity is within tolerance of the target. */
+  public boolean isFlywheelReady() {
     double errorRps =
         targetVelocity.in(RadiansPerSecond) - flywheelInputs.velocity.in(RadiansPerSecond);
-    boolean flywheelReady = Math.abs(errorRps) <= flywheelAngularTolerance.in(RadiansPerSecond);
+    return Math.abs(errorRps) <= flywheelAngularTolerance.in(RadiansPerSecond);
+  }
 
-    // Check if hood actuator has reached setpoint
-    boolean hoodReady = hoodInputs.atSetpoint;
+  /** Returns true if the hood actuator has reached its setpoint. */
+  public boolean isHoodReady() {
+    return hoodInputs.atSetpoint;
+  }
 
-    return flywheelReady && hoodReady && isShooting;
+  /** Returns true if the shooter has been commanded to an active shooting state. */
+  public boolean isShooting() {
+    return isShooting;
+  }
+
+  /** Returns the flywheel velocity error in radians per second (target minus actual). */
+  public double getFlywheelErrorRadPerSec() {
+    return targetVelocity.in(RadiansPerSecond) - flywheelInputs.velocity.in(RadiansPerSecond);
   }
 
   /** Safely stops the flywheels and retracts the hood. */

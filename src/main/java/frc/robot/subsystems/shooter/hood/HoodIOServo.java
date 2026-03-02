@@ -55,7 +55,7 @@ public class HoodIOServo implements HoodIO {
     // Log the current physical state of the actuator
     inputs.currentLength = currentLength;
     inputs.targetLength = targetLength;
-    inputs.atSetpoint = Math.abs(delta) < 0.001; // 1mm tolerance
+    inputs.atSetpoint = Math.abs(delta) < hoodLengthTolerance.in(Meters);
   }
 
   /**
