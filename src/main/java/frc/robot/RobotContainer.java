@@ -12,6 +12,7 @@ package frc.robot;
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -19,6 +20,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.SuperstructureStates.RobotGoal;
 import frc.robot.commands.ClimbCommands;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.IntakeCommands;
@@ -52,6 +54,7 @@ import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOChalkydri;
 import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.util.HardwareConfigManager;
+import frc.robot.util.Util;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -72,9 +75,6 @@ public class RobotContainer {
 
   // Superstructure coordinator
   private final Superstructure superstructure;
-
-  // Tracks whether the driver has initiated a climb (latching)
-  private boolean climbRequested = false;
 
   // Controllers
   public final CommandXboxController driverController = new CommandXboxController(0);
@@ -141,8 +141,18 @@ public class RobotContainer {
         break;
     }
 
+    // Build the superstructure coordinator after subsystems are initialized but before bindings
+    superstructure = new Superstructure(drive, shooter, indexer, intake, climb);
+
     // Set up auto routines via PathPlanner
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
+
+    // Shoot preload auto — forces superstructure to FIRE state
+    autoChooser.addOption(
+        "Shoot Preload",
+        Commands.startEnd(
+            () -> superstructure.setGoal(RobotGoal.FIRE),
+            () -> superstructure.setGoal(RobotGoal.IDLE)));
 
     // Set up characterization routines for SysId
     autoChooser.addOption(
@@ -163,20 +173,6 @@ public class RobotContainer {
     // Configure the button bindings
     configureButtonBindings();
 
-    // Build the superstructure coordinator after subsystems and bindings are initialized
-    superstructure =
-        new Superstructure(
-            drive,
-            shooter,
-            indexer,
-            intake,
-            driverController,
-            () -> -driverController.getLeftY(),
-            () -> -driverController.getLeftX(),
-            () -> driverController.getLeftTriggerAxis() > 0.5,
-            () -> driverController.getRightTriggerAxis() > 0.5,
-            () -> climbRequested);
-
     // The superstructure periodic command owns the shooter and indexer subsystems, replacing
     // the old per-subsystem default commands for those mechanisms.
     shooter.setDefaultCommand(superstructure.getPeriodicCommand());
@@ -186,13 +182,83 @@ public class RobotContainer {
     intake.setDefaultCommand(superstructure.getIntakeDefaultCommand());
 
     // Schedule auto-aim drive whenever the superstructure requests it
-    new Trigger(superstructure::wantsAutoAim).whileTrue(superstructure.getAutoAimDriveCommand());
+    new Trigger(superstructure::wantsAutoAim)
+        .whileTrue(
+            DriveCommands.joystickDriveWithRotationPriority(
+                drive,
+                () -> -driverController.getLeftY(),
+                () -> -driverController.getLeftX(),
+                superstructure::getAimingRotation));
 
-    // Endgame rumble alert when the match enters its last 30 seconds
-    new Trigger(superstructure::isEndgame)
+    // Rumble feedback triggers
+    new Trigger(Util::isEndgame)
         .onTrue(
-            Superstructure.rumbleCommand(
-                driverController, GenericHID.RumbleType.kBothRumble, 1.0, 0.5));
+            Commands.run(
+                    () ->
+                        driverController.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1.0))
+                .withTimeout(0.5)
+                .finallyDo(
+                    () ->
+                        driverController
+                            .getHID()
+                            .setRumble(GenericHID.RumbleType.kBothRumble, 0.0)));
+
+    new Trigger(Util::isHubEnabled)
+        .onTrue(
+            Commands.run(
+                    () ->
+                        driverController.getHID().setRumble(GenericHID.RumbleType.kLeftRumble, 0.5))
+                .withTimeout(0.2)
+                .finallyDo(
+                    () ->
+                        driverController
+                            .getHID()
+                            .setRumble(GenericHID.RumbleType.kLeftRumble, 0.0)));
+
+    // Only rumble when the driver is actively aiming (left trigger) or in autonomous.
+    new Trigger(() -> driverController.leftTrigger().getAsBoolean() || DriverStation.isAutonomous())
+        .and(new Trigger(superstructure::isReadyToFire))
+        .whileTrue(
+            Commands.startEnd(
+                () -> driverController.getHID().setRumble(GenericHID.RumbleType.kRightRumble, 0.4),
+                () ->
+                    driverController.getHID().setRumble(GenericHID.RumbleType.kRightRumble, 0.0)));
+
+    // Intents mapping (Left/Right trigger map to AIM/FIRE goals)
+    Trigger aimTrigger =
+        new Trigger(
+            () -> driverController.leftTrigger().getAsBoolean() || DriverStation.isAutonomous());
+    Trigger fireTrigger =
+        new Trigger(
+            () -> driverController.leftTrigger().getAsBoolean() || DriverStation.isAutonomous());
+
+    aimTrigger
+        .and(fireTrigger.negate())
+        .whileTrue(
+            Commands.startEnd(
+                () -> superstructure.setGoal(RobotGoal.AIM),
+                () -> superstructure.setGoal(RobotGoal.IDLE)));
+
+    aimTrigger
+        .and(fireTrigger)
+        .whileTrue(
+            Commands.startEnd(
+                () -> superstructure.setGoal(RobotGoal.FIRE),
+                () -> superstructure.setGoal(RobotGoal.IDLE)));
+
+    // Climb toggle
+    driverController
+        .povLeft()
+        .onTrue(
+            Commands.runOnce(
+                    () -> {
+                      if (superstructure.getGoal() == RobotGoal.CLIMB) {
+                        superstructure.setGoal(RobotGoal.IDLE);
+                      } else if (!Util.isMatchMode() || Util.isEndgame()) {
+                        superstructure.forceGoal(RobotGoal.CLIMB);
+                      }
+                    })
+                .ignoringDisable(true));
   }
 
   /**
@@ -208,9 +274,9 @@ public class RobotContainer {
             () -> -driverController.getLeftX(),
             () -> -driverController.getRightX()));
 
-    // Intake spinner overlay (orthogonal to the state machine)
-    driverController.leftBumper().whileTrue(IntakeCommands.runSpinnersIn(intake));
-    driverController.rightBumper().whileTrue(IntakeCommands.runSpinnersOut(intake));
+    // Intake deploy + spinner overlay (orthogonal to the state machine)
+    driverController.leftBumper().whileTrue(IntakeCommands.deployAndRunSpinnersIn(intake));
+    driverController.rightBumper().whileTrue(IntakeCommands.deployAndRunSpinnersOut(intake));
 
     // Reset gyro heading
     driverController
@@ -223,14 +289,21 @@ public class RobotContainer {
                     drive)
                 .ignoringDisable(true));
 
-    // Climb controls (latching state transition)
+    // Climb motor controls
     driverController
         .povUp()
-        .onTrue(Commands.runOnce(() -> climbRequested = true).andThen(ClimbCommands.liftUp(climb)));
+        .whileTrue(
+            Commands.either(
+                ClimbCommands.liftUp(climb),
+                Commands.none(),
+                () -> superstructure.getGoal() == RobotGoal.CLIMB));
     driverController
         .povDown()
-        .onTrue(
-            Commands.runOnce(() -> climbRequested = true).andThen(ClimbCommands.liftDown(climb)));
+        .whileTrue(
+            Commands.either(
+                ClimbCommands.liftDown(climb),
+                Commands.none(),
+                () -> superstructure.getGoal() == RobotGoal.CLIMB));
   }
 
   /**
