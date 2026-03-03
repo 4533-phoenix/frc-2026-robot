@@ -95,7 +95,7 @@ public final class ShooterConstants {
   public static final AngularVelocity flywheelIdleSpeed = RotationsPerSecond.of(30.0);
 
   // ---------- Lobbing constants ----------
-  /** Flywheel speed for lobbed shots. Lower than outpost shots for a high-arc trajectory. */
+  /** Flywheel speed for lobbed shots. Lower than hub shots for a high-arc trajectory. */
   public static final AngularVelocity lobFlywheelSpeed = RotationsPerSecond.of(40.0);
   /** Hood angle for lobbed shots. Steep angle to produce the high arc. */
   public static final Angle lobHoodAngle = Degrees.of(70.0);

@@ -52,8 +52,8 @@ public final class Constants {
   public static final Distance fieldWidth = Inches.of(317.5);
 
   // Field Objects
-  /** The location of the center of the field outpost mechanism. */
-  public static final Translation2d outpostPosition =
+  /** The location of the center of the field hub mechanism. */
+  public static final Translation2d hubPosition =
       new Translation2d(Meters.of(4.65), fieldWidth.div(2.0));
 
   /** Center of the left lobbing target line (blue alliance coordinates). */

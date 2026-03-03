@@ -14,8 +14,9 @@ import frc.robot.subsystems.intake.Intake;
 /**
  * Factory class for creating commands related to the intake subsystem.
  *
- * <p>The intake arm deploys once and stays deployed for the entire match. These commands only
- * control the spinner rollers. Arm retraction is handled exclusively by the climbing transition.
+ * <p>The intake arm starts retracted and deploys on the first bumper press via the {@code
+ * deployAndRunSpinners*} commands. Once deployed it stays deployed for the rest of the match (the
+ * default command maintains it). Arm retraction is handled exclusively by the climbing state.
  */
 public class IntakeCommands {
   private IntakeCommands() {}
@@ -39,6 +40,42 @@ public class IntakeCommands {
    */
   public static Command runSpinnersOut(Intake intake) {
     return Commands.runEnd(intake::extake, intake::stopSpinner, intake);
+  }
+
+  /**
+   * Deploys the intake arm AND runs the spinners inward. The arm setpoint is commanded every cycle
+   * so it begins moving immediately; the spinners run in parallel. When the command ends the
+   * spinners stop but the arm remains at the deployed setpoint (held by the default command).
+   *
+   * @param intake The intake subsystem.
+   * @return A command that deploys the arm and runs the spinners inward while held.
+   */
+  public static Command deployAndRunSpinnersIn(Intake intake) {
+    return Commands.runEnd(
+        () -> {
+          intake.deploy();
+          intake.intake();
+        },
+        intake::stopSpinner,
+        intake);
+  }
+
+  /**
+   * Deploys the intake arm AND runs the spinners outward. The arm setpoint is commanded every cycle
+   * so it begins moving immediately; the spinners run in parallel. When the command ends the
+   * spinners stop but the arm remains at the deployed setpoint (held by the default command).
+   *
+   * @param intake The intake subsystem.
+   * @return A command that deploys the arm and runs the spinners outward while held.
+   */
+  public static Command deployAndRunSpinnersOut(Intake intake) {
+    return Commands.runEnd(
+        () -> {
+          intake.deploy();
+          intake.extake();
+        },
+        intake::stopSpinner,
+        intake);
   }
 
   /**
