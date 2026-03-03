@@ -11,6 +11,7 @@ import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.util.ExtraMotors;
 
@@ -27,9 +28,18 @@ public final class ClimbConstants {
   // Motor and current limits
   /** Maximum current limit for the lift motor to prevent thermal damage. */
   public static final Current liftMotorCurrentLimit = Amps.of(30);
-  /** The gearbox model for the lift motor (e.g., AndyMark Snow Blower). */
+  /** The gearbox model for the lift motor. */
   public static final DCMotor liftGearbox = ExtraMotors.getSnowBlower(1);
 
   /** Default voltage used for lifting and lowering the mechanism. */
   public static final Voltage defaultLiftVoltage = Volts.of(6.0);
+
+  /** Simulated upper travel limit. */
+  public static final Distance upperHeight = Centimeters.of(22.0);
+  /** Simulated lower travel limit. */
+  public static final Distance lowerHeight = Centimeters.of(0.0);
+  /** The radius of the winch drum when empty. */
+  public static final Distance drumRadius = Centimeters.of(1.0);
+  /** Gear reduction on the climber */
+  public static final double gearReduction = 2.0;
 }
