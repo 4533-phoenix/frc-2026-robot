@@ -8,6 +8,7 @@
 package frc.robot.subsystems.climb;
 
 import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Kilograms;
 import static edu.wpi.first.units.Units.Meter;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.subsystems.climb.ClimbConstants.*;
@@ -24,8 +25,8 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
-import edu.wpi.first.wpilibj.simulation.ElevatorSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
+import frc.robot.simulation.ClimbSim;
 import frc.robot.subsystems.drive.DriveConstants;
 
 /**
@@ -43,7 +44,7 @@ public class ClimbIOSim implements ClimbIO {
   private final SparkLimitSwitchSim reverseLimitSim;
   private final SparkLimitSwitch forwardLimit;
   private final SparkLimitSwitch reverseLimit;
-  private final ElevatorSim physicsSim;
+  private final ClimbSim physicsSim;
 
   /** Creates a new ClimbIOSim and initializes the simulated Spark MAX. */
   public ClimbIOSim() {
@@ -55,19 +56,17 @@ public class ClimbIOSim implements ClimbIO {
     reverseLimit = spark.getReverseLimitSwitch();
 
     physicsSim =
-        new ElevatorSim(
+        new ClimbSim(
             liftGearbox,
             gearReduction,
-            DriveConstants.robotMass.in(
-                edu.wpi.first.units.Units
-                    .Kilograms), // simulate load without exceeding motor stall torque
+            1.5,
+            DriveConstants.robotMass.in(Kilograms),
             drumRadius.in(Meter),
             lowerHeight.in(Meter),
             upperHeight.in(Meter),
-            true,
-            0.0);
+            40.0 // TODO: Get actual arm mass and spring force values
+            );
 
-    // Configure Spark MAX (mirrors ClimbIOReal)
     // Disable hardware limit switch behavior so the Spark's internal firmware does not block output
     var liftCfg = new SparkMaxConfig();
     liftCfg
