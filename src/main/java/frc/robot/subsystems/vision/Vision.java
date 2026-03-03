@@ -88,20 +88,17 @@ public class Vision extends SubsystemBase {
 
     // Process all detections received this frame
     for (int i = 0; i < inputs.visionPoses.length; i++) {
+      int id = inputs.cameraIds[i];
+      if (id >= 0 && id <= maxCameraId && cameraActiveFlags[id]) {
+        lastTimestamps[id] = currentTime;
+      }
+
       // Single-tag detections are often unreliable for field position
       if (inputs.tagCounts[i] <= 1) {
         continue;
       }
 
-      int id = inputs.cameraIds[i];
-
-      // Update our primitive array instead of a HashMap (Zero Memory Allocation!)
-      if (id >= 0 && id <= maxCameraId && cameraActiveFlags[id]) {
-        lastTimestamps[id] = currentTime;
-      }
-
       // Update Drive Subsystem with refined pose
-      // Reuse pre-allocated vector instead of creating new one every cycle for performance
       stdVector.set(0, 0, inputs.stdDevX[i]);
       stdVector.set(1, 0, inputs.stdDevY[i]);
       stdVector.set(2, 0, inputs.stdDevRot[i]);
@@ -109,7 +106,7 @@ public class Vision extends SubsystemBase {
       drive.addVisionMeasurement(inputs.visionPoses[i], inputs.timestamps[i], stdVector);
     }
 
-    // Camera Status Monitoring: Check for offline cameras using fast array iteration
+    // Check for offline cameras
     for (int id = 0; id <= maxCameraId; id++) {
       if (!cameraActiveFlags[id]) continue;
 
@@ -118,7 +115,6 @@ public class Vision extends SubsystemBase {
       // Update Alerts for drivers and log status
       alerts[id].set(isOffline);
       Logger.recordOutput(logPaths[id], !isOffline);
-      // Expose AdvantageKit boolean for 'seen in past second' for each camera
       String seenPath = "Vision/CameraSeen/" + cameraMap.get(id).name();
       boolean seen = (currentTime - lastTimestamps[id]) <= offlineTimeoutSeconds;
       Logger.recordOutput(seenPath, seen);
