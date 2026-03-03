@@ -13,11 +13,8 @@ import static edu.wpi.first.units.Units.Seconds;
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
 import edu.wpi.first.math.filter.Debouncer;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -35,6 +32,9 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterKinematics;
 import frc.robot.subsystems.shooter.ShooterState;
+import frc.robot.util.Aiming;
+import frc.robot.util.Aiming.AimingResult;
+import frc.robot.util.Aiming.LobAimingResult;
 import frc.robot.util.Util;
 import org.littletonrobotics.junction.Logger;
 
@@ -70,9 +70,6 @@ public class Superstructure {
   // Ready-to-fire must be stable for a short period before allowing the shot
   private final Debouncer readyToFireDebouncer =
       new Debouncer(0.06, Debouncer.DebounceType.kRising);
-
-  /** Cached result of the aiming pipeline. */
-  private record AimingResult(Rotation2d targetRotation, Distance distanceToTarget) {}
 
   /**
    * Creates a new Superstructure coordinator.
@@ -127,8 +124,30 @@ public class Superstructure {
     if (currentState == RobotState.TRACKING
         || currentState == RobotState.AIMING
         || currentState == RobotState.FIRING) {
-      latestAiming =
-          isLobbing ? computeLobAiming(true) : computeAiming(Constants.hubPosition, true);
+      if (isLobbing) {
+        LobAimingResult lobResult =
+            Aiming.computeLobAiming(
+                drive.getPose().getTranslation(),
+                drive.getRotation(),
+                shooterRobotOffset,
+                Constants.lobbingTargetLeftCenter,
+                Constants.lobbingTargetRightCenter,
+                Constants.lobbingTargetHalfLength.in(Meters),
+                lobTargetIsLeft,
+                true);
+        latestAiming = lobResult.aimingResult();
+        lobTargetIsLeft = lobResult.lobTargetIsLeft();
+      } else {
+        latestAiming =
+            Aiming.computeHubAiming(
+                drive.getPose().getTranslation(),
+                drive.getRotation(),
+                drive.getFieldRelativeVelocity(),
+                Constants.hubPosition,
+                shooterRobotOffset,
+                estimatedTimeOfFlight.in(Seconds),
+                true);
+      }
     }
 
     applyState(currentState);
@@ -143,8 +162,6 @@ public class Superstructure {
     Logger.recordOutput("Superstructure/HubEnabled", Util.isHubEnabled());
     Logger.recordOutput("Superstructure/IsLobbing", isLobbing);
     Logger.recordOutput("Superstructure/MatchMode", Util.isMatchMode());
-
-    // Evaluate and log all ready-to-shoot signals once per cycle
     updateReadyToFire();
   }
 
@@ -274,130 +291,6 @@ public class Superstructure {
     Logger.recordOutput("Superstructure/ReadyToFire/HoodReady", hoodReady);
     Logger.recordOutput("Superstructure/ReadyToFire/IsShooting", isShooting);
     Logger.recordOutput("Superstructure/ReadyToFire/ShooterReady", shooterReady);
-  }
-
-  /**
-   * Returns the field-space position of the shooter mechanism, accounting for the physical offset
-   * from the robot center.
-   */
-  private Translation2d getShooterFieldPosition() {
-    Pose2d robotPose = drive.getPose();
-    return robotPose.getTranslation().plus(shooterRobotOffset.rotateBy(robotPose.getRotation()));
-  }
-
-  /**
-   * Returns the predicted field-space position of the shooter after the robot rotates to the given
-   * heading. The robot center stays the same; only the offset rotates.
-   */
-  private Translation2d getShooterFieldPositionAtHeading(Rotation2d heading) {
-    return drive.getPose().getTranslation().plus(shooterRobotOffset.rotateBy(heading));
-  }
-
-  /**
-   * Computes all aiming outputs using a two-pass approach. The first pass estimates the target
-   * heading from the current shooter position. The second pass predicts where the shooter will be
-   * once the robot rotates to that heading and recomputes the final rotation and distance. This
-   * gives the shooter kinematics a more accurate distance to work with during TRACKING before the
-   * robot has actually turned.
-   *
-   * @param targetPosition The blue-alliance target position (flipped automatically).
-   * @param log Whether to publish outputs to AdvantageKit for visualization.
-   */
-  private AimingResult computeAiming(Translation2d targetPosition, boolean log) {
-    Translation2d targetTranslation = Util.flipAllianceIfNeeded(targetPosition);
-    Translation2d fieldVelocity = drive.getFieldRelativeVelocity();
-
-    // Estimate rotation from current shooter position
-    Translation2d currentShooterPos = getShooterFieldPosition();
-    Translation2d initialLead =
-        Util.calculateClampedLead(
-            currentShooterPos, targetTranslation, fieldVelocity, estimatedTimeOfFlight.in(Seconds));
-    Translation2d initialVirtualTarget = targetTranslation.minus(initialLead);
-    Rotation2d estimatedRotation = initialVirtualTarget.minus(currentShooterPos).getAngle();
-
-    // Predict shooter position at the estimated rotation and recompute
-    Translation2d predictedShooterPos = getShooterFieldPositionAtHeading(estimatedRotation);
-    Translation2d clampedLead =
-        Util.calculateClampedLead(
-            predictedShooterPos,
-            targetTranslation,
-            fieldVelocity,
-            estimatedTimeOfFlight.in(Seconds));
-    Translation2d virtualTarget = targetTranslation.minus(clampedLead);
-
-    Translation2d shooterToTarget = virtualTarget.minus(predictedShooterPos);
-    Rotation2d targetRotation = shooterToTarget.getAngle();
-    double distanceMeters = shooterToTarget.getNorm();
-
-    if (log) {
-      Logger.recordOutput("Aiming/VirtualTarget", new Pose2d(virtualTarget, Rotation2d.kZero));
-      Logger.recordOutput("Aiming/StaticTarget", new Pose2d(targetTranslation, Rotation2d.kZero));
-      Logger.recordOutput(
-          "Aiming/ShooterPosition", new Pose2d(currentShooterPos, drive.getRotation()));
-      Logger.recordOutput(
-          "Aiming/PredictedShooterPosition", new Pose2d(predictedShooterPos, estimatedRotation));
-      Logger.recordOutput("Aiming/TargetRotation", targetRotation.getDegrees());
-      Logger.recordOutput("Aiming/DistanceToTarget", distanceMeters);
-    }
-
-    return new AimingResult(targetRotation, Meters.of(distanceMeters));
-  }
-
-  /**
-   * Computes aiming for lobbed shots. Each lobbing target is a 2m vertical line segment on the
-   * field. The method picks the nearest line with hysteresis, then aims at the closest point on
-   * that line. Uses a two-pass approach to predict the shooter position after rotation. Lead
-   * compensation is skipped because lobbed shots are high-arc and imprecise.
-   *
-   * @param log Whether to publish outputs to AdvantageKit for visualization.
-   */
-  private AimingResult computeLobAiming(boolean log) {
-    Translation2d leftCenter = Util.flipAllianceIfNeeded(Constants.lobbingTargetLeftCenter);
-    Translation2d rightCenter = Util.flipAllianceIfNeeded(Constants.lobbingTargetRightCenter);
-    double halfLen = Constants.lobbingTargetHalfLength.in(Meters);
-    Translation2d currentShooterPos = getShooterFieldPosition();
-
-    // Find closest point on each line segment to the current shooter position
-    Translation2d closestLeft = Util.closestPointOnLobLine(currentShooterPos, leftCenter, halfLen);
-    Translation2d closestRight =
-        Util.closestPointOnLobLine(currentShooterPos, rightCenter, halfLen);
-
-    double distLeft = currentShooterPos.getDistance(closestLeft);
-    double distRight = currentShooterPos.getDistance(closestRight);
-
-    // Only switch targets when the other is at least 0.5m closer
-    double hysteresis = 0.5;
-    if (lobTargetIsLeft && distRight < distLeft - hysteresis) {
-      lobTargetIsLeft = false;
-    } else if (!lobTargetIsLeft && distLeft < distRight - hysteresis) {
-      lobTargetIsLeft = true;
-    }
-
-    Translation2d target = lobTargetIsLeft ? closestLeft : closestRight;
-
-    // Estimate rotation from current shooter position
-    Rotation2d estimatedRotation = target.minus(currentShooterPos).getAngle();
-
-    // Predict shooter position at the estimated rotation, re-find closest point
-    Translation2d predictedShooterPos = getShooterFieldPositionAtHeading(estimatedRotation);
-    Translation2d lineCenter = lobTargetIsLeft ? leftCenter : rightCenter;
-    target = Util.closestPointOnLobLine(predictedShooterPos, lineCenter, halfLen);
-
-    Translation2d shooterToTarget = target.minus(predictedShooterPos);
-    Rotation2d targetRotation = shooterToTarget.getAngle();
-    double distanceMeters = shooterToTarget.getNorm();
-
-    if (log) {
-      Logger.recordOutput("Aiming/LobTarget", new Pose2d(target, Rotation2d.kZero));
-      Logger.recordOutput(
-          "Aiming/ShooterPosition", new Pose2d(currentShooterPos, drive.getRotation()));
-      Logger.recordOutput(
-          "Aiming/PredictedShooterPosition", new Pose2d(predictedShooterPos, estimatedRotation));
-      Logger.recordOutput("Aiming/TargetRotation", targetRotation.getDegrees());
-      Logger.recordOutput("Aiming/DistanceToTarget", distanceMeters);
-    }
-
-    return new AimingResult(targetRotation, Meters.of(distanceMeters));
   }
 
   /** Returns the current superstructure state. */
