@@ -17,7 +17,7 @@ public class Aiming {
 
   /** Record for returning aiming result along with updated hysteresis state for lobbing. */
   public record LobAimingResult(AimingResult aimingResult, boolean lobTargetIsLeft) {}
-  
+
   /**
    * Computes all aiming outputs for a direct hub shot.
    *

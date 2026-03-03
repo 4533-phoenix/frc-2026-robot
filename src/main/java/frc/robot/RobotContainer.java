@@ -291,14 +291,14 @@ public class RobotContainer {
     // Climb motor controls
     driverController
         .povUp()
-        .whileTrue(
+        .onTrue(
             Commands.either(
                 ClimbCommands.liftUp(climb),
                 Commands.none(),
                 () -> superstructure.getGoal() == RobotGoal.CLIMB));
     driverController
         .povDown()
-        .whileTrue(
+        .onTrue(
             Commands.either(
                 ClimbCommands.liftDown(climb),
                 Commands.none(),
