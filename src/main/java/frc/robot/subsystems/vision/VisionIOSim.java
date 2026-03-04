@@ -7,9 +7,9 @@
 
 package frc.robot.subsystems.vision;
 
+import static frc.robot.subsystems.vision.VisionConstants.*;
+
 import edu.wpi.first.apriltag.AprilTag;
-import edu.wpi.first.apriltag.AprilTagFieldLayout;
-import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -26,7 +26,6 @@ import java.util.function.Supplier;
  */
 public class VisionIOSim implements VisionIO {
   private final Supplier<Pose2d> poseSupplier;
-  private final AprilTagFieldLayout layout;
 
   // Pre-allocated empty pose to avoid creating 'new Pose2d()' constantly when no tags are seen
   private static final Pose2d EMPTY_POSE = new Pose2d();
@@ -38,8 +37,6 @@ public class VisionIOSim implements VisionIO {
    */
   public VisionIOSim(Supplier<Pose2d> poseSupplier) {
     this.poseSupplier = poseSupplier;
-    // Load default field layout (change to specific 2026 field layout when available)
-    this.layout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
   }
 
   /**
@@ -53,7 +50,7 @@ public class VisionIOSim implements VisionIO {
     Pose2d robotPose = poseSupplier.get();
     double timestamp = Timer.getFPGATimestamp();
 
-    int cameraCount = VisionConstants.cameraMap.size();
+    int cameraCount = cameraMap.size();
 
     // OPTIMIZATION: Resize arrays once. Removed ArrayLists and Java Streams to prevent
     // Autoboxing and continuous memory allocation during simulation.
@@ -71,17 +68,21 @@ public class VisionIOSim implements VisionIO {
     int index = 0;
 
     // Iterate through all configured cameras to simulate their detections
-    for (var entry : VisionConstants.cameraMap.entrySet()) {
+    for (var entry : cameraMap.entrySet()) {
       int camId = entry.getKey();
       CameraConfig config = entry.getValue();
 
-      // Calculate camera position on the field
-      Pose2d cameraPose = robotPose.transformBy(config.robotToCamera());
+    // Convert Transform3d to Transform2d for Pose2d transformation
+    var t3d = config.robotToCamera();
+    var t2d = new edu.wpi.first.math.geometry.Transform2d(
+      new Translation2d(t3d.getX(), t3d.getY()),
+      new Rotation2d(t3d.getRotation().getZ()));
+    Pose2d cameraPose = robotPose.transformBy(t2d);
       int visibleTags = 0;
       double totalDistance = 0.0;
 
       // Check visibility for each tag on the field
-      for (AprilTag tag : layout.getTags()) {
+      for (AprilTag tag : fieldLayout.getTags()) {
         Pose2d tagPose = tag.pose.toPose2d();
         Translation2d diff = tagPose.getTranslation().minus(cameraPose.getTranslation());
         double distance = diff.getNorm();
