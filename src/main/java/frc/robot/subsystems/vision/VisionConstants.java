@@ -7,7 +7,15 @@
 
 package frc.robot.subsystems.vision;
 
-import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
+
 import java.util.Map;
 
 /**
@@ -26,7 +34,7 @@ public class VisionConstants {
    * @param maxRangeMeters The maximum distance the camera can reliably detect AprilTags.
    */
   public record CameraConfig(
-      String name, Transform2d robotToCamera, double fovDegrees, double maxRangeMeters) {}
+      String name, Transform3d robotToCamera, double fovDegrees, double maxRangeMeters) {}
 
   /**
    * Map of Camera ID to its configuration. IDs should match those used in the native vision
@@ -37,25 +45,25 @@ public class VisionConstants {
           1,
           new CameraConfig(
               "FrontLeft",
-              new Transform2d(0.5, 0.5, edu.wpi.first.math.geometry.Rotation2d.fromDegrees(45)),
+              new Transform3d(0.0, 0.0, 0.0, new Rotation3d(0.0, 0.0, Math.toRadians(45))),
               90.0,
               10.0),
           2,
           new CameraConfig(
               "BackLeft",
-              new Transform2d(-0.5, 0.5, edu.wpi.first.math.geometry.Rotation2d.fromDegrees(135)),
+              new Transform3d(0.0, 0.0, 0.0, new Rotation3d(0.0, 0.0, Math.toRadians(135))),
               90.0,
               10.0),
           3,
           new CameraConfig(
               "BackRight",
-              new Transform2d(-0.5, -0.5, edu.wpi.first.math.geometry.Rotation2d.fromDegrees(225)),
+              new Transform3d(0.0, 0.0, 0.0, new Rotation3d(0.0, 0.0, Math.toRadians(225))),
               90.0,
               10.0),
           4,
           new CameraConfig(
               "FrontRight",
-              new Transform2d(0.5, -0.5, edu.wpi.first.math.geometry.Rotation2d.fromDegrees(315)),
+              new Transform3d(0.0, 0.0, 0.0, new Rotation3d(0.0, 0.0, Math.toRadians(315))),
               90.0,
               10.0));
 
@@ -63,4 +71,15 @@ public class VisionConstants {
   public static final double offlineTimeoutSeconds = 1.0;
   /** Port for communication between Java and the native vision server. */
   public static final int serverPort = 7001;
+
+  public static final Matrix<N3, N1> noStdDevs = VecBuilder.fill(0, 0, 0);
+  public static final Matrix<N3, N1> singleTagStdDevs = VecBuilder.fill(4, 4, Double.MAX_VALUE);
+  public static final Matrix<N3, N1> multiTagStdDevs = VecBuilder.fill(0.5, 0.5, Double.MAX_VALUE);
+  public static final Matrix<N3, N1> tagStdDevs = VecBuilder.fill(0, 0, Double.MAX_VALUE);
+
+  public static final double ambiguityCutoff = 0.05;
+  public static final double singleTagPoseCutoffMeters = 4.0;
+  public static final int noAmbiguity = -100;
+
+  public static final AprilTagFieldLayout fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
 }
