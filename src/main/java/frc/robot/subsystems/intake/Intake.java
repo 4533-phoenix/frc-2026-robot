@@ -100,4 +100,14 @@ public class Intake extends SubsystemBase {
     return armDeployedPosition.minus(inputs.armPosition).abs(Degrees)
         < armPositionIntakeTolerance.in(Degrees);
   }
+
+  /**
+   * Checks if the intake arm is close enough to the retracted position.
+   *
+   * @return True if the arm is within tolerance of the retracted position.
+   */
+  public boolean armRetracted() {
+    return armRetractedPosition.minus(inputs.armPosition).abs(Degrees)
+        < armPositionPIDTolerance.in(Degrees);
+  }
 }
