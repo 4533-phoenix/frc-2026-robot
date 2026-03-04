@@ -251,7 +251,7 @@ public class RobotContainer {
             Commands.runOnce(
                     () -> {
                       if (superstructure.getGoal() == RobotGoal.CLIMB) {
-                        superstructure.setGoal(RobotGoal.IDLE);
+                        superstructure.forceGoal(RobotGoal.IDLE);
                       } else if (!Util.isMatchMode() || Util.isEndgame()) {
                         superstructure.forceGoal(RobotGoal.CLIMB);
                       }

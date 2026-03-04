@@ -18,5 +18,4 @@
 
 URGENT
 * Figure out how to do auto in the most efficient way possible
-* Figure out climb mode and its state changes
-* Fix climb sim
+* Move back then shoot during auto
