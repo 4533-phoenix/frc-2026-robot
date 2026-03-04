@@ -293,7 +293,7 @@ public class RobotContainer {
         .povUp()
         .onTrue(
             Commands.either(
-                ClimbCommands.liftUp(climb),
+                ClimbCommands.liftUp(climb, intake),
                 Commands.none(),
                 () -> superstructure.getGoal() == RobotGoal.CLIMB));
     operatorController
