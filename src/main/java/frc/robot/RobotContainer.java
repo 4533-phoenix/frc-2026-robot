@@ -16,7 +16,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.SuperstructureStates.RobotGoal;
@@ -51,6 +50,7 @@ import frc.robot.subsystems.shooter.hood.HoodIOSim;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOChalkydri;
+import frc.robot.subsystems.vision.VisionIOPhoton;
 import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.util.HardwareConfigManager;
 import frc.robot.util.Util;
@@ -77,7 +77,7 @@ public class RobotContainer {
 
   // Controllers
   public final CommandXboxController driverController = new CommandXboxController(0);
-  public final CommandGenericHID operatorController = new CommandGenericHID(1);
+  public final CommandXboxController operatorController = new CommandXboxController(1);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -103,7 +103,7 @@ public class RobotContainer {
         intake = new Intake(new IntakeIOReal());
         shooter = new Shooter(new FlywheelIOTalonFX(), new HoodIOServo());
         indexer = new Indexer(new IndexerIOSpark());
-        vision = new Vision(new VisionIOChalkydri(), drive);
+        vision = new Vision(new VisionIOPhoton(), drive);
         HardwareConfigManager.startConfigThread();
         break;
 
@@ -246,7 +246,7 @@ public class RobotContainer {
                 () -> superstructure.setGoal(RobotGoal.IDLE)));
 
     // Climb toggle
-    driverController
+    operatorController
         .povLeft()
         .onTrue(
             Commands.runOnce(
@@ -274,8 +274,8 @@ public class RobotContainer {
             () -> -driverController.getRightX()));
 
     // Intake deploy + spinner overlay (orthogonal to the state machine)
-    driverController.leftBumper().whileTrue(IntakeCommands.deployAndRunSpinnersIn(intake));
-    driverController.rightBumper().whileTrue(IntakeCommands.deployAndRunSpinnersOut(intake));
+    operatorController.leftBumper().whileTrue(IntakeCommands.deployAndRunSpinnersIn(intake));
+    operatorController.rightBumper().whileTrue(IntakeCommands.deployAndRunSpinnersOut(intake));
 
     // Reset gyro heading
     driverController
@@ -289,14 +289,14 @@ public class RobotContainer {
                 .ignoringDisable(true));
 
     // Climb motor controls
-    driverController
+    operatorController
         .povUp()
         .onTrue(
             Commands.either(
                 ClimbCommands.liftUp(climb),
                 Commands.none(),
                 () -> superstructure.getGoal() == RobotGoal.CLIMB));
-    driverController
+    operatorController
         .povDown()
         .onTrue(
             Commands.either(

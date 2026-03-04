@@ -26,7 +26,7 @@ public final class IntakeConstants {
   /** Gear ratio: 112 motor rotations = 1 output shaft rotation for the arm. */
   public static final double armMotorReduction = 112.0;
   /** Gear ratio: 2.13 motor rotations = 1 output shaft rotation for the spinner. */
-  public static final double spinnerMotorReduction = 2.13;
+  public static final double spinnerMotorReduction = 6.39;
 
   // ---------- Encoder Conversion Factors ----------
   /** Converts internal motor rotations to radians for the arm. */
