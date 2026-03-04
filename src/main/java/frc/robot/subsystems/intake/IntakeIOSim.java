@@ -27,7 +27,7 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
@@ -142,11 +142,6 @@ public class IntakeIOSim implements IntakeIO {
         .encoder
         .positionConversionFactor(spinnerInternalEncoderPositionFactor)
         .velocityConversionFactor(spinnerInternalEncoderVelocityFactor);
-    spinnerConfig
-        .closedLoop
-        .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        .pid(spinnerKp, 0.0, spinnerKd);
-    spinnerConfig.closedLoop.feedForward.kV(spinnerKv).kA(spinnerKa).kS(spinnerKs);
     spinnerSpark.configure(
         spinnerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
@@ -197,8 +192,8 @@ public class IntakeIOSim implements IntakeIO {
   }
 
   @Override
-  public void setSpinnerAngularVelocity(AngularVelocity velocity) {
+  public void setSpinnerVoltage(Voltage voltage) {
     spinnerController.setSetpoint(
-        velocity.in(RadiansPerSecond), ControlType.kVelocity, ClosedLoopSlot.kSlot0);
+        voltage.in(Volts), ControlType.kVoltage, ClosedLoopSlot.kSlot0);
   }
 }

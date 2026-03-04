@@ -13,6 +13,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 
 /** Hardware and tuning constants for the intake subsystem. */
 public final class IntakeConstants {
@@ -67,20 +68,6 @@ public final class IntakeConstants {
   /** Acceleration feedforward gain for the arm. */
   public static final double armKa = 0.0;
 
-  // ---------- Spinner PID Configuration ----------
-  /** Proportional gain for spinner velocity control. */
-  public static final double spinnerKp = 0.0;
-  /** Derivative gain for spinner velocity control. */
-  public static final double spinnerKd = 0.0;
-
-  // ---------- Spinner Feedforward Configuration ----------
-  /** Static friction feedforward gain for the spinner. */
-  public static final double spinnerKs = 0.0;
-  /** Velocity feedforward gain for the spinner. */
-  public static final double spinnerKv = 0.0375;
-  /** Acceleration feedforward gain for the spinner. */
-  public static final double spinnerKa = 0.0;
-
   // ---------- Arm Motion Profile Constraints ----------
   /** Maximum angular velocity for the arm during movement. */
   public static final AngularVelocity armCruiseVelocity = RadiansPerSecond.of(3.5);
@@ -99,9 +86,9 @@ public final class IntakeConstants {
   /** Safety buffer for soft limits. */
   public static final Angle armPositionSoftLimitTolerance = Degrees.of(5.0);
 
-  // ---------- Spinner Velocities ----------
-  /** Velocity for pulling game pieces in. */
-  public static final AngularVelocity spinnerIntakeVelocity = RadiansPerSecond.of(180.0);
-  /** Velocity for pushing game pieces out. */
-  public static final AngularVelocity spinnerExtakeVelocity = RadiansPerSecond.of(-180.0);
+  // ---------- Spinner Voltages ----------
+  /** Voltage for pulling game pieces in. */
+  public static final Voltage spinnerIntakeVoltage = Volts.of(12.0);
+  /** Voltage for pushing game pieces out. */
+  public static final Voltage spinnerExtakeVoltage = Volts.of(-12.0);
 }
