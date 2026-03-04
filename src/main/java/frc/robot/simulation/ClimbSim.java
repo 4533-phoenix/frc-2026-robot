@@ -18,9 +18,7 @@ import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.LinearSystemSim;
 
-/**
- * A specialized simulation for a spring-extended, motor-retracted climber.
- */
+/** A specialized simulation for a spring-extended, motor-retracted climber. */
 public class ClimbSim extends LinearSystemSim<N2, N1, N2> {
   private final DCMotor m_gearbox;
 

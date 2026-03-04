@@ -193,7 +193,6 @@ public class IntakeIOSim implements IntakeIO {
 
   @Override
   public void setSpinnerVoltage(Voltage voltage) {
-    spinnerController.setSetpoint(
-        voltage.in(Volts), ControlType.kVoltage, ClosedLoopSlot.kSlot0);
+    spinnerController.setSetpoint(voltage.in(Volts), ControlType.kVoltage, ClosedLoopSlot.kSlot0);
   }
 }

@@ -229,7 +229,6 @@ public class IntakeIOReal implements IntakeIO {
   @Override
   public void setSpinnerVoltage(Voltage voltage) {
     if (!HardwareConfigManager.isReady()) return;
-    spinnerController.setSetpoint(
-        voltage.in(Volts), ControlType.kVoltage, ClosedLoopSlot.kSlot0);
+    spinnerController.setSetpoint(voltage.in(Volts), ControlType.kVoltage, ClosedLoopSlot.kSlot0);
   }
 }
