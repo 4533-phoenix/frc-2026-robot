@@ -25,8 +25,8 @@ import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 /**
- * PhotonVision implementation of VisionIO for Team 4533.
- * Incorporates 4451's distance-based standard deviation scaling.
+ * PhotonVision implementation of VisionIO for Team 4533. Incorporates 4451's distance-based
+ * standard deviation scaling.
  */
 public class VisionIOPhoton implements VisionIO {
   private final List<CameraContext> cameras = new ArrayList<>();
@@ -39,11 +39,9 @@ public class VisionIOPhoton implements VisionIO {
     public CameraContext(int id, CameraConfig config) {
       this.id = id;
       this.camera = new PhotonCamera(config.name());
-      this.estimator = new PhotonPoseEstimator(
-          fieldLayout,
-          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-          config.robotToCamera()
-      );
+      this.estimator =
+          new PhotonPoseEstimator(
+              fieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, config.robotToCamera());
       this.estimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
     }
   }
@@ -76,7 +74,7 @@ public class VisionIOPhoton implements VisionIO {
         if (!result.hasTargets()) continue;
 
         Optional<EstimatedRobotPose> estimation = ctx.estimator.update(result);
-        
+
         if (estimation.isPresent()) {
           EstimatedRobotPose estimatedPose = estimation.get();
           Pose2d pose2d = estimatedPose.estimatedPose.toPose2d();
@@ -113,7 +111,8 @@ public class VisionIOPhoton implements VisionIO {
   }
 
   /** Logic from Riptide's AprilTagAlgorithms.java */
-  private Matrix<N3, N1> getEstimationStdDevs(Pose2d estimatedPose, List<PhotonTrackedTarget> targets) {
+  private Matrix<N3, N1> getEstimationStdDevs(
+      Pose2d estimatedPose, List<PhotonTrackedTarget> targets) {
     int numTags = 0;
     double totalDistance = 0;
 
@@ -122,7 +121,8 @@ public class VisionIOPhoton implements VisionIO {
       if (tagPose.isEmpty()) continue;
 
       numTags++;
-      totalDistance += tagPose.get().toPose2d().getTranslation().getDistance(estimatedPose.getTranslation());
+      totalDistance +=
+          tagPose.get().toPose2d().getTranslation().getDistance(estimatedPose.getTranslation());
     }
 
     if (numTags == 0) return singleTagStdDevs;
@@ -142,7 +142,7 @@ public class VisionIOPhoton implements VisionIO {
 
   @Override
   public void broadcastRobotHeading(Rotation2d heading) {
-    // PhotonPoseEstimator manages heading internally if provided via update(), 
+    // PhotonPoseEstimator manages heading internally if provided via update(),
     // but we can pass it to the estimator if using constrained modes.
   }
 }

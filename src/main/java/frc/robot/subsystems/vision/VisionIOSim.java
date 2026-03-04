@@ -72,12 +72,12 @@ public class VisionIOSim implements VisionIO {
       int camId = entry.getKey();
       CameraConfig config = entry.getValue();
 
-    // Convert Transform3d to Transform2d for Pose2d transformation
-    var t3d = config.robotToCamera();
-    var t2d = new edu.wpi.first.math.geometry.Transform2d(
-      new Translation2d(t3d.getX(), t3d.getY()),
-      new Rotation2d(t3d.getRotation().getZ()));
-    Pose2d cameraPose = robotPose.transformBy(t2d);
+      // Convert Transform3d to Transform2d for Pose2d transformation
+      var t3d = config.robotToCamera();
+      var t2d =
+          new edu.wpi.first.math.geometry.Transform2d(
+              new Translation2d(t3d.getX(), t3d.getY()), new Rotation2d(t3d.getRotation().getZ()));
+      Pose2d cameraPose = robotPose.transformBy(t2d);
       int visibleTags = 0;
       double totalDistance = 0.0;
 

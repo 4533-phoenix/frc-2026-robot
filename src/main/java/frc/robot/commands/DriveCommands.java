@@ -1,5 +1,5 @@
-// Copyright (c) 2021-2026 Littleton Robotics
-// http://github.com/Mechanical-Advantage
+// Copyright (c) 2026 FRC Team 4533 (Phoenix)
+// Derived from the AdvantageKit framework by Littleton Robotics
 //
 // Use of this source code is governed by a BSD
 // license that can be found in the LICENSE file
@@ -51,16 +51,16 @@ public class DriveCommands {
   private DriveCommands() {}
 
   /**
-   * Processes joystick inputs to determine linear velocity, applying deadband and squaring inputs
-   * for fine control.
+   * Processes joystick inputs to determine linear velocity, applying deadband and cubing inputs for
+   * fine control.
    */
   private static Translation2d getLinearVelocityFromJoysticks(double x, double y) {
     // Apply deadband
     double linearMagnitude = MathUtil.applyDeadband(Math.hypot(x, y), joystickDeadband);
     Rotation2d linearDirection = new Rotation2d(Math.atan2(y, x));
 
-    // Square magnitude for more precise control at low speeds
-    linearMagnitude = linearMagnitude * linearMagnitude;
+    // Cube magnitude for exponential feel with fine low-speed control
+    linearMagnitude = linearMagnitude * linearMagnitude * linearMagnitude;
 
     // Return new linear velocity
     return new Pose2d(Translation2d.kZero, linearDirection)
@@ -91,8 +91,8 @@ public class DriveCommands {
           // Apply rotation deadband
           double omega = MathUtil.applyDeadband(omegaSupplier.getAsDouble(), joystickDeadband);
 
-          // Square rotation value for more precise control
-          omega = Math.copySign(omega * omega, omega);
+          // Cube rotation value for exponential feel with fine low-speed control
+          omega = Math.copySign(omega * omega * omega, omega);
 
           // Convert to field relative speeds & send command
           ChassisSpeeds speeds =
