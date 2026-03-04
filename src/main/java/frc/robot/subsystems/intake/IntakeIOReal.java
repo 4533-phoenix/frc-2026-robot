@@ -52,6 +52,11 @@ public class IntakeIOReal implements IntakeIO {
   private final Debouncer spinnerConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
+  // Target the user requested but not necessarily sent to the hardware yet
+  private Angle pendingTarget = null;
+  // Last target that was actually sent to the IO layer
+  private Angle lastSentTarget = null;
+
   /** Creates a new IntakeIOReal and configures the SparkMax controllers. */
   public IntakeIOReal() {
     armEncoder = armSpark.getAbsoluteEncoder();
@@ -164,7 +169,18 @@ public class IntakeIOReal implements IntakeIO {
   @Override
   public void updateInputs(IntakeIOInputs inputs) {
     if (!HardwareConfigManager.isReady()) return;
-    // ---------- Arm Motor Inputs ----------
+
+    if (pendingTarget != null) {
+      if (lastSentTarget == null || !pendingTarget.equals(lastSentTarget)) {
+        armController.setSetpoint(
+            pendingTarget.in(Radians),
+            ControlType.kMAXMotionPositionControl,
+            ClosedLoopSlot.kSlot0);
+        lastSentTarget = pendingTarget;
+      }
+    }
+
+    // Arm Motor Inputs
     boolean armSparkOk = true;
     armSparkOk &=
         ifOk(armSpark, armEncoder::getPosition, (value) -> inputs.armPosition = Radians.of(value));
@@ -187,7 +203,7 @@ public class IntakeIOReal implements IntakeIO {
     // Debounce the connection status
     inputs.armConnected = armConnectedDebounce.calculate(armSparkOk);
 
-    // ---------- Spinner Motor Inputs ----------
+    // Spinner Motor Inputs
     boolean spinnerSparkOk = true;
     spinnerSparkOk &=
         ifOk(
@@ -216,9 +232,11 @@ public class IntakeIOReal implements IntakeIO {
    */
   @Override
   public void setArmPosition(Angle angle) {
+    pendingTarget = angle;
     if (!HardwareConfigManager.isReady()) return;
     armController.setSetpoint(
         angle.in(Radians), ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
+    lastSentTarget = angle;
   }
 
   /**

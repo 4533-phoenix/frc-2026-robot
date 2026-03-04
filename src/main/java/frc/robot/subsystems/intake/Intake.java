@@ -25,10 +25,6 @@ import org.littletonrobotics.junction.Logger;
 public class Intake extends SubsystemBase {
   private final IntakeIO io;
   private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
-  // Target the user requested but not necessarily sent to the hardware yet
-  private Angle pendingTarget = null;
-  // Last target that was actually sent to the IO layer
-  private Angle lastSentTarget = null;
 
   // Alerts for hardware monitoring
   private final Alert armDisconnectedAlert =
@@ -54,16 +50,6 @@ public class Intake extends SubsystemBase {
     // Update connection alerts based on hardware feedback
     armDisconnectedAlert.set(!inputs.armConnected);
     spinnerDisconnectedAlert.set(!inputs.spinnerConnected);
-
-    // If we have a pending arm target and the hardware is connected, ensure the
-    // IO layer receives the setpoint. This handles the case where setSetpoint()
-    // was called before the hardware/configuration was ready.
-    if (pendingTarget != null && inputs.armConnected) {
-      if (lastSentTarget == null || !pendingTarget.equals(lastSentTarget)) {
-        io.setArmPosition(pendingTarget);
-        lastSentTarget = pendingTarget;
-      }
-    }
   }
 
   /** Deploys the intake arm to the operational position. */
@@ -82,19 +68,7 @@ public class Intake extends SubsystemBase {
    * @param newTarget The target angle for the arm.
    */
   private void setSetpoint(Angle newTarget) {
-    // Only update pending target if different
-    if (pendingTarget == null || !newTarget.equals(pendingTarget)) {
-      pendingTarget = newTarget;
-      // Attempt an immediate send if hardware already connected. Otherwise the
-      // periodic() resend logic will deliver the setpoint once the hardware is
-      // ready.
-      if (inputs.armConnected) {
-        io.setArmPosition(newTarget);
-        lastSentTarget = newTarget;
-      } else {
-        lastSentTarget = null;
-      }
-    }
+    io.setArmPosition(newTarget);
   }
 
   /** Spins the spinner rollers to bring game pieces into the robot. */
