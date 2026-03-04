@@ -78,17 +78,17 @@ public class Intake extends SubsystemBase {
 
   /** Spins the spinner rollers to bring game pieces into the robot. */
   public void intake() {
-    io.setSpinnerAngularVelocity(spinnerIntakeVelocity);
+    io.setSpinnerVoltage(spinnerIntakeVoltage);
   }
 
   /** Spins the spinner rollers in reverse to eject game pieces. */
   public void extake() {
-    io.setSpinnerAngularVelocity(spinnerExtakeVelocity);
+    io.setSpinnerVoltage(spinnerExtakeVoltage);
   }
 
   /** Stops the spinner rollers. */
   public void stopSpinner() {
-    io.setSpinnerAngularVelocity(RadiansPerSecond.of(0.0));
+    io.setSpinnerVoltage(Volts.of(0.0));
   }
 
   /**

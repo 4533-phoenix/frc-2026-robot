@@ -25,7 +25,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Voltage;
 import frc.robot.util.HardwareConfigManager;
 import java.util.function.DoubleSupplier;
 
@@ -135,11 +135,6 @@ public class IntakeIOReal implements IntakeIO {
         .positionConversionFactor(spinnerInternalEncoderPositionFactor)
         .velocityConversionFactor(spinnerInternalEncoderVelocityFactor);
     spinnerConfig
-        .closedLoop
-        .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        .pid(spinnerKp, 0.0, spinnerKd);
-    spinnerConfig.closedLoop.feedForward.kV(spinnerKv).kA(spinnerKa).kS(spinnerKs);
-    spinnerConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
         .primaryEncoderPositionPeriodMs(20)
@@ -232,9 +227,9 @@ public class IntakeIOReal implements IntakeIO {
    * @param velocity The target velocity for the spinner rollers.
    */
   @Override
-  public void setSpinnerAngularVelocity(AngularVelocity velocity) {
+  public void setSpinnerVoltage(Voltage voltage) {
     if (!HardwareConfigManager.isReady()) return;
     spinnerController.setSetpoint(
-        velocity.in(RadiansPerSecond), ControlType.kVelocity, ClosedLoopSlot.kSlot0);
+        voltage.in(Volts), ControlType.kVoltage, ClosedLoopSlot.kSlot0);
   }
 }
