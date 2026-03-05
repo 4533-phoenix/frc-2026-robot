@@ -169,12 +169,10 @@ public class RobotContainer {
     // Configure the button bindings
     configureButtonBindings();
 
-    // The superstructure periodic command owns the shooter and indexer subsystems, replacing
-    // the old per-subsystem default commands for those mechanisms.
+    // The superstructure periodic command owns the shooter and indexer subsystems
     shooter.setDefaultCommand(superstructure.getPeriodicCommand());
 
-    // Intake default command is driven by the superstructure state (deployed normally,
-    // retracted during climbing).
+    // Intake default command is driven by the superstructure state
     intake.setDefaultCommand(superstructure.getIntakeDefaultCommand());
 
     // Schedule auto-aim drive whenever the superstructure requests it
@@ -211,8 +209,8 @@ public class RobotContainer {
                             .getHID()
                             .setRumble(GenericHID.RumbleType.kLeftRumble, 0.0)));
 
-    // Only rumble when the driver is actively aiming (left trigger) or in autonomous.
-    new Trigger(() -> driverController.leftTrigger().getAsBoolean() || DriverStation.isAutonomous())
+    // Only rumble when the driver is actively aiming
+    driverController.leftTrigger()
         .and(new Trigger(superstructure::isReadyToFire))
         .whileTrue(
             Commands.startEnd(
@@ -220,7 +218,7 @@ public class RobotContainer {
                 () ->
                     driverController.getHID().setRumble(GenericHID.RumbleType.kRightRumble, 0.0)));
 
-    // Intents mapping (Left/Right trigger map to AIM/FIRE goals)
+    // Intents mapping
     Trigger aimTrigger =
         new Trigger(
             () -> driverController.leftTrigger().getAsBoolean() || DriverStation.isAutonomous());
