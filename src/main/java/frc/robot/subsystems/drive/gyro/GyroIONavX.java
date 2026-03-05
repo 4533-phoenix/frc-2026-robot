@@ -14,8 +14,8 @@ import static edu.wpi.first.units.Units.*;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 import com.studica.frc.AHRS.NavXUpdateRate;
-import frc.robot.subsystems.drive.SparkOdometryThread;
 import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.drive.SparkOdometryThread;
 import java.util.Queue;
 
 /**
@@ -32,7 +32,6 @@ public class GyroIONavX implements GyroIO {
 
   /** Creates a new GyroIONavX. */
   public GyroIONavX() {
-    // Register signals with the asynchronous odometry thread
     yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
     yawPositionQueue = SparkOdometryThread.getInstance().registerSignal(navX::getAngle);
     navX.zeroYaw();
@@ -46,12 +45,11 @@ public class GyroIONavX implements GyroIO {
   @Override
   public void updateInputs(GyroIOInputs inputs) {
     inputs.connected = navX.isConnected();
-    // Hardware returns degrees (with reversed sign), convert to radians
-    inputs.yawPosition = Radians.of(Math.toRadians(-navX.getAngle()));
-    inputs.yawVelocity = RadiansPerSecond.of(Math.toRadians(-navX.getRawGyroZ()));
+    inputs.yawPosition = Degrees.of(-navX.getAngle());
+    inputs.yawVelocity = DegreesPerSecond.of(-navX.getRawGyroZ());
 
     // Empty the queues into the inputs object for logging and odometry processing
-    frc.robot.subsystems.drive.Drive.odometryLock.lock();
+    Drive.odometryLock.lock();
     try {
       int count = Math.min(yawTimestampQueue.size(), yawPositionQueue.size());
       inputs.odometryYawTimestamps = new double[count];

@@ -10,6 +10,7 @@ package frc.robot.subsystems.drive.gyro;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import org.littletonrobotics.junction.Logger;
 
@@ -40,8 +41,10 @@ public class GyroIODual implements GyroIO {
       Angle currentCorrectedPos = navxIn.yawPosition.plus(driftOffset);
 
       if (canIn.connected) {
-        // Calculate error between NavX (corrected) and CanAndGyro
-        Angle error = canIn.yawPosition.minus(currentCorrectedPos);
+        // Calculate error between NavX (corrected) and CanAndGyro, continuously wrapped
+        double errorRad = MathUtil.angleModulus(
+            canIn.yawPosition.minus(currentCorrectedPos).in(Radians));
+        Angle error = Radians.of(errorRad);
         // Determine if the robot is effectively stationary
         boolean isStill =
             navxIn.yawVelocity.abs(RadiansPerSecond) < velocityGate.in(RadiansPerSecond);
