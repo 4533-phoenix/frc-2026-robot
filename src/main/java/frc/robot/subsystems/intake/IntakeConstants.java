@@ -54,7 +54,7 @@ public final class IntakeConstants {
 
   // ---------- Arm PID Configuration ----------
   /** Proportional gain for arm position control. */
-  public static final double armKp = 0.0; // 0.05
+  public static final double armKp = 0.05;
   /** Derivative gain for arm position control. */
   public static final double armKd = 0.0;
 
@@ -64,13 +64,13 @@ public final class IntakeConstants {
   /** Gravity feedforward gain for the arm. */
   public static final double armKg = 0.1;
   /** Velocity feedforward gain for the arm. */
-  public static final double armKv = 1.0; // 1.9
+  public static final double armKv = 1.9; // 1.9
   /** Acceleration feedforward gain for the arm. */
   public static final double armKa = 0.0;
 
   // ---------- Arm Motion Profile Constraints ----------
   /** Maximum angular velocity for the arm during movement. */
-  public static final AngularVelocity armCruiseVelocity = RadiansPerSecond.of(3.5);
+  public static final AngularVelocity armCruiseVelocity = RadiansPerSecond.of(5.0);
   /** Maximum angular acceleration for the arm during movement. */
   public static final AngularAcceleration armMaxAcceleration = RadiansPerSecondPerSecond.of(6.0);
 

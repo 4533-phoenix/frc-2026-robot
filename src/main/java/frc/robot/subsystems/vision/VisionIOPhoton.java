@@ -20,7 +20,6 @@ import java.util.Optional;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
-import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
@@ -39,10 +38,7 @@ public class VisionIOPhoton implements VisionIO {
     public CameraContext(int id, CameraConfig config) {
       this.id = id;
       this.camera = new PhotonCamera(config.name());
-      this.estimator =
-          new PhotonPoseEstimator(
-              fieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, config.robotToCamera());
-      this.estimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
+      this.estimator = new PhotonPoseEstimator(fieldLayout, config.robotToCamera());
     }
   }
 
@@ -73,19 +69,22 @@ public class VisionIOPhoton implements VisionIO {
       for (PhotonPipelineResult result : ctx.camera.getAllUnreadResults()) {
         if (!result.hasTargets()) continue;
 
-        Optional<EstimatedRobotPose> estimation = ctx.estimator.update(result);
+        Optional<EstimatedRobotPose> estimation =
+            ctx.estimator
+                .estimateCoprocMultiTagPose(result)
+                .or(() -> ctx.estimator.estimateLowestAmbiguityPose(result));
 
         if (estimation.isPresent()) {
           EstimatedRobotPose estimatedPose = estimation.get();
           Pose2d pose2d = estimatedPose.estimatedPose.toPose2d();
           List<PhotonTrackedTarget> targets = result.getTargets();
 
-          // Apply Riptide's single-tag usage filter
+          // Apply single-tag usage filter
           if (targets.size() == 1 && !isUsableSingleTag(targets.get(0))) {
             continue;
           }
 
-          // Calculate Standard Deviations using Riptide logic
+          // Calculate Standard Deviations
           Matrix<N3, N1> stdDevs = getEstimationStdDevs(pose2d, targets);
 
           poses.add(pose2d);

@@ -68,7 +68,7 @@ public final class ShooterConstants {
   /** Radius of the flywheel driving wheel. */
   public static final Distance flywheelWheelRadius = Inches.of(2.05);
   /** Allowed velocity error before the shooter is considered "ready". */
-  public static final AngularVelocity flywheelAngularTolerance = RadiansPerSecond.of(5.0);
+  public static final AngularVelocity flywheelAngularTolerance = RadiansPerSecond.of(10.0);
   /** Maximum current limit for the flywheel motor. */
   public static final Current flywheelMotorCurrentLimit = Amps.of(60.0);
 
@@ -108,5 +108,5 @@ public final class ShooterConstants {
    * Y is left.
    */
   public static final Translation2d shooterRobotOffset =
-      new Translation2d(Inches.of(-19.0), Inches.of(19.0));
+      new Translation2d(Inches.of(-10.25), Inches.of(8.5));
 }

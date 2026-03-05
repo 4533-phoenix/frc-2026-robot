@@ -172,11 +172,8 @@ public class Drive extends SubsystemBase {
     double[] sampleTimestamps =
         modules[0].getOdometryTimestamps(); // All signals are sampled together
     int sampleCount = sampleTimestamps.length;
-    // Defensive bounds checking: ensure we don't exceed the bounds of any array if there's a
-    // hardware desynchronization
-    if (gyroInputs.connected) {
-      sampleCount = Math.min(sampleCount, gyroInputs.odometryYawPositions.length);
-    }
+
+    // Check bounds for module positions to determine max valid sample count
     for (int i = 0; i < 4; i++) {
       sampleCount = Math.min(sampleCount, modules[i].getOdometryPositions().length);
     }
@@ -194,8 +191,8 @@ public class Drive extends SubsystemBase {
         lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
       }
 
-      // Update gyro angle
-      if (gyroInputs.connected) {
+      // Update gyro angle, fallback to kinematics if missing sample
+      if (gyroInputs.connected && i < gyroInputs.odometryYawPositions.length) {
         // Use the real gyro angle
         rawGyroRotation = Rotation2d.fromRadians(gyroInputs.odometryYawPositions[i]);
       } else {
@@ -373,6 +370,15 @@ public class Drive extends SubsystemBase {
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
     return poseEstimator.getEstimatedPosition();
+  }
+
+  /**
+   * Returns the current yaw (heading) velocity of the robot from the gyro.
+   *
+   * @return The current angular velocity around the yaw axis in radians per second.
+   */
+  public double getYawVelocityRadPerSec() {
+    return gyroInputs.yawVelocity.in(RadiansPerSecond);
   }
 
   /**

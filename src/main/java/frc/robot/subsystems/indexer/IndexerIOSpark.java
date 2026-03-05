@@ -45,7 +45,7 @@ public class IndexerIOSpark implements IndexerIO {
         .idleMode(IdleMode.kBrake)
         .smartCurrentLimit((int) indexerMotorCurrentLimit.in(Amps))
         .voltageCompensation(12.0);
-    config.signals.appliedOutputPeriodMs(40).busVoltagePeriodMs(40).outputCurrentPeriodMs(40);
+    config.signals.appliedOutputPeriodMs(20).busVoltagePeriodMs(20).outputCurrentPeriodMs(20);
     tryUntilOk(
         5,
         () ->

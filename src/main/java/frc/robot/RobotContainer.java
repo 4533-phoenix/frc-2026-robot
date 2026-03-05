@@ -228,7 +228,7 @@ public class RobotContainer {
             () -> driverController.leftTrigger().getAsBoolean() || DriverStation.isAutonomous());
     Trigger fireTrigger =
         new Trigger(
-            () -> driverController.leftTrigger().getAsBoolean() || DriverStation.isAutonomous());
+            () -> driverController.rightTrigger().getAsBoolean() || DriverStation.isAutonomous());
 
     aimTrigger
         .and(fireTrigger.negate())
@@ -252,7 +252,9 @@ public class RobotContainer {
                     () -> {
                       if (superstructure.getGoal() == RobotGoal.CLIMB) {
                         superstructure.forceGoal(RobotGoal.IDLE);
-                      } else if (!Util.isMatchMode() || Util.isEndgame()) {
+                      } else if (!Util.isMatchMode()
+                          || Util.isEndgame()
+                          || Util.isMatchModeOverridden()) {
                         superstructure.forceGoal(RobotGoal.CLIMB);
                       }
                     })
@@ -272,9 +274,17 @@ public class RobotContainer {
             () -> -driverController.getLeftX(),
             () -> -driverController.getRightX()));
 
-    // Intake deploy + spinner overlay (orthogonal to the state machine)
-    operatorController.leftBumper().whileTrue(IntakeCommands.deployAndRunSpinnersIn(intake));
-    operatorController.rightBumper().whileTrue(IntakeCommands.deployAndRunSpinnersOut(intake));
+    // Intake deploy + spinner overlay (orthogonal to the state machine).
+    // The onDeploy callback tells the superstructure that a driver-initiated deploy has occurred,
+    // so the arm stays deployed after leaving climb mode.
+    operatorController
+        .leftBumper()
+        .whileTrue(
+            IntakeCommands.deployAndRunSpinnersIn(intake, superstructure::signalIntakeDeploy));
+    operatorController
+        .rightBumper()
+        .whileTrue(
+            IntakeCommands.deployAndRunSpinnersOut(intake, superstructure::signalIntakeDeploy));
 
     // Reset gyro heading
     driverController

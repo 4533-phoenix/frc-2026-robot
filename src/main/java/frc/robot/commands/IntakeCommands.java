@@ -43,16 +43,18 @@ public class IntakeCommands {
   }
 
   /**
-   * Deploys the intake arm AND runs the spinners inward. The arm setpoint is commanded every cycle
-   * so it begins moving immediately; the spinners run in parallel. When the command ends the
-   * spinners stop but the arm remains at the deployed setpoint (held by the default command).
+   * Deploys the intake arm AND runs the spinners inward. Spinners stop when the command ends; the
+   * arm stays deployed (held by the default command).
    *
    * @param intake The intake subsystem.
+   * @param onDeploy Callback invoked every cycle while the command runs (signals deploy intent to
+   *     the superstructure).
    * @return A command that deploys the arm and runs the spinners inward while held.
    */
-  public static Command deployAndRunSpinnersIn(Intake intake) {
+  public static Command deployAndRunSpinnersIn(Intake intake, Runnable onDeploy) {
     return Commands.runEnd(
         () -> {
+          onDeploy.run();
           intake.deploy();
           intake.intake();
         },
@@ -61,16 +63,18 @@ public class IntakeCommands {
   }
 
   /**
-   * Deploys the intake arm AND runs the spinners outward. The arm setpoint is commanded every cycle
-   * so it begins moving immediately; the spinners run in parallel. When the command ends the
-   * spinners stop but the arm remains at the deployed setpoint (held by the default command).
+   * Deploys the intake arm AND runs the spinners outward. Spinners stop when the command ends; the
+   * arm stays deployed (held by the default command).
    *
    * @param intake The intake subsystem.
+   * @param onDeploy Callback invoked every cycle while the command runs (signals deploy intent to
+   *     the superstructure).
    * @return A command that deploys the arm and runs the spinners outward while held.
    */
-  public static Command deployAndRunSpinnersOut(Intake intake) {
+  public static Command deployAndRunSpinnersOut(Intake intake, Runnable onDeploy) {
     return Commands.runEnd(
         () -> {
+          onDeploy.run();
           intake.deploy();
           intake.extake();
         },

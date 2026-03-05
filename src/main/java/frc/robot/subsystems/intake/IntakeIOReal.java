@@ -68,7 +68,7 @@ public class IntakeIOReal implements IntakeIO {
     HardwareConfigManager.registerTask(this::configureHardware);
   }
 
-  // Runs on background thread!
+  // Runs on background thread
   private void configureHardware() {
     // Configure Arm Motor
     var armConfig = new SparkMaxConfig();

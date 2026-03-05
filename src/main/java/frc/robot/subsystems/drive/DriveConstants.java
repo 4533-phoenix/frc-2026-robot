@@ -185,7 +185,7 @@ public class DriveConstants {
 
   // Angle PID configuration (for rotation-locked drive commands)
   /** Proportional gain for rotational PID control. */
-  public static final double angleKp = 10.0;
+  public static final double angleKp = 5.0;
   /** Derivative gain for rotational PID control. */
   public static final double angleKd = 0.0;
   /** Maximum angular velocity for the rotation motion profile in radians per second. */

@@ -23,7 +23,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.SuperstructureStates.RobotGoal;
 import frc.robot.SuperstructureStates.RobotState;
 import frc.robot.commands.ClimbCommands;
-import frc.robot.commands.IntakeCommands;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveConstants;
@@ -64,6 +63,13 @@ public class Superstructure {
   private RobotState previousState = RobotState.IDLE;
   private boolean isLobbing = false;
   private boolean lobTargetIsLeft = true;
+
+  /**
+   * Whether the intake arm should be deployed. Set to true by a bumper press or on match-mode
+   * enable. Reset to false only when entering climb mode.
+   */
+  private boolean armDeployed = false;
+
   private boolean readyToFire = false;
   private AimingResult latestAiming = new AimingResult(Rotation2d.kZero, Meters.of(0.0));
 
@@ -110,6 +116,14 @@ public class Superstructure {
   /** Forcibly sets the superstructure goal, overriding any protections (e.g. escaping CLIMB). */
   public void forceGoal(RobotGoal goal) {
     this.currentGoal = goal;
+  }
+
+  /**
+   * Signals that a bumper command is running. Deploys the intake arm and keeps it deployed until
+   * climb mode is entered.
+   */
+  public void signalIntakeDeploy() {
+    armDeployed = true;
   }
 
   /**
@@ -178,6 +192,7 @@ public class Superstructure {
     // Climbing is the active goal
     if (currentGoal == RobotGoal.CLIMB) {
       isLobbing = false;
+      armDeployed = false;
       return RobotState.CLIMBING;
     }
 
@@ -187,6 +202,12 @@ public class Superstructure {
     }
 
     boolean matchMode = Util.isMatchMode();
+
+    // Auto-deploy the intake when match mode is active
+    if (matchMode) {
+      armDeployed = true;
+    }
+
     boolean aiming = (currentGoal == RobotGoal.AIM || currentGoal == RobotGoal.FIRE);
     boolean firing = (currentGoal == RobotGoal.FIRE);
 
@@ -309,18 +330,30 @@ public class Superstructure {
   }
 
   /**
-   * Returns an intake default command that manages arm position based on state. During CLIMBING the
-   * arm is always retracted. Otherwise, if the arm is already deployed (checked via the absolute
-   * encoder) it is held deployed; if not yet deployed it is held retracted.
+   * Returns the intake default command. Logic:
+   *
+   * <ul>
+   *   <li>CLIMBING → retract (and clears {@code armDeployed} flag).
+   *   <li>{@code armDeployed} true → deploy and hold.
+   *   <li>Otherwise → retract and hold.
+   * </ul>
+   *
+   * {@code armDeployed} is set by a bumper press ({@link #signalIntakeDeploy()}) or automatically
+   * when match mode is active. It is cleared only when the robot enters climb mode.
    */
   public Command getIntakeDefaultCommand() {
-    return Commands.either(
-        IntakeCommands.holdRetracted(intake),
-        Commands.either(
-            IntakeCommands.holdDeployed(intake),
-            IntakeCommands.holdRetracted(intake),
-            intake::armDeployed),
-        () -> currentState == RobotState.CLIMBING);
+    return Commands.run(
+        () -> {
+          if (currentState == RobotState.CLIMBING) {
+            intake.retract();
+          } else if (armDeployed) {
+            intake.deploy();
+          } else {
+            intake.retract();
+          }
+          intake.stopSpinner();
+        },
+        intake);
   }
 
   /**

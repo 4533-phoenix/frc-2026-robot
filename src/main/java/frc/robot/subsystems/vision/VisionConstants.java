@@ -7,6 +7,9 @@
 
 package frc.robot.subsystems.vision;
 
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inches;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
@@ -39,31 +42,53 @@ public class VisionConstants {
    * Map of Camera ID to its configuration. IDs should match those used in the native vision
    * pipeline.
    */
+  //   public static final Map<Integer, CameraConfig> cameraMap =
+  //       Map.of(
+  //           1,
+  //           new CameraConfig(
+  //               "Front Left",
+  //               new Transform3d(0.0, 0.0, 0.0, new Rotation3d(0.0, 0.0, Math.toRadians(45))),
+  //               90.0,
+  //               10.0),
+  //           2,
+  //           new CameraConfig(
+  //               "Back Left",
+  //               new Transform3d(0.0, 0.0, 0.0, new Rotation3d(0.0, 0.0, Math.toRadians(135))),
+  //               90.0,
+  //               10.0),
+  //           3,
+  //           new CameraConfig(
+  //               "Back Right",
+  //               new Transform3d(0.0, 0.0, 0.0, new Rotation3d(0.0, 0.0, Math.toRadians(225))),
+  //               90.0,
+  //               10.0),
+  //           4,
+  //           new CameraConfig(
+  //               "Front Right",
+  //               new Transform3d(0.0, 0.0, 0.0, new Rotation3d(0.0, 0.0, Math.toRadians(315))),
+  //               90.0,
+  //               10.0));
   public static final Map<Integer, CameraConfig> cameraMap =
       Map.of(
           1,
           new CameraConfig(
-              "FrontLeft",
-              new Transform3d(0.0, 0.0, 0.0, new Rotation3d(0.0, 0.0, Math.toRadians(45))),
-              90.0,
-              10.0),
-          2,
-          new CameraConfig(
-              "BackLeft",
-              new Transform3d(0.0, 0.0, 0.0, new Rotation3d(0.0, 0.0, Math.toRadians(135))),
+              "Top",
+              new Transform3d(
+                  Inches.of(-2.5),
+                  Inches.of(-2.5),
+                  Inches.of(21.0),
+                  new Rotation3d(Degrees.of(0.0), Degrees.of(15.0), Degrees.of(0.0))),
               90.0,
               10.0),
           3,
           new CameraConfig(
-              "BackRight",
-              new Transform3d(0.0, 0.0, 0.0, new Rotation3d(0.0, 0.0, Math.toRadians(225))),
-              90.0,
-              10.0),
-          4,
-          new CameraConfig(
-              "FrontRight",
-              new Transform3d(0.0, 0.0, 0.0, new Rotation3d(0.0, 0.0, Math.toRadians(315))),
-              90.0,
+              "Back Right",
+              new Transform3d(
+                  Inches.of(-11.0),
+                  Inches.of(-11.0),
+                  Inches.of(10.4),
+                  new Rotation3d(Degrees.of(0.0), Degrees.of(15.0), Degrees.of(-135.0))),
+              92.0,
               10.0));
 
   /** Time in seconds before a camera is considered offline if no data is received. */
@@ -72,8 +97,8 @@ public class VisionConstants {
   public static final int serverPort = 7001;
 
   public static final Matrix<N3, N1> noStdDevs = VecBuilder.fill(0, 0, 0);
-  public static final Matrix<N3, N1> singleTagStdDevs = VecBuilder.fill(4, 4, Double.MAX_VALUE);
-  public static final Matrix<N3, N1> multiTagStdDevs = VecBuilder.fill(0.5, 0.5, Double.MAX_VALUE);
+  public static final Matrix<N3, N1> singleTagStdDevs = VecBuilder.fill(2, 2, 4);
+  public static final Matrix<N3, N1> multiTagStdDevs = VecBuilder.fill(0.5, 0.5, 1);
   public static final Matrix<N3, N1> tagStdDevs = VecBuilder.fill(0, 0, Double.MAX_VALUE);
 
   public static final double ambiguityCutoff = 0.05;
