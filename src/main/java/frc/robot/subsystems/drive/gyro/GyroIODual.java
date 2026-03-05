@@ -42,8 +42,8 @@ public class GyroIODual implements GyroIO {
 
       if (canIn.connected) {
         // Calculate error between NavX (corrected) and CanAndGyro, continuously wrapped
-        double errorRad = MathUtil.angleModulus(
-            canIn.yawPosition.minus(currentCorrectedPos).in(Radians));
+        double errorRad =
+            MathUtil.angleModulus(canIn.yawPosition.minus(currentCorrectedPos).in(Radians));
         Angle error = Radians.of(errorRad);
         // Determine if the robot is effectively stationary
         boolean isStill =
