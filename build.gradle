@@ -294,6 +294,8 @@ spotless {
 javadoc {
     options {
         links "https://github.wpilib.org/allwpilib/docs/release/java/" // Need to change this to auto-detect version
+        links "https://pathplanner.dev/api/java/"
+        links "https://codedocs.revrobotics.com/java/"
         links "https://docs.oracle.com/en/java/javase/17/docs/api/"
     }
 }
