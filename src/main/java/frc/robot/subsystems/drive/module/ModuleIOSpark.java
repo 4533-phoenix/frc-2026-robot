@@ -78,7 +78,8 @@ public class ModuleIOSpark implements ModuleIO {
   private final Debouncer turnEncoderConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
-  // Pre-allocated buffers for draining odometry queues without GC pressure (sized to queue capacity)
+  // Pre-allocated buffers for draining odometry queues without GC pressure (sized to queue
+  // capacity)
   private static final int ODOMETRY_BUFFER_SIZE = 20;
   private final double[] odometryTimestampBuffer = new double[ODOMETRY_BUFFER_SIZE];
   private final double[] odometryDrivePositionBuffer = new double[ODOMETRY_BUFFER_SIZE];
@@ -120,7 +121,7 @@ public class ModuleIOSpark implements ModuleIO {
     HardwareConfigManager.registerTask(() -> configureHardware(module));
   }
 
-  // Runs on background thread!
+  // Runs on background thread
   private void configureHardware(int module) {
     var driveConfig = new SparkMaxConfig();
     driveConfig

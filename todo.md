@@ -10,6 +10,12 @@
 * Should I prefer double vibrate or sustained?
 * Need to retune intake kv
 * Get better physical constants for sim
-* Manual override for outpost enabling
 * Continue to optimize code
-* Flywhell responsetime is abysmal (Brake mode?)
+* Merge code more between lobbing and shooting
+* Overhaul rumble
+* Make TOF not hardcoded
+* Figure out the locking situation in drive odometry
+
+URGENT
+* Figure out how to do auto in the most efficient way possible
+* Move back then shoot during auto

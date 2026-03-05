@@ -8,6 +8,8 @@
 package frc.robot.subsystems.climb;
 
 import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Kilograms;
+import static edu.wpi.first.units.Units.Meter;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.subsystems.climb.ClimbConstants.*;
 
@@ -21,10 +23,11 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.LimitSwitchConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
-import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
+import frc.robot.simulation.ClimbSim;
+import frc.robot.subsystems.drive.DriveConstants;
 
 /**
  * Physics simulation implementation of {@link ClimbIO}.
@@ -35,18 +38,13 @@ import edu.wpi.first.wpilibj.simulation.RoboRioSim;
  * ClimbIOReal}.
  */
 public class ClimbIOSim implements ClimbIO {
-  /** Simulated upper travel limit in radians (mechanism-side). */
-  private static final double upperLimitRad = 50.0;
-  /** Simulated lower travel limit in radians (mechanism-side). */
-  private static final double lowerLimitRad = 0.0;
-
   private final SparkMax spark;
   private final SparkMaxSim sparkSim;
   private final SparkLimitSwitchSim forwardLimitSim;
   private final SparkLimitSwitchSim reverseLimitSim;
   private final SparkLimitSwitch forwardLimit;
   private final SparkLimitSwitch reverseLimit;
-  private final DCMotorSim physicsSim;
+  private final ClimbSim physicsSim;
 
   /** Creates a new ClimbIOSim and initializes the simulated Spark MAX. */
   public ClimbIOSim() {
@@ -58,9 +56,17 @@ public class ClimbIOSim implements ClimbIO {
     reverseLimit = spark.getReverseLimitSwitch();
 
     physicsSim =
-        new DCMotorSim(LinearSystemId.createDCMotorSystem(liftGearbox, 0.02, 1.0), liftGearbox);
+        new ClimbSim(
+            liftGearbox,
+            gearReduction,
+            1.5,
+            DriveConstants.robotMass.in(Kilograms),
+            drumRadius.in(Meter),
+            lowerHeight.in(Meter),
+            upperHeight.in(Meter),
+            40.0 // TODO: Get actual arm mass and spring force values
+            );
 
-    // Configure Spark MAX (mirrors ClimbIOReal)
     // Disable hardware limit switch behavior so the Spark's internal firmware does not block output
     var liftCfg = new SparkMaxConfig();
     liftCfg
@@ -85,22 +91,28 @@ public class ClimbIOSim implements ClimbIO {
     // Advance simulation by 20ms
     physicsSim.update(0.02);
 
-    // Update SparkMaxSim with physics results (no conversion factor, so RPM)
-    sparkSim.iterate(physicsSim.getAngularVelocityRPM(), RoboRioSim.getVInVoltage(), 0.02);
+    // Calculate RPM of the motor (v_linear / r = omega_shaft -> omega_shaft * gear_ratio =
+    // omega_motor)
+    double velocityRadPerSec = physicsSim.getVelocityMetersPerSecond() / drumRadius.in(Meter);
+    double motorRadPerSec = velocityRadPerSec * gearReduction;
+    double velocityRPM = motorRadPerSec * 60.0 / (2.0 * Math.PI);
+
+    // Update SparkMaxSim with physics results
+    sparkSim.iterate(velocityRPM, RoboRioSim.getVInVoltage(), 0.02);
 
     // Emulate limit switches based on simulated position
-    double positionRad = physicsSim.getAngularPositionRad();
-    boolean atUpper = positionRad >= upperLimitRad;
-    boolean atLower = positionRad <= lowerLimitRad;
+    double positionMeters = physicsSim.getPositionMeters();
+    boolean atUpper = positionMeters >= upperHeight.in(Meter);
+    boolean atLower = positionMeters <= lowerHeight.in(Meter);
     forwardLimitSim.setPressed(atUpper);
     reverseLimitSim.setPressed(atLower);
 
     // If the mechanism has overshot a limit, reset the physics sim to the boundary
     // so the limit switch clears on the very next cycle once we reverse direction.
     if (atUpper) {
-      physicsSim.setState(upperLimitRad, 0.0);
+      physicsSim.setState(upperHeight.in(Meter), 0.0);
     } else if (atLower) {
-      physicsSim.setState(lowerLimitRad, 0.0);
+      physicsSim.setState(lowerHeight.in(Meter), 0.0);
     }
 
     // Update loggable inputs

@@ -55,6 +55,9 @@ public final class ShooterConstants {
   /** Maximum linear speed of the hood servo actuator. */
   public static final LinearVelocity maxServoVelocity = MetersPerSecond.of(0.02);
 
+  /** Tolerance for the hood servo actuator length. */
+  public static final Distance hoodLengthTolerance = Meters.of(0.005);
+
   // ---------- Flywheel constants ----------
   /** Motor model for the flywheel. */
   public static final DCMotor flywheelGearbox = DCMotor.getFalcon500(1);
@@ -65,13 +68,13 @@ public final class ShooterConstants {
   /** Radius of the flywheel driving wheel. */
   public static final Distance flywheelWheelRadius = Inches.of(2.05);
   /** Allowed velocity error before the shooter is considered "ready". */
-  public static final AngularVelocity flywheelAngularTolerance = RadiansPerSecond.of(5.0);
+  public static final AngularVelocity flywheelAngularTolerance = RadiansPerSecond.of(10.0);
   /** Maximum current limit for the flywheel motor. */
   public static final Current flywheelMotorCurrentLimit = Amps.of(60.0);
 
   // ---------- PID constants for flywheel velocity control ----------
   /** Proportional gain for flywheel velocity control. */
-  public static final double flywheelKp = 0.25;
+  public static final double flywheelKp = 0.5;
   /** Integral gain for flywheel velocity control. */
   public static final double flywheelKi = 0.0;
   /** Derivative gain for flywheel velocity control. */
@@ -88,6 +91,14 @@ public final class ShooterConstants {
   public static final AngularVelocity flywheelMinRps = RotationsPerSecond.of(0.0);
   /** Maximum allowable flywheel speed. */
   public static final AngularVelocity flywheelMaxRps = RotationsPerSecond.of(100.0);
+  /** Idle flywheel speed used during the WARMING state to reduce spin-up latency. */
+  public static final AngularVelocity flywheelIdleSpeed = RotationsPerSecond.of(30.0);
+
+  // ---------- Lobbing constants ----------
+  /** Flywheel speed for lobbed shots. Lower than hub shots for a high-arc trajectory. */
+  public static final AngularVelocity lobFlywheelSpeed = RotationsPerSecond.of(40.0);
+  /** Hood angle for lobbed shots. Steep angle to produce the high arc. */
+  public static final Angle lobHoodAngle = Degrees.of(70.0);
 
   // ---------- Aiming / lead constants ----------
   /** Estimated time of flight for the game piece from shooter to target. */
@@ -97,5 +108,5 @@ public final class ShooterConstants {
    * Y is left.
    */
   public static final Translation2d shooterRobotOffset =
-      new Translation2d(Inches.of(-19.0), Inches.of(19.0));
+      new Translation2d(Inches.of(-10.25), Inches.of(8.5));
 }

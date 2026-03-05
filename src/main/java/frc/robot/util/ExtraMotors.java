@@ -7,8 +7,8 @@
 
 package frc.robot.util;
 
+import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
-import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import edu.wpi.first.math.system.plant.DCMotor;
 
@@ -28,7 +28,7 @@ public final class ExtraMotors {
         7.91, // Stall Torque (N-m)
         24.0, // Stall Current (A)
         5.0, // Free Current (A)
-        RotationsPerSecond.of(100).in(RadiansPerSecond), // Free Speed (rad/s)
+        RPM.of(100).in(RadiansPerSecond), // Free Speed (rad/s)
         numMotors);
   }
 }

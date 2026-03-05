@@ -40,6 +40,9 @@ public class DriveConstants {
   public static final Distance driveBaseRadius =
       Meters.of(Math.hypot(trackWidth.in(Meters) / 2.0, wheelBase.in(Meters) / 2.0));
 
+  /** Maximum heading error allowed when determining if the robot is aligned to shoot. */
+  public static final Angle headingAlignmentTolerance = Degrees.of(3.0);
+
   /**
    * Represents the hardware configuration for a single swerve module.
    *
@@ -182,7 +185,7 @@ public class DriveConstants {
 
   // Angle PID configuration (for rotation-locked drive commands)
   /** Proportional gain for rotational PID control. */
-  public static final double angleKp = 7.0;
+  public static final double angleKp = 5.0;
   /** Derivative gain for rotational PID control. */
   public static final double angleKd = 0.0;
   /** Maximum angular velocity for the rotation motion profile in radians per second. */

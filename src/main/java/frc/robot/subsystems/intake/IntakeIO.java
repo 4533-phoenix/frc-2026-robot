@@ -64,9 +64,9 @@ public interface IntakeIO {
   public default void setArmPosition(Angle angle) {}
 
   /**
-   * Commands the spinner motor to run at a specific angular velocity.
+   * Commands the spinner motor to run at a specific voltage.
    *
-   * @param velocity The target velocity for the spinner rollers.
+   * @param voltage The target voltage for the spinner rollers.
    */
-  public default void setSpinnerAngularVelocity(AngularVelocity velocity) {}
+  public default void setSpinnerVoltage(Voltage voltage) {}
 }

@@ -7,303 +7,361 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Seconds;
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
-import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.GenericHID.RumbleType;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.commands.DriveCommands;
+import frc.robot.SuperstructureStates.RobotGoal;
+import frc.robot.SuperstructureStates.RobotState;
+import frc.robot.commands.ClimbCommands;
+import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.drive.DriveConstants;
+import frc.robot.subsystems.indexer.Indexer;
+import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterKinematics;
+import frc.robot.subsystems.shooter.ShooterState;
+import frc.robot.util.Aiming;
+import frc.robot.util.Aiming.AimingResult;
+import frc.robot.util.Aiming.LobAimingResult;
 import frc.robot.util.Util;
 import org.littletonrobotics.junction.Logger;
 
 /**
- * The Superstructure class manages complex interactions between subsystems that depend on holistic
- * field state, robot pose, or match time.
+ * Central coordinator that evaluates field context, driver intent, and subsystem state to determine
+ * the robot's behavior each cycle.
  *
- * <p>It provides Triggers for conditional command execution and Commands for automated aiming and
- * alliance-specific logic.
+ * <p>Runs a state machine over {@link RobotState} to control the shooter, indexer, and drive
+ * rotation. Intake spinners are handled as an independent overlay controlled directly by driver
+ * bumpers and are not part of the state machine.
+ *
+ * <p>This class is not a subsystem. Its {@link #periodic()} method is invoked every cycle via a
+ * command scheduled on the shooter and indexer subsystems so that the state machine has exclusive
+ * ownership of those mechanisms.
  */
 public class Superstructure {
+  // Subsystems
+  private final Drive drive;
+  private final Shooter shooter;
+  private final Indexer indexer;
+  private final Intake intake;
+  private final Climb climb;
+
+  // State machine
+  private RobotGoal currentGoal = RobotGoal.IDLE;
+  private RobotState currentState = RobotState.IDLE;
+  private RobotState previousState = RobotState.IDLE;
+  private boolean isLobbing = false;
+  private boolean lobTargetIsLeft = true;
+
   /**
-   * Returns the field-space position of the shooter mechanism, accounting for the shooter's offset
-   * from the robot center.
-   *
-   * @param drive The drive subsystem for current pose feedback.
-   * @return The shooter's position on the field.
+   * Whether the intake arm should be deployed. Set to true by a bumper press or on match-mode
+   * enable. Reset to false only when entering climb mode.
    */
-  public static Translation2d getShooterFieldPosition(Drive drive) {
-    Pose2d robotPose = drive.getPose();
-    // Transform robot-relative shooter offset into field coordinates
-    return robotPose.getTranslation().plus(shooterRobotOffset.rotateBy(robotPose.getRotation()));
+  private boolean armDeployed = false;
+
+  private boolean readyToFire = false;
+  private AimingResult latestAiming = new AimingResult(Rotation2d.kZero, Meters.of(0.0));
+
+  // Ready-to-fire must be stable for a short period before allowing the shot
+  private final Debouncer readyToFireDebouncer =
+      new Debouncer(0.06, Debouncer.DebounceType.kRising);
+
+  /**
+   * Creates a new Superstructure coordinator.
+   *
+   * @param drive The drive subsystem.
+   * @param shooter The shooter subsystem.
+   * @param indexer The indexer subsystem.
+   * @param intake The intake subsystem.
+   * @param climb The climb subsystem (used for auto-retract on climb exit).
+   */
+  public Superstructure(Drive drive, Shooter shooter, Indexer indexer, Intake intake, Climb climb) {
+    this.drive = drive;
+    this.shooter = shooter;
+    this.indexer = indexer;
+    this.intake = intake;
+    this.climb = climb;
+
+    // Default to off so the robot does nothing automatic until explicitly enabled
+    SmartDashboard.putBoolean("Match Mode", false);
+  }
+
+  /** Gets the current requested goal of the superstructure. */
+  public RobotGoal getGoal() {
+    return currentGoal;
   }
 
   /**
-   * Calculates the lead offset to apply to the static target, accounting for the robot's current
-   * velocity and the estimated time of flight of the game piece.
-   *
-   * <p>The lead offset is clamped so it can never exceed 50% of the distance from the shooter to
-   * the target. Without this clamp, a fast-moving robot could push the virtual target behind the
-   * shooter, flipping the aim direction by 180°.
-   *
-   * @param shooterPos The shooter's field-space position.
-   * @param targetTranslation The static target position on the field.
-   * @param fieldVelocity The robot's field-relative velocity.
-   * @return The clamped lead offset to subtract from the static target.
+   * Sets the goal of the superstructure. If the current goal is CLIMB, it will ignore new goals to
+   * prevent accidental overrides. Use {@link #forceGoal(Goal)} to bypass this.
    */
-  private static Translation2d calculateClampedLead(
-      Translation2d shooterPos, Translation2d targetTranslation, Translation2d fieldVelocity) {
-    double tof = estimatedTimeOfFlight.in(Seconds);
-
-    // Compute the raw lead offset (velocity * time-of-flight)
-    Translation2d rawLead =
-        new Translation2d(fieldVelocity.getX() * tof, fieldVelocity.getY() * tof);
-
-    // Clamp the lead magnitude to at most half the shooter-to-target distance so the
-    // virtual target can never overshoot past the real target (which would flip aim 180°).
-    double distToTarget = shooterPos.getDistance(targetTranslation);
-    double maxLead = distToTarget * 0.5;
-    double leadMag = rawLead.getNorm();
-
-    if (leadMag > maxLead && leadMag > 1e-6) {
-      return rawLead.times(maxLead / leadMag);
+  public void setGoal(RobotGoal goal) {
+    if (goal != RobotGoal.CLIMB && currentGoal == RobotGoal.CLIMB) {
+      return;
     }
-    return rawLead;
+    this.currentGoal = goal;
+  }
+
+  /** Forcibly sets the superstructure goal, overriding any protections (e.g. escaping CLIMB). */
+  public void forceGoal(RobotGoal goal) {
+    this.currentGoal = goal;
   }
 
   /**
-   * Computes all aiming outputs in a single pass to avoid redundant calculations. Returns the
-   * target rotation for the drivetrain and the distance from the shooter to the virtual target for
-   * the shooter kinematics.
-   *
-   * @param drive The drive subsystem for current pose and velocity feedback.
-   * @param log Whether to record outputs to AdvantageKit for visualization.
-   * @return An {@link AimingResult} containing the target heading and distance.
+   * Signals that a bumper command is running. Deploys the intake arm and keeps it deployed until
+   * climb mode is entered.
    */
-  private static AimingResult computeAiming(Drive drive, boolean log) {
-    Translation2d targetTranslation = Util.flipAllianceIfNeeded(Constants.outpostPosition);
-    Translation2d shooterPos = getShooterFieldPosition(drive);
-    Translation2d fieldVelocity = drive.getFieldRelativeVelocity();
+  public void signalIntakeDeploy() {
+    armDeployed = true;
+  }
 
-    // Subtract lead: if we move right the ball drifts right, so aim left of the static target.
-    Translation2d clampedLead = calculateClampedLead(shooterPos, targetTranslation, fieldVelocity);
-    Translation2d virtualTarget = targetTranslation.minus(clampedLead);
+  /**
+   * Evaluates the current state, applies outputs to all subsystems, and handles rumble feedback.
+   * Must be called every cycle.
+   */
+  public void periodic() {
+    previousState = currentState;
+    currentState = evaluateState();
 
-    Translation2d shooterToTarget = virtualTarget.minus(shooterPos);
-    Rotation2d targetRotation = shooterToTarget.getAngle();
-    double distanceMeters = shooterToTarget.getNorm();
-
-    if (log) {
-      Logger.recordOutput("Aiming/VirtualTarget", new Pose2d(virtualTarget, Rotation2d.kZero));
-      Logger.recordOutput("Aiming/StaticTarget", new Pose2d(targetTranslation, Rotation2d.kZero));
-      Logger.recordOutput("Aiming/ShooterPosition", new Pose2d(shooterPos, drive.getRotation()));
-      Logger.recordOutput("Aiming/TargetRotation", targetRotation.getDegrees());
-      Logger.recordOutput("Aiming/DistanceToTarget", distanceMeters);
+    // Compute aiming whenever the shooter is actively tracking the target
+    if (currentState == RobotState.TRACKING
+        || currentState == RobotState.AIMING
+        || currentState == RobotState.FIRING) {
+      if (isLobbing) {
+        LobAimingResult lobResult =
+            Aiming.computeLobAiming(
+                drive.getPose().getTranslation(),
+                drive.getRotation(),
+                shooterRobotOffset,
+                Constants.lobbingTargetLeftCenter,
+                Constants.lobbingTargetRightCenter,
+                Constants.lobbingTargetHalfLength.in(Meters),
+                lobTargetIsLeft,
+                true);
+        latestAiming = lobResult.aimingResult();
+        lobTargetIsLeft = lobResult.lobTargetIsLeft();
+      } else {
+        latestAiming =
+            Aiming.computeHubAiming(
+                drive.getPose().getTranslation(),
+                drive.getRotation(),
+                drive.getFieldRelativeVelocity(),
+                Constants.hubPosition,
+                shooterRobotOffset,
+                estimatedTimeOfFlight.in(Seconds),
+                true);
+      }
     }
 
-    return new AimingResult(targetRotation, Meters.of(distanceMeters));
-  }
+    applyState(currentState);
 
-  /** Cached result of the aiming pipeline to avoid redundant computation across subsystems. */
-  private record AimingResult(Rotation2d targetRotation, Distance distanceToTarget) {}
+    // Auto-retract the climber when exiting CLIMBING state
+    if (previousState == RobotState.CLIMBING && currentState != RobotState.CLIMBING) {
+      CommandScheduler.getInstance().schedule(ClimbCommands.liftDown(climb));
+    }
 
-  /**
-   * Calculates the target rotation needed to face the outpost. This is the lightweight variant used
-   * by triggers (e.g. isReadyToFire) that only need the heading and should not spam logs.
-   *
-   * @param drive The drive subsystem for current pose feedback.
-   * @return The required Rotation2d to aim the shooter at the virtual target.
-   */
-  public static Rotation2d getTargetRotation(Drive drive) {
-    return computeAiming(drive, false).targetRotation();
-  }
-
-  /**
-   * Creates a trigger that activates when the robot is aligned with the target and the shooter is
-   * up to speed.
-   *
-   * @param drive The drive subsystem.
-   * @param shooter The shooter subsystem.
-   * @return A trigger representing the "ready to fire" state.
-   */
-  public static Trigger isReadyToFire(Drive drive, Shooter shooter) {
-    return new Trigger(
-        () -> {
-          Rotation2d targetAngle = getTargetRotation(drive);
-          // Check if drive is within 2 degrees of target angle
-          boolean driveReady = drive.isAlignedWithTarget(targetAngle, Rotation2d.fromDegrees(2.0));
-          boolean shooterReady = shooter.isReadyToShoot();
-
-          return driveReady && shooterReady;
-        });
+    Logger.recordOutput("Superstructure/State", currentState.toString());
+    Logger.recordOutput("Superstructure/PreviousState", previousState.toString());
+    Logger.recordOutput("Superstructure/HubEnabled", Util.isHubEnabled());
+    Logger.recordOutput("Superstructure/IsLobbing", isLobbing);
+    Logger.recordOutput("Superstructure/MatchMode", Util.isMatchMode());
+    updateReadyToFire();
   }
 
   /**
-   * Trigger that is active when the robot is within the designated shooting zone.
+   * Determines which {@link RobotState} the robot should be in based on field context, driver
+   * input, and sensor state.
    *
-   * @param drive The drive subsystem.
-   * @return A trigger for the shooting zone.
+   * <p>When match mode is disabled (the default), the robot stays IDLE until the driver explicitly
+   * holds LT. This prevents unexpected flywheel spin-up during practice and pit testing. Lobbing
+   * and hub scoring still work normally via LT/RT, but automatic WARMING and TRACKING are
+   * suppressed.
    */
-  public static Trigger isInShootingZone(Drive drive) {
-    return new Trigger(
-        () -> {
-          Rectangle2d shootingZone = Util.flipAllianceIfNeeded(Constants.shootingZone);
-          return shootingZone.contains(drive.getPose().getTranslation());
-        });
+  private RobotState evaluateState() {
+    // Climbing is the active goal
+    if (currentGoal == RobotGoal.CLIMB) {
+      isLobbing = false;
+      armDeployed = false;
+      return RobotState.CLIMBING;
+    }
+
+    if (DriverStation.isDisabled()) {
+      isLobbing = false;
+      return RobotState.IDLE;
+    }
+
+    boolean matchMode = Util.isMatchMode();
+
+    // Auto-deploy the intake when match mode is active
+    if (matchMode) {
+      armDeployed = true;
+    }
+
+    boolean aiming = (currentGoal == RobotGoal.AIM || currentGoal == RobotGoal.FIRE);
+    boolean firing = (currentGoal == RobotGoal.FIRE);
+
+    boolean canLob = isInLobbingZone() && (matchMode || aiming);
+    boolean canShootHub = Util.isHubEnabled() && isInShootingZone() && (matchMode || aiming);
+
+    if (canLob || canShootHub) {
+      isLobbing = canLob;
+      if (firing && isReadyToFire()) {
+        return RobotState.FIRING;
+      }
+      return aiming ? RobotState.AIMING : RobotState.TRACKING;
+    }
+
+    isLobbing = false;
+
+    // Pre-spin the flywheel when the hub is enabled or about to enable (match mode only)
+    if (matchMode && (Util.isHubEnabled() || Util.isHubApproaching())) {
+      return RobotState.WARMING;
+    }
+
+    return RobotState.IDLE;
+  }
+
+  /** Sends the appropriate commands to each subsystem based on the evaluated state. */
+  private void applyState(RobotState state) {
+    switch (state) {
+      case IDLE:
+      case CLIMBING:
+        shooter.stop();
+        indexer.stop();
+        break;
+
+      case WARMING:
+        shooter.setIdleSpeed();
+        indexer.stop();
+        break;
+
+      case TRACKING:
+      case AIMING:
+        shooter.setTargetState(getTargetShooterState());
+        indexer.stop();
+        break;
+
+      case FIRING:
+        shooter.setTargetState(getTargetShooterState());
+        indexer.run();
+        break;
+    }
+  }
+
+  /** Returns the shooter state for the current scoring mode (lobbing or hub). */
+  private ShooterState getTargetShooterState() {
+    if (isLobbing) {
+      return new ShooterState(lobFlywheelSpeed, lobHoodAngle);
+    }
+    return ShooterKinematics.calculateShooterState(latestAiming.distanceToTarget());
+  }
+
+  /** Returns true if the robot's current position is within the designated shooting zone. */
+  private boolean isInShootingZone() {
+    Rectangle2d shootingZone = Util.flipAllianceIfNeeded(Constants.shootingZone);
+    return shootingZone.contains(drive.getPose().getTranslation());
+  }
+
+  /** Returns true if the robot's current position is within the designated lobbing zone. */
+  private boolean isInLobbingZone() {
+    Rectangle2d lobbingZone = Util.flipAllianceIfNeeded(Constants.lobbingZone);
+    return lobbingZone.contains(drive.getPose().getTranslation());
   }
 
   /**
-   * Trigger that is active when the robot is within the designated lobbing zone.
-   *
-   * @param drive The drive subsystem.
-   * @return A trigger for the lobbing zone.
+   * Returns true if the drive heading is aligned with the target and the shooter is at the
+   * commanded speed and hood angle. Logs all contributing signals under {@code ReadyToShoot/}.
    */
-  public static Trigger isInLobbingZone(Drive drive) {
-    return new Trigger(
-        () -> {
-          Rectangle2d lobbingZone = Util.flipAllianceIfNeeded(Constants.lobbingZone);
-          return lobbingZone.contains(drive.getPose().getTranslation());
-        });
+  public boolean isReadyToFire() {
+    return readyToFire;
+  }
+
+  /** Evaluates if the system is ready to fire, updates debouncer, and logs the result. */
+  private void updateReadyToFire() {
+    Rotation2d targetAngle = latestAiming.targetRotation();
+    double headingErrorDeg = drive.getRotation().minus(targetAngle).getDegrees();
+    boolean driveReady =
+        Math.abs(headingErrorDeg) < DriveConstants.headingAlignmentTolerance.in(Degrees);
+
+    boolean flywheelReady = shooter.isFlywheelReady();
+    boolean hoodReady = shooter.isHoodReady();
+    boolean isShooting = shooter.isShooting();
+    boolean shooterReady = flywheelReady && hoodReady && isShooting;
+
+    boolean ready = driveReady && shooterReady;
+    readyToFire = readyToFireDebouncer.calculate(ready);
+
+    Logger.recordOutput("Superstructure/ReadyToFire/Ready", readyToFire);
+    Logger.recordOutput("Superstructure/ReadyToFire/RawReady", ready);
+    Logger.recordOutput("Superstructure/ReadyToFire/DriveAligned", driveReady);
+    Logger.recordOutput("Superstructure/ReadyToFire/HeadingErrorDeg", headingErrorDeg);
+    Logger.recordOutput("Superstructure/ReadyToFire/FlywheelReady", flywheelReady);
+    Logger.recordOutput(
+        "Superstructure/ReadyToFire/FlywheelErrorRadPerSec", shooter.getFlywheelErrorRadPerSec());
+    Logger.recordOutput("Superstructure/ReadyToFire/HoodReady", hoodReady);
+    Logger.recordOutput("Superstructure/ReadyToFire/IsShooting", isShooting);
+    Logger.recordOutput("Superstructure/ReadyToFire/ShooterReady", shooterReady);
+  }
+
+  /** Returns the current superstructure state. */
+  public RobotState getState() {
+    return currentState;
+  }
+
+  /** Returns true if the robot is in a state where auto-aim drive should be active. */
+  public boolean wantsAutoAim() {
+    return currentState == RobotState.AIMING || currentState == RobotState.FIRING;
+  }
+
+  /** Returns the current aimed rotation for the drive to snap to. */
+  public Rotation2d getAimingRotation() {
+    return latestAiming.targetRotation();
   }
 
   /**
-   * Trigger that is active during the last 30 seconds of a match.
+   * Returns the intake default command. Logic:
    *
-   * @return A trigger for the endgame period.
+   * <ul>
+   *   <li>CLIMBING → retract (and clears {@code armDeployed} flag).
+   *   <li>{@code armDeployed} true → deploy and hold.
+   *   <li>Otherwise → retract and hold.
+   * </ul>
+   *
+   * {@code armDeployed} is set by a bumper press ({@link #signalIntakeDeploy()}) or automatically
+   * when match mode is active. It is cleared only when the robot enters climb mode.
    */
-  public static Trigger isEndgame() {
-    return new Trigger(
-        () -> {
-          if (DriverStation.isDisabled()) return false;
-          if (DriverStation.isAutonomous()) return false;
-
-          // Check if we are in a timed session (FMS or Practice Mode)
-          double time = DriverStation.getMatchTime();
-          boolean isTimedMatch = DriverStation.isFMSAttached() || time > 0;
-
-          // Return true only if a timer is running and we are at or below 30s.
-          return isTimedMatch && time <= 30.0 && time > 0;
-        });
-  }
-
-  /**
-   * Trigger that determines if the outpost is active based on 2026 match shift rules.
-   *
-   * @return A trigger for outpost activation status.
-   */
-  public static Trigger isOutpostEnabled() {
-    return new Trigger(
-        () -> {
-          double time = DriverStation.getMatchTime();
-          boolean isTimedMatch = DriverStation.isFMSAttached() || time > 0;
-
-          // If we are just enabling the bot (e.g., testing in pits)
-          if (!isTimedMatch) {
-            return DriverStation.isEnabled();
-          }
-
-          // We are in a Match or Practice Session
-          if (DriverStation.isDisabled()) return false;
-          // Outpost active in Auto or outside specific shift windows
-          if (DriverStation.isAutonomous() || time > 125 || time <= 30) return true;
-
-          // FMS Game Data Logic
-          String data = DriverStation.getGameSpecificMessage();
-          var alliance = DriverStation.getAlliance();
-
-          // If in Practice Mode and forgot to type Game Data, default to ENABLED
-          if (data == null || data.isEmpty() || alliance.isEmpty()) return true;
-
-          char inactiveInShift1 = data.charAt(0);
-          char myColor = (alliance.get() == DriverStation.Alliance.Red) ? 'R' : 'B';
-          boolean amIInactiveInShift1 = (inactiveInShift1 == myColor);
-
-          // Standard 2026 Shift Windows
-          if (time > 100) return !amIInactiveInShift1; // Shift 1
-          else if (time > 75) return amIInactiveInShift1; // Shift 2
-          else if (time > 50) return !amIInactiveInShift1; // Shift 3
-          else return amIInactiveInShift1; // Shift 4
-        });
-  }
-
-  /**
-   * Creates a command that automatically rotates the robot to face the target while allowing for
-   * teleop translation, and concurrently aims the shooter. The aiming pipeline is computed once per
-   * cycle and shared between the drive heading and shooter kinematics.
-   *
-   * <p>Rotation is given priority over translation: the PID-controlled heading correction claims as
-   * much of the module speed budget as it needs, and translation fills whatever remains.
-   *
-   * @param drive The drive subsystem.
-   * @param shooter The shooter subsystem.
-   * @param controller The Xbox controller for translation inputs.
-   * @return An auto-aiming command.
-   */
-  public static Command getAutoAimCommand(
-      Drive drive, Shooter shooter, CommandXboxController controller) {
-    // Shared reference so the aiming result is computed once and read by both subsystem commands.
-    final AimingResult[] cachedResult = {computeAiming(drive, false)};
-
-    return Commands.parallel(
-        // Update the cached aiming result and set shooter state each cycle
-        Commands.run(
-            () -> {
-              cachedResult[0] = computeAiming(drive, true);
-              shooter.setTargetState(
-                  ShooterKinematics.calculateShooterState(cachedResult[0].distanceToTarget()));
-            },
-            shooter),
-        // Drive with rotation priority, reading heading from the cache
-        DriveCommands.joystickDriveWithRotationPriority(
-            drive,
-            () -> -controller.getLeftY(),
-            () -> -controller.getLeftX(),
-            () -> cachedResult[0].targetRotation()));
-  }
-
-  /**
-   * Creates a standalone command to aim the shooter without controlling the drivetrain. Useful for
-   * autonomous routines or testing where the drive heading is managed separately.
-   *
-   * @param drive The drive subsystem.
-   * @param shooter The shooter subsystem.
-   * @return A command that continuously sets the shooter to the optimal state.
-   */
-  public static Command getShooterAimCommand(Drive drive, Shooter shooter) {
+  public Command getIntakeDefaultCommand() {
     return Commands.run(
         () -> {
-          AimingResult result = computeAiming(drive, true);
-          shooter.setTargetState(ShooterKinematics.calculateShooterState(result.distanceToTarget()));
+          if (currentState == RobotState.CLIMBING) {
+            intake.retract();
+          } else if (armDeployed) {
+            intake.deploy();
+          } else {
+            intake.retract();
+          }
+          intake.stopSpinner();
         },
-        shooter);
+        intake);
   }
 
   /**
-   * Creates a command to rumble a controller for a specific duration.
-   *
-   * @param controller The controller to rumble.
-   * @param type The type of rumble (Left or Right).
-   * @param intensity The intensity of the rumble (0.0 to 1.0).
-   * @param duration The duration of the rumble in seconds.
-   * @return A command to rumble the controller.
+   * Returns a command that runs the superstructure periodic loop. This command requires the shooter
+   * and indexer subsystems, giving the state machine exclusive control over those mechanisms. The
+   * command runs even while disabled so the state machine stays coherent and logs are accurate.
    */
-  public static Command rumbleCommand(
-      CommandGenericHID controller, RumbleType type, double intensity, double duration) {
-    return Commands.startEnd(
-            () -> controller.setRumble(type, intensity), () -> controller.setRumble(type, 0.0))
-        .withTimeout(duration);
+  public Command getPeriodicCommand() {
+    return Commands.run(this::periodic, shooter, indexer).ignoringDisable(true);
   }
 }

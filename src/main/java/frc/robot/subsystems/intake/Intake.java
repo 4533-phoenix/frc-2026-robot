@@ -25,7 +25,6 @@ import org.littletonrobotics.junction.Logger;
 public class Intake extends SubsystemBase {
   private final IntakeIO io;
   private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
-  private Angle currentTarget = null;
 
   // Alerts for hardware monitoring
   private final Alert armDisconnectedAlert =
@@ -69,26 +68,22 @@ public class Intake extends SubsystemBase {
    * @param newTarget The target angle for the arm.
    */
   private void setSetpoint(Angle newTarget) {
-    // Only send to IO if the target is actually different to reduce CAN traffic
-    if (currentTarget == null || !newTarget.equals(currentTarget)) {
-      io.setArmPosition(newTarget);
-      currentTarget = newTarget;
-    }
+    io.setArmPosition(newTarget);
   }
 
   /** Spins the spinner rollers to bring game pieces into the robot. */
   public void intake() {
-    io.setSpinnerAngularVelocity(spinnerIntakeVelocity);
+    io.setSpinnerVoltage(spinnerIntakeVoltage);
   }
 
   /** Spins the spinner rollers in reverse to eject game pieces. */
   public void extake() {
-    io.setSpinnerAngularVelocity(spinnerExtakeVelocity);
+    io.setSpinnerVoltage(spinnerExtakeVoltage);
   }
 
   /** Stops the spinner rollers. */
   public void stopSpinner() {
-    io.setSpinnerAngularVelocity(RadiansPerSecond.of(0.0));
+    io.setSpinnerVoltage(Volts.of(0.0));
   }
 
   /**
@@ -99,5 +94,15 @@ public class Intake extends SubsystemBase {
   public boolean armDeployed() {
     return armDeployedPosition.minus(inputs.armPosition).abs(Degrees)
         < armPositionIntakeTolerance.in(Degrees);
+  }
+
+  /**
+   * Checks if the intake arm is close enough to the retracted position.
+   *
+   * @return True if the arm is within tolerance of the retracted position.
+   */
+  public boolean armRetracted() {
+    return armRetractedPosition.minus(inputs.armPosition).abs(Degrees)
+        < armPositionPIDTolerance.in(Degrees);
   }
 }

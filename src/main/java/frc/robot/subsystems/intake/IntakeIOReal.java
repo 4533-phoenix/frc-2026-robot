@@ -25,7 +25,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Voltage;
 import frc.robot.util.HardwareConfigManager;
 import java.util.function.DoubleSupplier;
 
@@ -52,6 +52,11 @@ public class IntakeIOReal implements IntakeIO {
   private final Debouncer spinnerConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
+  // Target the user requested but not necessarily sent to the hardware yet
+  private Angle pendingTarget = null;
+  // Last target that was actually sent to the IO layer
+  private Angle lastSentTarget = null;
+
   /** Creates a new IntakeIOReal and configures the SparkMax controllers. */
   public IntakeIOReal() {
     armEncoder = armSpark.getAbsoluteEncoder();
@@ -63,7 +68,7 @@ public class IntakeIOReal implements IntakeIO {
     HardwareConfigManager.registerTask(this::configureHardware);
   }
 
-  // Runs on background thread!
+  // Runs on background thread
   private void configureHardware() {
     // Configure Arm Motor
     var armConfig = new SparkMaxConfig();
@@ -135,11 +140,6 @@ public class IntakeIOReal implements IntakeIO {
         .positionConversionFactor(spinnerInternalEncoderPositionFactor)
         .velocityConversionFactor(spinnerInternalEncoderVelocityFactor);
     spinnerConfig
-        .closedLoop
-        .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        .pid(spinnerKp, 0.0, spinnerKd);
-    spinnerConfig.closedLoop.feedForward.kV(spinnerKv).kA(spinnerKa).kS(spinnerKs);
-    spinnerConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
         .primaryEncoderPositionPeriodMs(20)
@@ -169,7 +169,18 @@ public class IntakeIOReal implements IntakeIO {
   @Override
   public void updateInputs(IntakeIOInputs inputs) {
     if (!HardwareConfigManager.isReady()) return;
-    // ---------- Arm Motor Inputs ----------
+
+    if (pendingTarget != null) {
+      if (lastSentTarget == null || !pendingTarget.equals(lastSentTarget)) {
+        armController.setSetpoint(
+            pendingTarget.in(Radians),
+            ControlType.kMAXMotionPositionControl,
+            ClosedLoopSlot.kSlot0);
+        lastSentTarget = pendingTarget;
+      }
+    }
+
+    // Arm Motor Inputs
     boolean armSparkOk = true;
     armSparkOk &=
         ifOk(armSpark, armEncoder::getPosition, (value) -> inputs.armPosition = Radians.of(value));
@@ -192,7 +203,7 @@ public class IntakeIOReal implements IntakeIO {
     // Debounce the connection status
     inputs.armConnected = armConnectedDebounce.calculate(armSparkOk);
 
-    // ---------- Spinner Motor Inputs ----------
+    // Spinner Motor Inputs
     boolean spinnerSparkOk = true;
     spinnerSparkOk &=
         ifOk(
@@ -221,9 +232,11 @@ public class IntakeIOReal implements IntakeIO {
    */
   @Override
   public void setArmPosition(Angle angle) {
+    pendingTarget = angle;
     if (!HardwareConfigManager.isReady()) return;
     armController.setSetpoint(
         angle.in(Radians), ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
+    lastSentTarget = angle;
   }
 
   /**
@@ -232,9 +245,8 @@ public class IntakeIOReal implements IntakeIO {
    * @param velocity The target velocity for the spinner rollers.
    */
   @Override
-  public void setSpinnerAngularVelocity(AngularVelocity velocity) {
+  public void setSpinnerVoltage(Voltage voltage) {
     if (!HardwareConfigManager.isReady()) return;
-    spinnerController.setSetpoint(
-        velocity.in(RadiansPerSecond), ControlType.kVelocity, ClosedLoopSlot.kSlot0);
+    spinnerController.setSetpoint(voltage.in(Volts), ControlType.kVoltage, ClosedLoopSlot.kSlot0);
   }
 }

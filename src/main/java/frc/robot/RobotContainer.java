@@ -12,20 +12,16 @@ package frc.robot;
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
-import edu.wpi.first.wpilibj.GenericHID.RumbleType;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.SuperstructureStates.RobotGoal;
 import frc.robot.commands.ClimbCommands;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.IndexerCommands;
 import frc.robot.commands.IntakeCommands;
-import frc.robot.commands.ShooterCommands;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.climb.ClimbIO;
 import frc.robot.subsystems.climb.ClimbIOReal;
@@ -53,16 +49,18 @@ import frc.robot.subsystems.shooter.hood.HoodIOServo;
 import frc.robot.subsystems.shooter.hood.HoodIOSim;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
-import frc.robot.subsystems.vision.VisionIOChalkydri;
+import frc.robot.subsystems.vision.VisionIOPhoton;
 import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.util.HardwareConfigManager;
+import frc.robot.util.Util;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
- * subsystems, commands, and button mappings) should be declared here.
+ * Declares the robot's subsystems, operator interface devices, and command bindings.
+ *
+ * <p>Scoring logic (shooter, indexer, auto-aim) is delegated to the {@link Superstructure} state
+ * machine. Bindings here express driver intent as simple boolean signals that the superstructure
+ * reads each cycle.
  */
 public class RobotContainer {
   // Subsystems
@@ -73,9 +71,12 @@ public class RobotContainer {
   private final Indexer indexer;
   private final Vision vision;
 
+  // Superstructure coordinator
+  private final Superstructure superstructure;
+
   // Controllers
   public final CommandXboxController driverController = new CommandXboxController(0);
-  public final CommandGenericHID operatorController = new CommandGenericHID(1);
+  public final CommandXboxController operatorController = new CommandXboxController(1);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -101,7 +102,7 @@ public class RobotContainer {
         intake = new Intake(new IntakeIOReal());
         shooter = new Shooter(new FlywheelIOTalonFX(), new HoodIOServo());
         indexer = new Indexer(new IndexerIOSpark());
-        vision = new Vision(new VisionIOChalkydri(), drive);
+        vision = new Vision(new VisionIOPhoton(), drive);
         HardwareConfigManager.startConfigThread();
         break;
 
@@ -138,67 +139,154 @@ public class RobotContainer {
         break;
     }
 
+    // Build the superstructure coordinator after subsystems are initialized but before bindings
+    superstructure = new Superstructure(drive, shooter, indexer, intake, climb);
+
     // Set up auto routines via PathPlanner
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
-    // Set up characterization routines for SysId
+    // Shoot preload auto forces superstructure to FIRE state
     autoChooser.addOption(
-        "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
-    autoChooser.addOption(
-        "Drive Simple FF Characterization", DriveCommands.feedforwardCharacterization(drive));
-    autoChooser.addOption(
-        "Drive SysId (Quasistatic Forward)",
-        drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    autoChooser.addOption(
-        "Drive SysId (Quasistatic Reverse)",
-        drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    autoChooser.addOption(
-        "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    autoChooser.addOption(
-        "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+        "Shoot Preload",
+        Commands.startEnd(
+            () -> superstructure.setGoal(RobotGoal.FIRE),
+            () -> superstructure.setGoal(RobotGoal.IDLE)));
+
+    // // Set up characterization routines for SysId
+    // autoChooser.addOption(
+    //     "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
+    // autoChooser.addOption(
+    //     "Drive Simple FF Characterization", DriveCommands.feedforwardCharacterization(drive));
+    // autoChooser.addOption(
+    //     "Drive SysId (Quasistatic Forward)",
+    //     drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+    // autoChooser.addOption(
+    //     "Drive SysId (Quasistatic Reverse)",
+    //     drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+    // autoChooser.addOption(
+    //     "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
+    // autoChooser.addOption(
+    //     "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
 
     // Configure the button bindings
     configureButtonBindings();
+
+    // The superstructure periodic command owns the shooter and indexer subsystems, replacing
+    // the old per-subsystem default commands for those mechanisms.
+    shooter.setDefaultCommand(superstructure.getPeriodicCommand());
+
+    // Intake default command is driven by the superstructure state (deployed normally,
+    // retracted during climbing).
+    intake.setDefaultCommand(superstructure.getIntakeDefaultCommand());
+
+    // Schedule auto-aim drive whenever the superstructure requests it
+    new Trigger(superstructure::wantsAutoAim)
+        .whileTrue(
+            DriveCommands.joystickDriveWithRotationPriority(
+                drive,
+                () -> -driverController.getLeftY(),
+                () -> -driverController.getLeftX(),
+                superstructure::getAimingRotation));
+
+    // Rumble feedback triggers
+    new Trigger(Util::isEndgame)
+        .onTrue(
+            Commands.run(
+                    () ->
+                        driverController.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 1.0))
+                .withTimeout(0.5)
+                .finallyDo(
+                    () ->
+                        driverController
+                            .getHID()
+                            .setRumble(GenericHID.RumbleType.kBothRumble, 0.0)));
+
+    new Trigger(Util::isHubEnabled)
+        .onTrue(
+            Commands.run(
+                    () ->
+                        driverController.getHID().setRumble(GenericHID.RumbleType.kLeftRumble, 0.5))
+                .withTimeout(0.2)
+                .finallyDo(
+                    () ->
+                        driverController
+                            .getHID()
+                            .setRumble(GenericHID.RumbleType.kLeftRumble, 0.0)));
+
+    // Only rumble when the driver is actively aiming (left trigger) or in autonomous.
+    new Trigger(() -> driverController.leftTrigger().getAsBoolean() || DriverStation.isAutonomous())
+        .and(new Trigger(superstructure::isReadyToFire))
+        .whileTrue(
+            Commands.startEnd(
+                () -> driverController.getHID().setRumble(GenericHID.RumbleType.kRightRumble, 0.4),
+                () ->
+                    driverController.getHID().setRumble(GenericHID.RumbleType.kRightRumble, 0.0)));
+
+    // Intents mapping (Left/Right trigger map to AIM/FIRE goals)
+    Trigger aimTrigger =
+        new Trigger(
+            () -> driverController.leftTrigger().getAsBoolean() || DriverStation.isAutonomous());
+    Trigger fireTrigger =
+        new Trigger(
+            () -> driverController.rightTrigger().getAsBoolean() || DriverStation.isAutonomous());
+
+    aimTrigger
+        .and(fireTrigger.negate())
+        .whileTrue(
+            Commands.startEnd(
+                () -> superstructure.setGoal(RobotGoal.AIM),
+                () -> superstructure.setGoal(RobotGoal.IDLE)));
+
+    aimTrigger
+        .and(fireTrigger)
+        .whileTrue(
+            Commands.startEnd(
+                () -> superstructure.setGoal(RobotGoal.FIRE),
+                () -> superstructure.setGoal(RobotGoal.IDLE)));
+
+    // Climb toggle
+    operatorController
+        .povLeft()
+        .onTrue(
+            Commands.runOnce(
+                    () -> {
+                      if (superstructure.getGoal() == RobotGoal.CLIMB) {
+                        superstructure.forceGoal(RobotGoal.IDLE);
+                      } else if (!Util.isMatchMode()
+                          || Util.isEndgame()
+                          || Util.isMatchModeOverridden()) {
+                        superstructure.forceGoal(RobotGoal.CLIMB);
+                      }
+                    })
+                .ignoringDisable(true));
   }
 
   /**
-   * Use this method to define your button->command mappings. Buttons can be created by
-   * instantiating a {@link GenericHID} or one of its subclasses ({@link
-   * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
-   * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
+   * Defines button-to-command mappings. Most scoring logic is handled by the {@link Superstructure}
+   * state machine. Bindings here express driver intent as simple input signals.
    */
   private void configureButtonBindings() {
-    // Get common triggers from the superstructure
-    Trigger outpostEnabled = Superstructure.isOutpostEnabled();
-    Trigger readyToFire = Superstructure.isReadyToFire(drive, shooter);
-    Trigger endgame = Superstructure.isEndgame();
-
-    // Normal field-relative drive
+    // Normal field-relative drive (default command, overridden by auto-aim when active)
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
             () -> -driverController.getLeftY(),
             () -> -driverController.getLeftX(),
             () -> -driverController.getRightX()));
-    // drive.setDefaultCommand(
-    //     DriveCommands.joystickDriveAtAngle(
-    //         drive,
-    //         () -> -driverController.getLeftY(),
-    //         () -> -driverController.getLeftX(),
-    //         () -> new Rotation2d(-driverController.getRightX(), -driverController.getRightY())));
 
-    // Intake remains retracted by default
-    intake.setDefaultCommand(IntakeCommands.holdRetracted(intake));
+    // Intake deploy + spinner overlay (orthogonal to the state machine).
+    // The onDeploy callback tells the superstructure that a driver-initiated deploy has occurred,
+    // so the arm stays deployed after leaving climb mode.
+    operatorController
+        .leftBumper()
+        .whileTrue(
+            IntakeCommands.deployAndRunSpinnersIn(intake, superstructure::signalIntakeDeploy));
+    operatorController
+        .rightBumper()
+        .whileTrue(
+            IntakeCommands.deployAndRunSpinnersOut(intake, superstructure::signalIntakeDeploy));
 
-    // Shooter and indexer stop by default
-    shooter.setDefaultCommand(ShooterCommands.stopShooter(shooter));
-    indexer.setDefaultCommand(IndexerCommands.stopIndexer(indexer));
-
-    // Deploy intake and spin while Left Bumper is held
-    driverController.leftBumper().whileTrue(IntakeCommands.intake(intake));
-    driverController.rightBumper().whileTrue(IntakeCommands.extake(intake));
-
-    // Reset gyro to 0° when B button is pressed
+    // Reset gyro heading
     driverController
         .b()
         .onTrue(
@@ -209,41 +297,21 @@ public class RobotContainer {
                     drive)
                 .ignoringDisable(true));
 
-    // Auto-aim while holding Left Trigger and in shooting zone
-    driverController
-        .leftTrigger()
-        .and(Superstructure.isInShootingZone(drive))
-        .whileTrue(Superstructure.getAutoAimCommand(drive, shooter, driverController));
-    // driverController.leftTrigger().whileTrue(Superstructure.getShooterAimCommand(drive,
-    // shooter));
-
-    // When we press up or down dpad
-    driverController.povUp().onTrue(ClimbCommands.liftUp(climb));
-    driverController.povDown().onTrue(ClimbCommands.liftDown(climb));
-
-    // Fire game piece while holding Right Trigger, ready to fire, and outpost enabled
-    driverController
-        .rightTrigger()
-        .and(readyToFire)
-        .and(outpostEnabled)
-        .whileTrue(IndexerCommands.runIndexer(indexer));
-
-    // Rumble when outpost becomes enabled
-    outpostEnabled.onTrue(
-        Superstructure.rumbleCommand(driverController, RumbleType.kLeftRumble, 0.5, 0.2)
-            .andThen(Commands.waitSeconds(0.1))
-            .andThen(
-                Superstructure.rumbleCommand(driverController, RumbleType.kLeftRumble, 0.5, 0.2)));
-
-    // Rumble when shooter is ready
-    readyToFire.whileTrue(
-        Commands.startEnd(
-            () -> driverController.setRumble(RumbleType.kRightRumble, 0.4),
-            () -> driverController.setRumble(RumbleType.kRightRumble, 0.0)));
-
-    // Rumble hard during endgame
-    endgame.onTrue(
-        Superstructure.rumbleCommand(driverController, RumbleType.kBothRumble, 1.0, 1.5));
+    // Climb motor controls
+    operatorController
+        .povUp()
+        .onTrue(
+            Commands.either(
+                ClimbCommands.liftUp(climb, intake),
+                Commands.none(),
+                () -> superstructure.getGoal() == RobotGoal.CLIMB));
+    operatorController
+        .povDown()
+        .onTrue(
+            Commands.either(
+                ClimbCommands.liftDown(climb),
+                Commands.none(),
+                () -> superstructure.getGoal() == RobotGoal.CLIMB));
   }
 
   /**
