@@ -220,44 +220,61 @@ public class DriveCommands {
 
               double maxSpeed = maxLinearVelocity.in(MetersPerSecond);
 
-              // 1. Determine how much module speed rotation alone requires
-              ChassisSpeeds rotationOnly = new ChassisSpeeds(0.0, 0.0, omega);
+              double desiredVx = maxSpeed * linearVelocity.getX();
+              double desiredVy = maxSpeed * linearVelocity.getY();
+
+              // Flip controls if on the Red alliance
+              boolean isFlipped =
+                  DriverStation.getAlliance().isPresent()
+                      && DriverStation.getAlliance().get() == Alliance.Red;
+              Rotation2d fieldHeading =
+                  isFlipped
+                      ? drive.getRotation().plus(new Rotation2d(Math.PI))
+                      : drive.getRotation();
+
+              // Convert to field-relative first, then discretize so that the rotation-priority
+              // budget accounts for the skew-correction term that discretize adds. Without this,
+              // discretize injects an extra translational component for the rotation that bypasses
+              // the budget and causes the robot to drift clockwise when the PID is active.
+              ChassisSpeeds fieldRelative =
+                  ChassisSpeeds.fromFieldRelativeSpeeds(desiredVx, desiredVy, omega, fieldHeading);
+              ChassisSpeeds discretized = ChassisSpeeds.discretize(fieldRelative, 0.02);
+
+              // Determine how much module speed rotation alone requires (post-discretize)
+              ChassisSpeeds rotationOnly =
+                  new ChassisSpeeds(0.0, 0.0, discretized.omegaRadiansPerSecond);
               SwerveModuleState[] rotStates = kinematics.toSwerveModuleStates(rotationOnly);
               double maxRotModule = 0.0;
               for (SwerveModuleState s : rotStates) {
                 maxRotModule = Math.max(maxRotModule, Math.abs(s.speedMetersPerSecond));
               }
 
-              // 2. Calculate leftover budget for translation
+              // Calculate leftover budget for translation
               double remainingBudget = Math.max(0.0, maxSpeed - maxRotModule);
 
-              // 3. Scale translation to fit within the remaining budget
-              double desiredVx = maxSpeed * linearVelocity.getX();
-              double desiredVy = maxSpeed * linearVelocity.getY();
-              double desiredTransSpeed = Math.hypot(desiredVx, desiredVy);
-
+              // Scale translation to fit within the remaining budget
+              double desiredTransSpeed =
+                  Math.hypot(discretized.vxMetersPerSecond, discretized.vyMetersPerSecond);
               double translationScale =
                   desiredTransSpeed > 1e-6
                       ? Math.min(1.0, remainingBudget / desiredTransSpeed)
                       : 1.0;
 
-              ChassisSpeeds speeds =
+              ChassisSpeeds finalSpeeds =
                   new ChassisSpeeds(
-                      desiredVx * translationScale, desiredVy * translationScale, omega);
+                      discretized.vxMetersPerSecond * translationScale,
+                      discretized.vyMetersPerSecond * translationScale,
+                      discretized.omegaRadiansPerSecond);
 
-              // Flip controls if on the Red alliance
-              boolean isFlipped =
-                  DriverStation.getAlliance().isPresent()
-                      && DriverStation.getAlliance().get() == Alliance.Red;
-              drive.runVelocity(
-                  ChassisSpeeds.fromFieldRelativeSpeeds(
-                      speeds,
-                      isFlipped
-                          ? drive.getRotation().plus(new Rotation2d(Math.PI))
-                          : drive.getRotation()));
+              drive.runVelocity(finalSpeeds);
             },
             drive)
-        .beforeStarting(() -> angleController.reset(drive.getRotation().getRadians()));
+        // Reset with both position and current velocity so the profiled controller doesn't
+        // wind up from a zero-velocity initial state and cause a sudden rotation spike.
+        .beforeStarting(
+            () ->
+                angleController.reset(
+                    drive.getRotation().getRadians(), drive.getYawVelocityRadPerSec()));
   }
 
   /**

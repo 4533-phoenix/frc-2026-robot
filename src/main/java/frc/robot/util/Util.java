@@ -15,6 +15,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 
 /**
@@ -169,10 +170,21 @@ public class Util {
    * toggle for testing.
    */
   public static boolean isMatchMode() {
-    if (edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.getBoolean(MATCH_MODE_KEY, false))
-      return true;
+    if (SmartDashboard.getBoolean(MATCH_MODE_KEY, false)) return true;
     double time = DriverStation.getMatchTime();
     return DriverStation.isFMSAttached() || time > 0;
+  }
+
+  /**
+   * Returns true when match mode is active only because of the SmartDashboard override toggle, not
+   * because a real FMS/timed match is running. Used to allow actions (e.g. climbing) that are
+   * normally gated behind endgame when testing without a real match.
+   */
+  public static boolean isMatchModeOverridden() {
+    boolean dashboardOverride = SmartDashboard.getBoolean(MATCH_MODE_KEY, false);
+    double time = DriverStation.getMatchTime();
+    boolean realMatch = DriverStation.isFMSAttached() || time > 0;
+    return dashboardOverride && !realMatch;
   }
 
   /** Returns true when the match is in the last 30 seconds of teleop. */

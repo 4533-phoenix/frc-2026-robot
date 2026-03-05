@@ -15,6 +15,7 @@ import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 import com.studica.frc.AHRS.NavXUpdateRate;
 import frc.robot.subsystems.drive.SparkOdometryThread;
+import frc.robot.subsystems.drive.Drive;
 import java.util.Queue;
 
 /**
@@ -52,25 +53,24 @@ public class GyroIONavX implements GyroIO {
     // Empty the queues into the inputs object for logging and odometry processing
     frc.robot.subsystems.drive.Drive.odometryLock.lock();
     try {
-      int count = yawTimestampQueue.size();
+      int count = Math.min(yawTimestampQueue.size(), yawPositionQueue.size());
       inputs.odometryYawTimestamps = new double[count];
       inputs.odometryYawPositions = new double[count];
 
-      int i = 0;
-      for (Double timestamp : yawTimestampQueue) {
-        inputs.odometryYawTimestamps[i++] = timestamp;
+      for (int i = 0; i < count; i++) {
+        Double timestamp = yawTimestampQueue.poll();
+        Double angle = yawPositionQueue.poll();
+        if (timestamp != null && angle != null) {
+          inputs.odometryYawTimestamps[i] = timestamp;
+          inputs.odometryYawPositions[i] = Math.toRadians(-angle);
+        }
       }
 
-      i = 0;
-      for (Double angle : yawPositionQueue) {
-        inputs.odometryYawPositions[i++] = Math.toRadians(-angle);
-      }
-
-      // Clear queues to ensure data is only processed once
+      // Clear any remaining elements in case of mismatch
       yawTimestampQueue.clear();
       yawPositionQueue.clear();
     } finally {
-      frc.robot.subsystems.drive.Drive.odometryLock.unlock();
+      Drive.odometryLock.unlock();
     }
   }
 }

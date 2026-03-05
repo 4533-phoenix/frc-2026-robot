@@ -121,7 +121,7 @@ public class ModuleIOSpark implements ModuleIO {
     HardwareConfigManager.registerTask(() -> configureHardware(module));
   }
 
-  // Runs on background thread!
+  // Runs on background thread
   private void configureHardware(int module) {
     var driveConfig = new SparkMaxConfig();
     driveConfig
