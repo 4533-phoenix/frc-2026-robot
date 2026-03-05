@@ -12,8 +12,8 @@ import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import com.reduxrobotics.sensors.canandgyro.Canandgyro;
 import com.reduxrobotics.sensors.canandgyro.CanandgyroSettings;
-import frc.robot.subsystems.drive.SparkOdometryThread;
 import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.drive.SparkOdometryThread;
 import java.util.Queue;
 
 /**
