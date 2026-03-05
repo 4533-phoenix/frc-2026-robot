@@ -240,9 +240,9 @@ public class IntakeIOReal implements IntakeIO {
   }
 
   /**
-   * Commands the spinner motor to run at a specific angular velocity using closed-loop control.
+   * Commands the spinner motor to run at a specific voltage.
    *
-   * @param velocity The target velocity for the spinner rollers.
+   * @param voltage The target voltage for the spinner rollers.
    */
   @Override
   public void setSpinnerVoltage(Voltage voltage) {

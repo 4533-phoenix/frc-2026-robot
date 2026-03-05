@@ -84,7 +84,7 @@ public class GyroIODual implements GyroIO {
       inputs.connected = false;
     }
 
-    // Log the current drift offset for debugging
+    // Log the current drift offset
     Logger.recordOutput("Drive/Gyro/DriftOffset", driftOffset);
   }
 }
