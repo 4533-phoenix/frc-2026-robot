@@ -70,6 +70,16 @@ public class VisionConstants {
   //               10.0));
   public static final Map<Integer, CameraConfig> cameraMap =
       Map.of(
+          0,
+          new CameraConfig(
+              "Front Left",
+              new Transform3d(
+                  Centimeters.of(32.8892),
+                  Centimeters.of(30.5885),
+                  Centimeters.of(19.0588),
+                  new Rotation3d(Degrees.of(105.0), Degrees.of(-11.435630), Degrees.of(50.0))),
+              90.0,
+              10.0),
           2,
           new CameraConfig(
               "Back Left",
@@ -87,7 +97,7 @@ public class VisionConstants {
                   Centimeters.of(-30.6647),
                   Centimeters.of(-29.5090),
                   Centimeters.of(26.2679),
-                  new Rotation3d(Degrees.of(0.0), Degrees.of(20.0), Degrees.of(-135.0))),
+                  new Rotation3d(Degrees.of(0.0), Degrees.of(-20.0), Degrees.of(-135.0))),
               92.0,
               10.0));
 
