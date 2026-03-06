@@ -7,8 +7,8 @@
 
 package frc.robot.subsystems.vision;
 
+import static edu.wpi.first.units.Units.Centimeters;
 import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Inches;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -70,24 +70,24 @@ public class VisionConstants {
   //               10.0));
   public static final Map<Integer, CameraConfig> cameraMap =
       Map.of(
-          1,
+          2,
           new CameraConfig(
-              "Top",
+              "Back Left",
               new Transform3d(
-                  Inches.of(-2.5),
-                  Inches.of(-2.5),
-                  Inches.of(21.0),
-                  new Rotation3d(Degrees.of(0.0), Degrees.of(15.0), Degrees.of(0.0))),
+                  Centimeters.of(-21.3),
+                  Centimeters.of(32.68),
+                  Centimeters.of(30.0017),
+                  new Rotation3d(Degrees.of(90.0), Degrees.of(0.0), Degrees.of(135.0))),
               90.0,
               10.0),
           3,
           new CameraConfig(
               "Back Right",
               new Transform3d(
-                  Inches.of(-11.0),
-                  Inches.of(-11.0),
-                  Inches.of(10.4),
-                  new Rotation3d(Degrees.of(0.0), Degrees.of(15.0), Degrees.of(-135.0))),
+                  Centimeters.of(-30.6647),
+                  Centimeters.of(-29.5090),
+                  Centimeters.of(26.2679),
+                  new Rotation3d(Degrees.of(0.0), Degrees.of(20.0), Degrees.of(-135.0))),
               92.0,
               10.0));
 

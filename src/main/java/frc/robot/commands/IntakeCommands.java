@@ -9,14 +9,18 @@ package frc.robot.commands;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.arm.Arm;
+import frc.robot.subsystems.intake.spinner.Spinner;
 
 /**
- * Factory class for creating commands related to the intake subsystem.
+ * Factory class for creating commands related to the intake subsystems (arm and spinner).
  *
  * <p>The intake arm starts retracted and deploys on the first bumper press via the {@code
  * deployAndRunSpinners*} commands. Once deployed it stays deployed for the rest of the match (the
  * default command maintains it). Arm retraction is handled exclusively by the climbing state.
+ *
+ * <p>Because the arm and spinner are separate subsystems, spinner commands do not interfere with
+ * the arm default command and vice-versa.
  */
 public class IntakeCommands {
   private IntakeCommands() {}
@@ -25,92 +29,42 @@ public class IntakeCommands {
    * Runs the intake spinners inward to collect game pieces. The spinners stop when the command
    * ends.
    *
-   * @param intake The intake subsystem.
+   * @param spinner The spinner subsystem.
    * @return A command that runs the spinners inward while held.
    */
-  public static Command runSpinnersIn(Intake intake) {
-    return Commands.runEnd(intake::intake, intake::stopSpinner, intake);
+  public static Command intake(Spinner spinner) {
+    return Commands.runEnd(spinner::intake, spinner::stopSpinner, spinner);
   }
 
   /**
    * Runs the intake spinners outward to eject game pieces. The spinners stop when the command ends.
    *
-   * @param intake The intake subsystem.
+   * @param spinner The spinner subsystem.
    * @return A command that runs the spinners outward while held.
    */
-  public static Command runSpinnersOut(Intake intake) {
-    return Commands.runEnd(intake::extake, intake::stopSpinner, intake);
+  public static Command extake(Spinner spinner) {
+    return Commands.runEnd(spinner::extake, spinner::stopSpinner, spinner);
   }
 
   /**
-   * Deploys the intake arm AND runs the spinners inward. Spinners stop when the command ends; the
-   * arm stays deployed (held by the default command).
+   * Holds the intake arm at the deployed position. Intended as the default command for the arm
+   * subsystem during normal match play.
    *
-   * @param intake The intake subsystem.
-   * @param onDeploy Callback invoked every cycle while the command runs (signals deploy intent to
-   *     the superstructure).
-   * @return A command that deploys the arm and runs the spinners inward while held.
-   */
-  public static Command deployAndRunSpinnersIn(Intake intake, Runnable onDeploy) {
-    return Commands.runEnd(
-        () -> {
-          onDeploy.run();
-          intake.deploy();
-          intake.intake();
-        },
-        intake::stopSpinner,
-        intake);
-  }
-
-  /**
-   * Deploys the intake arm AND runs the spinners outward. Spinners stop when the command ends; the
-   * arm stays deployed (held by the default command).
-   *
-   * @param intake The intake subsystem.
-   * @param onDeploy Callback invoked every cycle while the command runs (signals deploy intent to
-   *     the superstructure).
-   * @return A command that deploys the arm and runs the spinners outward while held.
-   */
-  public static Command deployAndRunSpinnersOut(Intake intake, Runnable onDeploy) {
-    return Commands.runEnd(
-        () -> {
-          onDeploy.run();
-          intake.deploy();
-          intake.extake();
-        },
-        intake::stopSpinner,
-        intake);
-  }
-
-  /**
-   * Holds the intake arm at the deployed position with spinners off. Intended as the default
-   * command for the intake subsystem during normal match play.
-   *
-   * @param intake The intake subsystem.
+   * @param arm The arm subsystem.
    * @return A command that continuously holds the arm deployed.
    */
-  public static Command holdDeployed(Intake intake) {
-    return Commands.run(
-        () -> {
-          intake.deploy();
-          intake.stopSpinner();
-        },
-        intake);
+  public static Command holdDeployed(Arm arm) {
+    return Commands.run(arm::deploy, arm);
   }
 
   /**
-   * Holds the intake arm at the retracted position with spinners off. Used only during the climbing
-   * state to clear the arm for the climb mechanism.
+   * Holds the intake arm at the retracted position. Used only during the climbing state to clear
+   * the arm for the climb mechanism.
    *
-   * @param intake The intake subsystem.
+   * @param arm The arm subsystem.
    * @return A command that continuously holds the arm retracted.
    */
-  public static Command holdRetracted(Intake intake) {
-    return Commands.run(
-        () -> {
-          intake.retract();
-          intake.stopSpinner();
-        },
-        intake);
+  public static Command holdRetracted(Arm arm) {
+    return Commands.run(arm::retract, arm);
   }
 }

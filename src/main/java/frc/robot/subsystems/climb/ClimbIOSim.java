@@ -48,8 +48,8 @@ public class ClimbIOSim implements ClimbIO {
 
   /** Creates a new ClimbIOSim and initializes the simulated Spark MAX. */
   public ClimbIOSim() {
-    spark = new SparkMax(liftMotorCanId, MotorType.kBrushed);
-    sparkSim = new SparkMaxSim(spark, liftGearbox);
+    spark = new SparkMax(canId, MotorType.kBrushed);
+    sparkSim = new SparkMaxSim(spark, gearbox);
     forwardLimitSim = sparkSim.getForwardLimitSwitchSim();
     reverseLimitSim = sparkSim.getReverseLimitSwitchSim();
     forwardLimit = spark.getForwardLimitSwitch();
@@ -57,7 +57,7 @@ public class ClimbIOSim implements ClimbIO {
 
     physicsSim =
         new ClimbSim(
-            liftGearbox,
+            gearbox,
             gearReduction,
             1.5,
             DriveConstants.robotMass.in(Kilograms),
@@ -71,7 +71,7 @@ public class ClimbIOSim implements ClimbIO {
     var liftCfg = new SparkMaxConfig();
     liftCfg
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) liftMotorCurrentLimit.in(Amps))
+        .smartCurrentLimit((int) motorCurrentLimit.in(Amps))
         .voltageCompensation(12.0);
     liftCfg.limitSwitch.forwardLimitSwitchType(LimitSwitchConfig.Type.kNormallyOpen);
     liftCfg.limitSwitch.reverseLimitSwitchType(LimitSwitchConfig.Type.kNormallyOpen);

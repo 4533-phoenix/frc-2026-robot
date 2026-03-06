@@ -7,9 +7,7 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
 import edu.wpi.first.math.filter.Debouncer;
@@ -27,7 +25,7 @@ import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveConstants;
 import frc.robot.subsystems.indexer.Indexer;
-import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.arm.Arm;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterKinematics;
 import frc.robot.subsystems.shooter.ShooterState;
@@ -54,7 +52,7 @@ public class Superstructure {
   private final Drive drive;
   private final Shooter shooter;
   private final Indexer indexer;
-  private final Intake intake;
+  private final Arm arm;
   private final Climb climb;
 
   // State machine
@@ -83,14 +81,14 @@ public class Superstructure {
    * @param drive The drive subsystem.
    * @param shooter The shooter subsystem.
    * @param indexer The indexer subsystem.
-   * @param intake The intake subsystem.
+   * @param arm The intake arm subsystem.
    * @param climb The climb subsystem (used for auto-retract on climb exit).
    */
-  public Superstructure(Drive drive, Shooter shooter, Indexer indexer, Intake intake, Climb climb) {
+  public Superstructure(Drive drive, Shooter shooter, Indexer indexer, Arm arm, Climb climb) {
     this.drive = drive;
     this.shooter = shooter;
     this.indexer = indexer;
-    this.intake = intake;
+    this.arm = arm;
     this.climb = climb;
 
     // Default to off so the robot does nothing automatic until explicitly enabled
@@ -111,11 +109,13 @@ public class Superstructure {
       return;
     }
     this.currentGoal = goal;
+    Logger.recordOutput("Superstructure/Goal", goal.toString());
   }
 
   /** Forcibly sets the superstructure goal, overriding any protections (e.g. escaping CLIMB). */
   public void forceGoal(RobotGoal goal) {
     this.currentGoal = goal;
+    Logger.recordOutput("Superstructure/Goal", goal.toString());
   }
 
   /**
@@ -294,10 +294,10 @@ public class Superstructure {
     boolean driveReady =
         Math.abs(headingErrorDeg) < DriveConstants.headingAlignmentTolerance.in(Degrees);
 
-    boolean flywheelReady = shooter.isFlywheelReady();
-    boolean hoodReady = shooter.isHoodReady();
-    boolean isShooting = shooter.isShooting();
-    boolean shooterReady = flywheelReady && hoodReady && isShooting;
+    boolean flywheelReady = shooter.isFlywheelReady().getAsBoolean();
+    boolean hoodReady = shooter.isHoodReady().getAsBoolean();
+    boolean isShooting = shooter.isShooting().getAsBoolean();
+    boolean shooterReady = shooter.isReadyToShoot().getAsBoolean();
 
     boolean ready = driveReady && shooterReady;
     readyToFire = readyToFireDebouncer.calculate(ready);
@@ -330,7 +330,7 @@ public class Superstructure {
   }
 
   /**
-   * Returns the intake default command. Logic:
+   * Returns the arm default command. Logic:
    *
    * <ul>
    *   <li>CLIMBING → retract (and clears {@code armDeployed} flag).
@@ -341,19 +341,18 @@ public class Superstructure {
    * {@code armDeployed} is set by a bumper press ({@link #signalIntakeDeploy()}) or automatically
    * when match mode is active. It is cleared only when the robot enters climb mode.
    */
-  public Command getIntakeDefaultCommand() {
+  public Command getArmDefaultCommand() {
     return Commands.run(
         () -> {
           if (currentState == RobotState.CLIMBING) {
-            intake.retract();
+            arm.retract();
           } else if (armDeployed) {
-            intake.deploy();
+            arm.deploy();
           } else {
-            intake.retract();
+            arm.retract();
           }
-          intake.stopSpinner();
         },
-        intake);
+        arm);
   }
 
   /**

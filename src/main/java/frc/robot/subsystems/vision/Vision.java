@@ -38,6 +38,7 @@ public class Vision extends SubsystemBase {
   private final double[] lastTimestamps;
   private final Alert[] alerts;
   private final String[] logPaths;
+  private final String[] seenPaths;
   private final boolean[] cameraActiveFlags; // Tracks if an ID actually exists
 
   // Pre-allocated standard deviation vector to avoid allocations in periodic()
@@ -59,6 +60,7 @@ public class Vision extends SubsystemBase {
     lastTimestamps = new double[maxCameraId + 1];
     alerts = new Alert[maxCameraId + 1];
     logPaths = new String[maxCameraId + 1];
+    seenPaths = new String[maxCameraId + 1];
     cameraActiveFlags = new boolean[maxCameraId + 1];
 
     // Initialize arrays for tracking camera status based on Constants
@@ -69,6 +71,7 @@ public class Vision extends SubsystemBase {
       alerts[id] =
           new Alert("Vision: Camera '" + entry.getValue() + "' is offline!", AlertType.kWarning);
       logPaths[id] = "Vision/CameraStatus/" + entry.getValue();
+      seenPaths[id] = "Vision/CameraSeen/" + entry.getValue().name();
     }
   }
 
@@ -115,9 +118,8 @@ public class Vision extends SubsystemBase {
       // Update Alerts for drivers and log status
       alerts[id].set(isOffline);
       Logger.recordOutput(logPaths[id], !isOffline);
-      String seenPath = "Vision/CameraSeen/" + cameraMap.get(id).name();
       boolean seen = (currentTime - lastTimestamps[id]) <= offlineTimeoutSeconds;
-      Logger.recordOutput(seenPath, seen);
+      Logger.recordOutput(seenPaths[id], seen);
     }
   }
 }

@@ -49,12 +49,12 @@ public class Climb extends SubsystemBase {
 
   /** Moves the lift mechanism up at the default voltage. */
   public void startLiftUp() {
-    io.setLiftVoltage(defaultLiftVoltage);
+    io.setLiftVoltage(defaultVoltage);
   }
 
   /** Moves the lift mechanism down at the default voltage. */
   public void startLiftDown() {
-    io.setLiftVoltage(defaultLiftVoltage.unaryMinus());
+    io.setLiftVoltage(defaultVoltage.unaryMinus());
   }
 
   /** Stops the lift mechanism. */

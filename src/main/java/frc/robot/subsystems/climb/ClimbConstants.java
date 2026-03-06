@@ -23,16 +23,16 @@ import frc.robot.util.ExtraMotors;
 public final class ClimbConstants {
   // CAN IDs
   /** CAN ID for the lift mechanism motor. */
-  public static final int liftMotorCanId = 19;
+  public static final int canId = 19;
 
   // Motor and current limits
   /** Maximum current limit for the lift motor to prevent thermal damage. */
-  public static final Current liftMotorCurrentLimit = Amps.of(30);
+  public static final Current motorCurrentLimit = Amps.of(30);
   /** The gearbox model for the lift motor. */
-  public static final DCMotor liftGearbox = ExtraMotors.getSnowBlower(1);
+  public static final DCMotor gearbox = ExtraMotors.getSnowBlower(1);
 
   /** Default voltage used for lifting and lowering the mechanism. */
-  public static final Voltage defaultLiftVoltage = Volts.of(6.0);
+  public static final Voltage defaultVoltage = Volts.of(12.0);
 
   /** Simulated upper travel limit. */
   public static final Distance upperHeight = Centimeters.of(22.0);

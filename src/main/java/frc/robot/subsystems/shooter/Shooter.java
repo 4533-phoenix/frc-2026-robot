@@ -17,6 +17,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOInputsAutoLogged;
 import frc.robot.subsystems.shooter.hood.HoodIO;
@@ -39,6 +40,11 @@ public class Shooter extends SubsystemBase {
   private AngularVelocity targetVelocity = RadiansPerSecond.of(0.0);
   private boolean isShooting = false;
 
+  private final Trigger flywheelReadyTrigger;
+  private final Trigger hoodReadyTrigger;
+  private final Trigger isShootingTrigger;
+  private final Trigger readyToShootTrigger;
+
   private final Alert flywheelDisconnectedAlert =
       new Alert("Flywheel IO disconnected", AlertType.kWarning);
 
@@ -51,6 +57,16 @@ public class Shooter extends SubsystemBase {
   public Shooter(FlywheelIO flywheelIO, HoodIO hoodIO) {
     this.flywheelIO = flywheelIO;
     this.hoodIO = hoodIO;
+
+    // Build triggers once; lambdas capture 'this' and evaluate live state each poll
+    flywheelReadyTrigger =
+        new Trigger(
+            () ->
+                Math.abs(getFlywheelErrorRadPerSec())
+                    <= flywheelAngularTolerance.in(RadiansPerSecond));
+    hoodReadyTrigger = new Trigger(() -> hoodInputs.atSetpoint);
+    isShootingTrigger = new Trigger(() -> isShooting);
+    readyToShootTrigger = isShootingTrigger.and(flywheelReadyTrigger).and(hoodReadyTrigger);
   }
 
   /** Updates hardware inputs, logs data, and updates status alerts. */
@@ -116,25 +132,23 @@ public class Shooter extends SubsystemBase {
    *
    * @return True if the flywheels are spun up, the hood is in position, and the shooter is active.
    */
-  public boolean isReadyToShoot() {
-    return isFlywheelReady() && isHoodReady() && isShooting;
+  public Trigger isReadyToShoot() {
+    return readyToShootTrigger;
   }
 
   /** Returns true if the flywheel velocity is within tolerance of the target. */
-  public boolean isFlywheelReady() {
-    double errorRps =
-        targetVelocity.in(RadiansPerSecond) - flywheelInputs.velocity.in(RadiansPerSecond);
-    return Math.abs(errorRps) <= flywheelAngularTolerance.in(RadiansPerSecond);
+  public Trigger isFlywheelReady() {
+    return flywheelReadyTrigger;
   }
 
   /** Returns true if the hood actuator has reached its setpoint. */
-  public boolean isHoodReady() {
-    return hoodInputs.atSetpoint;
+  public Trigger isHoodReady() {
+    return hoodReadyTrigger;
   }
 
   /** Returns true if the shooter has been commanded to an active shooting state. */
-  public boolean isShooting() {
-    return isShooting;
+  public Trigger isShooting() {
+    return isShootingTrigger;
   }
 
   /** Returns the flywheel velocity error in radians per second (target minus actual). */

@@ -30,6 +30,17 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 public class VisionIOPhoton implements VisionIO {
   private final List<CameraContext> cameras = new ArrayList<>();
 
+  // Pre-allocated buffers to avoid ArrayList/stream/boxing allocations every cycle.
+  // Sized to a reasonable max; if more results arrive they are silently dropped.
+  private static final int MAX_OBSERVATIONS = 16;
+  private final Pose2d[] poseBuffer = new Pose2d[MAX_OBSERVATIONS];
+  private final double[] timestampBuffer = new double[MAX_OBSERVATIONS];
+  private final int[] cameraIdBuffer = new int[MAX_OBSERVATIONS];
+  private final int[] tagCountBuffer = new int[MAX_OBSERVATIONS];
+  private final double[] stdXBuffer = new double[MAX_OBSERVATIONS];
+  private final double[] stdYBuffer = new double[MAX_OBSERVATIONS];
+  private final double[] stdRotBuffer = new double[MAX_OBSERVATIONS];
+
   private static class CameraContext {
     public final int id;
     public final PhotonCamera camera;
@@ -50,14 +61,7 @@ public class VisionIOPhoton implements VisionIO {
 
   @Override
   public void updateInputs(VisionIOInputs inputs) {
-    List<Pose2d> poses = new ArrayList<>();
-    List<Double> timestamps = new ArrayList<>();
-    List<Integer> cameraIds = new ArrayList<>();
-    List<Integer> tagCounts = new ArrayList<>();
-    List<Double> stdX = new ArrayList<>();
-    List<Double> stdY = new ArrayList<>();
-    List<Double> stdRot = new ArrayList<>();
-
+    int count = 0;
     boolean allConnected = true;
 
     for (CameraContext ctx : cameras) {
@@ -74,7 +78,7 @@ public class VisionIOPhoton implements VisionIO {
                 .estimateCoprocMultiTagPose(result)
                 .or(() -> ctx.estimator.estimateLowestAmbiguityPose(result));
 
-        if (estimation.isPresent()) {
+        if (estimation.isPresent() && count < MAX_OBSERVATIONS) {
           EstimatedRobotPose estimatedPose = estimation.get();
           Pose2d pose2d = estimatedPose.estimatedPose.toPose2d();
           List<PhotonTrackedTarget> targets = result.getTargets();
@@ -87,26 +91,27 @@ public class VisionIOPhoton implements VisionIO {
           // Calculate Standard Deviations
           Matrix<N3, N1> stdDevs = getEstimationStdDevs(pose2d, targets);
 
-          poses.add(pose2d);
-          timestamps.add(estimatedPose.timestampSeconds);
-          cameraIds.add(ctx.id);
-          tagCounts.add(targets.size());
-          stdX.add(stdDevs.get(0, 0));
-          stdY.add(stdDevs.get(1, 0));
-          stdRot.add(stdDevs.get(2, 0));
+          poseBuffer[count] = pose2d;
+          timestampBuffer[count] = estimatedPose.timestampSeconds;
+          cameraIdBuffer[count] = ctx.id;
+          tagCountBuffer[count] = targets.size();
+          stdXBuffer[count] = stdDevs.get(0, 0);
+          stdYBuffer[count] = stdDevs.get(1, 0);
+          stdRotBuffer[count] = stdDevs.get(2, 0);
+          count++;
         }
       }
     }
 
-    // Update the AutoLogged inputs
+    // Copy from buffers into exact-sized arrays for AutoLog
     inputs.serverLoaded = allConnected;
-    inputs.visionPoses = poses.toArray(new Pose2d[0]);
-    inputs.timestamps = timestamps.stream().mapToDouble(Double::doubleValue).toArray();
-    inputs.cameraIds = cameraIds.stream().mapToInt(Integer::intValue).toArray();
-    inputs.tagCounts = tagCounts.stream().mapToInt(Integer::intValue).toArray();
-    inputs.stdDevX = stdX.stream().mapToDouble(Double::doubleValue).toArray();
-    inputs.stdDevY = stdY.stream().mapToDouble(Double::doubleValue).toArray();
-    inputs.stdDevRot = stdRot.stream().mapToDouble(Double::doubleValue).toArray();
+    inputs.visionPoses = java.util.Arrays.copyOf(poseBuffer, count);
+    inputs.timestamps = java.util.Arrays.copyOf(timestampBuffer, count);
+    inputs.cameraIds = java.util.Arrays.copyOf(cameraIdBuffer, count);
+    inputs.tagCounts = java.util.Arrays.copyOf(tagCountBuffer, count);
+    inputs.stdDevX = java.util.Arrays.copyOf(stdXBuffer, count);
+    inputs.stdDevY = java.util.Arrays.copyOf(stdYBuffer, count);
+    inputs.stdDevRot = java.util.Arrays.copyOf(stdRotBuffer, count);
   }
 
   /** Logic from Riptide's AprilTagAlgorithms.java */

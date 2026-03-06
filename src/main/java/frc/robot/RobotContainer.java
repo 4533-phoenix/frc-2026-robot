@@ -7,9 +7,12 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Meters;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -34,10 +37,14 @@ import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.indexer.IndexerIO;
 import frc.robot.subsystems.indexer.IndexerIOSim;
 import frc.robot.subsystems.indexer.IndexerIOSpark;
-import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.intake.IntakeIO;
-import frc.robot.subsystems.intake.IntakeIOReal;
-import frc.robot.subsystems.intake.IntakeIOSim;
+import frc.robot.subsystems.intake.arm.Arm;
+import frc.robot.subsystems.intake.arm.ArmIO;
+import frc.robot.subsystems.intake.arm.ArmIOSim;
+import frc.robot.subsystems.intake.arm.ArmIOSpark;
+import frc.robot.subsystems.intake.spinner.Spinner;
+import frc.robot.subsystems.intake.spinner.SpinnerIO;
+import frc.robot.subsystems.intake.spinner.SpinnerIOSim;
+import frc.robot.subsystems.intake.spinner.SpinnerIOSpark;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
@@ -64,7 +71,8 @@ public class RobotContainer {
   // Subsystems
   private final Drive drive;
   private final Climb climb;
-  private final Intake intake;
+  private final Arm arm;
+  private final Spinner spinner;
   private final Shooter shooter;
   private final Indexer indexer;
   private final Vision vision;
@@ -97,7 +105,8 @@ public class RobotContainer {
                 new ModuleIOSpark(2),
                 new ModuleIOSpark(3));
         climb = new Climb(new ClimbIOReal());
-        intake = new Intake(new IntakeIOReal());
+        arm = new Arm(new ArmIOSpark());
+        spinner = new Spinner(new SpinnerIOSpark());
         shooter = new Shooter(new FlywheelIOTalonFX(), new HoodIOServo());
         indexer = new Indexer(new IndexerIOSpark());
         vision = new Vision(new VisionIOPhoton(), drive);
@@ -114,7 +123,8 @@ public class RobotContainer {
                 new ModuleIOSim(2),
                 new ModuleIOSim(3));
         climb = new Climb(new ClimbIOSim());
-        intake = new Intake(new IntakeIOSim());
+        arm = new Arm(new ArmIOSim());
+        spinner = new Spinner(new SpinnerIOSim());
         shooter = new Shooter(new FlywheelIOSim(), new HoodIOSim());
         indexer = new Indexer(new IndexerIOSim());
         vision = new Vision(new VisionIOSim(drive::getPose), drive);
@@ -130,7 +140,8 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {});
         climb = new Climb(new ClimbIO() {});
-        intake = new Intake(new IntakeIO() {});
+        arm = new Arm(new ArmIO() {});
+        spinner = new Spinner(new SpinnerIO() {});
         shooter = new Shooter(new FlywheelIO() {}, new HoodIO() {});
         indexer = new Indexer(new IndexerIO() {});
         vision = new Vision(new VisionIO() {}, drive);
@@ -138,17 +149,47 @@ public class RobotContainer {
     }
 
     // Build the superstructure coordinator after subsystems are initialized but before bindings
-    superstructure = new Superstructure(drive, shooter, indexer, intake, climb);
+    superstructure = new Superstructure(drive, shooter, indexer, arm, climb);
 
     // Set up auto routines via PathPlanner
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
-    // Shoot preload auto forces superstructure to FIRE state
+    // Basic autos to just shoot the preloaded game piece from the starting pose, for both alliances
     autoChooser.addOption(
-        "Shoot Preload",
-        Commands.startEnd(
-            () -> superstructure.setGoal(RobotGoal.FIRE),
-            () -> superstructure.setGoal(RobotGoal.IDLE)));
+        "Left Shoot Preload",
+        Commands.sequence(
+            Commands.runOnce(
+                () ->
+                    drive.setPose(
+                        Util.flipAllianceIfNeeded(
+                            new Pose2d(
+                                3.536,
+                                Constants.fieldWidth.in(Meters) - 2.437,
+                                new Rotation2d(0))))),
+            Commands.parallel(
+                Commands.startEnd(
+                    () -> superstructure.setGoal(RobotGoal.FIRE),
+                    () -> superstructure.setGoal(RobotGoal.IDLE)),
+                Commands.sequence(
+                    Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
+                        .withTimeout(1.0),
+                    Commands.runOnce(() -> drive.runVelocity(new ChassisSpeeds()))))));
+
+    autoChooser.addOption(
+        "Right Shoot Preload",
+        Commands.sequence(
+            Commands.runOnce(
+                () ->
+                    drive.setPose(
+                        Util.flipAllianceIfNeeded(new Pose2d(3.536, 2.437, new Rotation2d(0))))),
+            Commands.parallel(
+                Commands.startEnd(
+                    () -> superstructure.setGoal(RobotGoal.FIRE),
+                    () -> superstructure.setGoal(RobotGoal.IDLE)),
+                Commands.sequence(
+                    Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
+                        .withTimeout(1.0),
+                    Commands.runOnce(() -> drive.runVelocity(new ChassisSpeeds()))))));
 
     // // Set up characterization routines for SysId
     // autoChooser.addOption(
@@ -172,8 +213,8 @@ public class RobotContainer {
     // The superstructure periodic command owns the shooter and indexer subsystems
     shooter.setDefaultCommand(superstructure.getPeriodicCommand());
 
-    // Intake default command is driven by the superstructure state
-    intake.setDefaultCommand(superstructure.getIntakeDefaultCommand());
+    // Intake arm default command is driven by the superstructure state
+    arm.setDefaultCommand(superstructure.getArmDefaultCommand());
 
     // Schedule auto-aim drive whenever the superstructure requests it
     new Trigger(superstructure::wantsAutoAim)
@@ -210,7 +251,8 @@ public class RobotContainer {
                             .setRumble(GenericHID.RumbleType.kLeftRumble, 0.0)));
 
     // Only rumble when the driver is actively aiming
-    driverController.leftTrigger()
+    driverController
+        .leftTrigger()
         .and(new Trigger(superstructure::isReadyToFire))
         .whileTrue(
             Commands.startEnd(
@@ -270,17 +312,20 @@ public class RobotContainer {
             () -> -driverController.getLeftX(),
             () -> -driverController.getRightX()));
 
-    // Intake deploy + spinner overlay (orthogonal to the state machine).
-    // The onDeploy callback tells the superstructure that a driver-initiated deploy has occurred,
-    // so the arm stays deployed after leaving climb mode.
+    // Signal the superstructure to deploy the arm whenever a bumper is held.
+    // The arm default command (driven by the superstructure) handles the actual deploy/retract.
     operatorController
         .leftBumper()
-        .whileTrue(
-            IntakeCommands.deployAndRunSpinnersIn(intake, superstructure::signalIntakeDeploy));
+        .or(operatorController.rightBumper())
+        .and(() -> climb.liftLowerLimit())
+        .whileTrue(Commands.run(superstructure::signalIntakeDeploy));
+
+    // Spinner commands only run once the arm is deployed.
+    operatorController.leftBumper().and(arm.isDeployed()).whileTrue(IntakeCommands.intake(spinner));
     operatorController
         .rightBumper()
-        .whileTrue(
-            IntakeCommands.deployAndRunSpinnersOut(intake, superstructure::signalIntakeDeploy));
+        .and(arm.isDeployed())
+        .whileTrue(IntakeCommands.extake(spinner));
 
     // Reset gyro heading
     driverController
@@ -296,9 +341,10 @@ public class RobotContainer {
     // Climb motor controls
     operatorController
         .povUp()
+        .and(arm.isRetracted())
         .onTrue(
             Commands.either(
-                ClimbCommands.liftUp(climb, intake),
+                ClimbCommands.liftUp(climb),
                 Commands.none(),
                 () -> superstructure.getGoal() == RobotGoal.CLIMB));
     operatorController
