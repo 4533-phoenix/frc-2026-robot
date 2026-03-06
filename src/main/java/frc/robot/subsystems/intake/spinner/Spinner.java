@@ -47,7 +47,7 @@ public class Spinner extends SubsystemBase {
   }
 
   /** Stops the spinner rollers. */
-  public void stopSpinner() {
+  public void stop() {
     io.setVoltage(Volts.of(0.0));
   }
 }

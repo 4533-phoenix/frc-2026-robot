@@ -132,7 +132,7 @@ public class Shooter extends SubsystemBase {
    *
    * @return True if the flywheels are spun up, the hood is in position, and the shooter is active.
    */
-  public Trigger isReadyToShoot() {
+  public Trigger isShooterReady() {
     return readyToShootTrigger;
   }
 

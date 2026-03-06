@@ -24,7 +24,6 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
-import frc.robot.util.HardwareConfigManager;
 import java.util.function.DoubleSupplier;
 
 /**
@@ -42,23 +41,11 @@ public class ArmIOSpark implements ArmIO {
   // Debouncers to prevent rapid flickering of connection status
   private final Debouncer connectedDebounce = new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
-  // Target the user requested but not necessarily sent to the hardware yet
-  private Angle pendingTarget = null;
-  // Last target that was actually sent to the IO layer
-  private Angle lastSentTarget = null;
-
   /** Creates a new ArmIOSpark and configures the SparkMax controllers. */
   public ArmIOSpark() {
     encoder = spark.getAbsoluteEncoder();
     controller = spark.getClosedLoopController();
 
-    // Register async config task
-    HardwareConfigManager.registerTask(this::configureHardware);
-  }
-
-  // Runs on background thread
-  private void configureHardware() {
-    // Configure Arm Motor
     var armConfig = new SparkMaxConfig();
     armConfig
         .idleMode(IdleMode.kBrake)
@@ -124,18 +111,6 @@ public class ArmIOSpark implements ArmIO {
    */
   @Override
   public void updateInputs(ArmIOInputs inputs) {
-    if (!HardwareConfigManager.isReady()) return;
-
-    if (pendingTarget != null) {
-      if (lastSentTarget == null || !pendingTarget.equals(lastSentTarget)) {
-        controller.setSetpoint(
-            pendingTarget.in(Radians),
-            ControlType.kMAXMotionPositionControl,
-            ClosedLoopSlot.kSlot0);
-        lastSentTarget = pendingTarget;
-      }
-    }
-
     // Arm Motor Inputs
     boolean armSparkOk = true;
     armSparkOk &= ifOk(spark, encoder::getPosition, (value) -> inputs.position = Radians.of(value));
@@ -160,10 +135,7 @@ public class ArmIOSpark implements ArmIO {
    */
   @Override
   public void setPosition(Angle angle) {
-    pendingTarget = angle;
-    if (!HardwareConfigManager.isReady()) return;
     controller.setSetpoint(
         angle.in(Radians), ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
-    lastSentTarget = angle;
   }
 }

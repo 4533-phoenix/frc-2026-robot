@@ -33,7 +33,7 @@ public class IntakeCommands {
    * @return A command that runs the spinners inward while held.
    */
   public static Command intake(Spinner spinner) {
-    return Commands.runEnd(spinner::intake, spinner::stopSpinner, spinner);
+    return Commands.runEnd(spinner::intake, spinner::stop, spinner);
   }
 
   /**
@@ -43,7 +43,7 @@ public class IntakeCommands {
    * @return A command that runs the spinners outward while held.
    */
   public static Command extake(Spinner spinner) {
-    return Commands.runEnd(spinner::extake, spinner::stopSpinner, spinner);
+    return Commands.runEnd(spinner::extake, spinner::stop, spinner);
   }
 
   /**
@@ -53,8 +53,8 @@ public class IntakeCommands {
    * @param arm The arm subsystem.
    * @return A command that continuously holds the arm deployed.
    */
-  public static Command holdDeployed(Arm arm) {
-    return Commands.run(arm::deploy, arm);
+  public static Command deploy(Arm arm) {
+    return Commands.runOnce(arm::deploy, arm);
   }
 
   /**
@@ -64,7 +64,7 @@ public class IntakeCommands {
    * @param arm The arm subsystem.
    * @return A command that continuously holds the arm retracted.
    */
-  public static Command holdRetracted(Arm arm) {
-    return Commands.run(arm::retract, arm);
+  public static Command retract(Arm arm) {
+    return Commands.runOnce(arm::retract, arm);
   }
 }

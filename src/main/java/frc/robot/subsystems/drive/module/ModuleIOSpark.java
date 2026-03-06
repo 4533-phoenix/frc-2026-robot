@@ -38,7 +38,6 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.SparkOdometryThread;
-import frc.robot.util.HardwareConfigManager;
 import java.util.Queue;
 import java.util.function.DoubleSupplier;
 
@@ -117,12 +116,6 @@ public class ModuleIOSpark implements ModuleIO {
                     turnAbsolutePositionSignal.refresh().getValueAsDouble()
                         * turnEncoderPositionFactor);
 
-    // Queue CAN configuration for background thread
-    HardwareConfigManager.registerTask(() -> configureHardware(module));
-  }
-
-  // Runs on background thread
-  private void configureHardware(int module) {
     var driveConfig = new SparkMaxConfig();
     driveConfig
         .idleMode(IdleMode.kBrake)
@@ -218,16 +211,6 @@ public class ModuleIOSpark implements ModuleIO {
   /** Updates hardware inputs, monitors connectivity, and manages turn encoder drift. */
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
-    // Gate all IO on hardware config ready
-    if (!HardwareConfigManager.isReady()) {
-      inputs.driveConnected = false;
-      inputs.turnConnected = false;
-      timestampQueue.clear();
-      drivePositionQueue.clear();
-      turnPositionQueue.clear();
-      return;
-    }
-
     // Drive Motor Inputs
     boolean driveOk = true;
     driveOk &=
@@ -335,19 +318,16 @@ public class ModuleIOSpark implements ModuleIO {
 
   @Override
   public void setDriveOpenLoop(Voltage output) {
-    if (!HardwareConfigManager.isReady()) return;
     driveSpark.setVoltage(output);
   }
 
   @Override
   public void setTurnOpenLoop(Voltage output) {
-    if (!HardwareConfigManager.isReady()) return;
     turnSpark.setVoltage(output);
   }
 
   @Override
   public void setDriveVelocity(AngularVelocity velocity) {
-    if (!HardwareConfigManager.isReady()) return;
     // Calculate Feedforward voltage based on velocity
     double ffVolts =
         driveKs * Math.signum(velocity.in(RadiansPerSecond))
@@ -363,7 +343,6 @@ public class ModuleIOSpark implements ModuleIO {
 
   @Override
   public void setTurnPosition(Angle rotation) {
-    if (!HardwareConfigManager.isReady()) return;
     // Use closed-loop position control
     turnController.setSetpoint(rotation.in(Radians), ControlType.kPosition, ClosedLoopSlot.kSlot0);
   }

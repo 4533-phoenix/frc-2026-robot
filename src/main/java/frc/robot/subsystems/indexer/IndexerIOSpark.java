@@ -19,7 +19,6 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Voltage;
-import frc.robot.util.HardwareConfigManager;
 import java.util.function.DoubleSupplier;
 
 /**
@@ -36,10 +35,6 @@ public class IndexerIOSpark implements IndexerIO {
 
   /** Creates a new IndexerIOSpark and configures the Spark Max. */
   public IndexerIOSpark() {
-    HardwareConfigManager.registerTask(this::configureHardware);
-  }
-
-  private void configureHardware() {
     var config = new SparkMaxConfig();
     config
         .idleMode(IdleMode.kBrake)
@@ -56,7 +51,6 @@ public class IndexerIOSpark implements IndexerIO {
   /** Updates hardware inputs and monitors connectivity. */
   @Override
   public void updateInputs(IndexerIOInputs inputs) {
-    if (!HardwareConfigManager.isReady()) return;
     boolean sparkOk = true;
 
     // Safely retrieve telemetry from the motor controller
@@ -79,7 +73,6 @@ public class IndexerIOSpark implements IndexerIO {
    */
   @Override
   public void setVoltage(Voltage voltage) {
-    if (!HardwareConfigManager.isReady()) return;
     spark.setVoltage(voltage.in(Volts));
   }
 }

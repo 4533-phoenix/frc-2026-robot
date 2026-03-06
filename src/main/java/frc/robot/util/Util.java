@@ -105,7 +105,8 @@ public class Util {
    */
   public static Translation2d flipAlliance(Translation2d translation) {
     return new Translation2d(
-        Constants.fieldLength.minus(translation.getMeasureX()), translation.getMeasureY());
+        Constants.fieldLength.minus(translation.getMeasureX()),
+        Constants.fieldWidth.minus(translation.getMeasureY()));
   }
 
   /**
@@ -115,7 +116,7 @@ public class Util {
    * @return The flipped rotation.
    */
   public static Rotation2d flipAlliance(Rotation2d rotation) {
-    return Rotation2d.fromRadians(Math.PI).minus(rotation);
+    return rotation.plus(Rotation2d.kPi);
   }
 
   /**

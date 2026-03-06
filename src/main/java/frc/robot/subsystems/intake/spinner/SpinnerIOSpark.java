@@ -20,7 +20,6 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Voltage;
-import frc.robot.util.HardwareConfigManager;
 import java.util.function.DoubleSupplier;
 
 /**
@@ -41,13 +40,6 @@ public class SpinnerIOSpark implements SpinnerIO {
   public SpinnerIOSpark() {
     encoder = spark.getEncoder();
 
-    // Register async config task
-    HardwareConfigManager.registerTask(this::configureHardware);
-  }
-
-  // Runs on background thread
-  private void configureHardware() {
-    // Configure Spinner Motor
     var config = new SparkMaxConfig();
     config
         .idleMode(IdleMode.kBrake)
@@ -87,8 +79,6 @@ public class SpinnerIOSpark implements SpinnerIO {
    */
   @Override
   public void updateInputs(SpinnerIOInputs inputs) {
-    if (!HardwareConfigManager.isReady()) return;
-
     // Spinner Motor Inputs
     boolean spinnerSparkOk = true;
     spinnerSparkOk &=
@@ -112,7 +102,6 @@ public class SpinnerIOSpark implements SpinnerIO {
    */
   @Override
   public void setVoltage(Voltage voltage) {
-    if (!HardwareConfigManager.isReady()) return;
     spark.setVoltage(voltage.in(Volts));
   }
 }
