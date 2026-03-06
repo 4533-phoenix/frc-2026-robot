@@ -1,10 +1,3 @@
-// Copyright (c) 2026 FRC Team 4533 (Phoenix)
-// Derived from the AdvantageKit framework by Littleton Robotics
-//
-// Use of this source code is governed by a BSD
-// license that can be found in the LICENSE file
-// at the root directory of this project.
-
 package frc.robot.subsystems.intake.spinner;
 
 import static edu.wpi.first.units.Units.*;
@@ -19,7 +12,10 @@ public class Spinner extends SubsystemBase {
   private final SpinnerIO io;
   private final SpinnerIOInputsAutoLogged inputs = new SpinnerIOInputsAutoLogged();
 
-  // Alerts for hardware monitoring
+  // Goals for the subsystem
+  public enum Goal { STOP, INTAKE, EXTAKE }
+  private Goal currentGoal = Goal.STOP;
+
   private final Alert spinnerDisconnectedAlert =
       new Alert("Intake spinner motor disconnected", AlertType.kWarning);
 
@@ -27,27 +23,24 @@ public class Spinner extends SubsystemBase {
     this.io = io;
   }
 
-  /** Updates hardware inputs, logs data, and updates status alerts. */
+  /** Sets the current requested behavior for the rollers. */
+  public void setGoal(Goal goal) { 
+    this.currentGoal = goal; 
+  }
+
   @Override
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Spinner", inputs);
-
     spinnerDisconnectedAlert.set(!inputs.connected);
-  }
 
-  /** Spins the spinner rollers to bring game pieces into the robot. */
-  public void intake() {
-    io.setVoltage(intakeVoltage);
-  }
+    // Apply the voltage based on the current goal
+    switch (currentGoal) {
+      case INTAKE -> io.setVoltage(intakeVoltage);
+      case EXTAKE -> io.setVoltage(extakeVoltage);
+      case STOP -> io.setVoltage(Volts.of(0.0));
+    }
 
-  /** Spins the spinner rollers in reverse to eject game pieces. */
-  public void extake() {
-    io.setVoltage(extakeVoltage);
-  }
-
-  /** Stops the spinner rollers. */
-  public void stop() {
-    io.setVoltage(Volts.of(0.0));
+    Logger.recordOutput("Spinner/Goal", currentGoal.toString());
   }
 }

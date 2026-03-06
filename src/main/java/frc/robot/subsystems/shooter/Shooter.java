@@ -22,6 +22,8 @@ import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOInputsAutoLogged;
 import frc.robot.subsystems.shooter.hood.HoodIO;
 import frc.robot.subsystems.shooter.hood.HoodIOInputsAutoLogged;
+import frc.robot.util.Util;
+
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -37,6 +39,10 @@ public class Shooter extends SubsystemBase {
   private final HoodIO hoodIO;
   private final HoodIOInputsAutoLogged hoodInputs = new HoodIOInputsAutoLogged();
 
+  public enum Goal { STOP, SHOOTING }
+  private Goal currentGoal = Goal.STOP;
+  private ShooterState lastTargetState = new ShooterState(RadiansPerSecond.of(0), Degrees.of(0));
+  
   private AngularVelocity targetVelocity = RadiansPerSecond.of(0.0);
   private boolean isShooting = false;
 
@@ -69,6 +75,8 @@ public class Shooter extends SubsystemBase {
     readyToShootTrigger = isShootingTrigger.and(flywheelReadyTrigger).and(hoodReadyTrigger);
   }
 
+  public void setGoal(Goal goal) { this.currentGoal = goal; }
+
   /** Updates hardware inputs, logs data, and updates status alerts. */
   @Override
   public void periodic() {
@@ -78,6 +86,13 @@ public class Shooter extends SubsystemBase {
 
     hoodIO.updateInputs(hoodInputs);
     Logger.processInputs("Shooter/Hood", hoodInputs);
+
+    switch (currentGoal) {
+      case STOP -> stop();
+      case SHOOTING -> setTargetState(lastTargetState);
+    }
+    
+    Logger.recordOutput("Shooter/Goal", currentGoal.toString());
   }
 
   /**
@@ -85,22 +100,11 @@ public class Shooter extends SubsystemBase {
    *
    * @param state The desired {@link ShooterState} containing target flywheel speed and hood angle.
    */
-  public void setTargetState(ShooterState state) {
+  private void setTargetState(ShooterState state) {
     targetVelocity = state.flywheelSpeed();
     flywheelIO.setAngularVelocity(state.flywheelSpeed());
     hoodIO.setLength(convertHoodAngleToServoLength(state.hoodAngle()));
     isShooting = true;
-  }
-
-  /**
-   * Spins the flywheel at a low idle speed and retracts the hood. Used by the WARMING state to
-   * reduce spin-up latency without full target tracking.
-   */
-  public void setIdleSpeed() {
-    targetVelocity = flywheelIdleSpeed;
-    flywheelIO.setAngularVelocity(flywheelIdleSpeed);
-    hoodIO.retract();
-    isShooting = false;
   }
 
   /**
@@ -162,5 +166,9 @@ public class Shooter extends SubsystemBase {
     flywheelIO.stop();
     hoodIO.retract();
     isShooting = false;
+  }
+
+  public void setAimingParameters(ShooterState state) {
+    this.lastTargetState = state;
   }
 }

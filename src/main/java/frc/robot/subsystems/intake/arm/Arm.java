@@ -10,7 +10,6 @@ package frc.robot.subsystems.intake.arm;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.intake.arm.ArmConstants.*;
 
-import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -27,11 +26,13 @@ public class Arm extends SubsystemBase {
   private final ArmIO io;
   private final ArmIOInputsAutoLogged inputs = new ArmIOInputsAutoLogged();
 
+  public enum Goal { RETRACT, DEPLOY }
+  private Goal currentGoal = Goal.RETRACT;
+
   // Alerts for hardware monitoring
   private final Alert armDisconnectedAlert =
       new Alert("Intake arm motor disconnected", AlertType.kWarning);
 
-  // Cached Triggers — created once, lambdas evaluate live state each poll
   private final Trigger deployedTrigger;
   private final Trigger retractedTrigger;
 
@@ -54,33 +55,30 @@ public class Arm extends SubsystemBase {
                     < intakeTolerance.in(Degrees));
   }
 
+  public void setGoal(Goal goal) { this.currentGoal = goal; }
+
   /** Updates hardware inputs, logs data, and updates status alerts. */
   @Override
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Arm", inputs);
-
-    // Update connection alerts based on hardware feedback
     armDisconnectedAlert.set(!inputs.connected);
+
+    switch (currentGoal) {
+      case RETRACT -> retract();
+      case DEPLOY -> deploy();
+    }
+    Logger.recordOutput("Arm/Goal", currentGoal.toString());
   }
 
   /** Deploys the intake arm to the operational position. */
-  public void deploy() {
-    setSetpoint(deployedPosition);
+  private void deploy() {
+    io.setPosition(deployedPosition);
   }
 
   /** Retracts the intake arm to the stowed position. */
-  public void retract() {
-    setSetpoint(retractedPosition);
-  }
-
-  /**
-   * Sets the target position for the arm actuator.
-   *
-   * @param newTarget The target angle for the arm.
-   */
-  private void setSetpoint(Angle newTarget) {
-    io.setPosition(newTarget);
+  private void retract() {
+    io.setPosition(retractedPosition);
   }
 
   public Trigger isDeployed() {

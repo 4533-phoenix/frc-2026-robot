@@ -91,8 +91,6 @@ public final class ShooterConstants {
   public static final AngularVelocity flywheelMinRps = RotationsPerSecond.of(0.0);
   /** Maximum allowable flywheel speed. */
   public static final AngularVelocity flywheelMaxRps = RotationsPerSecond.of(100.0);
-  /** Idle flywheel speed used during the WARMING state to reduce spin-up latency. */
-  public static final AngularVelocity flywheelIdleSpeed = RotationsPerSecond.of(30.0);
 
   // ---------- Lobbing constants ----------
   /** Flywheel speed for lobbed shots. Lower than hub shots for a high-arc trajectory. */
