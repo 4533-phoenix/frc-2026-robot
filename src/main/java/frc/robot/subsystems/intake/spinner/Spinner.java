@@ -5,6 +5,7 @@ import static frc.robot.subsystems.intake.spinner.SpinnerConstants.*;
 
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
@@ -38,9 +39,21 @@ public class Spinner extends SubsystemBase {
     switch (currentGoal) {
       case INTAKE -> io.setVoltage(intakeVoltage);
       case EXTAKE -> io.setVoltage(extakeVoltage);
-      case STOP -> io.setVoltage(Volts.of(0.0));
+      case STOP -> io.setVoltage(Volts.zero());
     }
 
     Logger.recordOutput("Spinner/Goal", currentGoal.toString());
+  }
+
+  public Command intake() {
+    return this.runEnd(() -> setGoal(Goal.INTAKE), () -> setGoal(Goal.STOP));
+  }
+
+  public Command extake() {
+    return this.runEnd(() -> setGoal(Goal.EXTAKE), () -> setGoal(Goal.STOP));
+  }
+
+  public Command stop() {
+    return this.runOnce(() -> setGoal(Goal.STOP));
   }
 }

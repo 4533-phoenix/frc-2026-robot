@@ -12,7 +12,10 @@ import static frc.robot.subsystems.climb.ClimbConstants.*;
 
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -25,7 +28,13 @@ public class Climb extends SubsystemBase {
   private final ClimbIO io;
   private final ClimbIOInputsAutoLogged inputs = new ClimbIOInputsAutoLogged();
 
+  public enum Goal { STOP, UP, DOWN }
+  private Goal currentGoal = Goal.STOP;
+
   private final Alert disconnectedAlert = new Alert("Climb IO disconnected", AlertType.kWarning);
+
+  private final Trigger upTrigger;
+  private final Trigger downTrigger;
 
   /**
    * Creates a new Climb subsystem.
@@ -34,6 +43,14 @@ public class Climb extends SubsystemBase {
    */
   public Climb(ClimbIO io) {
     this.io = io;
+
+    upTrigger = new Trigger(() -> inputs.upperLimit);
+    downTrigger = new Trigger(() -> inputs.lowerLimit);
+  }
+
+  /** Sets the current requested goal for the climber. */
+  public void setGoal(Goal goal) {
+    this.currentGoal = goal;
   }
 
   /** Updates hardware inputs, logs data, and updates status alerts. */
@@ -42,46 +59,44 @@ public class Climb extends SubsystemBase {
     io.updateInputs(inputs);
     Logger.processInputs("Climb", inputs);
     disconnectedAlert.set(!inputs.connected);
+
+        switch (currentGoal) {
+      case UP -> {
+        if (upTrigger.getAsBoolean()) io.setLiftVoltage(Volts.zero());
+        else io.setLiftVoltage(defaultVoltage);
+      }
+      case DOWN -> {
+        if (downTrigger.getAsBoolean()) io.setLiftVoltage(Volts.zero());
+        else io.setLiftVoltage(defaultVoltage.unaryMinus());
+      }
+      case STOP -> io.setLiftVoltage(Volts.zero());
+    }
+
+    Logger.recordOutput("Climb/Goal", currentGoal.toString());
   }
 
   @Override
   public void simulationPeriodic() {}
 
-  /** Moves the lift mechanism up at the default voltage. */
-  public void startLiftUp() {
-    io.setLiftVoltage(defaultVoltage);
+  public Trigger isUp() {
+    return upTrigger;
   }
 
-  /** Moves the lift mechanism down at the default voltage. */
-  public void startLiftDown() {
-    io.setLiftVoltage(defaultVoltage.unaryMinus());
+  public Trigger isDown() {
+    return downTrigger;
   }
 
-  /** Stops the lift mechanism. */
-  public void stopLift() {
-    io.setLiftVoltage(Volts.of(0.0));
+    public Command raise() {
+    return this.runEnd(() -> setGoal(Goal.UP), () -> setGoal(Goal.STOP))
+        .until(upTrigger);
   }
 
-  /** Stops all climb mechanism components. */
-  public void stop() {
-    stopLift();
+  public Command lower() {
+    return this.runEnd(() -> setGoal(Goal.DOWN), () -> setGoal(Goal.STOP))
+        .until(downTrigger);
   }
 
-  /**
-   * Checks if the lift has reached its upper limit.
-   *
-   * @return True if upper limit switch is pressed or hardware is disconnected.
-   */
-  public boolean liftUpperLimit() {
-    return inputs.upperLimit || !inputs.connected;
-  }
-
-  /**
-   * Checks if the lift has reached its lower limit.
-   *
-   * @return True if lower limit switch is pressed or hardware is disconnected.
-   */
-  public boolean liftLowerLimit() {
-    return inputs.lowerLimit || !inputs.connected;
+  public Command stop() {
+    return this.runOnce(() -> setGoal(Goal.STOP));
   }
 }

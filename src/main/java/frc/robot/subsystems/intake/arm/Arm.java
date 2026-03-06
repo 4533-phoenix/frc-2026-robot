@@ -12,6 +12,7 @@ import static frc.robot.subsystems.intake.arm.ArmConstants.*;
 
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import org.littletonrobotics.junction.Logger;
@@ -30,7 +31,7 @@ public class Arm extends SubsystemBase {
   private Goal currentGoal = Goal.RETRACT;
 
   // Alerts for hardware monitoring
-  private final Alert armDisconnectedAlert =
+  private final Alert disconnectedAlert =
       new Alert("Intake arm motor disconnected", AlertType.kWarning);
 
   private final Trigger deployedTrigger;
@@ -62,23 +63,13 @@ public class Arm extends SubsystemBase {
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Arm", inputs);
-    armDisconnectedAlert.set(!inputs.connected);
+    disconnectedAlert.set(!inputs.connected);
 
     switch (currentGoal) {
-      case RETRACT -> retract();
-      case DEPLOY -> deploy();
+      case RETRACT -> io.setPosition(retractedPosition);
+      case DEPLOY -> io.setPosition(deployedPosition);
     }
     Logger.recordOutput("Arm/Goal", currentGoal.toString());
-  }
-
-  /** Deploys the intake arm to the operational position. */
-  private void deploy() {
-    io.setPosition(deployedPosition);
-  }
-
-  /** Retracts the intake arm to the stowed position. */
-  private void retract() {
-    io.setPosition(retractedPosition);
   }
 
   public Trigger isDeployed() {
@@ -87,5 +78,13 @@ public class Arm extends SubsystemBase {
 
   public Trigger isRetracted() {
     return retractedTrigger;
+  }
+
+  public Command deploy() {
+    return this.runOnce(() -> setGoal(Goal.DEPLOY));
+  }
+
+  public Command retract() {
+    return this.runOnce(() -> setGoal(Goal.RETRACT));
   }
 }

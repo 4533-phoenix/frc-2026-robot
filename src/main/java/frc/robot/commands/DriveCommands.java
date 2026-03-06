@@ -301,7 +301,7 @@ public class DriveCommands {
         // Allow modules to orient and hold voltage at 0 before starting
         Commands.run(
                 () -> {
-                  drive.runCharacterization(Volts.of(0.0));
+                  drive.runCharacterization(Volts.zero());
                 },
                 drive)
             .withTimeout(ffStartDelay),

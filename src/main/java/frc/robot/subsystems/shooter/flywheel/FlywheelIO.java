@@ -26,11 +26,11 @@ public interface FlywheelIO {
     /** Whether the motor controller is successfully connected. */
     public boolean connected = false;
     /** The current angular velocity of the flywheel. */
-    public AngularVelocity velocity = RadiansPerSecond.of(0.0);
+    public AngularVelocity velocity = RadiansPerSecond.zero();
     /** The voltage currently being applied to the motor. */
-    public Voltage appliedVoltage = Volts.of(0.0);
+    public Voltage appliedVoltage = Volts.zero();
     /** The current being drawn by the motor. */
-    public Current appliedCurrent = Amps.of(0.0);
+    public Current appliedCurrent = Amps.zero();
   }
 
   /**

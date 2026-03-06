@@ -270,7 +270,7 @@ public class Drive extends SubsystemBase {
    * @return A Command to execute the test.
    */
   public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
-    return run(() -> runCharacterization(Volts.of(0.0)))
+    return run(() -> runCharacterization(Volts.zero()))
         .withTimeout(1.0)
         .andThen(sysId.quasistatic(direction));
   }
@@ -282,7 +282,7 @@ public class Drive extends SubsystemBase {
    * @return A Command to execute the test.
    */
   public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-    return run(() -> runCharacterization(Volts.of(0.0)))
+    return run(() -> runCharacterization(Volts.zero()))
         .withTimeout(1.0)
         .andThen(sysId.dynamic(direction));
   }

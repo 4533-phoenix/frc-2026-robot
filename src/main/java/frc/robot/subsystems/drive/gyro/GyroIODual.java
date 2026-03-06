@@ -24,7 +24,7 @@ public class GyroIODual implements GyroIO {
   private final GyroIONavX navx = new GyroIONavX();
   private final GyroIOCanAndGyro canandgyro = new GyroIOCanAndGyro();
 
-  private Angle driftOffset = Radians.of(0.0);
+  private Angle driftOffset = Radians.zero();
 
   /** Updates the combined gyro inputs and manages drift compensation. */
   @Override

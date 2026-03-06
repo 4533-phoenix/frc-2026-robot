@@ -29,11 +29,11 @@ public interface SpinnerIO {
     /** Whether the spinner motor controller is connected. */
     public boolean connected = false;
     /** The current angular velocity of the intake spinner rollers. */
-    public AngularVelocity velocity = RadiansPerSecond.of(0.0);
+    public AngularVelocity velocity = RadiansPerSecond.zero();
     /** The voltage currently being applied to the spinner motor. */
-    public Voltage appliedVoltage = Volts.of(0.0);
+    public Voltage appliedVoltage = Volts.zero();
     /** The current drawn by the spinner motor. */
-    public Current appliedCurrent = Amps.of(0.0);
+    public Current appliedCurrent = Amps.zero();
   }
 
   /**

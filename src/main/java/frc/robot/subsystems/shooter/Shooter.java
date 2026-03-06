@@ -22,7 +22,6 @@ import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOInputsAutoLogged;
 import frc.robot.subsystems.shooter.hood.HoodIO;
 import frc.robot.subsystems.shooter.hood.HoodIOInputsAutoLogged;
-import frc.robot.util.Util;
 
 import org.littletonrobotics.junction.Logger;
 
@@ -43,7 +42,7 @@ public class Shooter extends SubsystemBase {
   private Goal currentGoal = Goal.STOP;
   private ShooterState lastTargetState = new ShooterState(RadiansPerSecond.of(0), Degrees.of(0));
   
-  private AngularVelocity targetVelocity = RadiansPerSecond.of(0.0);
+  private AngularVelocity targetVelocity = RadiansPerSecond.zero();
   private boolean isShooting = false;
 
   private final Trigger flywheelReadyTrigger;
@@ -162,7 +161,7 @@ public class Shooter extends SubsystemBase {
 
   /** Safely stops the flywheels and retracts the hood. */
   public void stop() {
-    targetVelocity = RadiansPerSecond.of(0.0);
+    targetVelocity = RadiansPerSecond.zero();
     flywheelIO.stop();
     hoodIO.retract();
     isShooting = false;

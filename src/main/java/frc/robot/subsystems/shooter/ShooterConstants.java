@@ -86,12 +86,6 @@ public final class ShooterConstants {
   /** Acceleration feedforward gain for the flywheel. */
   public static final double flywheelKa = 0.04;
 
-  // ---------- Allowed flywheel velocity range ----------
-  /** Minimum allowable flywheel speed. */
-  public static final AngularVelocity flywheelMinRps = RotationsPerSecond.of(0.0);
-  /** Maximum allowable flywheel speed. */
-  public static final AngularVelocity flywheelMaxRps = RotationsPerSecond.of(100.0);
-
   // ---------- Lobbing constants ----------
   /** Flywheel speed for lobbed shots. Lower than hub shots for a high-arc trajectory. */
   public static final AngularVelocity lobFlywheelSpeed = RotationsPerSecond.of(40.0);

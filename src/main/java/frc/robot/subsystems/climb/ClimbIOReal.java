@@ -96,7 +96,7 @@ public class ClimbIOReal implements ClimbIO {
     boolean atLower = lowerLimit.isPressed();
 
     // Stop the motor if trying to move past a limit switch
-    if ((voltage.gt(Volts.of(0.0)) && atUpper) || (voltage.lt(Volts.of(0.0)) && atLower)) {
+    if ((voltage.gt(Volts.zero()) && atUpper) || (voltage.lt(Volts.zero()) && atLower)) {
       spark.setVoltage(0.0);
     } else {
       spark.setVoltage(voltage);

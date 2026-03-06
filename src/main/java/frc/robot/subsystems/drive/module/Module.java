@@ -101,13 +101,13 @@ public class Module {
    */
   public void runCharacterization(Voltage output) {
     io.setDriveOpenLoop(output);
-    io.setTurnPosition(Radians.of(0.0));
+    io.setTurnPosition(Radians.zero());
   }
 
   /** Disables all outputs to motors. */
   public void stop() {
-    io.setDriveOpenLoop(Volts.of(0.0));
-    io.setTurnOpenLoop(Volts.of(0.0));
+    io.setDriveOpenLoop(Volts.zero());
+    io.setTurnOpenLoop(Volts.zero());
   }
 
   /**

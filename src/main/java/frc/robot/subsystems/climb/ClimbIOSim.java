@@ -129,7 +129,7 @@ public class ClimbIOSim implements ClimbIO {
     boolean atUpper = forwardLimit.isPressed();
     boolean atLower = reverseLimit.isPressed();
 
-    if ((voltage.gt(Volts.of(0.0)) && atUpper) || (voltage.lt(Volts.of(0.0)) && atLower)) {
+    if ((voltage.gt(Volts.zero()) && atUpper) || (voltage.lt(Volts.zero()) && atLower)) {
       spark.setVoltage(0.0);
     } else {
       spark.setVoltage(voltage);

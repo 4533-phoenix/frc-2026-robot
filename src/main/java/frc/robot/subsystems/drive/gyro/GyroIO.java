@@ -28,10 +28,10 @@ public interface GyroIO {
     public boolean connected = false;
 
     /** The current yaw position from the gyro. */
-    public Angle yawPosition = Radians.of(0.0);
+    public Angle yawPosition = Radians.zero();
 
     /** The current angular velocity around the yaw axis. */
-    public AngularVelocity yawVelocity = RadiansPerSecond.of(0.0);
+    public AngularVelocity yawVelocity = RadiansPerSecond.zero();
 
     /**
      * Timestamps for high-frequency yaw measurements used for odometry.

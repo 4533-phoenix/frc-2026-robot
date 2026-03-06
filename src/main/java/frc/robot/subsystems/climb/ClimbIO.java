@@ -27,9 +27,9 @@ public interface ClimbIO {
     /** Whether the lift motor controller is currently connected and communicating. */
     public boolean connected = false;
     /** The voltage currently being applied to the lift motor. */
-    public Voltage appliedVoltage = Volts.of(0.0);
+    public Voltage appliedVoltage = Volts.zero();
     /** The current being drawn by the lift motor. */
-    public Current appliedCurrent = Amps.of(0.0);
+    public Current appliedCurrent = Amps.zero();
 
     // Limit switches
     /** Whether the lower limit switch is currently pressed. */

@@ -12,6 +12,7 @@ import static frc.robot.subsystems.indexer.IndexerConstants.*;
 
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
@@ -25,6 +26,9 @@ public class Indexer extends SubsystemBase {
   private final IndexerIO io;
   private final IndexerIOInputsAutoLogged inputs = new IndexerIOInputsAutoLogged();
 
+  public enum Goal { STOP, RUNNING }
+  private Goal currentGoal = Goal.STOP;
+
   private final Alert disconnectedAlert = new Alert("Indexer IO disconnected", AlertType.kWarning);
 
   /**
@@ -36,21 +40,30 @@ public class Indexer extends SubsystemBase {
     this.io = io;
   }
 
+  public void setGoal(Goal goal) {
+    this.currentGoal = goal;
+  }
+
   /** Updates hardware inputs, logs data, and updates status alerts. */
   @Override
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Indexer", inputs);
     disconnectedAlert.set(!inputs.connected);
+
+    switch (currentGoal) {
+      case RUNNING -> io.setVoltage(indexerOnVoltage);
+      case STOP -> io.setVoltage(Volts.zero());
+    }
+
+    Logger.recordOutput("Indexer/Goal", currentGoal.toString());
   }
 
-  /** Runs the indexer at the configured voltage. */
-  public void run() {
-    io.setVoltage(indexerOnVoltage);
+  public Command run() {
+    return this.runEnd(() -> setGoal(Goal.RUNNING), () -> setGoal(Goal.STOP));
   }
 
-  /** Stops the indexer motor. */
-  public void stop() {
-    io.setVoltage(Volts.of(0.0));
+  public Command stop() {
+    return this.runOnce(() -> setGoal(Goal.STOP));
   }
 }

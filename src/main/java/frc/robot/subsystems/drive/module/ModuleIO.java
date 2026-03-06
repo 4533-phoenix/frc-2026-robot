@@ -29,25 +29,25 @@ public interface ModuleIO {
     /** Whether the drive motor controller is currently connected. */
     public boolean driveConnected = false;
     /** The current position of the drive motor in radians. */
-    public Angle drivePosition = Radians.of(0.0);
+    public Angle drivePosition = Radians.zero();
     /** The current velocity of the drive motor in radians per second. */
-    public AngularVelocity driveVelocity = RadiansPerSecond.of(0.0);
+    public AngularVelocity driveVelocity = RadiansPerSecond.zero();
     /** The voltage currently being applied to the drive motor. */
-    public Voltage driveAppliedVoltage = Volts.of(0.0);
+    public Voltage driveAppliedVoltage = Volts.zero();
     /** The current being drawn by the drive motor. */
-    public Current driveCurrent = Amps.of(0.0);
+    public Current driveCurrent = Amps.zero();
 
     // Turn Motor Inputs
     /** Whether the turn motor controller is currently connected. */
     public boolean turnConnected = false;
     /** The current position of the turn motor in radians. */
-    public Angle turnPosition = Radians.of(0.0);
+    public Angle turnPosition = Radians.zero();
     /** The current velocity of the turn motor in radians per second. */
-    public AngularVelocity turnVelocity = RadiansPerSecond.of(0.0);
+    public AngularVelocity turnVelocity = RadiansPerSecond.zero();
     /** The voltage currently being applied to the turn motor. */
-    public Voltage turnAppliedVoltage = Volts.of(0.0);
+    public Voltage turnAppliedVoltage = Volts.zero();
     /** The current being drawn by the turn motor. */
-    public Current turnCurrent = Amps.of(0.0);
+    public Current turnCurrent = Amps.zero();
 
     // Turn Encoder Inputs
     /** Whether the turn encoder is currently connected. */
