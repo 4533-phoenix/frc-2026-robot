@@ -8,12 +8,9 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.Seconds;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -43,7 +40,6 @@ import frc.robot.subsystems.intake.spinner.SpinnerIO;
 import frc.robot.subsystems.intake.spinner.SpinnerIOSim;
 import frc.robot.subsystems.intake.spinner.SpinnerIOSpark;
 import frc.robot.subsystems.shooter.Shooter;
-import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.shooter.ShooterKinematics;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
@@ -55,7 +51,6 @@ import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOPhoton;
 import frc.robot.subsystems.vision.VisionIOSim;
-import frc.robot.util.Aiming;
 import frc.robot.util.Util;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
@@ -87,6 +82,8 @@ public class RobotContainer {
   private final LoggedDashboardChooser<Command> autoChooser;
 
   private boolean climbMode = false;
+  private boolean climbOverride = false;
+
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
    *
@@ -191,76 +188,6 @@ public class RobotContainer {
     //             DriveCommands.joystickDriveWithRotationPriority(
     //                 drive, () -> 0.0, () -> 0.0, superstructure::getAimingRotation))));
 
-    // Set up autoaimer
-    hubAimRotation =
-        () ->
-            Aiming.computeHubAiming(
-                    drive.getPose().getTranslation(),
-                    drive.getRotation(),
-                    drive.getFieldRelativeVelocity(),
-                    Constants.hubPosition,
-                    ShooterConstants.shooterRobotOffset,
-                    ShooterConstants.estimatedTimeOfFlight.in(Seconds),
-                    false)
-                .targetRotation();
-
-    autoChooser.addOption(
-        "Left Shoot Preload",
-        Commands.sequence(
-            Commands.runOnce(
-                () ->
-                    drive.setPose(
-                        Util.flipAllianceIfNeeded(
-                            new Pose2d(
-                                3.536,
-                                Constants.fieldWidth.in(Meters) - 2.437,
-                                new Rotation2d(0))))),
-            Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
-                .withTimeout(1.0),
-            Commands.runOnce(() -> drive.runVelocity(new ChassisSpeeds()), drive),
-            Commands.deadline(
-                Commands.waitSeconds(15.0),
-                shootWhenReady(),
-                DriveCommands.joystickDriveWithRotationPriority(
-                    drive, () -> 0.0, () -> 0.0, hubAimRotation),
-                IntakeCommands.deploy(arm))));
-
-    autoChooser.addOption(
-        "Middle Shoot Preload",
-        Commands.sequence(
-            Commands.runOnce(
-                () ->
-                    drive.setPose(
-                        Util.flipAllianceIfNeeded(
-                            new Pose2d(
-                                3.536, Constants.fieldWidth.in(Meters) / 2.0, new Rotation2d(0))))),
-            Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
-                .withTimeout(1.0),
-            Commands.runOnce(() -> drive.runVelocity(new ChassisSpeeds()), drive),
-            Commands.deadline(
-                Commands.waitSeconds(15.0),
-                shootWhenReady(),
-                DriveCommands.joystickDriveWithRotationPriority(
-                    drive, () -> 0.0, () -> 0.0, hubAimRotation),
-                IntakeCommands.deploy(arm))));
-
-    autoChooser.addOption(
-        "Right Shoot Preload",
-        Commands.sequence(
-            Commands.runOnce(
-                () ->
-                    drive.setPose(
-                        Util.flipAllianceIfNeeded(new Pose2d(3.536, 2.437, new Rotation2d(0))))),
-            Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
-                .withTimeout(1.0),
-            Commands.runOnce(() -> drive.runVelocity(new ChassisSpeeds()), drive),
-            Commands.deadline(
-                Commands.waitSeconds(15.0),
-                shootWhenReady(),
-                DriveCommands.joystickDriveWithRotationPriority(
-                    drive, () -> 0.0, () -> 0.0, hubAimRotation),
-                IntakeCommands.deploy(arm))));
-
     // // Set up characterization routines for SysId
     // autoChooser.addOption(
     //     "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
@@ -345,8 +272,23 @@ public class RobotContainer {
                 },
                 arm));
 
-    operatorController.povUp().and(arm.isRetracted()).whileTrue(ClimbCommands.liftUp(climb));
-    operatorController.povDown().and(arm.isRetracted()).whileTrue(ClimbCommands.liftDown(climb));
+    operatorController
+        .povRight()
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  climbOverride = !climbOverride;
+                },
+                climb));
+
+    operatorController
+        .povUp()
+        .and(() -> climbOverride || arm.isRetracted().getAsBoolean())
+        .whileTrue(ClimbCommands.liftUp(climb));
+    operatorController
+        .povDown()
+        .and(() -> climbOverride || arm.isRetracted().getAsBoolean())
+        .whileTrue(ClimbCommands.liftDown(climb));
   }
 
   /**

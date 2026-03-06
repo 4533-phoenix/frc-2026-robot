@@ -27,8 +27,13 @@ public class Arm extends SubsystemBase {
   private final ArmIO io;
   private final ArmIOInputsAutoLogged inputs = new ArmIOInputsAutoLogged();
 
-  public enum Goal { RETRACT, DEPLOY }
-  private Goal currentGoal = Goal.RETRACT;
+  public enum Goal {
+    RETRACT,
+    UNKNOWN,
+    DEPLOY
+  }
+
+  private Goal currentGoal = Goal.UNKNOWN;
 
   // Alerts for hardware monitoring
   private final Alert disconnectedAlert =
@@ -56,7 +61,9 @@ public class Arm extends SubsystemBase {
                     < intakeTolerance.in(Degrees));
   }
 
-  public void setGoal(Goal goal) { this.currentGoal = goal; }
+  public void setGoal(Goal goal) {
+    this.currentGoal = goal;
+  }
 
   /** Updates hardware inputs, logs data, and updates status alerts. */
   @Override
@@ -68,6 +75,13 @@ public class Arm extends SubsystemBase {
     switch (currentGoal) {
       case RETRACT -> io.setPosition(retractedPosition);
       case DEPLOY -> io.setPosition(deployedPosition);
+      case UNKNOWN -> {
+        if (deployedTrigger.getAsBoolean()) {
+          setGoal(Goal.DEPLOY);
+        } else if (retractedTrigger.getAsBoolean()) {
+          setGoal(Goal.RETRACT);
+        }
+      }
     }
     Logger.recordOutput("Arm/Goal", currentGoal.toString());
   }

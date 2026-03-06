@@ -26,7 +26,11 @@ public class Indexer extends SubsystemBase {
   private final IndexerIO io;
   private final IndexerIOInputsAutoLogged inputs = new IndexerIOInputsAutoLogged();
 
-  public enum Goal { STOP, RUNNING }
+  public enum Goal {
+    STOP,
+    RUNNING
+  }
+
   private Goal currentGoal = Goal.STOP;
 
   private final Alert disconnectedAlert = new Alert("Indexer IO disconnected", AlertType.kWarning);

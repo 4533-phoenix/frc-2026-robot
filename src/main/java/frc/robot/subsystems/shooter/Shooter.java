@@ -22,7 +22,6 @@ import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOInputsAutoLogged;
 import frc.robot.subsystems.shooter.hood.HoodIO;
 import frc.robot.subsystems.shooter.hood.HoodIOInputsAutoLogged;
-
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -38,10 +37,14 @@ public class Shooter extends SubsystemBase {
   private final HoodIO hoodIO;
   private final HoodIOInputsAutoLogged hoodInputs = new HoodIOInputsAutoLogged();
 
-  public enum Goal { STOP, SHOOTING }
+  public enum Goal {
+    STOP,
+    SHOOTING
+  }
+
   private Goal currentGoal = Goal.STOP;
   private ShooterState lastTargetState = new ShooterState(RadiansPerSecond.of(0), Degrees.of(0));
-  
+
   private AngularVelocity targetVelocity = RadiansPerSecond.zero();
   private boolean isShooting = false;
 
@@ -74,7 +77,9 @@ public class Shooter extends SubsystemBase {
     readyToShootTrigger = isShootingTrigger.and(flywheelReadyTrigger).and(hoodReadyTrigger);
   }
 
-  public void setGoal(Goal goal) { this.currentGoal = goal; }
+  public void setGoal(Goal goal) {
+    this.currentGoal = goal;
+  }
 
   /** Updates hardware inputs, logs data, and updates status alerts. */
   @Override
@@ -90,7 +95,7 @@ public class Shooter extends SubsystemBase {
       case STOP -> stop();
       case SHOOTING -> setTargetState(lastTargetState);
     }
-    
+
     Logger.recordOutput("Shooter/Goal", currentGoal.toString());
   }
 

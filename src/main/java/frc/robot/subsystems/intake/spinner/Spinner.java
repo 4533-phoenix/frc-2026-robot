@@ -14,7 +14,12 @@ public class Spinner extends SubsystemBase {
   private final SpinnerIOInputsAutoLogged inputs = new SpinnerIOInputsAutoLogged();
 
   // Goals for the subsystem
-  public enum Goal { STOP, INTAKE, EXTAKE }
+  public enum Goal {
+    STOP,
+    INTAKE,
+    EXTAKE
+  }
+
   private Goal currentGoal = Goal.STOP;
 
   private final Alert spinnerDisconnectedAlert =
@@ -25,8 +30,8 @@ public class Spinner extends SubsystemBase {
   }
 
   /** Sets the current requested behavior for the rollers. */
-  public void setGoal(Goal goal) { 
-    this.currentGoal = goal; 
+  public void setGoal(Goal goal) {
+    this.currentGoal = goal;
   }
 
   @Override

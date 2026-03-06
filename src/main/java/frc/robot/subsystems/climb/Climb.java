@@ -15,7 +15,6 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -28,7 +27,12 @@ public class Climb extends SubsystemBase {
   private final ClimbIO io;
   private final ClimbIOInputsAutoLogged inputs = new ClimbIOInputsAutoLogged();
 
-  public enum Goal { STOP, UP, DOWN }
+  public enum Goal {
+    STOP,
+    UP,
+    DOWN
+  }
+
   private Goal currentGoal = Goal.STOP;
 
   private final Alert disconnectedAlert = new Alert("Climb IO disconnected", AlertType.kWarning);
@@ -60,7 +64,7 @@ public class Climb extends SubsystemBase {
     Logger.processInputs("Climb", inputs);
     disconnectedAlert.set(!inputs.connected);
 
-        switch (currentGoal) {
+    switch (currentGoal) {
       case UP -> {
         if (upTrigger.getAsBoolean()) io.setLiftVoltage(Volts.zero());
         else io.setLiftVoltage(defaultVoltage);
@@ -86,14 +90,12 @@ public class Climb extends SubsystemBase {
     return downTrigger;
   }
 
-    public Command raise() {
-    return this.runEnd(() -> setGoal(Goal.UP), () -> setGoal(Goal.STOP))
-        .until(upTrigger);
+  public Command raise() {
+    return this.runEnd(() -> setGoal(Goal.UP), () -> setGoal(Goal.STOP)).until(upTrigger);
   }
 
   public Command lower() {
-    return this.runEnd(() -> setGoal(Goal.DOWN), () -> setGoal(Goal.STOP))
-        .until(downTrigger);
+    return this.runEnd(() -> setGoal(Goal.DOWN), () -> setGoal(Goal.STOP)).until(downTrigger);
   }
 
   public Command stop() {
