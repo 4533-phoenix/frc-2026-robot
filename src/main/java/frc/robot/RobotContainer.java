@@ -191,6 +191,19 @@ public class RobotContainer {
     //             DriveCommands.joystickDriveWithRotationPriority(
     //                 drive, () -> 0.0, () -> 0.0, superstructure::getAimingRotation))));
 
+    // Set up autoaimer
+    hubAimRotation =
+        () ->
+            Aiming.computeHubAiming(
+                    drive.getPose().getTranslation(),
+                    drive.getRotation(),
+                    drive.getFieldRelativeVelocity(),
+                    Constants.hubPosition,
+                    ShooterConstants.shooterRobotOffset,
+                    ShooterConstants.estimatedTimeOfFlight.in(Seconds),
+                    false)
+                .targetRotation();
+
     autoChooser.addOption(
         "Left Shoot Preload",
         Commands.sequence(
@@ -202,6 +215,25 @@ public class RobotContainer {
                                 3.536,
                                 Constants.fieldWidth.in(Meters) - 2.437,
                                 new Rotation2d(0))))),
+            Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
+                .withTimeout(1.0),
+            Commands.runOnce(() -> drive.runVelocity(new ChassisSpeeds()), drive),
+            Commands.deadline(
+                Commands.waitSeconds(15.0),
+                shootWhenReady(),
+                DriveCommands.joystickDriveWithRotationPriority(
+                    drive, () -> 0.0, () -> 0.0, hubAimRotation),
+                IntakeCommands.deploy(arm))));
+
+    autoChooser.addOption(
+        "Middle Shoot Preload",
+        Commands.sequence(
+            Commands.runOnce(
+                () ->
+                    drive.setPose(
+                        Util.flipAllianceIfNeeded(
+                            new Pose2d(
+                                3.536, Constants.fieldWidth.in(Meters) / 2.0, new Rotation2d(0))))),
             Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
                 .withTimeout(1.0),
             Commands.runOnce(() -> drive.runVelocity(new ChassisSpeeds()), drive),
@@ -244,19 +276,6 @@ public class RobotContainer {
     //     "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
     // autoChooser.addOption(
     //     "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-
-    // Set up autoaimer
-    hubAimRotation =
-        () ->
-            Aiming.computeHubAiming(
-                    drive.getPose().getTranslation(),
-                    drive.getRotation(),
-                    drive.getFieldRelativeVelocity(),
-                    Constants.hubPosition,
-                    ShooterConstants.shooterRobotOffset,
-                    ShooterConstants.estimatedTimeOfFlight.in(Seconds),
-                    false)
-                .targetRotation();
 
     // Configure the button bindings
     configureButtonBindings();
