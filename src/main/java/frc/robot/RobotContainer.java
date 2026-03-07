@@ -78,6 +78,9 @@ public class RobotContainer {
   private final Spinner spinner;
   private final Shooter shooter;
   private final Indexer indexer;
+
+  // Vision
+  @SuppressWarnings("unused")
   private final Vision vision;
 
   // Controllers
