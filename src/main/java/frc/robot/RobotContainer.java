@@ -189,10 +189,7 @@ public class RobotContainer {
             Commands.parallel(
                 Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
                 DriveCommands.joystickDriveWithRotationPriority(
-                    drive,
-                    () -> 0.0,
-                    () -> 0.0,
-                    () -> currentAimingResult.targetRotation()))));
+                    drive, () -> 0.0, () -> 0.0, () -> currentAimingResult.targetRotation()))));
 
     autoChooser.addOption(
         "Middle Shoot Preload",
@@ -211,10 +208,7 @@ public class RobotContainer {
             Commands.parallel(
                 Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
                 DriveCommands.joystickDriveWithRotationPriority(
-                    drive,
-                    () -> 0.0,
-                    () -> 0.0,
-                    () -> currentAimingResult.targetRotation()))));
+                    drive, () -> 0.0, () -> 0.0, () -> currentAimingResult.targetRotation()))));
 
     autoChooser.addOption(
         "Right Shoot Preload",
@@ -231,10 +225,7 @@ public class RobotContainer {
             Commands.parallel(
                 Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
                 DriveCommands.joystickDriveWithRotationPriority(
-                    drive,
-                    () -> 0.0,
-                    () -> 0.0,
-                    () -> currentAimingResult.targetRotation()))));
+                    drive, () -> 0.0, () -> 0.0, () -> currentAimingResult.targetRotation()))));
 
     // Configure the commands
     configureDriverButtonBindings();
@@ -251,12 +242,12 @@ public class RobotContainer {
     driverController
         .leftTrigger()
         .and(() -> currentAimingResult.hasTarget())
-        .whileTrue(DriveCommands.joystickDriveWithRotationPriority(
-            drive,
-            () -> -driverController.getLeftY(),
-            () -> -driverController.getLeftX(),
-            () -> currentAimingResult.targetRotation()
-        ));
+        .whileTrue(
+            DriveCommands.joystickDriveWithRotationPriority(
+                drive,
+                () -> -driverController.getLeftY(),
+                () -> -driverController.getLeftX(),
+                () -> currentAimingResult.targetRotation()));
 
     // Spin up the motor if we are practicing not in match mode
     driverController.leftTrigger().and(() -> !Util.isMatchMode()).whileTrue(shooter.runHeld());
@@ -284,14 +275,12 @@ public class RobotContainer {
     // If left or right bumper is pressed while the climb is down, deploy the intake arm
     operatorController
         .leftBumper()
-        .onTrue(arm.deploy())
-        .whileTrue(Commands.either(spinner.intake(), spinner.stop(), arm.isDeployed()))
-        .onFalse(spinner.stop());
-    operatorController
-        .rightBumper()
-        .onTrue(arm.deploy())
-        .whileTrue(Commands.either(spinner.extake(), spinner.stop(), arm.isDeployed()))
-        .onFalse(spinner.stop());
+        .or(operatorController.rightBumper())
+        .and(() -> !climbMode)
+        .and(climb.isDown())
+        .onTrue(arm.deploy());
+    operatorController.leftBumper().and(arm.isDeployed()).whileTrue(spinner.intake());
+    operatorController.rightBumper().and(arm.isDeployed()).whileTrue(spinner.extake());
 
     // If left dpad is pressed, toggle climb mode. If climb mode is on, also retract the arm
     operatorController

@@ -25,10 +25,12 @@ import org.littletonrobotics.junction.Logger;
 public class Aiming {
 
   /** Cached result of the aiming pipeline. */
-  public record AimingResult(Rotation2d targetRotation, Distance distanceToTarget, boolean hasTarget) {}
+  public record AimingResult(
+      Rotation2d targetRotation, Distance distanceToTarget, boolean hasTarget) {}
 
   /** A default empty result to prevent NullPointerExceptions */
-  public static final AimingResult noTarget = new AimingResult(new Rotation2d(), Meters.of(0), false);
+  public static final AimingResult noTarget =
+      new AimingResult(new Rotation2d(), Meters.of(0), false);
 
   /**
    * Computes all aiming outputs for a direct hub shot.
