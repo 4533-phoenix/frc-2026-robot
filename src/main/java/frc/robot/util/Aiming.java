@@ -77,9 +77,8 @@ public class Aiming {
    * @param lobTargetLeftCenter Blue alliance left lobbing target center.
    * @param lobTargetRightCenter Blue alliance right lobbing target center.
    * @param lobTargetHalfLength Half length of the lobbing target line segment.
-   * @param lobTargetIsLeft Hysteresis state: true if currently targeting the left side.
    * @param log Whether to publish outputs to AdvantageKit for visualization.
-   * @return The computed aiming result and updated hysteresis state.
+   * @return The computed aiming result.
    */
   public static AimingResult computeLobAiming(
       Translation2d robotCenter,
@@ -88,7 +87,6 @@ public class Aiming {
       Translation2d lobTargetLeftCenter,
       Translation2d lobTargetRightCenter,
       Distance lobTargetHalfLength,
-      boolean lobTargetIsLeft,
       boolean log) {
 
     Translation2d leftCenter = Util.flipAllianceIfNeeded(lobTargetLeftCenter);
@@ -219,7 +217,6 @@ public class Aiming {
                   Constants.lobbingTargetLeftCenter,
                   Constants.lobbingTargetRightCenter,
                   Constants.lobbingTargetHalfLength,
-                  true,
                   true);
           lastTimestamp = currentTime;
         }
