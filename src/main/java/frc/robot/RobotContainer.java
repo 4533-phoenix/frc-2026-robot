@@ -170,6 +170,7 @@ public class RobotContainer {
     autoChooser.addOption(
         "Left Shoot Preload",
         Commands.sequence(
+            arm.deploy(),
             Commands.runOnce(
                 () ->
                     drive.setPose(
@@ -196,6 +197,7 @@ public class RobotContainer {
     autoChooser.addOption(
         "Middle Shoot Preload",
         Commands.sequence(
+            arm.deploy(),
             Commands.runOnce(
                 () ->
                     drive.setPose(
@@ -220,6 +222,7 @@ public class RobotContainer {
     autoChooser.addOption(
         "Right Shoot Preload",
         Commands.sequence(
+            arm.deploy(),
             Commands.runOnce(
                 () ->
                     drive.setPose(
