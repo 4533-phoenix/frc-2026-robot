@@ -1,3 +1,10 @@
+// Copyright (c) 2026 FRC Team 4533 (Phoenix)
+// Derived from the AdvantageKit framework by Littleton Robotics
+//
+// Use of this source code is governed by a BSD
+// license that can be found in the LICENSE file
+// at the root directory of this project.
+
 package frc.robot.subsystems.intake.spinner;
 
 import static edu.wpi.first.units.Units.*;
@@ -9,14 +16,18 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
+/** Subsystem for controlling the intake spinner rollers. */
 public class Spinner extends SubsystemBase {
   private final SpinnerIO io;
   private final SpinnerIOInputsAutoLogged inputs = new SpinnerIOInputsAutoLogged();
 
-  // Goals for the subsystem
+  /** Possible goals for the spinner. */
   public enum Goal {
+    /** Stop the rollers. */
     STOP,
+    /** Spin the rollers to pull game pieces in. */
     INTAKE,
+    /** Spin the rollers to push game pieces out. */
     EXTAKE
   }
 
@@ -25,11 +36,20 @@ public class Spinner extends SubsystemBase {
   private final Alert spinnerDisconnectedAlert =
       new Alert("Intake spinner motor disconnected", AlertType.kWarning);
 
+  /**
+   * Creates a new Spinner subsystem.
+   *
+   * @param io The IO implementation to use.
+   */
   public Spinner(SpinnerIO io) {
     this.io = io;
   }
 
-  /** Sets the current requested behavior for the rollers. */
+  /**
+   * Sets the current requested behavior for the rollers.
+   *
+   * @param goal The target goal for the spinner.
+   */
   public void setGoal(Goal goal) {
     this.currentGoal = goal;
   }
@@ -50,14 +70,29 @@ public class Spinner extends SubsystemBase {
     Logger.recordOutput("Spinner/Goal", currentGoal.toString());
   }
 
+  /**
+   * Returns a command to run the intake.
+   *
+   * @return The intake command.
+   */
   public Command intake() {
     return this.startEnd(() -> setGoal(Goal.INTAKE), () -> setGoal(Goal.STOP));
   }
 
+  /**
+   * Returns a command to run the extake.
+   *
+   * @return The extake command.
+   */
   public Command extake() {
     return this.startEnd(() -> setGoal(Goal.EXTAKE), () -> setGoal(Goal.STOP));
   }
 
+  /**
+   * Returns a command to stop the spinner.
+   *
+   * @return The stop command.
+   */
   public Command stop() {
     return this.runOnce(() -> setGoal(Goal.STOP));
   }

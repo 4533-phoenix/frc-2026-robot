@@ -90,15 +90,33 @@ public class VisionConstants {
   /** Port for communication between Java and the native vision server. */
   public static final int serverPort = 7001;
 
+  /**
+   * Standard deviations for vision measurements when the data is not valid or should be ignored.
+   */
   public static final Matrix<N3, N1> noStdDevs = VecBuilder.fill(0, 0, 0);
+
+  /** Standard deviations for vision measurements when only one AprilTag is visible. */
   public static final Matrix<N3, N1> singleTagStdDevs = VecBuilder.fill(2, 2, 4);
+
+  /**
+   * Standard deviations for vision measurements when multiple AprilTags are visible (higher
+   * confidence).
+   */
   public static final Matrix<N3, N1> multiTagStdDevs = VecBuilder.fill(0.5, 0.5, 1);
+
+  /** Standard deviations for vision measurements used for individual tag tracking. */
   public static final Matrix<N3, N1> tagStdDevs = VecBuilder.fill(0, 0, Double.MAX_VALUE);
 
+  /** The maximum allowed ambiguity for a single-tag detection to be considered valid. */
   public static final double ambiguityCutoff = 0.05;
+
+  /** The maximum distance from the camera to a tag for a single-tag detection to be trusted. */
   public static final double singleTagPoseCutoffMeters = 4.0;
+
+  /** Sentinel value indicating that no ambiguity calculation is applicable (e.g., multi-tag). */
   public static final int noAmbiguity = -100;
 
+  /** The AprilTag field layout representing the positions of tags on the current year's field. */
   public static final AprilTagFieldLayout fieldLayout =
       AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
 }

@@ -23,6 +23,7 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 
+/** Simulation implementation of the Spinner IO interface. */
 public class SpinnerIOSim implements SpinnerIO {
   // Spinner motor and sim
   private final SparkMax spinnerSpark;

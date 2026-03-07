@@ -87,6 +87,7 @@ public final class ShooterConstants {
   public static final double flywheelKa = 0.04;
 
   // ---------- Lobbing constants ----------
+  /** Preset shooter state for lobbing game pieces into the coral station. */
   public static final ShooterState lobShootingState =
       new ShooterState(RotationsPerSecond.of(60.0), Degrees.of(70.0));
 

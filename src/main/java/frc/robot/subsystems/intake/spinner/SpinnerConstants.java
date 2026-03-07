@@ -40,5 +40,6 @@ public final class SpinnerConstants {
   /** Voltage for pushing game pieces out. */
   public static final Voltage extakeVoltage = Volts.of(-12.0);
 
+  /** The motor type and quantity used by the spinner gearbox. */
   public static final DCMotor gearbox = DCMotor.getNEO(1);
 }

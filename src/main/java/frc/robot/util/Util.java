@@ -150,12 +150,20 @@ public class Util {
     else return amIInactiveInShift1;
   }
 
-  /** Returns true if the hub is currently active. */
+  /**
+   * Evaluates if the hub is currently active.
+   *
+   * @return True if the hub is currently active.
+   */
   public static boolean isHubEnabled() {
     return isHubEnabledAtTime(DriverStation.getMatchTime());
   }
 
-  /** Returns true if the hub will enable within the next 5 seconds. */
+  /**
+   * Evaluates if the hub will enable within the next 5 seconds.
+   *
+   * @return True if the hub will enable within the next 5 seconds.
+   */
   public static boolean isHubApproaching() {
     double time = DriverStation.getMatchTime();
     double futureTime = time - 5.0;
@@ -167,9 +175,11 @@ public class Util {
   }
 
   /**
-   * Returns true when match mode is active. Match mode enables automatically when a match timer is
-   * running (FMS or driver station practice mode). It can also be forced on via the dashboard
-   * toggle for testing.
+   * Checks if match mode is active. Match mode enables automatically when a match timer is running
+   * (FMS or driver station practice mode). It can also be forced on via the dashboard toggle for
+   * testing.
+   *
+   * @return True when match mode is active.
    */
   public static boolean isMatchMode() {
     if (SmartDashboard.getBoolean(MATCH_MODE_KEY, false)) return true;
@@ -178,9 +188,11 @@ public class Util {
   }
 
   /**
-   * Returns true when match mode is active only because of the SmartDashboard override toggle, not
-   * because a real FMS/timed match is running. Used to allow actions (e.g. climbing) that are
-   * normally gated behind endgame when testing without a real match.
+   * Checks if match mode is active only because of the SmartDashboard override toggle, not because
+   * a real FMS/timed match is running. Used to allow actions (e.g. climbing) that are normally
+   * gated behind endgame when testing without a real match.
+   *
+   * @return True when match mode is active only because of the dashboard override.
    */
   public static boolean isMatchModeOverridden() {
     boolean dashboardOverride = SmartDashboard.getBoolean(MATCH_MODE_KEY, false);
@@ -189,7 +201,11 @@ public class Util {
     return dashboardOverride && !realMatch;
   }
 
-  /** Returns true when the match is in the last 30 seconds of teleop. */
+  /**
+   * Checks if the match is in the last 30 seconds of teleop.
+   *
+   * @return True when the match is in the last 30 seconds of teleop.
+   */
   public static boolean isEndgame() {
     if (DriverStation.isDisabled() || DriverStation.isAutonomous()) return false;
     double time = DriverStation.getMatchTime();
@@ -198,8 +214,13 @@ public class Util {
   }
 
   /**
-   * Returns the closest point on a vertical (Y-axis) lobbing line segment to the given position.
+   * Calculates the closest point on a vertical (Y-axis) lobbing line segment to the given position.
    * The line is centered at {@code center} and extends {@code halfLen} meters in each Y direction.
+   *
+   * @param from The position to calculate the closest point from.
+   * @param center The center translation of the vertical line segment.
+   * @param halfLen The half length of the vertical line segment in meters.
+   * @return The closest point on the line segment to the given position.
    */
   public static Translation2d closestPointOnLobLine(
       Translation2d from, Translation2d center, double halfLen) {
@@ -211,6 +232,12 @@ public class Util {
    * Calculates the lead offset to apply to the static target, accounting for the robot's current
    * velocity and the estimated time of flight. The lead magnitude is clamped to 50% of the
    * shooter-to-target distance so the virtual target can never overshoot past the real target.
+   *
+   * @param shooterPos The current position of the shooter.
+   * @param targetTranslation The translation of the static target.
+   * @param fieldVelocity The field-relative velocity of the robot.
+   * @param tofSeconds The estimated time of flight in seconds.
+   * @return The calculated and clamped lead translation to apply.
    */
   public static Translation2d calculateClampedLead(
       Translation2d shooterPos,
