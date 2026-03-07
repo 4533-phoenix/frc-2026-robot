@@ -42,32 +42,6 @@ public class VisionConstants {
    * Map of Camera ID to its configuration. IDs should match those used in the native vision
    * pipeline.
    */
-  //   public static final Map<Integer, CameraConfig> cameraMap =
-  //       Map.of(
-  //           1,
-  //           new CameraConfig(
-  //               "Front Left",
-  //               new Transform3d(0.0, 0.0, 0.0, new Rotation3d(0.0, 0.0, Math.toRadians(45))),
-  //               90.0,
-  //               10.0),
-  //           2,
-  //           new CameraConfig(
-  //               "Back Left",
-  //               new Transform3d(0.0, 0.0, 0.0, new Rotation3d(0.0, 0.0, Math.toRadians(135))),
-  //               90.0,
-  //               10.0),
-  //           3,
-  //           new CameraConfig(
-  //               "Back Right",
-  //               new Transform3d(0.0, 0.0, 0.0, new Rotation3d(0.0, 0.0, Math.toRadians(225))),
-  //               90.0,
-  //               10.0),
-  //           4,
-  //           new CameraConfig(
-  //               "Front Right",
-  //               new Transform3d(0.0, 0.0, 0.0, new Rotation3d(0.0, 0.0, Math.toRadians(315))),
-  //               90.0,
-  //               10.0));
   public static final Map<Integer, CameraConfig> cameraMap =
       Map.of(
           0,
@@ -77,8 +51,8 @@ public class VisionConstants {
                   Centimeters.of(32.8892),
                   Centimeters.of(30.5885),
                   Centimeters.of(19.0588),
-                  new Rotation3d(Degrees.of(105.0), Degrees.of(-11.435630), Degrees.of(50.0))),
-              90.0,
+                  new Rotation3d(Degrees.of(-105.0), Degrees.of(-11.435630), Degrees.of(50.0))),
+              92.0,
               10.0),
           2,
           new CameraConfig(
@@ -88,7 +62,7 @@ public class VisionConstants {
                   Centimeters.of(32.68),
                   Centimeters.of(30.0017),
                   new Rotation3d(Degrees.of(90.0), Degrees.of(0.0), Degrees.of(135.0))),
-              90.0,
+              92.0,
               10.0),
           3,
           new CameraConfig(

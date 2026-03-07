@@ -48,6 +48,7 @@ public class ClimbIOReal implements ClimbIO {
     liftCfg
         .idleMode(IdleMode.kBrake)
         .smartCurrentLimit((int) motorCurrentLimit.in(Amps))
+        .inverted(true)
         .voltageCompensation(12.0);
     liftCfg.signals.appliedOutputPeriodMs(20).busVoltagePeriodMs(20).outputCurrentPeriodMs(20);
     tryUntilOk(
