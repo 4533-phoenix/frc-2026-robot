@@ -16,6 +16,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
@@ -92,7 +93,12 @@ public class Shooter extends SubsystemBase {
     Logger.processInputs("Shooter/Hood", hoodInputs);
 
     switch (currentGoal) {
-      case STOP -> stop();
+      case STOP -> {
+        targetVelocity = RadiansPerSecond.zero();
+        flywheelIO.stop();
+        hoodIO.retract();
+        isShooting = false;
+      }
       case SHOOTING -> setTargetState(lastTargetState);
     }
 
@@ -165,11 +171,8 @@ public class Shooter extends SubsystemBase {
   }
 
   /** Safely stops the flywheels and retracts the hood. */
-  public void stop() {
-    targetVelocity = RadiansPerSecond.zero();
-    flywheelIO.stop();
-    hoodIO.retract();
-    isShooting = false;
+  public Command stop() {
+    return this.runOnce(() -> setGoal(Goal.STOP));
   }
 
   public void setAimingParameters(ShooterState state) {

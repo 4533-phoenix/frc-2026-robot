@@ -248,18 +248,18 @@ public class RobotContainer {
         .and(shooter.isShooterReady())
         .whileTrue(Commands.runEnd(indexer::run, indexer::stop, indexer));
 
-    shooter.setDefaultCommand(Commands.run(shooter::stop, shooter));
-    indexer.setDefaultCommand(Commands.run(indexer::stop, indexer));
+    shooter.setDefaultCommand(shooter.stop());
+    indexer.setDefaultCommand(indexer.stop());
 
     // Operator
     operatorController
         .leftBumper()
-        .whileTrue(Commands.parallel(IntakeCommands.deploy(arm), IntakeCommands.intake(spinner)));
+        .whileTrue(Commands.parallel(arm.deploy(), spinner.intake()));
 
     operatorController
         .rightBumper()
-        .whileTrue(Commands.parallel(IntakeCommands.deploy(arm), IntakeCommands.extake(spinner)));
-
+        .whileTrue(Commands.parallel(arm.deploy(), spinner.extake()));
+        
     operatorController
         .povLeft()
         .onTrue(
@@ -300,30 +300,5 @@ public class RobotContainer {
     Command autoCommand = autoChooser.get();
     if (autoCommand == null) autoCommand = Commands.none();
     return autoCommand;
-  }
-
-  private Command shootWhenReady() {
-    return Commands.run(
-        () -> {
-          double dist =
-              drive
-                  .getPose()
-                  .getTranslation()
-                  .getDistance(Util.flipAllianceIfNeeded(Constants.hubPosition));
-
-          // Set shooter state based on distance
-          shooter.setTargetState(ShooterKinematics.calculateShooterState(Meters.of(dist)));
-
-          // Only run indexer if drivetrain is aligned (within 3 degrees) and flywheel is at speed
-          boolean driveAligned =
-              drive.isAlignedWithTarget(hubAimRotation.get(), Rotation2d.fromDegrees(5.0));
-          if (driveAligned && shooter.isFlywheelReady().getAsBoolean()) {
-            indexer.run();
-          } else {
-            indexer.stop();
-          }
-        },
-        shooter,
-        indexer);
   }
 }

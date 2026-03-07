@@ -40,6 +40,8 @@ public class Climb extends SubsystemBase {
   private final Trigger upTrigger;
   private final Trigger downTrigger;
 
+  private boolean climbLocked = true;
+
   /**
    * Creates a new Climb subsystem.
    *
