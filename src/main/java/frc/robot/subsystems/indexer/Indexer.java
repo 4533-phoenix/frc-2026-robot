@@ -26,8 +26,11 @@ public class Indexer extends SubsystemBase {
   private final IndexerIO io;
   private final IndexerIOInputsAutoLogged inputs = new IndexerIOInputsAutoLogged();
 
+  /** High-level goals for the indexer. */
   public enum Goal {
+    /** Stop the indexer motor. */
     STOP,
+    /** Run the indexer to move game pieces toward the shooter. */
     RUNNING
   }
 
@@ -44,6 +47,11 @@ public class Indexer extends SubsystemBase {
     this.io = io;
   }
 
+  /**
+   * Sets the current goal for the indexer.
+   *
+   * @param goal The target goal.
+   */
   public void setGoal(Goal goal) {
     this.currentGoal = goal;
   }
@@ -63,10 +71,20 @@ public class Indexer extends SubsystemBase {
     Logger.recordOutput("Indexer/Goal", currentGoal.toString());
   }
 
+  /**
+   * Returns a command to run the indexer while the command is held.
+   *
+   * @return The run command.
+   */
   public Command run() {
     return this.startEnd(() -> setGoal(Goal.RUNNING), () -> setGoal(Goal.STOP));
   }
 
+  /**
+   * Returns a command to stop the indexer.
+   *
+   * @return The stop command.
+   */
   public Command stop() {
     return this.runOnce(() -> setGoal(Goal.STOP));
   }

@@ -33,6 +33,9 @@ public class Robot extends LoggedRobot {
   private Command autonomousCommand;
   private RobotContainer robotContainer;
 
+  /**
+   * Initializes the AdvantageKit logger, sets up metadata, and creates the {@link RobotContainer}.
+   */
   public Robot() {
     // Record metadata
     Logger.recordMetadata("ProjectName", BuildConstants.MAVEN_NAME);

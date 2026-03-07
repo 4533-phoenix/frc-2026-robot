@@ -14,6 +14,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import frc.robot.subsystems.vision.VisionConstants.CameraConfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -53,6 +54,7 @@ public class VisionIOPhoton implements VisionIO {
     }
   }
 
+  /** Creates a new VisionIOPhoton and connects to cameras. */
   public VisionIOPhoton() {
     for (var entry : cameraMap.entrySet()) {
       cameras.add(new CameraContext(entry.getKey(), entry.getValue()));

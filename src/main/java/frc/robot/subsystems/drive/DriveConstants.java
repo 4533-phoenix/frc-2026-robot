@@ -142,9 +142,13 @@ public class DriveConstants {
       (2 * Math.PI) / 60.0 / driveMotorReduction;
 
   // Drive PID configuration
+  /** Proportional gain for the drive motor PID controller. */
   public static final double driveKp = 0.015;
+  /** Derivative gain for the drive motor PID controller. */
   public static final double driveKd = 0.0;
+  /** Static friction feedforward gain for the drive motor. */
   public static final double driveKs = 0.0;
+  /** Velocity feedforward gain for the drive motor. */
   public static final double driveKv = 0.1;
 
   // Turn motor configuration
@@ -168,7 +172,9 @@ public class DriveConstants {
   public static final double turnEncoderVelocityFactor = 2 * Math.PI; // Rotations/Sec -> Rad/Sec
 
   // Turn PID configuration
+  /** Proportional gain for the turn motor PID controller. */
   public static final double turnKp = 0.4;
+  /** Derivative gain for the turn motor PID controller. */
   public static final double turnKd = 0.01;
   /** Minimum input range for turn PID (in radians). */
   public static final double turnPIDMinInput = -Math.PI;

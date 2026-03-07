@@ -27,9 +27,13 @@ public class Arm extends SubsystemBase {
   private final ArmIO io;
   private final ArmIOInputsAutoLogged inputs = new ArmIOInputsAutoLogged();
 
+  /** High-level goals for the intake arm. */
   public enum Goal {
+    /** Retract the arm inside the robot perimeter. */
     RETRACT,
+    /** Goal state when the current position hasn't been determined yet. */
     UNKNOWN,
+    /** Deploy the arm for intaking. */
     DEPLOY
   }
 
@@ -61,6 +65,11 @@ public class Arm extends SubsystemBase {
                     < intakeTolerance.in(Degrees));
   }
 
+  /**
+   * Sets the high-level goal for the intake arm.
+   *
+   * @param goal The target goal for the arm.
+   */
   public void setGoal(Goal goal) {
     this.currentGoal = goal;
   }
@@ -86,18 +95,38 @@ public class Arm extends SubsystemBase {
     Logger.recordOutput("Arm/Goal", currentGoal.toString());
   }
 
+  /**
+   * Returns a trigger that is true when the arm is in the deployed position.
+   *
+   * @return The deployed trigger.
+   */
   public Trigger isDeployed() {
     return deployedTrigger;
   }
 
+  /**
+   * Returns a trigger that is true when the arm is in the retracted position.
+   *
+   * @return The retracted trigger.
+   */
   public Trigger isRetracted() {
     return retractedTrigger;
   }
 
+  /**
+   * Returns a command to move the arm to the deployed position.
+   *
+   * @return The deploy command.
+   */
   public Command deploy() {
     return this.runOnce(() -> setGoal(Goal.DEPLOY));
   }
 
+  /**
+   * Returns a command to move the arm to the retracted position.
+   *
+   * @return The retract command.
+   */
   public Command retract() {
     return this.runOnce(() -> setGoal(Goal.RETRACT));
   }

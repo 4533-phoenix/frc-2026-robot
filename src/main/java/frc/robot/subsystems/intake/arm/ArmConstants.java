@@ -71,5 +71,6 @@ public final class ArmConstants {
   /** Safety buffer for soft limits. */
   public static final Angle softLimitTolerance = Degrees.of(5.0);
 
+  /** The motor model and quantity used for the arm gearbox. */
   public static final DCMotor gearbox = DCMotor.getNEO(1);
 }

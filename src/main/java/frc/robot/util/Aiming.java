@@ -165,6 +165,16 @@ public class Aiming {
     return new AimingResult(targetRotation, Meters.of(distanceMeters), true);
   }
 
+  /**
+   * Creates a supplier that calculates aiming results for the central hub. The results are cached
+   * per control loop cycle to optimize performance.
+   *
+   * @param robotPoseSupplier A supplier for the robot's current {@link Pose2d}.
+   * @param fieldVelocitySupplier A supplier for the robot's field-relative velocity.
+   * @param shooterRobotOffset The physical offset of the shooter from the robot's center.
+   * @param estimatedTimeOfFlight The estimated time for the projectile to reach the target.
+   * @return A supplier that provides the calculated {@link AimingResult} for the hub.
+   */
   public static Supplier<AimingResult> hubAimingSupplier(
       Supplier<Pose2d> robotPoseSupplier,
       Supplier<Translation2d> fieldVelocitySupplier,
@@ -197,6 +207,14 @@ public class Aiming {
     };
   }
 
+  /**
+   * Creates a supplier that calculates aiming results for lobbing. The results are cached per
+   * control loop cycle to optimize performance.
+   *
+   * @param robotPoseSupplier A supplier for the robot's current {@link Pose2d}.
+   * @param shooterRobotOffset The physical offset of the shooter from the robot's center.
+   * @return A supplier that provides the calculated {@link AimingResult} for lobbing.
+   */
   public static Supplier<AimingResult> lobAimingSupplier(
       Supplier<Pose2d> robotPoseSupplier, Translation2d shooterRobotOffset) {
     return new Supplier<AimingResult>() {

@@ -27,9 +27,13 @@ public class Climb extends SubsystemBase {
   private final ClimbIO io;
   private final ClimbIOInputsAutoLogged inputs = new ClimbIOInputsAutoLogged();
 
+  /** High-level goals for the climb subsystem. */
   public enum Goal {
+    /** Stop the climb motor. */
     STOP,
+    /** Extend the climber upwards. */
     UP,
+    /** Retract the climber downwards. */
     DOWN
   }
 
@@ -52,7 +56,11 @@ public class Climb extends SubsystemBase {
     downTrigger = new Trigger(() -> inputs.lowerLimit);
   }
 
-  /** Sets the current requested goal for the climber. */
+  /**
+   * Sets the current requested goal for the climber.
+   *
+   * @param goal The target goal for the climber.
+   */
   public void setGoal(Goal goal) {
     this.currentGoal = goal;
   }
@@ -82,22 +90,47 @@ public class Climb extends SubsystemBase {
   @Override
   public void simulationPeriodic() {}
 
+  /**
+   * Returns a trigger that is true when the upper limit switch is triggered.
+   *
+   * @return The upper limit trigger.
+   */
   public Trigger isUp() {
     return upTrigger;
   }
 
+  /**
+   * Returns a trigger that is true when the lower limit switch is triggered.
+   *
+   * @return The lower limit trigger.
+   */
   public Trigger isDown() {
     return downTrigger;
   }
 
+  /**
+   * Returns a command to raise the climber until it hits the upper limit.
+   *
+   * @return The raise command.
+   */
   public Command raise() {
     return this.startEnd(() -> setGoal(Goal.UP), () -> setGoal(Goal.STOP)).until(upTrigger);
   }
 
+  /**
+   * Returns a command to lower the climber until it hits the lower limit.
+   *
+   * @return The lower command.
+   */
   public Command lower() {
     return this.startEnd(() -> setGoal(Goal.DOWN), () -> setGoal(Goal.STOP)).until(downTrigger);
   }
 
+  /**
+   * Returns a command to stop the climber.
+   *
+   * @return The stop command.
+   */
   public Command stop() {
     return this.runOnce(() -> setGoal(Goal.STOP));
   }

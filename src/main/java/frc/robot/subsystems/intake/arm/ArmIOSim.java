@@ -28,7 +28,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 
-// TODO: rename everything from arm(...) to (...)
+/** Simulation implementation for the intake arm IO interface. */
 public class ArmIOSim implements ArmIO {
   private final SparkMax armSpark;
   private final SparkMaxSim armSparkSim;

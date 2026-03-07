@@ -77,8 +77,10 @@ public class RobotContainer {
   @SuppressWarnings("unused")
   private final Vision vision;
 
-  // Controllers
+  /** Controller for the driver. */
   public final CommandXboxController driverController = new CommandXboxController(0);
+
+  /** Controller for the operator. */
   public final CommandXboxController operatorController = new CommandXboxController(1);
 
   // Suppliers
@@ -304,6 +306,7 @@ public class RobotContainer {
                 climb));
   }
 
+  /** Sets up the default commands for subsystems. */
   public void configureDefaultCommands() {
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
@@ -324,6 +327,7 @@ public class RobotContainer {
     return autoCommand;
   }
 
+  /** Periodically updates aiming logic and subsystem goals. */
   public void periodic() {
     // Get common booleans
     boolean isHubEnabled = Util.isHubEnabled();
