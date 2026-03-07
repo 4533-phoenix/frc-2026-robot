@@ -96,7 +96,7 @@ public class RobotContainer {
 
   // State variables
   private boolean climbMode = false;
-  private AimingResult currentAimingResult = null;
+  private AimingResult currentAimingResult = Aiming.noTarget;
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -192,10 +192,7 @@ public class RobotContainer {
                     drive,
                     () -> 0.0,
                     () -> 0.0,
-                    () ->
-                        currentAimingResult != null
-                            ? currentAimingResult.targetRotation()
-                            : drive.getPose().getRotation()))));
+                    () -> currentAimingResult.targetRotation()))));
 
     autoChooser.addOption(
         "Middle Shoot Preload",
@@ -217,10 +214,7 @@ public class RobotContainer {
                     drive,
                     () -> 0.0,
                     () -> 0.0,
-                    () ->
-                        currentAimingResult != null
-                            ? currentAimingResult.targetRotation()
-                            : drive.getPose().getRotation()))));
+                    () -> currentAimingResult.targetRotation()))));
 
     autoChooser.addOption(
         "Right Shoot Preload",
@@ -240,10 +234,7 @@ public class RobotContainer {
                     drive,
                     () -> 0.0,
                     () -> 0.0,
-                    () ->
-                        currentAimingResult != null
-                            ? currentAimingResult.targetRotation()
-                            : drive.getPose().getRotation()))));
+                    () -> currentAimingResult.targetRotation()))));
 
     // Configure the commands
     configureDriverButtonBindings();
@@ -259,15 +250,13 @@ public class RobotContainer {
     // When left trigger held and shooter has a target, rotate to aim at the target
     driverController
         .leftTrigger()
-        .whileTrue(
-            Commands.either(
-                DriveCommands.joystickDriveWithRotationPriority(
-                    drive,
-                    () -> -driverController.getLeftY(),
-                    () -> -driverController.getLeftX(),
-                    () -> currentAimingResult.targetRotation()),
-                Commands.none(),
-                () -> currentAimingResult != null));
+        .and(() -> currentAimingResult.hasTarget())
+        .whileTrue(DriveCommands.joystickDriveWithRotationPriority(
+            drive,
+            () -> -driverController.getLeftY(),
+            () -> -driverController.getLeftX(),
+            () -> currentAimingResult.targetRotation()
+        ));
 
     // Spin up the motor if we are practicing not in match mode
     driverController.leftTrigger().and(() -> !Util.isMatchMode()).whileTrue(shooter.runHeld());
@@ -368,15 +357,15 @@ public class RobotContainer {
         currentAimingResult = lobAiming.get();
         shooter.setAimingParameters(ShooterConstants.lobShootingState);
       } else {
-        currentAimingResult = null;
+        currentAimingResult = Aiming.noTarget;
       }
     } else {
-      currentAimingResult = null;
+      currentAimingResult = Aiming.noTarget;
     }
 
     // Tell when the shooter should be on
     if (Util.isMatchMode()) {
-      if (currentAimingResult != null && !climbMode) {
+      if (currentAimingResult.hasTarget() && !climbMode) {
         shooter.setGoal(Shooter.Goal.RUNNING);
       } else {
         shooter.setGoal(Shooter.Goal.STOP);
@@ -392,7 +381,7 @@ public class RobotContainer {
   private Trigger isRobotRotated() {
     return new Trigger(
         () ->
-            currentAimingResult != null
+            currentAimingResult.hasTarget()
                 && Math.abs(
                         currentAimingResult
                             .targetRotation()

@@ -25,7 +25,10 @@ import org.littletonrobotics.junction.Logger;
 public class Aiming {
 
   /** Cached result of the aiming pipeline. */
-  public record AimingResult(Rotation2d targetRotation, Distance distanceToTarget) {}
+  public record AimingResult(Rotation2d targetRotation, Distance distanceToTarget, boolean hasTarget) {}
+
+  /** A default empty result to prevent NullPointerExceptions */
+  public static final AimingResult noTarget = new AimingResult(new Rotation2d(), Meters.of(0), false);
 
   /**
    * Computes all aiming outputs for a direct hub shot.
@@ -158,7 +161,8 @@ public class Aiming {
       Logger.recordOutput("Aiming/DistanceToTarget", distanceMeters);
     }
 
-    return new AimingResult(targetRotation, Meters.of(distanceMeters));
+    // Pass true for hasTarget
+    return new AimingResult(targetRotation, Meters.of(distanceMeters), true);
   }
 
   public static Supplier<AimingResult> hubAimingSupplier(
@@ -167,7 +171,7 @@ public class Aiming {
       Translation2d shooterRobotOffset,
       Time estimatedTimeOfFlight) {
     return new Supplier<AimingResult>() {
-      private AimingResult lastResult = null;
+      private AimingResult lastResult = noTarget;
       private double lastTimestamp = -1.0;
 
       @Override
@@ -196,7 +200,7 @@ public class Aiming {
   public static Supplier<AimingResult> lobAimingSupplier(
       Supplier<Pose2d> robotPoseSupplier, Translation2d shooterRobotOffset) {
     return new Supplier<AimingResult>() {
-      private AimingResult lastResult = null;
+      private AimingResult lastResult = noTarget;
       private double lastTimestamp = -1.0;
 
       @Override
