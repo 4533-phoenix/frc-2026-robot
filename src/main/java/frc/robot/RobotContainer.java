@@ -14,9 +14,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import frc.robot.commands.ClimbCommands;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.IntakeCommands;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.climb.ClimbIO;
 import frc.robot.subsystems.climb.ClimbIOReal;
@@ -82,7 +80,6 @@ public class RobotContainer {
   private final LoggedDashboardChooser<Command> autoChooser;
 
   private boolean climbMode = false;
-  private boolean climbOverride = false;
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -252,43 +249,35 @@ public class RobotContainer {
     indexer.setDefaultCommand(indexer.stop());
 
     // Operator
+    operatorController.leftBumper().or(operatorController.rightBumper()).and(climb.isDown()).onTrue(arm.deploy());
+    
     operatorController
         .leftBumper()
-        .whileTrue(Commands.parallel(arm.deploy(), spinner.intake()));
+        .and(arm.isDeployed())
+        .whileTrue(spinner.intake());
 
     operatorController
         .rightBumper()
-        .whileTrue(Commands.parallel(arm.deploy(), spinner.extake()));
+        .and(arm.isDeployed())
+        .whileTrue(spinner.extake());
         
     operatorController
         .povLeft()
-        .onTrue(
-            Commands.runOnce(
-                () -> {
-                  climbMode = !climbMode;
-                  if (climbMode) {
-                    arm.retract();
-                  }
-                },
-                arm));
-
-    operatorController
-        .povRight()
-        .onTrue(
-            Commands.runOnce(
-                () -> {
-                  climbOverride = !climbOverride;
-                },
-                climb));
+        .onTrue(toggleClimbMode())
+        .and(() -> climbMode)
+        .onTrue(arm.retract());
 
     operatorController
         .povUp()
-        .and(() -> climbOverride || arm.isRetracted().getAsBoolean())
-        .whileTrue(ClimbCommands.liftUp(climb));
+        .and(() -> climbMode)
+        .and(arm.isRetracted())
+        .whileTrue(climb.raise());
+
     operatorController
         .povDown()
-        .and(() -> climbOverride || arm.isRetracted().getAsBoolean())
-        .whileTrue(ClimbCommands.liftDown(climb));
+        .and(() -> climbMode)
+        .and(arm.isRetracted())
+        .whileTrue(climb.lower());
   }
 
   /**
@@ -300,5 +289,13 @@ public class RobotContainer {
     Command autoCommand = autoChooser.get();
     if (autoCommand == null) autoCommand = Commands.none();
     return autoCommand;
+  }
+
+  private Command toggleClimbMode() {
+    return Commands.runOnce(
+        () -> {
+          climbMode = !climbMode;
+        },
+        arm);
   }
 }

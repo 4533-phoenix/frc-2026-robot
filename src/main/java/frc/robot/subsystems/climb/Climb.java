@@ -40,8 +40,6 @@ public class Climb extends SubsystemBase {
   private final Trigger upTrigger;
   private final Trigger downTrigger;
 
-  private boolean climbLocked = true;
-
   /**
    * Creates a new Climb subsystem.
    *
@@ -93,11 +91,11 @@ public class Climb extends SubsystemBase {
   }
 
   public Command raise() {
-    return this.runEnd(() -> setGoal(Goal.UP), () -> setGoal(Goal.STOP)).until(upTrigger);
+    return this.startEnd(() -> setGoal(Goal.UP), () -> setGoal(Goal.STOP)).until(upTrigger);
   }
 
   public Command lower() {
-    return this.runEnd(() -> setGoal(Goal.DOWN), () -> setGoal(Goal.STOP)).until(downTrigger);
+    return this.startEnd(() -> setGoal(Goal.DOWN), () -> setGoal(Goal.STOP)).until(downTrigger);
   }
 
   public Command stop() {

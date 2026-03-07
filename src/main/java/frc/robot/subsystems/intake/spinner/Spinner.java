@@ -51,11 +51,11 @@ public class Spinner extends SubsystemBase {
   }
 
   public Command intake() {
-    return this.runEnd(() -> setGoal(Goal.INTAKE), () -> setGoal(Goal.STOP));
+    return this.startEnd(() -> setGoal(Goal.INTAKE), () -> setGoal(Goal.STOP));
   }
 
   public Command extake() {
-    return this.runEnd(() -> setGoal(Goal.EXTAKE), () -> setGoal(Goal.STOP));
+    return this.startEnd(() -> setGoal(Goal.EXTAKE), () -> setGoal(Goal.STOP));
   }
 
   public Command stop() {

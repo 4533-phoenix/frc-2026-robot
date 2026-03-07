@@ -64,7 +64,7 @@ public class Indexer extends SubsystemBase {
   }
 
   public Command run() {
-    return this.runEnd(() -> setGoal(Goal.RUNNING), () -> setGoal(Goal.STOP));
+    return this.startEnd(() -> setGoal(Goal.RUNNING), () -> setGoal(Goal.STOP));
   }
 
   public Command stop() {
