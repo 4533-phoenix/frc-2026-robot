@@ -76,7 +76,7 @@ public class Aiming {
    * @param shooterRobotOffset The physical offset of the shooter from the robot's center.
    * @param lobTargetLeftCenter Blue alliance left lobbing target center.
    * @param lobTargetRightCenter Blue alliance right lobbing target center.
-   * @param lobTargetHalfLengthMeters Half length of the lobbing target line segment.
+   * @param lobTargetHalfLength Half length of the lobbing target line segment.
    * @param lobTargetIsLeft Hysteresis state: true if currently targeting the left side.
    * @param log Whether to publish outputs to AdvantageKit for visualization.
    * @return The computed aiming result and updated hysteresis state.

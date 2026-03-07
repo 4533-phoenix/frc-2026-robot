@@ -65,10 +65,6 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
  * Declares the robot's subsystems, operator interface devices, and command bindings.
- *
- * <p>Scoring logic (shooter, indexer, auto-aim) is delegated to the {@link Superstructure} state
- * machine. Bindings here express driver intent as simple boolean signals that the superstructure
- * reads each cycle.
  */
 public class RobotContainer {
   // Subsystems
