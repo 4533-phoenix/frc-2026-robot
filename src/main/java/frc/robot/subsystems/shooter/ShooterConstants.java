@@ -88,7 +88,7 @@ public final class ShooterConstants {
 
   // ---------- Lobbing constants ----------
   public static final ShooterState lobShootingState =
-      new ShooterState(RotationsPerSecond.of(40.0), Degrees.of(70.0));
+      new ShooterState(RotationsPerSecond.of(60.0), Degrees.of(70.0));
 
   // ---------- Aiming / lead constants ----------
   /** Estimated time of flight for the game piece from shooter to target. */

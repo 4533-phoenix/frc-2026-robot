@@ -13,6 +13,7 @@ import static frc.robot.util.SparkUtil.*;
 
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.FeedbackSensor;
@@ -30,20 +31,26 @@ import java.util.function.DoubleSupplier;
  * Real IO implementation for the intake using REV SparkMax controllers.
  *
  * <p>This implementation configures the arm motor for position closed-loop control using motion
- * profiling and the spinner motor for velocity control. It optimizes CAN bus traffic by setting
- * specific update frequencies for status signals.
+ * profiling and the internal relative encoder, while continuously syncing to the absolute encoder
+ * to prevent drift and handle startup seeding.
  */
 public class ArmIOSpark implements ArmIO {
   private final SparkMax spark = new SparkMax(canId, MotorType.kBrushless);
-  private final AbsoluteEncoder encoder;
+  private final AbsoluteEncoder absoluteEncoder;
+  private final RelativeEncoder internalEncoder;
   private final SparkClosedLoopController controller;
 
   // Debouncers to prevent rapid flickering of connection status
   private final Debouncer connectedDebounce = new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
+  // Synchronization thresholds (Feel free to move these to ArmConstants)
+  private static final double VELOCITY_GATE_RAD_PER_SEC = 0.05;
+  private static final double ERROR_THRESHOLD_RAD = 0.05;
+
   /** Creates a new ArmIOSpark and configures the SparkMax controllers. */
   public ArmIOSpark() {
-    encoder = spark.getAbsoluteEncoder();
+    absoluteEncoder = spark.getAbsoluteEncoder();
+    internalEncoder = spark.getEncoder();
     controller = spark.getClosedLoopController();
 
     var armConfig = new SparkMaxConfig();
@@ -61,6 +68,8 @@ public class ArmIOSpark implements ArmIO {
         .positionConversionFactor(2.0 * Math.PI)
         .zeroOffset(globalEncoderOffset.in(Rotations))
         .inverted(true);
+
+    // PID runs off the primary internal encoder for maximum smoothness and high D-gains
     armConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(armKp, 0.0, armKd);
     armConfig
         .closedLoop
@@ -91,6 +100,7 @@ public class ArmIOSpark implements ArmIO {
         .forwardSoftLimit(retractedPosition.plus(softLimitTolerance).in(Radians))
         .reverseSoftLimitEnabled(true)
         .reverseSoftLimit(deployedPosition.minus(softLimitTolerance).in(Radians));
+
     tryUntilOk(
         5,
         () ->
@@ -99,7 +109,7 @@ public class ArmIOSpark implements ArmIO {
     tryUntilOk(
         5,
         () -> {
-          double initialPos = encoder.getPosition();
+          double initialPos = absoluteEncoder.getPosition();
           return spark.getEncoder().setPosition(initialPos);
         });
   }
@@ -111,11 +121,42 @@ public class ArmIOSpark implements ArmIO {
    */
   @Override
   public void updateInputs(ArmIOInputs inputs) {
-    // Arm Motor Inputs
     boolean armSparkOk = true;
-    armSparkOk &= ifOk(spark, encoder::getPosition, (value) -> inputs.position = Radians.of(value));
-    armSparkOk &=
-        ifOk(spark, encoder::getVelocity, (value) -> inputs.velocity = RadiansPerSecond.of(value));
+
+    // Temporary containers to extract values from ifOk checks
+    final double[] absPosContainer = new double[1];
+    final double[] intPosContainer = new double[1];
+    final double[] velContainer = new double[1];
+
+    boolean absOk = ifOk(spark, absoluteEncoder::getPosition, (val) -> absPosContainer[0] = val);
+    boolean intPosOk = ifOk(spark, internalEncoder::getPosition, (val) -> intPosContainer[0] = val);
+    boolean velOk = ifOk(spark, internalEncoder::getVelocity, (val) -> velContainer[0] = val);
+
+    armSparkOk &= (absOk && intPosOk && velOk);
+
+    // If CAN communications for position/velocity were successful, process drift compensation
+    if (armSparkOk) {
+      double absPos = absPosContainer[0];
+      double internalPos = intPosContainer[0];
+      double currentVel = velContainer[0];
+      boolean absEncoderReady = (absPos != 0.0);
+
+      boolean isStill = Math.abs(currentVel) < VELOCITY_GATE_RAD_PER_SEC;
+      double armError = Math.abs(internalPos - absPos);
+
+      // Apply Synchronization
+      if (absEncoderReady && isStill && armError > ERROR_THRESHOLD_RAD) {
+        internalEncoder.setPosition(absPos);
+        internalPos = absPos;
+      }
+
+      // Log the INTERNAL encoder data to inputs since that is what the PID controller is actually
+      // using.
+      inputs.position = Radians.of(internalPos);
+      inputs.velocity = RadiansPerSecond.of(currentVel);
+    }
+
+    // Power and current inputs
     armSparkOk &=
         ifOk(
             spark,
