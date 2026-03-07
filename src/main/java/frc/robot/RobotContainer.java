@@ -63,9 +63,7 @@ import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
-/**
- * Declares the robot's subsystems, operator interface devices, and command bindings.
- */
+/** Declares the robot's subsystems, operator interface devices, and command bindings. */
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
