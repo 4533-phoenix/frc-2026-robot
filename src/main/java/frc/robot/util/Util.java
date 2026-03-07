@@ -9,6 +9,7 @@
 
 package frc.robot.util;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -202,9 +203,7 @@ public class Util {
    */
   public static Translation2d closestPointOnLobLine(
       Translation2d from, Translation2d center, double halfLen) {
-    double clampedY =
-        edu.wpi.first.math.MathUtil.clamp(
-            from.getY(), center.getY() - halfLen, center.getY() + halfLen);
+    double clampedY = MathUtil.clamp(from.getY(), center.getY() - halfLen, center.getY() + halfLen);
     return new Translation2d(center.getX(), clampedY);
   }
 

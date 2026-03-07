@@ -56,21 +56,4 @@ public class ShooterKinematics {
     return new ShooterState(
         RotationsPerSecond.of(flywheelMap.get(distMeters)), Degrees.of(hoodMap.get(distMeters)));
   }
-
-  /**
-   * Calculates the optimal {@link ShooterState} for a lobbing shot at a given distance.
-   *
-   * <p>Lobbing uses lower flywheel speeds and steeper hood angles to produce a high-arc trajectory
-   * that lands in the lobbing targets on the far side of the field.
-   *
-   * @param distanceToTarget The distance from the shooter to the lobbing target.
-   * @return The calculated ShooterState for a lob shot.
-   */
-  public static ShooterState calculateLobState(Distance distanceToTarget) {
-    double distMeters = distanceToTarget.in(Meters);
-
-    return new ShooterState(
-        RotationsPerSecond.of(lobFlywheelMap.get(distMeters)),
-        Degrees.of(lobHoodMap.get(distMeters)));
-  }
 }

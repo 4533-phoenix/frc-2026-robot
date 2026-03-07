@@ -40,18 +40,16 @@ public class Shooter extends SubsystemBase {
 
   public enum Goal {
     STOP,
-    SHOOTING
+    RUNNING
   }
 
   private Goal currentGoal = Goal.STOP;
   private ShooterState lastTargetState = new ShooterState(RadiansPerSecond.of(0), Degrees.of(0));
 
   private AngularVelocity targetVelocity = RadiansPerSecond.zero();
-  private boolean isShooting = false;
 
   private final Trigger flywheelReadyTrigger;
   private final Trigger hoodReadyTrigger;
-  private final Trigger isShootingTrigger;
   private final Trigger readyToShootTrigger;
 
   private final Alert flywheelDisconnectedAlert =
@@ -74,8 +72,8 @@ public class Shooter extends SubsystemBase {
                 Math.abs(getFlywheelErrorRadPerSec())
                     <= flywheelAngularTolerance.in(RadiansPerSecond));
     hoodReadyTrigger = new Trigger(() -> hoodInputs.atSetpoint);
-    isShootingTrigger = new Trigger(() -> isShooting);
-    readyToShootTrigger = isShootingTrigger.and(flywheelReadyTrigger).and(hoodReadyTrigger);
+    readyToShootTrigger =
+        flywheelReadyTrigger.and(hoodReadyTrigger).and(() -> currentGoal == Goal.RUNNING);
   }
 
   public void setGoal(Goal goal) {
@@ -97,9 +95,8 @@ public class Shooter extends SubsystemBase {
         targetVelocity = RadiansPerSecond.zero();
         flywheelIO.stop();
         hoodIO.retract();
-        isShooting = false;
       }
-      case SHOOTING -> setTargetState(lastTargetState);
+      case RUNNING -> setTargetState(lastTargetState);
     }
 
     Logger.recordOutput("Shooter/Goal", currentGoal.toString());
@@ -114,7 +111,6 @@ public class Shooter extends SubsystemBase {
     targetVelocity = state.flywheelSpeed();
     flywheelIO.setAngularVelocity(state.flywheelSpeed());
     hoodIO.setLength(convertHoodAngleToServoLength(state.hoodAngle()));
-    isShooting = true;
   }
 
   /**
@@ -160,11 +156,6 @@ public class Shooter extends SubsystemBase {
     return hoodReadyTrigger;
   }
 
-  /** Returns true if the shooter has been commanded to an active shooting state. */
-  public Trigger isShooting() {
-    return isShootingTrigger;
-  }
-
   /** Returns the flywheel velocity error in radians per second (target minus actual). */
   public double getFlywheelErrorRadPerSec() {
     return targetVelocity.in(RadiansPerSecond) - flywheelInputs.velocity.in(RadiansPerSecond);
@@ -173,6 +164,18 @@ public class Shooter extends SubsystemBase {
   /** Safely stops the flywheels and retracts the hood. */
   public Command stop() {
     return this.runOnce(() -> setGoal(Goal.STOP));
+  }
+
+  public Command runHeld() {
+    return this.startEnd(() -> setGoal(Goal.RUNNING), () -> setGoal(Goal.STOP));
+  }
+
+  public Command run() {
+    return this.runOnce(() -> setGoal(Goal.RUNNING));
+  }
+
+  public Goal getCurrentGoal() {
+    return currentGoal;
   }
 
   public void setAimingParameters(ShooterState state) {

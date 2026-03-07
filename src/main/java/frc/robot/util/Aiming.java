@@ -1,12 +1,24 @@
+// Copyright (c) 2026 FRC Team 4533 (Phoenix)
+// Derived from the AdvantageKit framework by Littleton Robotics
+//
+// Use of this source code is governed by a BSD
+// license that can be found in the LICENSE file
+// at the root directory of this project.
+
 package frc.robot.util;
 
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Seconds;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.wpilibj.Timer;
+import frc.robot.Constants;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
 /** Utility class for calculating aiming solutions for the shooter. */
@@ -14,9 +26,6 @@ public class Aiming {
 
   /** Cached result of the aiming pipeline. */
   public record AimingResult(Rotation2d targetRotation, Distance distanceToTarget) {}
-
-  /** Record for returning aiming result along with updated hysteresis state for lobbing. */
-  public record LobAimingResult(AimingResult aimingResult, boolean lobTargetIsLeft) {}
 
   /**
    * Computes all aiming outputs for a direct hub shot.
@@ -26,7 +35,7 @@ public class Aiming {
    * @param fieldVelocity The robot's field-relative velocity.
    * @param targetPosition The blue-alliance target position.
    * @param shooterRobotOffset The physical offset of the shooter from the robot's center.
-   * @param estimatedTimeOfFlightSeconds Estimated time for the note to travel to the target.
+   * @param estimatedTimeOfFlight Estimated time for the note to travel to the target.
    * @param log Whether to publish outputs to AdvantageKit for visualization.
    * @return The computed aiming result.
    */
@@ -36,7 +45,7 @@ public class Aiming {
       Translation2d fieldVelocity,
       Translation2d targetPosition,
       Translation2d shooterRobotOffset,
-      double estimatedTimeOfFlightSeconds,
+      Time estimatedTimeOfFlight,
       boolean log) {
 
     Translation2d targetTranslation = Util.flipAllianceIfNeeded(targetPosition);
@@ -48,7 +57,7 @@ public class Aiming {
         (shooterPos) -> {
           Translation2d lead =
               Util.calculateClampedLead(
-                  shooterPos, targetTranslation, fieldVelocity, estimatedTimeOfFlightSeconds);
+                  shooterPos, targetTranslation, fieldVelocity, estimatedTimeOfFlight.in(Seconds));
           return targetTranslation.minus(lead);
         },
         log);
@@ -67,13 +76,13 @@ public class Aiming {
    * @param log Whether to publish outputs to AdvantageKit for visualization.
    * @return The computed aiming result and updated hysteresis state.
    */
-  public static LobAimingResult computeLobAiming(
+  public static AimingResult computeLobAiming(
       Translation2d robotCenter,
       Rotation2d currentRobotRotation,
       Translation2d shooterRobotOffset,
       Translation2d lobTargetLeftCenter,
       Translation2d lobTargetRightCenter,
-      double lobTargetHalfLengthMeters,
+      Distance lobTargetHalfLength,
       boolean lobTargetIsLeft,
       boolean log) {
 
@@ -84,36 +93,24 @@ public class Aiming {
 
     // Find closest point on each line segment to the current shooter position
     Translation2d closestLeft =
-        Util.closestPointOnLobLine(currentShooterPos, leftCenter, lobTargetHalfLengthMeters);
+        Util.closestPointOnLobLine(currentShooterPos, leftCenter, lobTargetHalfLength.in(Meters));
     Translation2d closestRight =
-        Util.closestPointOnLobLine(currentShooterPos, rightCenter, lobTargetHalfLengthMeters);
+        Util.closestPointOnLobLine(currentShooterPos, rightCenter, lobTargetHalfLength.in(Meters));
 
     double distLeft = currentShooterPos.getDistance(closestLeft);
     double distRight = currentShooterPos.getDistance(closestRight);
 
-    // Only switch targets when the other is at least 0.5m closer
-    double hysteresis = 0.5;
-    boolean newLobTargetIsLeft = lobTargetIsLeft;
-    if (newLobTargetIsLeft && distRight < distLeft - hysteresis) {
-      newLobTargetIsLeft = false;
-    } else if (!newLobTargetIsLeft && distLeft < distRight - hysteresis) {
-      newLobTargetIsLeft = true;
-    }
+    final Translation2d closestLineCenter = distLeft < distRight ? leftCenter : rightCenter;
 
-    final boolean targetIsLeftFinal = newLobTargetIsLeft;
-
-    AimingResult result =
-        calculateTwoPassAiming(
-            robotCenter,
-            currentRobotRotation,
-            shooterRobotOffset,
-            (shooterPos) -> {
-              Translation2d lineCenter = targetIsLeftFinal ? leftCenter : rightCenter;
-              return Util.closestPointOnLobLine(shooterPos, lineCenter, lobTargetHalfLengthMeters);
-            },
-            log);
-
-    return new LobAimingResult(result, targetIsLeftFinal);
+    return calculateTwoPassAiming(
+        robotCenter,
+        currentRobotRotation,
+        shooterRobotOffset,
+        (shooterPos) -> {
+          return Util.closestPointOnLobLine(
+              shooterPos, closestLineCenter, lobTargetHalfLength.in(Meters));
+        },
+        log);
   }
 
   /**
@@ -162,5 +159,67 @@ public class Aiming {
     }
 
     return new AimingResult(targetRotation, Meters.of(distanceMeters));
+  }
+
+  public static Supplier<AimingResult> hubAimingSupplier(
+      Supplier<Pose2d> robotPoseSupplier,
+      Supplier<Translation2d> fieldVelocitySupplier,
+      Translation2d shooterRobotOffset,
+      Time estimatedTimeOfFlight) {
+    return new Supplier<AimingResult>() {
+      private AimingResult lastResult = null;
+      private double lastTimestamp = -1.0;
+
+      @Override
+      public AimingResult get() {
+        double currentTime = Math.round(Timer.getFPGATimestamp() * 50.0) / 50.0;
+
+        if (currentTime != lastTimestamp) {
+          Pose2d robotPose = robotPoseSupplier.get();
+          lastResult =
+              computeHubAiming(
+                  robotPose.getTranslation(),
+                  robotPose.getRotation(),
+                  fieldVelocitySupplier.get(),
+                  Constants.hubPosition,
+                  shooterRobotOffset,
+                  estimatedTimeOfFlight,
+                  true);
+          lastTimestamp = currentTime;
+        }
+
+        return lastResult;
+      }
+    };
+  }
+
+  public static Supplier<AimingResult> lobAimingSupplier(
+      Supplier<Pose2d> robotPoseSupplier, Translation2d shooterRobotOffset) {
+    return new Supplier<AimingResult>() {
+      private AimingResult lastResult = null;
+      private double lastTimestamp = -1.0;
+
+      @Override
+      public AimingResult get() {
+        double currentTime = Math.round(Timer.getFPGATimestamp() * 50.0) / 50.0;
+
+        if (currentTime != lastTimestamp) {
+          Pose2d robotPose = robotPoseSupplier.get();
+          lastResult =
+              computeLobAiming(
+                  robotPose.getTranslation(),
+                  robotPose.getRotation(),
+                  shooterRobotOffset,
+                  Constants.lobbingTargetLeftCenter,
+                  Constants.lobbingTargetRightCenter,
+                  Constants.lobbingTargetHalfLength,
+                  true,
+                  true);
+          lastTimestamp = currentTime;
+        }
+
+        return lastResult;
+      }
+    };
   }
 }

@@ -87,10 +87,8 @@ public final class ShooterConstants {
   public static final double flywheelKa = 0.04;
 
   // ---------- Lobbing constants ----------
-  /** Flywheel speed for lobbed shots. Lower than hub shots for a high-arc trajectory. */
-  public static final AngularVelocity lobFlywheelSpeed = RotationsPerSecond.of(40.0);
-  /** Hood angle for lobbed shots. Steep angle to produce the high arc. */
-  public static final Angle lobHoodAngle = Degrees.of(70.0);
+  public static final ShooterState lobShootingState =
+      new ShooterState(RotationsPerSecond.of(40.0), Degrees.of(70.0));
 
   // ---------- Aiming / lead constants ----------
   /** Estimated time of flight for the game piece from shooter to target. */

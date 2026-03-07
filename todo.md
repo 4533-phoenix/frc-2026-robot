@@ -15,7 +15,5 @@
 * Overhaul rumble
 * Make TOF not hardcoded
 * Figure out the locking situation in drive odometry
-
-URGENT
-* Figure out how to do auto in the most efficient way possible
-* Move back then shoot during auto
+* Rename climb to climber
+* Probably want to move heading pid controller to Drive itself

@@ -10,10 +10,16 @@ package frc.robot;
 import static edu.wpi.first.units.Units.Meters;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.DriveCommands;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.climb.ClimbIO;
@@ -38,6 +44,7 @@ import frc.robot.subsystems.intake.spinner.SpinnerIO;
 import frc.robot.subsystems.intake.spinner.SpinnerIOSim;
 import frc.robot.subsystems.intake.spinner.SpinnerIOSpark;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.shooter.ShooterKinematics;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
@@ -49,8 +56,11 @@ import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOPhoton;
 import frc.robot.subsystems.vision.VisionIOSim;
+import frc.robot.util.Aiming;
+import frc.robot.util.Aiming.AimingResult;
 import frc.robot.util.Util;
 import java.util.function.Supplier;
+import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -70,16 +80,20 @@ public class RobotContainer {
   private final Indexer indexer;
   private final Vision vision;
 
-  private Supplier<Rotation2d> hubAimRotation;
-
   // Controllers
   public final CommandXboxController driverController = new CommandXboxController(0);
   public final CommandXboxController operatorController = new CommandXboxController(1);
 
+  // Suppliers
+  private final Supplier<AimingResult> hubAiming;
+  private final Supplier<AimingResult> lobAiming;
+
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
 
+  // State variables
   private boolean climbMode = false;
+  private AimingResult currentAimingResult = null;
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -144,140 +158,181 @@ public class RobotContainer {
     // Set up auto routines via PathPlanner
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
-    // Basic autos to just shoot the preloaded game piece from the starting pose, for both alliances
-    // autoChooser.addOption(
-    //     "Left Shoot Preload",
-    //     Commands.sequence(
-    //         Commands.runOnce(
-    //             () ->
-    //                 drive.setPose(
-    //                     Util.flipAllianceIfNeeded(
-    //                         new Pose2d(
-    //                             3.536,
-    //                             Constants.fieldWidth.in(Meters) - 2.437,
-    //                             new Rotation2d(0))))),
-    //         Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
-    //             .withTimeout(1.0),
-    //         Commands.runOnce(() -> drive.runVelocity(new ChassisSpeeds()), drive),
-    //         Commands.deadline(
-    //             Commands.waitSeconds(15.0),
-    //             Commands.startEnd(
-    //                 () -> superstructure.setGoal(RobotGoal.FIRE),
-    //                 () -> superstructure.setGoal(RobotGoal.IDLE)),
-    //             DriveCommands.joystickDriveWithRotationPriority(
-    //                 drive, () -> 0.0, () -> 0.0, superstructure::getAimingRotation))));
+    // Set up aiming suppliers
+    hubAiming =
+        Aiming.hubAimingSupplier(
+            drive::getPose,
+            drive::getFieldRelativeVelocity,
+            ShooterConstants.shooterRobotOffset,
+            ShooterConstants.estimatedTimeOfFlight);
+    lobAiming = Aiming.lobAimingSupplier(drive::getPose, ShooterConstants.shooterRobotOffset);
 
-    // autoChooser.addOption(
-    //     "Right Shoot Preload",
-    //     Commands.sequence(
-    //         Commands.runOnce(
-    //             () ->
-    //                 drive.setPose(
-    //                     Util.flipAllianceIfNeeded(new Pose2d(3.536, 2.437, new Rotation2d(0))))),
-    //         Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
-    //             .withTimeout(1.0),
-    //         Commands.runOnce(() -> drive.runVelocity(new ChassisSpeeds()), drive),
-    //         Commands.deadline(
-    //             Commands.waitSeconds(15.0),
-    //             Commands.startEnd(
-    //                 () -> superstructure.setGoal(RobotGoal.FIRE),
-    //                 () -> superstructure.setGoal(RobotGoal.IDLE)),
-    //             DriveCommands.joystickDriveWithRotationPriority(
-    //                 drive, () -> 0.0, () -> 0.0, superstructure::getAimingRotation))));
+    autoChooser.addOption(
+        "Left Shoot Preload",
+        Commands.sequence(
+            Commands.runOnce(
+                () ->
+                    drive.setPose(
+                        Util.flipAllianceIfNeeded(
+                            new Pose2d(
+                                3.536,
+                                Constants.fieldWidth.in(Meters) - 2.437,
+                                new Rotation2d(0))))),
+            shooter.run(),
+            Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
+                .withTimeout(1.0)
+                .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
+            Commands.parallel(
+                Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
+                DriveCommands.joystickDriveWithRotationPriority(
+                    drive,
+                    () -> 0.0,
+                    () -> 0.0,
+                    () ->
+                        currentAimingResult != null
+                            ? currentAimingResult.targetRotation()
+                            : drive.getPose().getRotation()))));
 
-    // // Set up characterization routines for SysId
-    // autoChooser.addOption(
-    //     "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
-    // autoChooser.addOption(
-    //     "Drive Simple FF Characterization", DriveCommands.feedforwardCharacterization(drive));
-    // autoChooser.addOption(
-    //     "Drive SysId (Quasistatic Forward)",
-    //     drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    // autoChooser.addOption(
-    //     "Drive SysId (Quasistatic Reverse)",
-    //     drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    // autoChooser.addOption(
-    //     "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    // autoChooser.addOption(
-    //     "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+    autoChooser.addOption(
+        "Middle Shoot Preload",
+        Commands.sequence(
+            Commands.runOnce(
+                () ->
+                    drive.setPose(
+                        Util.flipAllianceIfNeeded(
+                            new Pose2d(
+                                3.536, Constants.fieldWidth.in(Meters) / 2.0, new Rotation2d(0))))),
+            shooter.run(),
+            Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
+                .withTimeout(1.0)
+                .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
+            Commands.parallel(
+                Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
+                DriveCommands.joystickDriveWithRotationPriority(
+                    drive,
+                    () -> 0.0,
+                    () -> 0.0,
+                    () ->
+                        currentAimingResult != null
+                            ? currentAimingResult.targetRotation()
+                            : drive.getPose().getRotation()))));
 
-    // Configure the button bindings
-    configureButtonBindings();
+    autoChooser.addOption(
+        "Right Shoot Preload",
+        Commands.sequence(
+            Commands.runOnce(
+                () ->
+                    drive.setPose(
+                        Util.flipAllianceIfNeeded(new Pose2d(3.536, 2.437, new Rotation2d(0))))),
+            shooter.run(),
+            Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
+                .withTimeout(1.0)
+                .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
+            Commands.parallel(
+                Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
+                DriveCommands.joystickDriveWithRotationPriority(
+                    drive,
+                    () -> 0.0,
+                    () -> 0.0,
+                    () ->
+                        currentAimingResult != null
+                            ? currentAimingResult.targetRotation()
+                            : drive.getPose().getRotation()))));
+
+    // Configure the commands
+    configureDriverButtonBindings();
+    configureOperatorButtonBindings();
+    configureDefaultCommands();
   }
 
   /**
    * Defines button-to-command mappings. Most scoring logic is handled by the {@link Superstructure}
    * state machine. Bindings here express driver intent as simple input signals.
    */
-  private void configureButtonBindings() {
-    // Driver
+  private void configureDriverButtonBindings() {
+    // When left trigger held and shooter has a target, rotate to aim at the target
+    driverController
+        .leftTrigger()
+        .whileTrue(
+            Commands.either(
+                DriveCommands.joystickDriveWithRotationPriority(
+                    drive,
+                    () -> -driverController.getLeftY(),
+                    () -> -driverController.getLeftX(),
+                    () -> currentAimingResult.targetRotation()),
+                Commands.none(),
+                () -> currentAimingResult != null));
+
+    // Spin up the motor if we are practicing not in match mode
+    driverController.leftTrigger().and(() -> !Util.isMatchMode()).whileTrue(shooter.runHeld());
+
+    // When right trigger held, shooter is ready, and robot is aimed, run the indexer
+    driverController
+        .rightTrigger()
+        .and(driverController.leftTrigger())
+        .and(isRobotRotated())
+        .and(shooter.isShooterReady())
+        .whileTrue(indexer.run());
+
+    new Trigger(
+            () ->
+                driverController.leftTrigger().getAsBoolean()
+                    && isRobotRotated().getAsBoolean()
+                    && shooter.isShooterReady().getAsBoolean())
+        .whileTrue(
+            Commands.runEnd(
+                () -> driverController.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0.5),
+                () -> driverController.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0)));
+  }
+
+  private void configureOperatorButtonBindings() {
+    // If left or right bumper is pressed while the climb is down, deploy the intake arm
+    operatorController
+        .leftBumper()
+        .onTrue(arm.deploy())
+        .whileTrue(Commands.either(spinner.intake(), spinner.stop(), arm.isDeployed()))
+        .onFalse(spinner.stop());
+    operatorController
+        .rightBumper()
+        .onTrue(arm.deploy())
+        .whileTrue(Commands.either(spinner.extake(), spinner.stop(), arm.isDeployed()))
+        .onFalse(spinner.stop());
+
+    // If left dpad is pressed, toggle climb mode. If climb mode is on, also retract the arm
+    operatorController
+        .povLeft()
+        .onTrue(
+            Commands.runOnce(() -> climbMode = !climbMode)
+                .andThen(
+                    Commands.runOnce(
+                        () -> {
+                          if (climbMode) arm.setGoal(Arm.Goal.RETRACT);
+                        })));
+
+    // If climb mode is on and the arm is retracted, up dpad raises the climb and down dpad lowers
+    operatorController.povUp().and(() -> climbMode).and(arm.isRetracted()).whileTrue(climb.raise());
+    operatorController
+        .povDown()
+        .and(() -> climbMode)
+        .and(arm.isRetracted())
+        .whileTrue(climb.lower());
+
+    // Rumble operator controller when climb mode is engaged
+    new Trigger(() -> climbMode)
+        .whileTrue(
+            Commands.runEnd(
+                () -> operatorController.getHID().setRumble(RumbleType.kRightRumble, 0.25),
+                () -> operatorController.getHID().setRumble(RumbleType.kBothRumble, 0),
+                climb));
+  }
+
+  public void configureDefaultCommands() {
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
             () -> -driverController.getLeftY(),
             () -> -driverController.getLeftX(),
             () -> -driverController.getRightX()));
-
-    driverController
-        .leftTrigger()
-        .and(() -> !climbMode)
-        .whileTrue(
-            Commands.parallel(
-                DriveCommands.joystickDriveWithRotationPriority(
-                    drive,
-                    () -> -driverController.getLeftY(),
-                    () -> -driverController.getLeftX(),
-                    hubAimRotation),
-                Commands.run(
-                    () -> {
-                      double dist =
-                          drive
-                              .getPose()
-                              .getTranslation()
-                              .getDistance(Util.flipAllianceIfNeeded(Constants.hubPosition));
-                      shooter.setTargetState(
-                          ShooterKinematics.calculateShooterState(Meters.of(dist)));
-                    },
-                    shooter)));
-
-    driverController
-        .rightTrigger()
-        .and(shooter.isShooterReady())
-        .whileTrue(Commands.runEnd(indexer::run, indexer::stop, indexer));
-
-    shooter.setDefaultCommand(shooter.stop());
-    indexer.setDefaultCommand(indexer.stop());
-
-    // Operator
-    operatorController.leftBumper().or(operatorController.rightBumper()).and(climb.isDown()).onTrue(arm.deploy());
-    
-    operatorController
-        .leftBumper()
-        .and(arm.isDeployed())
-        .whileTrue(spinner.intake());
-
-    operatorController
-        .rightBumper()
-        .and(arm.isDeployed())
-        .whileTrue(spinner.extake());
-        
-    operatorController
-        .povLeft()
-        .onTrue(toggleClimbMode())
-        .and(() -> climbMode)
-        .onTrue(arm.retract());
-
-    operatorController
-        .povUp()
-        .and(() -> climbMode)
-        .and(arm.isRetracted())
-        .whileTrue(climb.raise());
-
-    operatorController
-        .povDown()
-        .and(() -> climbMode)
-        .and(arm.isRetracted())
-        .whileTrue(climb.lower());
   }
 
   /**
@@ -291,11 +346,52 @@ public class RobotContainer {
     return autoCommand;
   }
 
-  private Command toggleClimbMode() {
-    return Commands.runOnce(
-        () -> {
-          climbMode = !climbMode;
-        },
-        arm);
+  public void periodic() {
+    // Get common booleans
+    boolean isHubEnabled = Util.isHubEnabled();
+
+    // Update the current aiming result based on the robot's position on the field
+    Translation2d robotTranslation = drive.getPose().getTranslation();
+    if (!climbMode) {
+      if (Util.flipAllianceIfNeeded(Constants.shootingZone).contains(robotTranslation)
+          && (Util.isHubApproaching() || isHubEnabled)) {
+        currentAimingResult = hubAiming.get();
+        shooter.setAimingParameters(
+            ShooterKinematics.calculateShooterState(currentAimingResult.distanceToTarget()));
+      } else if (Util.flipAllianceIfNeeded(Constants.lobbingZone).contains(robotTranslation)) {
+        currentAimingResult = lobAiming.get();
+        shooter.setAimingParameters(ShooterConstants.lobShootingState);
+      } else {
+        currentAimingResult = null;
+      }
+    } else {
+      currentAimingResult = null;
+    }
+
+    // Tell when the shooter should be on
+    if (Util.isMatchMode()) {
+      if (currentAimingResult != null && !climbMode) {
+        shooter.setGoal(Shooter.Goal.RUNNING);
+      } else {
+        shooter.setGoal(Shooter.Goal.STOP);
+      }
+    }
+
+    // Log some useful values to AdvantageKit
+    Logger.recordOutput("Container/ClimbMode", climbMode);
+    Logger.recordOutput("Container/CurrentAimingResult", currentAimingResult);
+    Logger.recordOutput("Container/IsHubEnabled", isHubEnabled);
+  }
+
+  private Trigger isRobotRotated() {
+    return new Trigger(
+        () ->
+            currentAimingResult != null
+                && Math.abs(
+                        currentAimingResult
+                            .targetRotation()
+                            .minus(drive.getPose().getRotation())
+                            .getDegrees())
+                    < 5.0);
   }
 }
