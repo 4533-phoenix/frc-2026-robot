@@ -133,7 +133,6 @@ public class Util {
       return DriverStation.isEnabled();
     }
 
-    if (DriverStation.isDisabled()) return false;
     if (DriverStation.isAutonomous() || time > 130 || time <= 30) return true;
 
     String data = DriverStation.getGameSpecificMessage();
@@ -207,7 +206,7 @@ public class Util {
    * @return True when the match is in the last 30 seconds of teleop.
    */
   public static boolean isEndgame() {
-    if (DriverStation.isDisabled() || DriverStation.isAutonomous()) return false;
+    if (DriverStation.isAutonomous()) return false;
     double time = DriverStation.getMatchTime();
     boolean isTimedMatch = DriverStation.isFMSAttached() || time > 0;
     return isTimedMatch && time <= 30.0 && time > 0;
