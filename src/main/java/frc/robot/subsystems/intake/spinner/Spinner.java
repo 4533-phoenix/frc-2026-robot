@@ -14,6 +14,8 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 /** Subsystem for controlling the intake spinner rollers. */
@@ -31,7 +33,7 @@ public class Spinner extends SubsystemBase {
     EXTAKE
   }
 
-  private Goal currentGoal = Goal.STOP;
+  @AutoLogOutput private Goal goal = Goal.STOP;
 
   private final Alert spinnerDisconnectedAlert =
       new Alert("Intake spinner motor disconnected", AlertType.kWarning);
@@ -51,7 +53,7 @@ public class Spinner extends SubsystemBase {
    * @param goal The target goal for the spinner.
    */
   public void setGoal(Goal goal) {
-    this.currentGoal = goal;
+    this.goal = goal;
   }
 
   @Override
@@ -61,13 +63,11 @@ public class Spinner extends SubsystemBase {
     spinnerDisconnectedAlert.set(!inputs.connected);
 
     // Apply the voltage based on the current goal
-    switch (currentGoal) {
+    switch (goal) {
       case INTAKE -> io.setVoltage(intakeVoltage);
       case EXTAKE -> io.setVoltage(extakeVoltage);
       case STOP -> io.setVoltage(Volts.zero());
     }
-
-    Logger.recordOutput("Spinner/Goal", currentGoal.toString());
   }
 
   /**

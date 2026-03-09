@@ -14,6 +14,8 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -34,7 +36,7 @@ public class Indexer extends SubsystemBase {
     RUNNING
   }
 
-  private Goal currentGoal = Goal.STOP;
+  @AutoLogOutput private Goal goal = Goal.STOP;
 
   private final Alert disconnectedAlert = new Alert("Indexer IO disconnected", AlertType.kWarning);
 
@@ -53,7 +55,7 @@ public class Indexer extends SubsystemBase {
    * @param goal The target goal.
    */
   public void setGoal(Goal goal) {
-    this.currentGoal = goal;
+    this.goal = goal;
   }
 
   /** Updates hardware inputs, logs data, and updates status alerts. */
@@ -63,12 +65,10 @@ public class Indexer extends SubsystemBase {
     Logger.processInputs("Indexer", inputs);
     disconnectedAlert.set(!inputs.connected);
 
-    switch (currentGoal) {
+    switch (goal) {
       case RUNNING -> io.setVoltage(indexerOnVoltage);
       case STOP -> io.setVoltage(Volts.zero());
     }
-
-    Logger.recordOutput("Indexer/Goal", currentGoal.toString());
   }
 
   /**

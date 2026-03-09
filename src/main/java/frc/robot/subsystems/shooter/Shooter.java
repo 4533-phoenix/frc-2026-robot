@@ -23,6 +23,8 @@ import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOInputsAutoLogged;
 import frc.robot.subsystems.shooter.hood.HoodIO;
 import frc.robot.subsystems.shooter.hood.HoodIOInputsAutoLogged;
+
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -46,7 +48,7 @@ public class Shooter extends SubsystemBase {
     RUNNING
   }
 
-  private Goal currentGoal = Goal.STOP;
+  @AutoLogOutput private Goal goal = Goal.STOP;
   private ShooterState lastTargetState = new ShooterState(RadiansPerSecond.of(0), Degrees.of(0));
 
   private AngularVelocity targetVelocity = RadiansPerSecond.zero();
@@ -76,7 +78,7 @@ public class Shooter extends SubsystemBase {
                     <= flywheelAngularTolerance.in(RadiansPerSecond));
     hoodReadyTrigger = new Trigger(() -> hoodInputs.atSetpoint);
     readyToShootTrigger =
-        flywheelReadyTrigger.and(hoodReadyTrigger).and(() -> currentGoal == Goal.RUNNING);
+        flywheelReadyTrigger.and(hoodReadyTrigger).and(() -> goal == Goal.RUNNING);
   }
 
   /**
@@ -85,7 +87,7 @@ public class Shooter extends SubsystemBase {
    * @param goal The target goal.
    */
   public void setGoal(Goal goal) {
-    this.currentGoal = goal;
+    this.goal = goal;
   }
 
   /** Updates hardware inputs, logs data, and updates status alerts. */
@@ -98,7 +100,7 @@ public class Shooter extends SubsystemBase {
     hoodIO.updateInputs(hoodInputs);
     Logger.processInputs("Shooter/Hood", hoodInputs);
 
-    switch (currentGoal) {
+    switch (goal) {
       case STOP -> {
         targetVelocity = RadiansPerSecond.zero();
         flywheelIO.stop();
@@ -106,8 +108,6 @@ public class Shooter extends SubsystemBase {
       }
       case RUNNING -> setTargetState(lastTargetState);
     }
-
-    Logger.recordOutput("Shooter/Goal", currentGoal.toString());
   }
 
   /**
@@ -206,15 +206,6 @@ public class Shooter extends SubsystemBase {
    */
   public Command run() {
     return this.runOnce(() -> setGoal(Goal.RUNNING));
-  }
-
-  /**
-   * Returns the current goal of the shooter.
-   *
-   * @return The current shooter goal.
-   */
-  public Goal getCurrentGoal() {
-    return currentGoal;
   }
 
   /**

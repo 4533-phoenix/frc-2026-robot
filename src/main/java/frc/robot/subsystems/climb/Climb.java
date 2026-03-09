@@ -15,6 +15,8 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -37,7 +39,7 @@ public class Climb extends SubsystemBase {
     DOWN
   }
 
-  private Goal currentGoal = Goal.STOP;
+  @AutoLogOutput private Goal goal = Goal.STOP;
 
   private final Alert disconnectedAlert = new Alert("Climb IO disconnected", AlertType.kWarning);
 
@@ -62,7 +64,7 @@ public class Climb extends SubsystemBase {
    * @param goal The target goal for the climber.
    */
   public void setGoal(Goal goal) {
-    this.currentGoal = goal;
+    this.goal = goal;
   }
 
   /** Updates hardware inputs, logs data, and updates status alerts. */
@@ -72,7 +74,7 @@ public class Climb extends SubsystemBase {
     Logger.processInputs("Climb", inputs);
     disconnectedAlert.set(!inputs.connected);
 
-    switch (currentGoal) {
+    switch (goal) {
       case UP -> {
         if (upTrigger.getAsBoolean()) io.setLiftVoltage(Volts.zero());
         else io.setLiftVoltage(defaultVoltage);
@@ -83,8 +85,6 @@ public class Climb extends SubsystemBase {
       }
       case STOP -> io.setLiftVoltage(Volts.zero());
     }
-
-    Logger.recordOutput("Climb/Goal", currentGoal.toString());
   }
 
   @Override

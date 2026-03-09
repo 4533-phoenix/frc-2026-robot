@@ -15,6 +15,8 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -37,7 +39,7 @@ public class Arm extends SubsystemBase {
     DEPLOY
   }
 
-  private Goal currentGoal = Goal.UNKNOWN;
+  @AutoLogOutput private Goal goal = Goal.UNKNOWN;
 
   // Alerts for hardware monitoring
   private final Alert disconnectedAlert =
@@ -71,7 +73,7 @@ public class Arm extends SubsystemBase {
    * @param goal The target goal for the arm.
    */
   public void setGoal(Goal goal) {
-    this.currentGoal = goal;
+    this.goal = goal;
   }
 
   /** Updates hardware inputs, logs data, and updates status alerts. */
@@ -81,7 +83,7 @@ public class Arm extends SubsystemBase {
     Logger.processInputs("Arm", inputs);
     disconnectedAlert.set(!inputs.connected);
 
-    switch (currentGoal) {
+    switch (goal) {
       case RETRACT -> io.setPosition(retractedPosition);
       case DEPLOY -> io.setPosition(deployedPosition);
       case UNKNOWN -> {
@@ -92,7 +94,6 @@ public class Arm extends SubsystemBase {
         }
       }
     }
-    Logger.recordOutput("Arm/Goal", currentGoal.toString());
   }
 
   /**
