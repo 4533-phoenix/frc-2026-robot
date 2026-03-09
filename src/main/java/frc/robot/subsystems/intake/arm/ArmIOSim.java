@@ -38,6 +38,8 @@ public class ArmIOSim implements ArmIO {
   private final SparkClosedLoopController armController;
   private final SingleJointedArmSim armPhysicsSim;
 
+  private Angle sentPosition = null;
+
   /** Creates a new ArmIOSim and initializes the simulated Spark MAX motor controllers. */
   public ArmIOSim() {
     // Create Spark MAX objects
@@ -101,7 +103,6 @@ public class ArmIOSim implements ArmIO {
         .reverseSoftLimitEnabled(true)
         .reverseSoftLimit(deployedPosition.minus(softLimitTolerance).in(Radians));
     armSpark.configure(armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    // Set initial encoder position to retracted
     armEncoder.setPosition(retractedPosition.in(Radians));
   }
 
@@ -135,7 +136,9 @@ public class ArmIOSim implements ArmIO {
 
   @Override
   public void setPosition(Angle angle) {
+    if (angle.isEquivalent(sentPosition)) return;
     armController.setSetpoint(
         angle.in(Radians), ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
+    sentPosition = angle;
   }
 }

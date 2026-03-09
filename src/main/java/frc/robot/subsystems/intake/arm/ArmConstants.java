@@ -73,4 +73,9 @@ public final class ArmConstants {
 
   /** The motor model and quantity used for the arm gearbox. */
   public static final DCMotor gearbox = DCMotor.getNEO(1);
+
+  /** Maximum angular velocity for the arm to be considered "still". */
+  public static final AngularVelocity velocityGate = RadiansPerSecond.of(0.5);
+  /** Maximum allowable error between internal and absolute encoder positions. */
+  public static final Angle errorThreshold = Radians.of(0.05);
 }

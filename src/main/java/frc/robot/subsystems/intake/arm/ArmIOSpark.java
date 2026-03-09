@@ -43,9 +43,7 @@ public class ArmIOSpark implements ArmIO {
   // Debouncers to prevent rapid flickering of connection status
   private final Debouncer connectedDebounce = new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
-  // Synchronization thresholds (Feel free to move these to ArmConstants)
-  private static final double VELOCITY_GATE_RAD_PER_SEC = 0.05;
-  private static final double ERROR_THRESHOLD_RAD = 0.05;
+  private Angle sentPosition = null;
 
   /** Creates a new ArmIOSpark and configures the SparkMax controllers. */
   public ArmIOSpark() {
@@ -90,10 +88,7 @@ public class ArmIOSpark implements ArmIO {
         .primaryEncoderPositionAlwaysOn(true)
         .primaryEncoderPositionPeriodMs(20)
         .primaryEncoderVelocityAlwaysOn(true)
-        .primaryEncoderVelocityPeriodMs(20)
-        .appliedOutputPeriodMs(50)
-        .busVoltagePeriodMs(50)
-        .outputCurrentPeriodMs(50);
+        .primaryEncoderVelocityPeriodMs(20);
     armConfig
         .softLimit
         .forwardSoftLimitEnabled(true)
@@ -141,16 +136,16 @@ public class ArmIOSpark implements ArmIO {
       double currentVel = velContainer[0];
       boolean absEncoderReady = (absPos != 0.0);
 
-      boolean isStill = Math.abs(currentVel) < VELOCITY_GATE_RAD_PER_SEC;
+      boolean isStill = Math.abs(currentVel) < velocityGate.in(RadiansPerSecond);
       double armError = Math.abs(internalPos - absPos);
 
       // Apply Synchronization
-      if (absEncoderReady && isStill && armError > ERROR_THRESHOLD_RAD) {
+      if (absEncoderReady && isStill && armError > errorThreshold.in(Radians)) {
         internalEncoder.setPosition(absPos);
         internalPos = absPos;
       }
 
-      // Log the INTERNAL encoder data to inputs since that is what the PID controller is actually
+      // Log the internal encoder data to inputs since that is what the PID controller is actually
       // using.
       inputs.position = Radians.of(internalPos);
       inputs.velocity = RadiansPerSecond.of(currentVel);
@@ -176,7 +171,9 @@ public class ArmIOSpark implements ArmIO {
    */
   @Override
   public void setPosition(Angle angle) {
+    if (angle.isEquivalent(sentPosition)) return;
     controller.setSetpoint(
         angle.in(Radians), ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
+    sentPosition = angle;
   }
 }
