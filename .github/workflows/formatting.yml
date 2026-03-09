@@ -1,4 +1,4 @@
-name: Java CI with Gradle
+name: Check Spotless
 
 on:
   push:
@@ -28,8 +28,5 @@ jobs:
       - name: Install toolchain
         run: ./gradlew installRoboRioToolchain
 
-      - name: Build with Gradle
-        run: ./gradlew build
-
-      - name: Run tests with Gradle
-        run: ./gradlew test
+      - name: Check Spotless
+        run: ./gradlew spotlessCheck

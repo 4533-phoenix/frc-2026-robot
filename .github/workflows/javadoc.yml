@@ -1,4 +1,4 @@
-name: Deploy Javadoc to GitHub Pages
+name: Generate Javadoc
 
 on:
   push:
