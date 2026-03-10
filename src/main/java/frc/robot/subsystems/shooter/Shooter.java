@@ -215,4 +215,14 @@ public class Shooter extends SubsystemBase {
   public void setAimingParameters(ShooterState state) {
     this.lastTargetState = state;
   }
+
+  /** Convenience method to set the running goal directly. */
+  public void setRunning() {
+    setGoal(Goal.RUNNING);
+  }
+
+  /** Convenience method to set the stop goal directly. */
+  public void setStop() {
+    setGoal(Goal.STOP);
+  }
 }

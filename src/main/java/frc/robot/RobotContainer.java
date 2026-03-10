@@ -14,7 +14,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -59,6 +58,8 @@ import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.util.Aiming;
 import frc.robot.util.Aiming.AimingResult;
 import frc.robot.util.Util;
+import frc.robot.util.WritableTrigger;
+
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
@@ -91,7 +92,7 @@ public class RobotContainer {
   private final LoggedDashboardChooser<Command> autoChooser;
 
   // State variables
-  private boolean climbMode = false;
+  private final WritableTrigger climbMode = new WritableTrigger(false);
   private AimingResult currentAimingResult = Aiming.noTarget;
 
   /**
@@ -263,8 +264,8 @@ public class RobotContainer {
                     && shooter.isShooterReady().getAsBoolean())
         .whileTrue(
             Commands.runEnd(
-                () -> driverController.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0.5),
-                () -> driverController.getHID().setRumble(GenericHID.RumbleType.kBothRumble, 0)));
+                () -> driverController.getHID().setRumble(RumbleType.kBothRumble, 0.5),
+                () -> driverController.getHID().setRumble(RumbleType.kBothRumble, 0)));
   }
 
   private void configureOperatorButtonBindings() {
@@ -272,33 +273,30 @@ public class RobotContainer {
     operatorController
         .leftBumper()
         .or(operatorController.rightBumper())
-        .and(() -> !climbMode)
+        .and(climbMode.negate())
         .and(climb.isDown())
+        .and(arm.isDeployed().negate())
         .onTrue(arm.deploy());
     operatorController.leftBumper().and(arm.isDeployed()).whileTrue(spinner.intake());
     operatorController.rightBumper().and(arm.isDeployed()).whileTrue(spinner.extake());
 
     // If left dpad is pressed, toggle climb mode. If climb mode is on, also retract the arm
     operatorController
-        .povLeft()
-        .onTrue(
-            Commands.runOnce(() -> climbMode = !climbMode)
-                .andThen(
-                    Commands.runOnce(
-                        () -> {
-                          if (climbMode) arm.setGoal(Arm.Goal.RETRACT);
-                        })));
+      .povLeft()
+      .onTrue(Commands.runOnce(() -> {
+          if (climbMode.toggle()) arm.setRetract();
+      }));
 
     // If climb mode is on and the arm is retracted, up dpad raises the climb and down dpad lowers
-    operatorController.povUp().and(() -> climbMode).and(arm.isRetracted()).whileTrue(climb.raise());
+    operatorController.povUp().and(climbMode).and(arm.isRetracted()).whileTrue(climb.raise());
     operatorController
         .povDown()
-        .and(() -> climbMode)
+        .and(climbMode)
         .and(arm.isRetracted())
         .whileTrue(climb.lower());
 
     // Rumble operator controller when climb mode is engaged
-    new Trigger(() -> climbMode)
+    climbMode
         .whileTrue(
             Commands.runEnd(
                 () -> operatorController.getHID().setRumble(RumbleType.kRightRumble, 0.25),
@@ -308,6 +306,7 @@ public class RobotContainer {
 
   /** Sets up the default commands for subsystems. */
   public void configureDefaultCommands() {
+    // By default, drive with the joysticks
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
@@ -334,7 +333,7 @@ public class RobotContainer {
 
     // Update the current aiming result based on the robot's position on the field
     Translation2d robotTranslation = drive.getPose().getTranslation();
-    if (!climbMode) {
+    if (!climbMode.get()) {
       if (Util.flipAllianceIfNeeded(Constants.shootingZone).contains(robotTranslation)
           && (Util.isHubApproaching() || isHubEnabled)) {
         currentAimingResult = hubAiming.get();
@@ -352,10 +351,10 @@ public class RobotContainer {
 
     // Tell when the shooter should be on
     if (Util.isMatchMode()) {
-      if (currentAimingResult.hasTarget() && !climbMode) {
-        shooter.setGoal(Shooter.Goal.RUNNING);
+      if (currentAimingResult.hasTarget() && !climbMode.get()) {
+        shooter.setRunning();
       } else {
-        shooter.setGoal(Shooter.Goal.STOP);
+        shooter.setStop();
       }
     }
 

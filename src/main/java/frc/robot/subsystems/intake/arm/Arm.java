@@ -130,4 +130,14 @@ public class Arm extends SubsystemBase {
   public Command retract() {
     return this.runOnce(() -> setGoal(Goal.RETRACT));
   }
+
+  /** Convenience method to set the retract goal directly. */
+  public void setRetract() {
+    setGoal(Goal.RETRACT);
+  }
+
+  /** Convenience method to set the deploy goal directly. */
+  public void setDeploy() {
+    setGoal(Goal.DEPLOY);
+  }
 }

@@ -26,6 +26,8 @@ import frc.robot.Constants;
  * color.
  */
 public class Util {
+  private Util() {} // Prevent instantiation
+
   private static final String MATCH_MODE_KEY = "Match Mode";
 
   /**

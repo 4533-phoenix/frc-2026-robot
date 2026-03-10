@@ -17,9 +17,9 @@ public class ShooterKinematics {
   private static final InterpolatingDoubleTreeMap flywheelMap = new InterpolatingDoubleTreeMap();
   private static final InterpolatingDoubleTreeMap hoodMap = new InterpolatingDoubleTreeMap();
 
-  // Separate maps for lobbing shots (lower power, higher arc)
-  private static final InterpolatingDoubleTreeMap lobFlywheelMap = new InterpolatingDoubleTreeMap();
-  private static final InterpolatingDoubleTreeMap lobHoodMap = new InterpolatingDoubleTreeMap();
+  // // Separate maps for lobbing shots (lower power, higher arc)
+  // private static final InterpolatingDoubleTreeMap lobFlywheelMap = new InterpolatingDoubleTreeMap();
+  // private static final InterpolatingDoubleTreeMap lobHoodMap = new InterpolatingDoubleTreeMap();
 
   static {
     // Rough shooter tune (342 Scrimage 2/28/26)
@@ -32,15 +32,15 @@ public class ShooterKinematics {
     flywheelMap.put(4.0513, 100.0);
     hoodMap.put(4.0513, 55.0);
 
-    // Placeholder lob tune (needs field calibration)
-    lobFlywheelMap.put(4.0, 35.0);
-    lobHoodMap.put(4.0, 60.0);
+    // // Placeholder lob tune (needs field calibration)
+    // lobFlywheelMap.put(4.0, 35.0);
+    // lobHoodMap.put(4.0, 60.0);
 
-    lobFlywheelMap.put(6.0, 45.0);
-    lobHoodMap.put(6.0, 55.0);
+    // lobFlywheelMap.put(6.0, 45.0);
+    // lobHoodMap.put(6.0, 55.0);
 
-    lobFlywheelMap.put(8.0, 55.0);
-    lobHoodMap.put(8.0, 50.0);
+    // lobFlywheelMap.put(8.0, 55.0);
+    // lobHoodMap.put(8.0, 50.0);
   }
 
   /**

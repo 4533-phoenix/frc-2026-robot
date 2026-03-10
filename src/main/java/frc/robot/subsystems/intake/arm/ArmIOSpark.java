@@ -171,7 +171,7 @@ public class ArmIOSpark implements ArmIO {
    */
   @Override
   public void setPosition(Angle angle) {
-    if (angle.isEquivalent(sentPosition)) return;
+    if (sentPosition != null && angle.isEquivalent(sentPosition)) return;
     controller.setSetpoint(
         angle.in(Radians), ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
     sentPosition = angle;

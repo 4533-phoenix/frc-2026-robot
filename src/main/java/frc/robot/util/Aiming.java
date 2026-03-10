@@ -23,6 +23,7 @@ import org.littletonrobotics.junction.Logger;
 
 /** Utility class for calculating aiming solutions for the shooter. */
 public class Aiming {
+  private Aiming() {} // Prevent instantiation
 
   /** Cached result of the aiming pipeline. */
   public record AimingResult(
