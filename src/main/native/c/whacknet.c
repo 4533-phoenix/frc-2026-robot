@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <jni.h>
+#include <stdint.h>
 #include <time.h>
 #include <arpa/inet.h>
 #include <linux/net_tstamp.h>
