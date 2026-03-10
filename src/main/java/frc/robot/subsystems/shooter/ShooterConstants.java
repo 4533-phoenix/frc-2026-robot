@@ -93,7 +93,9 @@ public final class ShooterConstants {
       new ShooterState(RotationsPerSecond.of(60.0), Degrees.of(70.0));
   /** Default shooter state with zero velocity and angle. */
   public static final ShooterState defaultShootingState =
-      new ShooterState(RadiansPerSecond.of(0), Degrees.of(90.0)); // TODO: Do this better? It works but it looks bad?
+      new ShooterState(
+          RadiansPerSecond.of(0),
+          Degrees.of(90.0)); // TODO: Do this better? It works but it looks bad?
 
   // ---------- Aiming / lead constants ----------
   /** Estimated time of flight for the game piece from shooter to target. */
