@@ -10,117 +10,19 @@
 package frc.robot.util;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rectangle2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Constants;
 
 /**
- * Utility class for common robot math and field geometry operations.
- *
- * <p>Includes functions to automatically flip field coordinates based on the current alliance
- * color.
+ * Utility class for evaluating game-specific conditions and performing other geometry-related
+ * calculations.
  */
 public class Util {
   private Util() {} // Prevent instantiation
 
   private static final String MATCH_MODE_KEY = "Match Mode";
-
-  /**
-   * Checks if the robot needs to flip its coordinate system for the Red alliance.
-   *
-   * @return True if on the Red alliance, false if Blue or unknown.
-   */
-  public static boolean shouldFlip() {
-    return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red;
-  }
-
-  /**
-   * Flips a {@link Rectangle2d} to the opposite side of the field if on the Red alliance.
-   *
-   * @param rectangle The rectangle to flip.
-   * @return The flipped rectangle, or the original if not needed.
-   */
-  public static Rectangle2d flipAllianceIfNeeded(Rectangle2d rectangle) {
-    return shouldFlip() ? flipAlliance(rectangle) : rectangle;
-  }
-
-  /**
-   * Flips a {@link Pose2d} to the opposite side of the field if on the Red alliance.
-   *
-   * @param pose The pose to flip.
-   * @return The flipped pose, or the original if not needed.
-   */
-  public static Pose2d flipAllianceIfNeeded(Pose2d pose) {
-    return shouldFlip() ? flipAlliance(pose) : pose;
-  }
-
-  /**
-   * Flips a {@link Translation2d} to the opposite side of the field if on the Red alliance.
-   *
-   * @param translation The translation to flip.
-   * @return The flipped translation, or the original if not needed.
-   */
-  public static Translation2d flipAllianceIfNeeded(Translation2d translation) {
-    return shouldFlip() ? flipAlliance(translation) : translation;
-  }
-
-  /**
-   * Flips a {@link Rotation2d} to the opposite side of the field if on the Red alliance.
-   *
-   * @param rotation The rotation to flip.
-   * @return The flipped rotation, or the original if not needed.
-   */
-  public static Rotation2d flipAllianceIfNeeded(Rotation2d rotation) {
-    return shouldFlip() ? flipAlliance(rotation) : rotation;
-  }
-
-  /**
-   * Forces a flip of a {@link Rectangle2d} to the opposite side of the field.
-   *
-   * @param rectangle The rectangle to flip.
-   * @return The flipped rectangle.
-   */
-  public static Rectangle2d flipAlliance(Rectangle2d rectangle) {
-    return new Rectangle2d(
-        flipAlliance(rectangle.getCenter()), rectangle.getXWidth(), rectangle.getYWidth());
-  }
-
-  /**
-   * Forces a flip of a {@link Pose2d} to the opposite side of the field.
-   *
-   * @param pose The pose to flip.
-   * @return The flipped pose.
-   */
-  public static Pose2d flipAlliance(Pose2d pose) {
-    return new Pose2d(flipAlliance(pose.getTranslation()), flipAlliance(pose.getRotation()));
-  }
-
-  /**
-   * Forces a flip of a {@link Translation2d} to the opposite side of the field.
-   *
-   * @param translation The translation to flip.
-   * @return The flipped translation.
-   */
-  public static Translation2d flipAlliance(Translation2d translation) {
-    return new Translation2d(
-        Constants.fieldLength.minus(translation.getMeasureX()),
-        Constants.fieldWidth.minus(translation.getMeasureY()));
-  }
-
-  /**
-   * Forces a flip of a {@link Rotation2d} to the opposite side of the field.
-   *
-   * @param rotation The rotation to flip.
-   * @return The flipped rotation.
-   */
-  public static Rotation2d flipAlliance(Rotation2d rotation) {
-    return rotation.plus(Rotation2d.kPi);
-  }
 
   /**
    * Evaluates the game specific message to determine if the hub is enabled at a given match time.

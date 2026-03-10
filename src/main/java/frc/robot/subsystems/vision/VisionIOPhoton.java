@@ -16,6 +16,7 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import frc.robot.subsystems.vision.VisionConstants.CameraConfig;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.photonvision.EstimatedRobotPose;
@@ -107,13 +108,13 @@ public class VisionIOPhoton implements VisionIO {
 
     // Copy from buffers into exact-sized arrays for AutoLog
     inputs.serverLoaded = allConnected;
-    inputs.visionPoses = java.util.Arrays.copyOf(poseBuffer, count);
-    inputs.timestamps = java.util.Arrays.copyOf(timestampBuffer, count);
-    inputs.cameraIds = java.util.Arrays.copyOf(cameraIdBuffer, count);
-    inputs.tagCounts = java.util.Arrays.copyOf(tagCountBuffer, count);
-    inputs.stdDevX = java.util.Arrays.copyOf(stdXBuffer, count);
-    inputs.stdDevY = java.util.Arrays.copyOf(stdYBuffer, count);
-    inputs.stdDevRot = java.util.Arrays.copyOf(stdRotBuffer, count);
+    inputs.visionPoses = Arrays.copyOf(poseBuffer, count);
+    inputs.timestamps = Arrays.copyOf(timestampBuffer, count);
+    inputs.cameraIds = Arrays.copyOf(cameraIdBuffer, count);
+    inputs.tagCounts = Arrays.copyOf(tagCountBuffer, count);
+    inputs.stdDevX = Arrays.copyOf(stdXBuffer, count);
+    inputs.stdDevY = Arrays.copyOf(stdYBuffer, count);
+    inputs.stdDevRot = Arrays.copyOf(stdRotBuffer, count);
   }
 
   /** Logic from Riptide's AprilTagAlgorithms.java */

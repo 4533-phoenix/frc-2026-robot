@@ -8,8 +8,8 @@
 package frc.robot.subsystems.intake.spinner;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.lib.SparkUtil.*;
 import static frc.robot.subsystems.intake.spinner.SpinnerConstants.*;
-import static frc.robot.util.SparkUtil.*;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;

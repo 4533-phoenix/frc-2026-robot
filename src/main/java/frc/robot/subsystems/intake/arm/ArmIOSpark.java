@@ -8,8 +8,8 @@
 package frc.robot.subsystems.intake.arm;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.lib.SparkUtil.*;
 import static frc.robot.subsystems.intake.arm.ArmConstants.*;
-import static frc.robot.util.SparkUtil.*;
 
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;

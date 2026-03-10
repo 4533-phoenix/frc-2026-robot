@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.units.measure.Distance;
+import frc.robot.subsystems.shooter.Shooter.ShooterState;
 
 /**
  * Calculates optimal shooter settings based on the distance to the target.
@@ -18,7 +19,8 @@ public class ShooterKinematics {
   private static final InterpolatingDoubleTreeMap hoodMap = new InterpolatingDoubleTreeMap();
 
   // // Separate maps for lobbing shots (lower power, higher arc)
-  // private static final InterpolatingDoubleTreeMap lobFlywheelMap = new InterpolatingDoubleTreeMap();
+  // private static final InterpolatingDoubleTreeMap lobFlywheelMap = new
+  // InterpolatingDoubleTreeMap();
   // private static final InterpolatingDoubleTreeMap lobHoodMap = new InterpolatingDoubleTreeMap();
 
   static {

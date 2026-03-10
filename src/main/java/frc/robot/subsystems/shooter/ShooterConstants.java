@@ -12,6 +12,7 @@ import static edu.wpi.first.units.Units.*;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.*;
+import frc.robot.subsystems.shooter.Shooter.ShooterState;
 
 /**
  * Physical constants and hardware configurations for the shooter subsystem.
@@ -86,10 +87,13 @@ public final class ShooterConstants {
   /** Acceleration feedforward gain for the flywheel. */
   public static final double flywheelKa = 0.04;
 
-  // ---------- Lobbing constants ----------
+  // ---------- Shooter state constants ----------
   /** Preset shooter state for lobbing game pieces into the coral station. */
   public static final ShooterState lobShootingState =
       new ShooterState(RotationsPerSecond.of(60.0), Degrees.of(70.0));
+  /** Default shooter state with zero velocity and angle. */
+  public static final ShooterState defaultShootingState =
+      new ShooterState(RadiansPerSecond.of(0), Degrees.of(90.0)); // TODO: Do this better? It works but it looks bad?
 
   // ---------- Aiming / lead constants ----------
   /** Estimated time of flight for the game piece from shooter to target. */

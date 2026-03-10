@@ -10,8 +10,8 @@
 package frc.robot.subsystems.drive.module;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.lib.SparkUtil.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
-import static frc.robot.util.SparkUtil.*;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;

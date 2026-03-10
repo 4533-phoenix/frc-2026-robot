@@ -13,7 +13,7 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Voltage;
-import frc.robot.util.ExtraMotors;
+import frc.lib.ExtraMotors;
 
 /**
  * Hardware and tuning constants for the climb subsystem.

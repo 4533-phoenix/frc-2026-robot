@@ -16,6 +16,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -33,6 +34,17 @@ import org.littletonrobotics.junction.Logger;
  * adjustable hood to regulate launch angle and distance.
  */
 public class Shooter extends SubsystemBase {
+  /**
+   * Represents the desired physical state of the shooter subsystem.
+   *
+   * <p>This record encapsulates the target speed for the flywheels and the target angle for the
+   * adjustable hood to achieve a specific shot.
+   *
+   * @param flywheelSpeed The target angular velocity of the shooter flywheels.
+   * @param hoodAngle The target angle of the adjustable hood mechanism.
+   */
+  public record ShooterState(AngularVelocity flywheelSpeed, Angle hoodAngle) {}
+
   private final FlywheelIO flywheelIO;
   private final FlywheelIOInputsAutoLogged flywheelInputs = new FlywheelIOInputsAutoLogged();
 
@@ -48,9 +60,7 @@ public class Shooter extends SubsystemBase {
   }
 
   @AutoLogOutput private Goal goal = Goal.STOP;
-  private ShooterState lastTargetState = new ShooterState(RadiansPerSecond.of(0), Degrees.of(0));
-
-  private AngularVelocity targetVelocity = RadiansPerSecond.zero();
+  private ShooterState state = defaultShootingState;
 
   private final Trigger flywheelReadyTrigger;
   private final Trigger hoodReadyTrigger;
@@ -101,23 +111,29 @@ public class Shooter extends SubsystemBase {
 
     switch (goal) {
       case STOP -> {
-        targetVelocity = RadiansPerSecond.zero();
         flywheelIO.stop();
         hoodIO.retract();
       }
-      case RUNNING -> setTargetState(lastTargetState);
+      case RUNNING -> {
+        flywheelIO.setAngularVelocity(state.flywheelSpeed());
+        hoodIO.setLength(convertHoodAngleToServoLength(state.hoodAngle()));
+      }
     }
   }
 
   /**
-   * Commands the shooter mechanisms to match a calculated state.
+   * Sets the target state for aiming (flywheel speed and hood angle).
    *
-   * @param state The desired {@link ShooterState} containing target flywheel speed and hood angle.
+   * @param state The target shooter state.
    */
-  private void setTargetState(ShooterState state) {
-    targetVelocity = state.flywheelSpeed();
-    flywheelIO.setAngularVelocity(state.flywheelSpeed());
-    hoodIO.setLength(convertHoodAngleToServoLength(state.hoodAngle()));
+  public void setShooterState(ShooterState state) {
+    if (state == null) {
+      this.state = defaultShootingState;
+      DriverStation.reportWarning(
+          "Attempted to set shooter state to null. Defaulting to safe state.", false);
+    } else {
+      this.state = state;
+    }
   }
 
   /**
@@ -177,7 +193,8 @@ public class Shooter extends SubsystemBase {
    * @return The flywheel velocity error in radians per second.
    */
   public double getFlywheelErrorRadPerSec() {
-    return targetVelocity.in(RadiansPerSecond) - flywheelInputs.velocity.in(RadiansPerSecond);
+    return state.flywheelSpeed().in(RadiansPerSecond)
+        - flywheelInputs.velocity.in(RadiansPerSecond);
   }
 
   /**
@@ -205,15 +222,6 @@ public class Shooter extends SubsystemBase {
    */
   public Command run() {
     return this.runOnce(() -> setGoal(Goal.RUNNING));
-  }
-
-  /**
-   * Sets the target state for aiming (flywheel speed and hood angle).
-   *
-   * @param state The target shooter state.
-   */
-  public void setAimingParameters(ShooterState state) {
-    this.lastTargetState = state;
   }
 
   /** Convenience method to set the running goal directly. */

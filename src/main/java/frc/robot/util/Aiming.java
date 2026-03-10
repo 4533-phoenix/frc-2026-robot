@@ -16,6 +16,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Timer;
+import frc.lib.FieldUtil;
 import frc.robot.Constants;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -54,7 +55,7 @@ public class Aiming {
       Time estimatedTimeOfFlight,
       boolean log) {
 
-    Translation2d targetTranslation = Util.flipAllianceIfNeeded(targetPosition);
+    Translation2d targetTranslation = FieldUtil.flipAllianceIfNeeded(targetPosition);
 
     return calculateTwoPassAiming(
         robotCenter,
@@ -90,8 +91,8 @@ public class Aiming {
       Distance lobTargetHalfLength,
       boolean log) {
 
-    Translation2d leftCenter = Util.flipAllianceIfNeeded(lobTargetLeftCenter);
-    Translation2d rightCenter = Util.flipAllianceIfNeeded(lobTargetRightCenter);
+    Translation2d leftCenter = FieldUtil.flipAllianceIfNeeded(lobTargetLeftCenter);
+    Translation2d rightCenter = FieldUtil.flipAllianceIfNeeded(lobTargetRightCenter);
     Translation2d currentShooterPos =
         robotCenter.plus(shooterRobotOffset.rotateBy(currentRobotRotation));
 

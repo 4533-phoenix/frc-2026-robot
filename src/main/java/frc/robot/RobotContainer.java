@@ -19,6 +19,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.lib.FieldUtil;
+import frc.lib.WritableTrigger;
 import frc.robot.commands.DriveCommands;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.climb.ClimbIO;
@@ -58,8 +60,6 @@ import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.util.Aiming;
 import frc.robot.util.Aiming.AimingResult;
 import frc.robot.util.Util;
-import frc.robot.util.WritableTrigger;
-
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
@@ -174,10 +174,10 @@ public class RobotContainer {
             Commands.runOnce(
                 () ->
                     drive.setPose(
-                        Util.flipAllianceIfNeeded(
+                        FieldUtil.flipAllianceIfNeeded(
                             new Pose2d(
                                 3.536,
-                                Constants.fieldWidth.in(Meters) - 2.437,
+                                FieldUtil.fieldWidth.in(Meters) - 2.437,
                                 new Rotation2d(0))))),
             shooter.run(),
             Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
@@ -195,9 +195,9 @@ public class RobotContainer {
             Commands.runOnce(
                 () ->
                     drive.setPose(
-                        Util.flipAllianceIfNeeded(
+                        FieldUtil.flipAllianceIfNeeded(
                             new Pose2d(
-                                3.536, Constants.fieldWidth.in(Meters) / 2.0, new Rotation2d(0))))),
+                                3.536, FieldUtil.fieldWidth.in(Meters) / 2.0, new Rotation2d(0))))),
             shooter.run(),
             Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
                 .withTimeout(1.0)
@@ -214,7 +214,8 @@ public class RobotContainer {
             Commands.runOnce(
                 () ->
                     drive.setPose(
-                        Util.flipAllianceIfNeeded(new Pose2d(3.536, 2.437, new Rotation2d(0))))),
+                        FieldUtil.flipAllianceIfNeeded(
+                            new Pose2d(3.536, 2.437, new Rotation2d(0))))),
             shooter.run(),
             Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
                 .withTimeout(1.0)
@@ -247,7 +248,11 @@ public class RobotContainer {
                 () -> currentAimingResult.targetRotation()));
 
     // Spin up the motor if we are practicing not in match mode
-    driverController.leftTrigger().and(() -> !Util.isMatchMode()).whileTrue(shooter.runHeld());
+    driverController
+        .leftTrigger()
+        .and(() -> currentAimingResult.hasTarget())
+        .and(() -> !Util.isMatchMode())
+        .whileTrue(shooter.runHeld());
 
     // When right trigger held, shooter is ready, and robot is aimed, run the indexer
     driverController
@@ -282,26 +287,23 @@ public class RobotContainer {
 
     // If left dpad is pressed, toggle climb mode. If climb mode is on, also retract the arm
     operatorController
-      .povLeft()
-      .onTrue(Commands.runOnce(() -> {
-          if (climbMode.toggle()) arm.setRetract();
-      }));
+        .povLeft()
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  if (climbMode.toggle()) arm.setRetract();
+                }));
 
     // If climb mode is on and the arm is retracted, up dpad raises the climb and down dpad lowers
     operatorController.povUp().and(climbMode).and(arm.isRetracted()).whileTrue(climb.raise());
-    operatorController
-        .povDown()
-        .and(climbMode)
-        .and(arm.isRetracted())
-        .whileTrue(climb.lower());
+    operatorController.povDown().and(climbMode).and(arm.isRetracted()).whileTrue(climb.lower());
 
     // Rumble operator controller when climb mode is engaged
-    climbMode
-        .whileTrue(
-            Commands.runEnd(
-                () -> operatorController.getHID().setRumble(RumbleType.kRightRumble, 0.25),
-                () -> operatorController.getHID().setRumble(RumbleType.kBothRumble, 0),
-                climb));
+    climbMode.whileTrue(
+        Commands.runEnd(
+            () -> operatorController.getHID().setRumble(RumbleType.kRightRumble, 0.25),
+            () -> operatorController.getHID().setRumble(RumbleType.kBothRumble, 0),
+            climb));
   }
 
   /** Sets up the default commands for subsystems. */
@@ -334,14 +336,14 @@ public class RobotContainer {
     // Update the current aiming result based on the robot's position on the field
     Translation2d robotTranslation = drive.getPose().getTranslation();
     if (!climbMode.get()) {
-      if (Util.flipAllianceIfNeeded(Constants.shootingZone).contains(robotTranslation)
+      if (FieldUtil.flipAllianceIfNeeded(Constants.shootingZone).contains(robotTranslation)
           && (Util.isHubApproaching() || isHubEnabled)) {
         currentAimingResult = hubAiming.get();
-        shooter.setAimingParameters(
+        shooter.setShooterState(
             ShooterKinematics.calculateShooterState(currentAimingResult.distanceToTarget()));
-      } else if (Util.flipAllianceIfNeeded(Constants.lobbingZone).contains(robotTranslation)) {
+      } else if (FieldUtil.flipAllianceIfNeeded(Constants.lobbingZone).contains(robotTranslation)) {
         currentAimingResult = lobAiming.get();
-        shooter.setAimingParameters(ShooterConstants.lobShootingState);
+        shooter.setShooterState(ShooterConstants.lobShootingState);
       } else {
         currentAimingResult = Aiming.noTarget;
       }

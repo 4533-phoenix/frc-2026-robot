@@ -9,7 +9,6 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -18,6 +17,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.lib.FieldUtil;
 
 /**
  * Defines constants for the robot's physical dimensions, game field layout, and AdvantageKit
@@ -45,16 +45,10 @@ public final class Constants {
     REPLAY
   }
 
-  // Field Dimensions
-  /** Total length of the field. */
-  public static final Distance fieldLength = Inches.of(651.25);
-  /** Total width of the field. */
-  public static final Distance fieldWidth = Inches.of(317.5);
-
   // Field Objects
   /** The location of the center of the field hub mechanism. */
   public static final Translation2d hubPosition =
-      new Translation2d(Meters.of(4.65), fieldWidth.div(2.0));
+      new Translation2d(Meters.of(4.65), FieldUtil.fieldWidth.div(2.0));
 
   /** Center of the left lobbing target line (blue alliance coordinates). */
   public static final Translation2d lobbingTargetLeftCenter =
@@ -62,7 +56,7 @@ public final class Constants {
 
   /** Center of the right lobbing target line (blue alliance coordinates). */
   public static final Translation2d lobbingTargetRightCenter =
-      new Translation2d(Meters.of(2.159), fieldWidth.minus(Meters.of(5.558)));
+      new Translation2d(Meters.of(2.159), FieldUtil.fieldWidth.minus(Meters.of(5.558)));
 
   /** Half-length of each lobbing target line segment (0.5m in each direction from center). */
   public static final Distance lobbingTargetHalfLength = Meters.of(0.5);
@@ -70,12 +64,14 @@ public final class Constants {
   // Game Specific Zones
   /** The area on the field where the robot is permitted to shoot game pieces. */
   public static final Rectangle2d shootingZone =
-      new Rectangle2d(Translation2d.kZero, new Translation2d(Meters.of(4.02), fieldWidth));
+      new Rectangle2d(
+          Translation2d.kZero, new Translation2d(Meters.of(4.02), FieldUtil.fieldWidth));
 
   /** The area on the field where the robot is permitted to lob game pieces. */
   public static final Rectangle2d lobbingZone =
       new Rectangle2d(
-          new Pose2d(fieldLength.div(2.0), fieldWidth.div(2.0), Rotation2d.kZero),
+          new Pose2d(
+              FieldUtil.fieldLength.div(2.0), FieldUtil.fieldWidth.div(2.0), Rotation2d.kZero),
           Meters.of(6.07),
-          fieldWidth);
+          FieldUtil.fieldWidth);
 }

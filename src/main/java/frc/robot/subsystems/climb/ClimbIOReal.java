@@ -9,8 +9,8 @@ package frc.robot.subsystems.climb;
 
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Volts;
+import static frc.lib.SparkUtil.*;
 import static frc.robot.subsystems.climb.ClimbConstants.*;
-import static frc.robot.util.SparkUtil.*;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;

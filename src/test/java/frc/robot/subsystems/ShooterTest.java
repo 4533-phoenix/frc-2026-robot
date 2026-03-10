@@ -16,8 +16,8 @@ import edu.wpi.first.hal.HAL;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.Shooter.ShooterState;
 import frc.robot.subsystems.shooter.ShooterConstants;
-import frc.robot.subsystems.shooter.ShooterState;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.hood.HoodIO;
 import org.junit.jupiter.api.BeforeAll;
@@ -55,7 +55,7 @@ public class ShooterTest {
     Shooter shooter = new Shooter(flywheelIO, hoodIO);
 
     // Test a steep shot (e.g. 50 RPS, 85 degrees)
-    shooter.setAimingParameters(new ShooterState(RotationsPerSecond.of(50), Degrees.of(85)));
+    shooter.setShooterState(new ShooterState(RotationsPerSecond.of(50), Degrees.of(85)));
     shooter.run().initialize();
     shooter.periodic();
 
@@ -66,7 +66,7 @@ public class ShooterTest {
     assertEquals(50.0, speed85, 1e-6, "Flywheel speed was not commanded correctly for steep shot!");
 
     // Test a shallow shot (e.g. 60 RPS, 40 degrees)
-    shooter.setAimingParameters(new ShooterState(RotationsPerSecond.of(60), Degrees.of(40)));
+    shooter.setShooterState(new ShooterState(RotationsPerSecond.of(60), Degrees.of(40)));
     shooter.periodic();
 
     double length40 = hoodIO.lastCommandedLength.in(Inches);
@@ -93,5 +93,33 @@ public class ShooterTest {
 
     // A steeper launch angle should require a different servo extension than a shallow one.
     assertNotEquals(length85, length40, 0.01, "Servo length did not change for different angles!");
+  }
+
+  @Test
+  public void testSetShooterStateNullSafety() {
+    DummyFlywheelIO flywheelIO = new DummyFlywheelIO();
+    DummyHoodIO hoodIO = new DummyHoodIO();
+    Shooter shooter = new Shooter(flywheelIO, hoodIO);
+
+    // Set a valid state first
+    shooter.setShooterState(new ShooterState(RotationsPerSecond.of(50), Degrees.of(85)));
+    shooter.run().initialize();
+    shooter.periodic();
+
+    // Now set the state to null and ensure it defaults to the safe state
+    shooter.setShooterState(null);
+    shooter.periodic();
+
+    double speedAfterNull = flywheelIO.lastCommandedVelocity.in(RotationsPerSecond);
+    double lengthAfterNull = hoodIO.lastCommandedLength.in(Inches);
+
+    // The flywheel should be commanded to 0 RPS and the hood should retract to the default position
+    assertEquals(
+        0.0, speedAfterNull, 1e-6, "Flywheel speed was not set to 0 when null state was provided!");
+    assertEquals(
+        ShooterConstants.servoMinLength.in(Inches),
+        lengthAfterNull,
+        1e-6,
+        "Hood length was not set to default when null state was provided!");
   }
 }

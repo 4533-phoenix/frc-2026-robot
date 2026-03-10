@@ -12,8 +12,8 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import frc.robot.subsystems.shooter.Shooter.ShooterState;
 import frc.robot.subsystems.shooter.ShooterKinematics;
-import frc.robot.subsystems.shooter.ShooterState;
 import org.junit.jupiter.api.Test;
 
 public class ShooterKinematicsTest {
