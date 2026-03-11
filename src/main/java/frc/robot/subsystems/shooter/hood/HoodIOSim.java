@@ -23,8 +23,8 @@ import edu.wpi.first.wpilibj.Timer;
  * hardware.
  */
 public class HoodIOSim implements HoodIO {
-  private Distance currentLength = servoMinLength;
-  private Distance targetLength = servoMinLength;
+  private Distance currentLength = SERVO_MIN_LENGTH;
+  private Distance targetLength = SERVO_MIN_LENGTH;
   private double lastTimestamp = 0.0;
 
   /**
@@ -40,7 +40,7 @@ public class HoodIOSim implements HoodIO {
 
     // Kinematic Model: Move currentLength toward targetLength based on max velocity
     double errorMeters = targetLength.minus(currentLength).in(Meters);
-    double maxStepMeters = maxServoVelocity.in(MetersPerSecond) * dt;
+    double maxStepMeters = MAX_SERVO_VELOCITY.in(MetersPerSecond) * dt;
 
     // Calculate distance to move this frame
     double moveMeters = MathUtil.clamp(errorMeters, -maxStepMeters, maxStepMeters);
@@ -65,6 +65,6 @@ public class HoodIOSim implements HoodIO {
     this.targetLength =
         Meters.of(
             MathUtil.clamp(
-                length.in(Meters), servoMinLength.in(Meters), servoMaxLength.in(Meters)));
+                length.in(Meters), SERVO_MIN_LENGTH.in(Meters), SERVO_MAX_LENGTH.in(Meters)));
   }
 }

@@ -17,29 +17,29 @@ import edu.wpi.first.units.measure.Voltage;
 public final class SpinnerConstants {
   // ---------- CAN IDs ----------
   /** CAN ID for the roller spinner motor. */
-  public static final int canId = 16;
+  public static final int CAN_ID = 16;
 
   // ---------- Gear Ratios ----------
   /** Gear ratio: 2.13 motor rotations = 1 output shaft rotation for the spinner. */
-  public static final double motorReduction = 6.39;
+  public static final double REDUCTION = 6.39;
 
   // ---------- Encoder Conversion Factors ----------
   /** Converts internal motor rotations to radians for the spinner. */
-  public static final double internalEncoderPositionFactor = (2.0 * Math.PI) / motorReduction;
+  public static final double INTERNAL_ENCODER_POSITION_FACTOR = (2.0 * Math.PI) / REDUCTION;
   /** Converts internal motor velocity (RPM) to radians per second for the spinner. */
-  public static final double internalEncoderVelocityFactor =
-      ((2.0 * Math.PI) / 60.0) / motorReduction;
+  public static final double INTERNAL_ENCODER_VELOCITY_FACTOR =
+      ((2.0 * Math.PI) / 60.0) / REDUCTION;
 
   // ---------- Motor Current Limits ----------
   /** Max current draw for the spinner motor. */
-  public static final Current motorCurrentLimit = Amps.of(30);
+  public static final Current MOTOR_CURRENT_LIMIT = Amps.of(30);
 
   // ---------- Spinner Voltages ----------
   /** Voltage for pulling game pieces in. */
-  public static final Voltage intakeVoltage = Volts.of(12.0);
+  public static final Voltage INTAKE_VOLTAGE = Volts.of(12.0);
   /** Voltage for pushing game pieces out. */
-  public static final Voltage extakeVoltage = Volts.of(-12.0);
+  public static final Voltage EXTAKE_VOLTAGE = Volts.of(-12.0);
 
   /** The motor type and quantity used by the spinner gearbox. */
-  public static final DCMotor gearbox = DCMotor.getNEO(1);
+  public static final DCMotor GEARBOX = DCMotor.getNEO(1);
 }

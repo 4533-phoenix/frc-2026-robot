@@ -63,7 +63,7 @@ public class Module {
     odometryPositions = new SwerveModulePosition[sampleCount];
     for (int i = 0; i < sampleCount; i++) {
       // Convert angular position (radians) to linear distance (meters)
-      double positionMeters = inputs.odometryDrivePositionsRad[i] * wheelRadius.in(Meters);
+      double positionMeters = inputs.odometryDrivePositionsRad[i] * WHEEL_RADIUS.in(Meters);
       Rotation2d angle = inputs.odometryTurnPositions[i];
       odometryPositions[i] = new SwerveModulePosition(positionMeters, angle);
     }
@@ -90,7 +90,7 @@ public class Module {
     state.cosineScale(Rotation2d.fromRadians(inputs.turnPosition.in(Radians)));
 
     // Apply setpoints to hardware
-    io.setDriveVelocity(RadiansPerSecond.of(state.speedMetersPerSecond / wheelRadius.in(Meters)));
+    io.setDriveVelocity(RadiansPerSecond.of(state.speedMetersPerSecond / WHEEL_RADIUS.in(Meters)));
     io.setTurnPosition(Radians.of(state.angle.getRadians()));
   }
 
@@ -125,7 +125,7 @@ public class Module {
    * @return The current distance as a Distance measure.
    */
   public Distance getCurrentPosition() {
-    return Meters.of(inputs.drivePosition.in(Radians) * wheelRadius.in(Meters));
+    return Meters.of(inputs.drivePosition.in(Radians) * WHEEL_RADIUS.in(Meters));
   }
 
   /**
@@ -134,7 +134,7 @@ public class Module {
    * @return The current velocity as a LinearVelocity measure.
    */
   public LinearVelocity getCurrentVelocityMetersPerSec() {
-    return MetersPerSecond.of(inputs.driveVelocity.in(RadiansPerSecond) * wheelRadius.in(Meters));
+    return MetersPerSecond.of(inputs.driveVelocity.in(RadiansPerSecond) * WHEEL_RADIUS.in(Meters));
   }
 
   /**

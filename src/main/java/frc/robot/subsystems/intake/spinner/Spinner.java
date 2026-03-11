@@ -63,8 +63,8 @@ public class Spinner extends SubsystemBase {
 
     // Apply the voltage based on the current goal
     switch (goal) {
-      case INTAKE -> io.setVoltage(intakeVoltage);
-      case EXTAKE -> io.setVoltage(extakeVoltage);
+      case INTAKE -> io.setVoltage(INTAKE_VOLTAGE);
+      case EXTAKE -> io.setVoltage(EXTAKE_VOLTAGE);
       case STOP -> io.setVoltage(Volts.zero());
     }
   }

@@ -28,7 +28,7 @@ public class VisionIOChalkydri implements VisionIO {
   /** Creates a new VisionIOChalkydri and starts the native vision server. */
   public VisionIOChalkydri() {
     whacknet = Whacknet.getInstance();
-    whacknet.start(serverPort);
+    whacknet.start(SERVER_PORT);
   }
 
   /**

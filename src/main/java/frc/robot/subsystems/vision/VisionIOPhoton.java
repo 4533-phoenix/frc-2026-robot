@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems.vision;
 
+import static edu.wpi.first.units.Units.Meters;
 import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import edu.wpi.first.math.Matrix;
@@ -51,13 +52,13 @@ public class VisionIOPhoton implements VisionIO {
     public CameraContext(int id, CameraConfig config) {
       this.id = id;
       this.camera = new PhotonCamera(config.name());
-      this.estimator = new PhotonPoseEstimator(fieldLayout, config.robotToCamera());
+      this.estimator = new PhotonPoseEstimator(FIELD_LAYOUT, config.robotToCamera());
     }
   }
 
   /** Creates a new VisionIOPhoton and connects to cameras. */
   public VisionIOPhoton() {
-    for (var entry : cameraMap.entrySet()) {
+    for (var entry : CAMERA_MAP.entrySet()) {
       cameras.add(new CameraContext(entry.getKey(), entry.getValue()));
     }
   }
@@ -124,7 +125,7 @@ public class VisionIOPhoton implements VisionIO {
     double totalDistance = 0;
 
     for (PhotonTrackedTarget target : targets) {
-      var tagPose = fieldLayout.getTagPose(target.getFiducialId());
+      var tagPose = FIELD_LAYOUT.getTagPose(target.getFiducialId());
       if (tagPose.isEmpty()) continue;
 
       numTags++;
@@ -132,10 +133,10 @@ public class VisionIOPhoton implements VisionIO {
           tagPose.get().toPose2d().getTranslation().getDistance(estimatedPose.getTranslation());
     }
 
-    if (numTags == 0) return singleTagStdDevs;
+    if (numTags == 0) return SINGLE_TAG_STD_DEVS;
 
     double avgDistance = totalDistance / numTags;
-    Matrix<N3, N1> stdDevs = (numTags > 1) ? multiTagStdDevs : singleTagStdDevs;
+    Matrix<N3, N1> stdDevs = (numTags > 1) ? MULTI_TAG_STD_DEVS : SINGLE_TAG_STD_DEVS;
 
     // Increase std devs based on average distance (Riptide formula)
     return stdDevs.times(1 + (avgDistance * avgDistance / 30.0));
@@ -143,8 +144,9 @@ public class VisionIOPhoton implements VisionIO {
 
   /** Logic from Riptide's SingleTagAlgorithms.java */
   private boolean isUsableSingleTag(PhotonTrackedTarget target) {
-    return target.getPoseAmbiguity() < ambiguityCutoff
-        && target.getBestCameraToTarget().getTranslation().getNorm() < singleTagPoseCutoffMeters;
+    return target.getPoseAmbiguity() < AMBIGUITY_CUTOFF
+        && target.getBestCameraToTarget().getTranslation().getNorm()
+            < SINGLE_TAG_POSE_CUTOFF.in(Meters);
   }
 
   @Override

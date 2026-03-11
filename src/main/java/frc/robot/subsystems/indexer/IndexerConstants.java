@@ -18,16 +18,16 @@ import edu.wpi.first.units.measure.*;
  * <p>Contains gearbox models, current limits, and voltage settings for the indexer motor.
  */
 public final class IndexerConstants {
-  /** The gearbox model for the indexer motor (e.g., REV NEO 550). */
-  public static final DCMotor indexerGearbox = DCMotor.getNeo550(1);
-  /** The gear reduction between the indexer motor and the conveyor mechanism. */
-  public static final double indexerReduction = 17.0;
-  /** The moment of inertia of the indexer mechanism, used for simulation. */
-  public static final MomentOfInertia indexerMOI = KilogramSquareMeters.of(0.0005);
-  /** Maximum current limit for the indexer motor to prevent overheating. */
-  public static final Current indexerMotorCurrentLimit = Amps.of(20.0);
-  /** The voltage applied to run the indexer at full speed. */
-  public static final Voltage indexerOnVoltage = Volts.of(12.0);
   /** CAN ID for the indexer motor controller. */
-  public static final int indexerMotorId = 17;
+  public static final int CAN_ID = 17;
+  /** The gearbox model for the indexer motor. */
+  public static final DCMotor GEARBOX = DCMotor.getNeo550(1);
+  /** The gear reduction between the indexer motor and the conveyor mechanism. */
+  public static final double REDUCTION = 17.0;
+  /** The moment of inertia of the indexer mechanism, used for simulation. */
+  public static final MomentOfInertia MOI = KilogramSquareMeters.of(0.0005);
+  /** Maximum current limit for the indexer motor to prevent overheating. */
+  public static final Current MOTOR_CURRENT_LIMIT = Amps.of(20.0);
+  /** The voltage applied to run the indexer at full speed. */
+  public static final Voltage DEFAULT_VOLTAGE = Volts.of(12.0);
 }

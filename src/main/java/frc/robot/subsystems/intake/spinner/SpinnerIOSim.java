@@ -34,27 +34,27 @@ public class SpinnerIOSim implements SpinnerIO {
   /** Creates a new SpinnerIOSim and initializes the simulated Spark MAX motor controllers. */
   public SpinnerIOSim() {
     // Create Spark MAX objects
-    spinnerSpark = new SparkMax(canId, MotorType.kBrushless);
+    spinnerSpark = new SparkMax(CAN_ID, MotorType.kBrushless);
     spinnerEncoder = spinnerSpark.getEncoder();
 
     // Create SparkMaxSim wrappers
-    spinnerSparkSim = new SparkMaxSim(spinnerSpark, gearbox);
+    spinnerSparkSim = new SparkMaxSim(spinnerSpark, GEARBOX);
 
     // Create physics models
     spinnerPhysicsSim =
-        new DCMotorSim(LinearSystemId.createDCMotorSystem(gearbox, 0.005, motorReduction), gearbox);
+        new DCMotorSim(LinearSystemId.createDCMotorSystem(GEARBOX, 0.005, REDUCTION), GEARBOX);
 
     // Configure spinner Spark MAX (mirrors IntakeIOReal)
     var spinnerConfig = new SparkMaxConfig();
     spinnerConfig
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) motorCurrentLimit.in(Amps))
+        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
         .voltageCompensation(12.0)
         .inverted(true);
     spinnerConfig
         .encoder
-        .positionConversionFactor(internalEncoderPositionFactor)
-        .velocityConversionFactor(internalEncoderVelocityFactor);
+        .positionConversionFactor(INTERNAL_ENCODER_POSITION_FACTOR)
+        .velocityConversionFactor(INTERNAL_ENCODER_VELOCITY_FACTOR);
     spinnerSpark.configure(
         spinnerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }

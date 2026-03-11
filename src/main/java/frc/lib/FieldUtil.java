@@ -26,12 +26,12 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 public class FieldUtil {
   // Field Dimensions
   /** The actual field */
-  private static final AprilTagFieldLayout aprilTagField =
+  private static final AprilTagFieldLayout APRILTAG_FIELD =
       AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
   /** Total length of the field. */
-  public static final Distance fieldLength = Meters.of(aprilTagField.getFieldLength());
+  public static final Distance FIELD_LENGTH = Meters.of(APRILTAG_FIELD.getFieldLength());
   /** Total width of the field. */
-  public static final Distance fieldWidth = Meters.of(aprilTagField.getFieldWidth());
+  public static final Distance FIELD_WIDTH = Meters.of(APRILTAG_FIELD.getFieldWidth());
 
   private FieldUtil() {} // Prevent instantiation
 
@@ -113,7 +113,8 @@ public class FieldUtil {
    */
   public static Translation2d flipAlliance(Translation2d translation) {
     return new Translation2d(
-        fieldLength.minus(translation.getMeasureX()), fieldWidth.minus(translation.getMeasureY()));
+        FIELD_LENGTH.minus(translation.getMeasureX()),
+        FIELD_WIDTH.minus(translation.getMeasureY()));
   }
 
   /**

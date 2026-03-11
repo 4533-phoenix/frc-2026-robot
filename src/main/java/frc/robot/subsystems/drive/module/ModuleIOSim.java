@@ -58,7 +58,7 @@ public class ModuleIOSim implements ModuleIO {
    *     back-right).
    */
   public ModuleIOSim(int module) {
-    var config = moduleConfigs[module];
+    var config = MODULE_CONFIGS[module];
 
     // Create real Spark MAX objects (they run in sim mode automatically)
     driveSpark = new SparkMax(config.driveCanId(), MotorType.kBrushless);
@@ -70,53 +70,53 @@ public class ModuleIOSim implements ModuleIO {
     turnController = turnSpark.getClosedLoopController();
 
     // Create SparkMaxSim wrappers backed by DCMotor models
-    driveSparkSim = new SparkMaxSim(driveSpark, driveGearbox);
-    turnSparkSim = new SparkMaxSim(turnSpark, turnGearbox);
+    driveSparkSim = new SparkMaxSim(driveSpark, DRIVE_GEARBOX);
+    turnSparkSim = new SparkMaxSim(turnSpark, TURN_GEARBOX);
 
     // Create DCMotorSim physics models for motor dynamics
     driveMotorSim =
         new DCMotorSim(
-            LinearSystemId.createDCMotorSystem(driveGearbox, 0.025, driveMotorReduction),
-            driveGearbox);
+            LinearSystemId.createDCMotorSystem(DRIVE_GEARBOX, 0.025, DRIVE_MOTOR_REDUCTION),
+            DRIVE_GEARBOX);
     turnMotorSim =
         new DCMotorSim(
-            LinearSystemId.createDCMotorSystem(turnGearbox, 0.004, turnMotorReduction),
-            turnGearbox);
+            LinearSystemId.createDCMotorSystem(TURN_GEARBOX, 0.004, TURN_MOTOR_REDUCTION),
+            TURN_GEARBOX);
 
     // Configure drive Spark MAX
     var driveConfig = new SparkMaxConfig();
     driveConfig
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) driveMotorCurrentLimit.in(Amps))
+        .smartCurrentLimit((int) DRIVE_MOTOR_CURRENT_LIMIT.in(Amps))
         .voltageCompensation(12.0);
     driveConfig
         .encoder
-        .positionConversionFactor(driveEncoderPositionFactor)
-        .velocityConversionFactor(driveEncoderVelocityFactor);
+        .positionConversionFactor(DRIVE_ENCODER_POSITION_FACTOR)
+        .velocityConversionFactor(DRIVE_ENCODER_VELOCITY_FACTOR);
     driveConfig
         .closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        .pid(driveKp, 0.0, driveKd);
+        .pid(DRIVE_KP, 0.0, DRIVE_KD);
     driveSpark.configure(
         driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     // Configure turn Spark MAX
     var turnConfig = new SparkMaxConfig();
     turnConfig
-        .inverted(turnInverted)
+        .inverted(TURN_INVERTED)
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) turnMotorCurrentLimit.in(Amps))
+        .smartCurrentLimit((int) TURN_MOTOR_CURRENT_LIMIT.in(Amps))
         .voltageCompensation(12.0);
     turnConfig
         .encoder
-        .positionConversionFactor((2.0 * Math.PI) / turnMotorReduction)
-        .velocityConversionFactor(((2.0 * Math.PI) / 60.0) / turnMotorReduction);
+        .positionConversionFactor((2.0 * Math.PI) / TURN_MOTOR_REDUCTION)
+        .velocityConversionFactor(((2.0 * Math.PI) / 60.0) / TURN_MOTOR_REDUCTION);
     turnConfig
         .closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        .pid(turnKp, 0.0, turnKd)
+        .pid(TURN_KP, 0.0, TURN_KD)
         .positionWrappingEnabled(true)
-        .positionWrappingInputRange(turnPIDMinInput, turnPIDMaxInput);
+        .positionWrappingInputRange(TURN_PID_MIN_INPUT, TURN_PID_MAX_INPUT);
     turnSpark.configure(turnConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
@@ -181,8 +181,8 @@ public class ModuleIOSim implements ModuleIO {
   public void setDriveVelocity(AngularVelocity velocity) {
     // Calculate Feedforward voltage based on velocity
     double ffVolts =
-        driveKs * Math.signum(velocity.in(RadiansPerSecond))
-            + driveKv * velocity.in(RadiansPerSecond);
+        DRIVE_KS * Math.signum(velocity.in(RadiansPerSecond))
+            + DRIVE_KV * velocity.in(RadiansPerSecond);
     // Use closed-loop velocity control with feedforward
     driveController.setSetpoint(
         velocity.in(RadiansPerSecond),

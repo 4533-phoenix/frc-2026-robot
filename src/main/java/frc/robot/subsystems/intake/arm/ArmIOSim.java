@@ -43,67 +43,60 @@ public class ArmIOSim implements ArmIO {
   /** Creates a new ArmIOSim and initializes the simulated Spark MAX motor controllers. */
   public ArmIOSim() {
     // Create Spark MAX objects
-    armSpark = new SparkMax(canId, MotorType.kBrushless);
+    armSpark = new SparkMax(CAN_ID, MotorType.kBrushless);
 
     armEncoder = armSpark.getEncoder();
     armAbsEncoder = armSpark.getAbsoluteEncoder();
     armController = armSpark.getClosedLoopController();
 
     // Create SparkMaxSim wrappers
-    armSparkSim = new SparkMaxSim(armSpark, gearbox);
+    armSparkSim = new SparkMaxSim(armSpark, GEARBOX);
     armAbsEncoderSim = armSparkSim.getAbsoluteEncoderSim();
 
     // Create physics models
     armPhysicsSim =
         new SingleJointedArmSim(
-            gearbox,
-            motorReduction,
+            GEARBOX,
+            REDUCTION,
             0.5,
             0.5,
-            deployedPosition.in(Radians),
-            retractedPosition.in(Radians),
+            DEPLOYED_POSITION.in(Radians),
+            RETRACTED_POSITION.in(Radians),
             true,
-            retractedPosition.in(Radians));
+            RETRACTED_POSITION.in(Radians));
 
     // Configure arm Spark MAX (mirrors IntakeIOReal)
     var armConfig = new SparkMaxConfig();
     armConfig
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) motorCurrentLimit.in(Amps))
+        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
         .voltageCompensation(12.0)
         .inverted(false);
     armConfig
         .encoder
-        .positionConversionFactor(internalEncoderPositionFactor)
-        .velocityConversionFactor(internalEncoderVelocityFactor);
+        .positionConversionFactor(INTERNAL_ENCODER_POSITION_FACTOR)
+        .velocityConversionFactor(INTERNAL_ENCODER_VELOCITY_FACTOR);
     armConfig
         .absoluteEncoder
         .positionConversionFactor(2.0 * Math.PI)
-        .zeroOffset(globalEncoderOffset.in(Rotations))
+        .zeroOffset(GLOBAL_ENCODER_OFFSET.in(Rotations))
         .inverted(true);
-    armConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(armKp, 0.0, armKd);
-    armConfig
-        .closedLoop
-        .feedForward
-        .kV(armKv)
-        .kA(armKa)
-        .kS(armKs)
-        .kCos(armKg)
-        .kCosRatio(1.0 / (2.0 * Math.PI));
+    armConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(KP, 0.0, KD);
+    armConfig.closedLoop.feedForward.kV(KV).kA(KA).kS(KS).kCos(KG).kCosRatio(1.0 / (2.0 * Math.PI));
     armConfig
         .closedLoop
         .maxMotion
-        .allowedProfileError(positionPIDTolerance.in(Radians))
-        .cruiseVelocity(cruiseVelocity.in(RadiansPerSecond))
-        .maxAcceleration(maxAcceleration.in(RadiansPerSecondPerSecond));
+        .allowedProfileError(PID_TOLERANCE.in(Radians))
+        .cruiseVelocity(CRUISE_VELOCITY.in(RadiansPerSecond))
+        .maxAcceleration(MAX_ACCELERATION.in(RadiansPerSecondPerSecond));
     armConfig
         .softLimit
         .forwardSoftLimitEnabled(true)
-        .forwardSoftLimit(retractedPosition.plus(softLimitTolerance).in(Radians))
+        .forwardSoftLimit(RETRACTED_POSITION.plus(SOFT_LIMIT_TOLERANCE).in(Radians))
         .reverseSoftLimitEnabled(true)
-        .reverseSoftLimit(deployedPosition.minus(softLimitTolerance).in(Radians));
+        .reverseSoftLimit(DEPLOYED_POSITION.minus(SOFT_LIMIT_TOLERANCE).in(Radians));
     armSpark.configure(armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    armEncoder.setPosition(retractedPosition.in(Radians));
+    armEncoder.setPosition(RETRACTED_POSITION.in(Radians));
   }
 
   /**

@@ -65,7 +65,7 @@ public class Indexer extends SubsystemBase {
     disconnectedAlert.set(!inputs.connected);
 
     switch (goal) {
-      case RUNNING -> io.setVoltage(indexerOnVoltage);
+      case RUNNING -> io.setVoltage(DEFAULT_VOLTAGE);
       case STOP -> io.setVoltage(Volts.zero());
     }
   }

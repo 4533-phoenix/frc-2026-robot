@@ -28,10 +28,10 @@ public final class Constants {
    * The mode to use when running in simulation. Change to {@link Mode#REPLAY} to read from a log
    * file instead of simulating physics.
    */
-  public static final Mode simMode = Mode.SIM;
+  public static final Mode SIM_MODE = Mode.SIM;
 
   /** The currently active operating mode based on hardware detection. */
-  public static final Mode currentMode = RobotBase.isReal() ? Mode.REAL : simMode;
+  public static final Mode CURRENT_MODE = RobotBase.isReal() ? Mode.REAL : SIM_MODE;
 
   /** Defines the three possible runtime modes for AdvantageKit. */
   public static enum Mode {
@@ -47,31 +47,31 @@ public final class Constants {
 
   // Field Objects
   /** The location of the center of the field hub mechanism. */
-  public static final Translation2d hubPosition =
-      new Translation2d(Meters.of(4.65), FieldUtil.fieldWidth.div(2.0));
+  public static final Translation2d HUB_POSITION =
+      new Translation2d(Meters.of(4.65), FieldUtil.FIELD_WIDTH.div(2.0));
 
   /** Center of the left lobbing target line (blue alliance coordinates). */
-  public static final Translation2d lobbingTargetLeftCenter =
+  public static final Translation2d LOBBING_TARGET_LEFT_CENTER =
       new Translation2d(Meters.of(2.159), Meters.of(5.558));
 
   /** Center of the right lobbing target line (blue alliance coordinates). */
-  public static final Translation2d lobbingTargetRightCenter =
-      new Translation2d(Meters.of(2.159), FieldUtil.fieldWidth.minus(Meters.of(5.558)));
+  public static final Translation2d LOBBING_TARGET_RIGHT_CENTER =
+      new Translation2d(Meters.of(2.159), FieldUtil.FIELD_WIDTH.minus(Meters.of(5.558)));
 
   /** Half-length of each lobbing target line segment (0.5m in each direction from center). */
-  public static final Distance lobbingTargetHalfLength = Meters.of(0.5);
+  public static final Distance LOBBING_TARGET_HALF_LENGTH = Meters.of(0.5);
 
   // Game Specific Zones
   /** The area on the field where the robot is permitted to shoot game pieces. */
-  public static final Rectangle2d shootingZone =
+  public static final Rectangle2d SHOOTING_ZONE =
       new Rectangle2d(
-          Translation2d.kZero, new Translation2d(Meters.of(4.02), FieldUtil.fieldWidth));
+          Translation2d.kZero, new Translation2d(Meters.of(4.02), FieldUtil.FIELD_WIDTH));
 
   /** The area on the field where the robot is permitted to lob game pieces. */
-  public static final Rectangle2d lobbingZone =
+  public static final Rectangle2d LOBBING_ZONE =
       new Rectangle2d(
           new Pose2d(
-              FieldUtil.fieldLength.div(2.0), FieldUtil.fieldWidth.div(2.0), Rotation2d.kZero),
+              FieldUtil.FIELD_LENGTH.div(2.0), FieldUtil.FIELD_WIDTH.div(2.0), Rotation2d.kZero),
           Meters.of(6.07),
-          FieldUtil.fieldWidth);
+          FieldUtil.FIELD_WIDTH);
 }

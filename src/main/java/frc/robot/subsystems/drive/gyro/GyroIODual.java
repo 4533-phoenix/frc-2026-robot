@@ -47,17 +47,17 @@ public class GyroIODual implements GyroIO {
         Angle error = Radians.of(errorRad);
         // Determine if the robot is effectively stationary
         boolean isStill =
-            navxIn.yawVelocity.abs(RadiansPerSecond) < velocityGate.in(RadiansPerSecond);
+            navxIn.yawVelocity.abs(RadiansPerSecond) < VELOCITY_GATE.in(RadiansPerSecond);
 
         // If stationary and error is significant, adjust the drift offset
-        if (isStill && (error.abs(Radians) > errorThreshold.in(Radians))) {
-          Angle step = error.times(driftGain);
+        if (isStill && (error.abs(Radians) > ERROR_THRESHOLD.in(Radians))) {
+          Angle step = error.times(DRIFT_GAIN);
           // Clamp the correction step to a maximum value to prevent sudden jumps
           step =
               Radians.of(
                   Math.max(
-                      -maxCorrectionPerFrame.in(Radians),
-                      Math.min(maxCorrectionPerFrame.in(Radians), step.in(Radians))));
+                      -MAX_CORRECTION_PER_FRAME.in(Radians),
+                      Math.min(MAX_CORRECTION_PER_FRAME.in(Radians), step.in(Radians))));
           driftOffset = driftOffset.plus(step);
         }
       }

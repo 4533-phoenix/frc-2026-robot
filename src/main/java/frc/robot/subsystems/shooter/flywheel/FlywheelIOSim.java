@@ -36,7 +36,7 @@ import edu.wpi.first.wpilibj.simulation.DCMotorSim;
  * FlywheelIOTalonFX}.
  */
 public class FlywheelIOSim implements FlywheelIO {
-  private final TalonFX talon = new TalonFX(flywheelMotorId);
+  private final TalonFX talon = new TalonFX(CAN_ID);
   private final TalonFXSimState talonSim = talon.getSimState();
 
   // Status signals for retrieving data
@@ -48,9 +48,8 @@ public class FlywheelIOSim implements FlywheelIO {
   // Physics model for the flywheel
   private final DCMotorSim physicsSim =
       new DCMotorSim(
-          LinearSystemId.createDCMotorSystem(
-              flywheelGearbox, flywheelMOI.in(KilogramSquareMeters), flywheelReduction),
-          flywheelGearbox);
+          LinearSystemId.createDCMotorSystem(GEARBOX, MOI.in(KilogramSquareMeters), REDUCTION),
+          GEARBOX);
 
   /** Creates a new FlywheelIOSim and configures the TalonFX (identical to FlywheelIOTalonFX). */
   public FlywheelIOSim() {
@@ -58,7 +57,7 @@ public class FlywheelIOSim implements FlywheelIO {
     config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
     config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
 
-    config.CurrentLimits.StatorCurrentLimit = flywheelMotorCurrentLimit.in(Amps);
+    config.CurrentLimits.StatorCurrentLimit = MOTOR_CURRENT_LIMIT.in(Amps);
     config.CurrentLimits.StatorCurrentLimitEnable = true;
 
     config.Slot0.kP = flywheelKp;
@@ -90,8 +89,8 @@ public class FlywheelIOSim implements FlywheelIO {
     // Feed physics results back into TalonFX sim state
     // DCMotorSim returns mechanism position/velocity (after gear ratio),
     // but TalonFX expects raw rotor position/velocity (before gear ratio)
-    talonSim.setRawRotorPosition(physicsSim.getAngularPosition().times(flywheelReduction));
-    talonSim.setRotorVelocity(physicsSim.getAngularVelocity().times(flywheelReduction));
+    talonSim.setRawRotorPosition(physicsSim.getAngularPosition().times(REDUCTION));
+    talonSim.setRotorVelocity(physicsSim.getAngularVelocity().times(REDUCTION));
 
     // Refresh status signals and populate inputs
     BaseStatusSignal.refreshAll(position, velocity, appliedVolts, current);

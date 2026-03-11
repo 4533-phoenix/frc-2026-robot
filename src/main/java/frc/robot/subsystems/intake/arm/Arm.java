@@ -58,12 +58,13 @@ public class Arm extends SubsystemBase {
     deployedTrigger =
         new Trigger(
             () ->
-                deployedPosition.minus(inputs.position).abs(Degrees) < intakeTolerance.in(Degrees));
+                DEPLOYED_POSITION.minus(inputs.position).abs(Degrees)
+                    < STATE_TOLERANCE.in(Degrees));
     retractedTrigger =
         new Trigger(
             () ->
-                retractedPosition.minus(inputs.position).abs(Degrees)
-                    < intakeTolerance.in(Degrees));
+                RETRACTED_POSITION.minus(inputs.position).abs(Degrees)
+                    < STATE_TOLERANCE.in(Degrees));
   }
 
   /**
@@ -83,8 +84,8 @@ public class Arm extends SubsystemBase {
     disconnectedAlert.set(!inputs.connected);
 
     switch (goal) {
-      case RETRACT -> io.setPosition(retractedPosition);
-      case DEPLOY -> io.setPosition(deployedPosition);
+      case RETRACT -> io.setPosition(RETRACTED_POSITION);
+      case DEPLOY -> io.setPosition(DEPLOYED_POSITION);
       case UNKNOWN -> {
         if (deployedTrigger.getAsBoolean()) {
           setGoal(Goal.DEPLOY);

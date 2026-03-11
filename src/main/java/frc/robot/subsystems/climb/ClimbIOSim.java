@@ -48,8 +48,8 @@ public class ClimbIOSim implements ClimbIO {
 
   /** Creates a new ClimbIOSim and initializes the simulated Spark MAX. */
   public ClimbIOSim() {
-    spark = new SparkMax(canId, MotorType.kBrushed);
-    sparkSim = new SparkMaxSim(spark, gearbox);
+    spark = new SparkMax(CAN_ID, MotorType.kBrushed);
+    sparkSim = new SparkMaxSim(spark, GEARBOX);
     forwardLimitSim = sparkSim.getForwardLimitSwitchSim();
     reverseLimitSim = sparkSim.getReverseLimitSwitchSim();
     forwardLimit = spark.getForwardLimitSwitch();
@@ -57,13 +57,13 @@ public class ClimbIOSim implements ClimbIO {
 
     physicsSim =
         new ClimbSim(
-            gearbox,
-            gearReduction,
+            GEARBOX,
+            REDUCTION,
             1.5,
-            DriveConstants.robotMass.in(Kilograms),
-            drumRadius.in(Meter),
-            lowerHeight.in(Meter),
-            upperHeight.in(Meter),
+            DriveConstants.ROBOT_MASS.in(Kilograms),
+            DRUM_RADIUS.in(Meter),
+            LOWER_HEIGHT.in(Meter),
+            UPPER_HEIGHT.in(Meter),
             40.0 // TODO: Get actual arm mass and spring force values
             );
 
@@ -71,7 +71,7 @@ public class ClimbIOSim implements ClimbIO {
     var liftCfg = new SparkMaxConfig();
     liftCfg
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) motorCurrentLimit.in(Amps))
+        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
         .voltageCompensation(12.0);
     liftCfg.limitSwitch.forwardLimitSwitchType(LimitSwitchConfig.Type.kNormallyOpen);
     liftCfg.limitSwitch.reverseLimitSwitchType(LimitSwitchConfig.Type.kNormallyOpen);
@@ -93,8 +93,8 @@ public class ClimbIOSim implements ClimbIO {
 
     // Calculate RPM of the motor (v_linear / r = omega_shaft -> omega_shaft * gear_ratio =
     // omega_motor)
-    double velocityRadPerSec = physicsSim.getVelocityMetersPerSecond() / drumRadius.in(Meter);
-    double motorRadPerSec = velocityRadPerSec * gearReduction;
+    double velocityRadPerSec = physicsSim.getVelocityMetersPerSecond() / DRUM_RADIUS.in(Meter);
+    double motorRadPerSec = velocityRadPerSec * REDUCTION;
     double velocityRPM = motorRadPerSec * 60.0 / (2.0 * Math.PI);
 
     // Update SparkMaxSim with physics results
@@ -102,17 +102,17 @@ public class ClimbIOSim implements ClimbIO {
 
     // Emulate limit switches based on simulated position
     double positionMeters = physicsSim.getPositionMeters();
-    boolean atUpper = positionMeters >= upperHeight.in(Meter);
-    boolean atLower = positionMeters <= lowerHeight.in(Meter);
+    boolean atUpper = positionMeters >= UPPER_HEIGHT.in(Meter);
+    boolean atLower = positionMeters <= LOWER_HEIGHT.in(Meter);
     forwardLimitSim.setPressed(atUpper);
     reverseLimitSim.setPressed(atLower);
 
     // If the mechanism has overshot a limit, reset the physics sim to the boundary
     // so the limit switch clears on the very next cycle once we reverse direction.
     if (atUpper) {
-      physicsSim.setState(upperHeight.in(Meter), 0.0);
+      physicsSim.setState(UPPER_HEIGHT.in(Meter), 0.0);
     } else if (atLower) {
-      physicsSim.setState(lowerHeight.in(Meter), 0.0);
+      physicsSim.setState(LOWER_HEIGHT.in(Meter), 0.0);
     }
 
     // Update loggable inputs

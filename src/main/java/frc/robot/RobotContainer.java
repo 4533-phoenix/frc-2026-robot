@@ -7,7 +7,7 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -27,6 +27,7 @@ import frc.robot.subsystems.climb.ClimbIO;
 import frc.robot.subsystems.climb.ClimbIOReal;
 import frc.robot.subsystems.climb.ClimbIOSim;
 import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.drive.DriveConstants;
 import frc.robot.subsystems.drive.gyro.GyroIO;
 import frc.robot.subsystems.drive.gyro.GyroIODual;
 import frc.robot.subsystems.drive.module.ModuleIO;
@@ -102,7 +103,7 @@ public class RobotContainer {
    */
   public RobotContainer() {
     // Instantiate subsystems based on the running mode
-    switch (Constants.currentMode) {
+    switch (Constants.CURRENT_MODE) {
       case REAL:
         // Real robot, instantiate hardware IO implementations
         drive =
@@ -163,9 +164,9 @@ public class RobotContainer {
         Aiming.hubAimingSupplier(
             drive::getPose,
             drive::getFieldRelativeVelocity,
-            ShooterConstants.shooterRobotOffset,
-            ShooterConstants.estimatedTimeOfFlight);
-    lobAiming = Aiming.lobAimingSupplier(drive::getPose, ShooterConstants.shooterRobotOffset);
+            ShooterConstants.SHOOTER_ROBOT_OFFSET,
+            ShooterConstants.ESTIMATED_TOF);
+    lobAiming = Aiming.lobAimingSupplier(drive::getPose, ShooterConstants.SHOOTER_ROBOT_OFFSET);
 
     autoChooser.addOption(
         "Left Shoot Preload",
@@ -177,7 +178,7 @@ public class RobotContainer {
                         FieldUtil.flipAllianceIfNeeded(
                             new Pose2d(
                                 3.536,
-                                FieldUtil.fieldWidth.in(Meters) - 2.437,
+                                FieldUtil.FIELD_WIDTH.in(Meters) - 2.437,
                                 new Rotation2d(0))))),
             shooter.run(),
             Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
@@ -197,7 +198,9 @@ public class RobotContainer {
                     drive.setPose(
                         FieldUtil.flipAllianceIfNeeded(
                             new Pose2d(
-                                3.536, FieldUtil.fieldWidth.in(Meters) / 2.0, new Rotation2d(0))))),
+                                3.536,
+                                FieldUtil.FIELD_WIDTH.in(Meters) / 2.0,
+                                new Rotation2d(0))))),
             shooter.run(),
             Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
                 .withTimeout(1.0)
@@ -336,14 +339,15 @@ public class RobotContainer {
     // Update the current aiming result based on the robot's position on the field
     Translation2d robotTranslation = drive.getPose().getTranslation();
     if (!climbMode.get()) {
-      if (FieldUtil.flipAllianceIfNeeded(Constants.shootingZone).contains(robotTranslation)
+      if (FieldUtil.flipAllianceIfNeeded(Constants.SHOOTING_ZONE).contains(robotTranslation)
           && (Util.isHubApproaching() || isHubEnabled)) {
         currentAimingResult = hubAiming.get();
         shooter.setShooterState(
             ShooterKinematics.calculateShooterState(currentAimingResult.distanceToTarget()));
-      } else if (FieldUtil.flipAllianceIfNeeded(Constants.lobbingZone).contains(robotTranslation)) {
+      } else if (FieldUtil.flipAllianceIfNeeded(Constants.LOBBING_ZONE)
+          .contains(robotTranslation)) {
         currentAimingResult = lobAiming.get();
-        shooter.setShooterState(ShooterConstants.lobShootingState);
+        shooter.setShooterState(ShooterConstants.LOB_STATE);
       } else {
         currentAimingResult = Aiming.noTarget;
       }
@@ -375,6 +379,6 @@ public class RobotContainer {
                             .targetRotation()
                             .minus(drive.getPose().getRotation())
                             .getDegrees())
-                    < 5.0);
+                    < DriveConstants.HEADING_ALIGNMENT_TOLERANCE.in(Degrees));
   }
 }

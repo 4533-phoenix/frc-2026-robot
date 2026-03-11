@@ -71,7 +71,7 @@ public class Drive extends SubsystemBase {
   private final Alert gyroDisconnectedAlert =
       new Alert("Disconnected gyro, using kinematics as fallback.", AlertType.kError);
 
-  private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(moduleTranslations);
+  private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(MODULE_TRANSLATIONS);
   private Rotation2d rawGyroRotation = Rotation2d.kZero;
   private SwerveModulePosition[] lastModulePositions = // For delta tracking
       new SwerveModulePosition[] {
@@ -118,7 +118,7 @@ public class Drive extends SubsystemBase {
         this::runVelocity,
         new PPHolonomicDriveController(
             new PIDConstants(5.0, 0.0, 0.0), new PIDConstants(5.0, 0.0, 0.0)),
-        ppConfig,
+        PP_CONFIG,
         () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
         this);
     Pathfinding.setPathfinder(new LocalADStarAK());
@@ -206,7 +206,7 @@ public class Drive extends SubsystemBase {
     }
 
     // Update gyro alert
-    gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
+    gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.CURRENT_MODE != Mode.SIM);
   }
 
   /**
@@ -219,7 +219,7 @@ public class Drive extends SubsystemBase {
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(
-        setpointStates, maxLinearVelocity.in(MetersPerSecond));
+        setpointStates, MAX_LINEAR_VELOCITY.in(MetersPerSecond));
 
     // Log unoptimized setpoints
     Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
@@ -257,7 +257,7 @@ public class Drive extends SubsystemBase {
   public void stopWithX() {
     Rotation2d[] headings = new Rotation2d[4];
     for (int i = 0; i < 4; i++) {
-      headings[i] = moduleTranslations[i].getAngle();
+      headings[i] = MODULE_TRANSLATIONS[i].getAngle();
     }
     kinematics.resetHeadings(headings);
     stop();
@@ -420,7 +420,7 @@ public class Drive extends SubsystemBase {
    * @return The maximum linear velocity.
    */
   public LinearVelocity getMaxLinearVelocity() {
-    return maxLinearVelocity;
+    return MAX_LINEAR_VELOCITY;
   }
 
   /**
@@ -429,7 +429,8 @@ public class Drive extends SubsystemBase {
    * @return The maximum angular velocity.
    */
   public AngularVelocity getMaxAngularVelocity() {
-    return RadiansPerSecond.of(maxLinearVelocity.in(MetersPerSecond) / driveBaseRadius.in(Meters));
+    return RadiansPerSecond.of(
+        MAX_LINEAR_VELOCITY.in(MetersPerSecond) / DRIVE_BASE_RADIUS.in(Meters));
   }
 
   /**

@@ -50,7 +50,7 @@ public class VisionIOSim implements VisionIO {
     Pose2d robotPose = poseSupplier.get();
     double timestamp = Timer.getFPGATimestamp();
 
-    int cameraCount = cameraMap.size();
+    int cameraCount = CAMERA_MAP.size();
 
     // OPTIMIZATION: Resize arrays once. Removed ArrayLists and Java Streams to prevent
     // Autoboxing and continuous memory allocation during simulation.
@@ -68,7 +68,7 @@ public class VisionIOSim implements VisionIO {
     int index = 0;
 
     // Iterate through all configured cameras to simulate their detections
-    for (var entry : cameraMap.entrySet()) {
+    for (var entry : CAMERA_MAP.entrySet()) {
       int camId = entry.getKey();
       CameraConfig config = entry.getValue();
 
@@ -82,7 +82,7 @@ public class VisionIOSim implements VisionIO {
       double totalDistance = 0.0;
 
       // Check visibility for each tag on the field
-      for (AprilTag tag : fieldLayout.getTags()) {
+      for (AprilTag tag : FIELD_LAYOUT.getTags()) {
         Pose2d tagPose = tag.pose.toPose2d();
         Translation2d diff = tagPose.getTranslation().minus(cameraPose.getTranslation());
         double distance = diff.getNorm();

@@ -20,11 +20,11 @@ import java.util.Queue;
  * IO implementation for the Redux Robotics Canandgyro.
  *
  * <p>This implementation configures the gyro to send data frames at the frequency defined in {@link
- * frc.robot.subsystems.drive.DriveConstants#odometryFrequency} and registers these signals with the
- * {@link SparkOdometryThread} for accurate, high-frequency odometry.
+ * frc.robot.subsystems.drive.DriveConstants#ODOMETRY_FREQUENCY} and registers these signals with
+ * the {@link SparkOdometryThread} for accurate, high-frequency odometry.
  */
 public class GyroIOCanAndGyro implements GyroIO {
-  private final Canandgyro canandgyro = new Canandgyro(imuCanId);
+  private final Canandgyro canandgyro = new Canandgyro(IMU_CAN_ID);
   private final Queue<Double> yawPositionQueue;
   private final Queue<Double> yawTimestampQueue;
 
@@ -32,9 +32,9 @@ public class GyroIOCanAndGyro implements GyroIO {
   public GyroIOCanAndGyro() {
     final CanandgyroSettings settings = new CanandgyroSettings();
     // Configure hardware frames to match the desired odometry frequency
-    settings.setYawFramePeriod(1 / odometryFrequency.in(Hertz));
+    settings.setYawFramePeriod(1 / ODOMETRY_FREQUENCY.in(Hertz));
     // Set standard less critical velocity data
-    settings.setAngularVelocityFramePeriod(1 / odometryLowFrequency.in(Hertz));
+    settings.setAngularVelocityFramePeriod(1 / ODOMETRY_LOW_FREQUENCY.in(Hertz));
     canandgyro.setSettings(settings);
     canandgyro.setYaw(0.0);
 

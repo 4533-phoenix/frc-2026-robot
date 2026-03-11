@@ -47,6 +47,6 @@ public interface HoodIO {
 
   /** Retracts the hood mechanism to its minimum length (default state). */
   public default void retract() {
-    setLength(servoMinLength);
+    setLength(SERVO_MIN_LENGTH);
   }
 }

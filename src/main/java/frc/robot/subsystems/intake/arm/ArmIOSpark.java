@@ -35,7 +35,7 @@ import java.util.function.DoubleSupplier;
  * to prevent drift and handle startup seeding.
  */
 public class ArmIOSpark implements ArmIO {
-  private final SparkMax spark = new SparkMax(canId, MotorType.kBrushless);
+  private final SparkMax spark = new SparkMax(CAN_ID, MotorType.kBrushless);
   private final AbsoluteEncoder absoluteEncoder;
   private final RelativeEncoder internalEncoder;
   private final SparkClosedLoopController controller;
@@ -54,35 +54,28 @@ public class ArmIOSpark implements ArmIO {
     var armConfig = new SparkMaxConfig();
     armConfig
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) motorCurrentLimit.in(Amps))
+        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
         .voltageCompensation(12.0)
         .inverted(false);
     armConfig
         .encoder
-        .positionConversionFactor(internalEncoderPositionFactor)
-        .velocityConversionFactor(internalEncoderVelocityFactor);
+        .positionConversionFactor(INTERNAL_ENCODER_POSITION_FACTOR)
+        .velocityConversionFactor(INTERNAL_ENCODER_VELOCITY_FACTOR);
     armConfig
         .absoluteEncoder
         .positionConversionFactor(2.0 * Math.PI)
-        .zeroOffset(globalEncoderOffset.in(Rotations))
+        .zeroOffset(GLOBAL_ENCODER_OFFSET.in(Rotations))
         .inverted(true);
 
     // PID runs off the primary internal encoder for maximum smoothness and high D-gains
-    armConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(armKp, 0.0, armKd);
-    armConfig
-        .closedLoop
-        .feedForward
-        .kV(armKv)
-        .kA(armKa)
-        .kS(armKs)
-        .kCos(armKg)
-        .kCosRatio(1.0 / (2.0 * Math.PI));
+    armConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(KP, 0.0, KD);
+    armConfig.closedLoop.feedForward.kV(KV).kA(KA).kS(KS).kCos(KG).kCosRatio(1.0 / (2.0 * Math.PI));
     armConfig
         .closedLoop
         .maxMotion
-        .allowedProfileError(positionPIDTolerance.in(Radians))
-        .cruiseVelocity(cruiseVelocity.in(RadiansPerSecond))
-        .maxAcceleration(maxAcceleration.in(RadiansPerSecondPerSecond));
+        .allowedProfileError(PID_TOLERANCE.in(Radians))
+        .cruiseVelocity(CRUISE_VELOCITY.in(RadiansPerSecond))
+        .maxAcceleration(MAX_ACCELERATION.in(RadiansPerSecondPerSecond));
     armConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
@@ -92,9 +85,9 @@ public class ArmIOSpark implements ArmIO {
     armConfig
         .softLimit
         .forwardSoftLimitEnabled(true)
-        .forwardSoftLimit(retractedPosition.plus(softLimitTolerance).in(Radians))
+        .forwardSoftLimit(RETRACTED_POSITION.plus(SOFT_LIMIT_TOLERANCE).in(Radians))
         .reverseSoftLimitEnabled(true)
-        .reverseSoftLimit(deployedPosition.minus(softLimitTolerance).in(Radians));
+        .reverseSoftLimit(DEPLOYED_POSITION.minus(SOFT_LIMIT_TOLERANCE).in(Radians));
 
     tryUntilOk(
         5,
@@ -136,11 +129,11 @@ public class ArmIOSpark implements ArmIO {
       double currentVel = velContainer[0];
       boolean absEncoderReady = (absPos != 0.0);
 
-      boolean isStill = Math.abs(currentVel) < velocityGate.in(RadiansPerSecond);
+      boolean isStill = Math.abs(currentVel) < VELOCITY_GATE.in(RadiansPerSecond);
       double armError = Math.abs(internalPos - absPos);
 
       // Apply Synchronization
-      if (absEncoderReady && isStill && armError > errorThreshold.in(Radians)) {
+      if (absEncoderReady && isStill && armError > ERROR_THRESHOLD.in(Radians)) {
         internalEncoder.setPosition(absPos);
         internalPos = absPos;
       }

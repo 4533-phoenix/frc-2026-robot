@@ -78,17 +78,17 @@ public class ShooterTest {
 
     // Ensure the calculated lengths NEVER exceed the physical limits of the servo
     assertTrue(
-        length85 >= ShooterConstants.servoMinLength.in(Inches),
+        length85 >= ShooterConstants.SERVO_MIN_LENGTH.in(Inches),
         "Steep shot violated min servo limit!");
     assertTrue(
-        length85 <= ShooterConstants.servoMaxLength.in(Inches),
+        length85 <= ShooterConstants.SERVO_MAX_LENGTH.in(Inches),
         "Steep shot violated max servo limit!");
 
     assertTrue(
-        length40 >= ShooterConstants.servoMinLength.in(Inches),
+        length40 >= ShooterConstants.SERVO_MIN_LENGTH.in(Inches),
         "Shallow shot violated min servo limit!");
     assertTrue(
-        length40 <= ShooterConstants.servoMaxLength.in(Inches),
+        length40 <= ShooterConstants.SERVO_MAX_LENGTH.in(Inches),
         "Shallow shot violated max servo limit!");
 
     // A steeper launch angle should require a different servo extension than a shallow one.
@@ -117,7 +117,7 @@ public class ShooterTest {
     assertEquals(
         0.0, speedAfterNull, 1e-6, "Flywheel speed was not set to 0 when null state was provided!");
     assertEquals(
-        ShooterConstants.servoMinLength.in(Inches),
+        ShooterConstants.SERVO_MIN_LENGTH.in(Inches),
         lengthAfterNull,
         1e-6,
         "Hood length was not set to default when null state was provided!");

@@ -36,20 +36,19 @@ public class IndexerIOSim implements IndexerIO {
 
   /** Creates a new IndexerIOSim and initializes the simulated Spark MAX. */
   public IndexerIOSim() {
-    spark = new SparkMax(indexerMotorId, MotorType.kBrushless);
-    sparkSim = new SparkMaxSim(spark, indexerGearbox);
+    spark = new SparkMax(CAN_ID, MotorType.kBrushless);
+    sparkSim = new SparkMaxSim(spark, GEARBOX);
 
     physicsSim =
         new DCMotorSim(
-            LinearSystemId.createDCMotorSystem(
-                indexerGearbox, indexerMOI.in(KilogramSquareMeters), indexerReduction),
-            indexerGearbox);
+            LinearSystemId.createDCMotorSystem(GEARBOX, MOI.in(KilogramSquareMeters), REDUCTION),
+            GEARBOX);
 
     // Configure Spark MAX (mirrors IndexerIOSpark)
     var config = new SparkMaxConfig();
     config
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) indexerMotorCurrentLimit.in(Amps))
+        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
         .voltageCompensation(12.0);
     spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }

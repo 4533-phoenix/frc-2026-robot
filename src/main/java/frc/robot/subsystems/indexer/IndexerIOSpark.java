@@ -28,7 +28,7 @@ import java.util.function.DoubleSupplier;
  * monitors connectivity via a debouncer.
  */
 public class IndexerIOSpark implements IndexerIO {
-  private final SparkMax spark = new SparkMax(indexerMotorId, MotorType.kBrushless);
+  private final SparkMax spark = new SparkMax(CAN_ID, MotorType.kBrushless);
 
   // Debouncer to prevent rapidly toggling connection status
   private final Debouncer sparkDebouncer = new Debouncer(0.5, Debouncer.DebounceType.kFalling);
@@ -38,7 +38,7 @@ public class IndexerIOSpark implements IndexerIO {
     var config = new SparkMaxConfig();
     config
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) indexerMotorCurrentLimit.in(Amps))
+        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
         .voltageCompensation(12.0);
     config.signals.appliedOutputPeriodMs(20).busVoltagePeriodMs(20).outputCurrentPeriodMs(20);
     tryUntilOk(

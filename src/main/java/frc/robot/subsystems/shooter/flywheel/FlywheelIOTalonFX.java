@@ -30,7 +30,7 @@ import edu.wpi.first.units.measure.Voltage;
  * bus utilization by setting specific update frequencies for status signals.
  */
 public class FlywheelIOTalonFX implements FlywheelIO {
-  private final TalonFX talon = new TalonFX(flywheelMotorId);
+  private final TalonFX talon = new TalonFX(CAN_ID);
 
   // Status signals for retrieving data from the TalonFX
   private final StatusSignal<Angle> position = talon.getPosition();
@@ -46,7 +46,7 @@ public class FlywheelIOTalonFX implements FlywheelIO {
     config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
 
     // Set current limits to protect the motor
-    config.CurrentLimits.StatorCurrentLimit = flywheelMotorCurrentLimit.in(Amps);
+    config.CurrentLimits.StatorCurrentLimit = MOTOR_CURRENT_LIMIT.in(Amps);
     config.CurrentLimits.StatorCurrentLimitEnable = true;
 
     // Configure PID gains for closed-loop velocity control

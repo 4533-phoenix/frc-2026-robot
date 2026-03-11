@@ -60,10 +60,10 @@ public class ArmTest {
 
     // Ensure the subsystem sent the deploy position to the hardware
     assertEquals(
-        ArmConstants.deployedPosition.in(Degrees), dummyIO.lastCommandedAngle.in(Degrees), 1e-6);
+        ArmConstants.DEPLOYED_POSITION.in(Degrees), dummyIO.lastCommandedAngle.in(Degrees), 1e-6);
 
     // Simulate the physical arm reaching the target position
-    dummyIO.inputsToInject.position = ArmConstants.deployedPosition;
+    dummyIO.inputsToInject.position = ArmConstants.DEPLOYED_POSITION;
     arm.periodic();
 
     // The trigger should now fire

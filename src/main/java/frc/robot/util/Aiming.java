@@ -197,7 +197,7 @@ public class Aiming {
                   robotPose.getTranslation(),
                   robotPose.getRotation(),
                   fieldVelocitySupplier.get(),
-                  Constants.hubPosition,
+                  Constants.HUB_POSITION,
                   shooterRobotOffset,
                   estimatedTimeOfFlight,
                   true);
@@ -234,9 +234,9 @@ public class Aiming {
                   robotPose.getTranslation(),
                   robotPose.getRotation(),
                   shooterRobotOffset,
-                  Constants.lobbingTargetLeftCenter,
-                  Constants.lobbingTargetRightCenter,
-                  Constants.lobbingTargetHalfLength,
+                  Constants.LOBBING_TARGET_LEFT_CENTER,
+                  Constants.LOBBING_TARGET_RIGHT_CENTER,
+                  Constants.LOBBING_TARGET_HALF_LENGTH,
                   true);
           lastTimestamp = currentTime;
         }

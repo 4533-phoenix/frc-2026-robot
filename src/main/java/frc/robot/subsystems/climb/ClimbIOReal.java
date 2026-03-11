@@ -32,7 +32,7 @@ import java.util.function.DoubleSupplier;
  * limits.
  */
 public class ClimbIOReal implements ClimbIO {
-  private final SparkMax spark = new SparkMax(canId, MotorType.kBrushed);
+  private final SparkMax spark = new SparkMax(CAN_ID, MotorType.kBrushed);
 
   // References to the limit switches directly connected to the Spark Max
   private final SparkLimitSwitch upperLimit = spark.getForwardLimitSwitch();
@@ -47,7 +47,7 @@ public class ClimbIOReal implements ClimbIO {
     var liftCfg = new SparkMaxConfig();
     liftCfg
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) motorCurrentLimit.in(Amps))
+        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
         .inverted(true)
         .voltageCompensation(12.0);
     liftCfg.signals.appliedOutputPeriodMs(20).busVoltagePeriodMs(20).outputCurrentPeriodMs(20);

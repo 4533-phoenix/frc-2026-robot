@@ -60,7 +60,7 @@ public class Shooter extends SubsystemBase {
   }
 
   @AutoLogOutput private Goal goal = Goal.STOP;
-  private ShooterState state = defaultShootingState;
+  private ShooterState state = DEFAULT_STATE;
 
   private final Trigger flywheelReadyTrigger;
   private final Trigger hoodReadyTrigger;
@@ -82,9 +82,7 @@ public class Shooter extends SubsystemBase {
     // Build triggers once; lambdas capture 'this' and evaluate live state each poll
     flywheelReadyTrigger =
         new Trigger(
-            () ->
-                Math.abs(getFlywheelErrorRadPerSec())
-                    <= flywheelAngularTolerance.in(RadiansPerSecond));
+            () -> Math.abs(getFlywheelErrorRadPerSec()) <= ANGULAR_TOLERANCE.in(RadiansPerSecond));
     hoodReadyTrigger = new Trigger(() -> hoodInputs.atSetpoint);
     readyToShootTrigger =
         flywheelReadyTrigger.and(hoodReadyTrigger).and(() -> goal == Goal.RUNNING);
@@ -128,7 +126,7 @@ public class Shooter extends SubsystemBase {
    */
   public void setShooterState(ShooterState state) {
     if (state == null) {
-      this.state = defaultShootingState;
+      this.state = DEFAULT_STATE;
       DriverStation.reportWarning(
           "Attempted to set shooter state to null. Defaulting to safe state.", false);
     } else {
@@ -145,11 +143,11 @@ public class Shooter extends SubsystemBase {
    */
   private static Distance convertHoodAngleToServoLength(Angle hoodAngle) {
     // Kinematic calculation for the hood mechanism
-    Angle plateAngle = hoodAngle.plus(crankTangentToLaunchAngle);
-    Angle internalTheta = mechanismTotalAngle.minus(plateAngle);
+    Angle plateAngle = hoodAngle.plus(CRANK_TANGENT_TO_LAUNCH_ANGLE);
+    Angle internalTheta = HOOD_TOTAL_ANGLE.minus(plateAngle);
 
-    double a = groundLinkDistance.in(Inches);
-    double b = crankArmLength.in(Inches);
+    double a = GROUND_LINK_DISTANCE.in(Inches);
+    double b = CRANK_ARM_LENGTH.in(Inches);
     double cosTheta = Math.cos(internalTheta.in(Radians));
 
     // Law of cosines: c^2 = a^2 + b^2 - 2ab*cos(C)
@@ -157,7 +155,7 @@ public class Shooter extends SubsystemBase {
     double servoLength = Math.sqrt(Math.max(0, servoLengthSquared));
 
     return Inches.of(
-        MathUtil.clamp(servoLength, servoMinLength.in(Inches), servoMaxLength.in(Inches)));
+        MathUtil.clamp(servoLength, SERVO_MIN_LENGTH.in(Inches), SERVO_MAX_LENGTH.in(Inches)));
   }
 
   /**

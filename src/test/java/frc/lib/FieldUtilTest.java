@@ -34,9 +34,9 @@ public class FieldUtilTest {
     Translation2d flipped = FieldUtil.flipAlliance(blueTranslation);
 
     // X should be mirrored across the center of the field length
-    assertEquals(FieldUtil.fieldLength.in(Meters) - 2.0, flipped.getX(), 1e-6);
+    assertEquals(FieldUtil.FIELD_LENGTH.in(Meters) - 2.0, flipped.getX(), 1e-6);
     // Y should be mirrored across the center of the field width
-    assertEquals(FieldUtil.fieldWidth.in(Meters) - 3.0, flipped.getY(), 1e-6);
+    assertEquals(FieldUtil.FIELD_WIDTH.in(Meters) - 3.0, flipped.getY(), 1e-6);
   }
 
   @Test

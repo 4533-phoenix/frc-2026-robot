@@ -114,7 +114,7 @@ public class SparkOdometryThread {
     }
 
     if (bakedTimestampQueues.length > 0) {
-      notifier.startPeriodic(1.0 / DriveConstants.odometryFrequency.in(Hertz));
+      notifier.startPeriodic(1.0 / DriveConstants.ODOMETRY_FREQUENCY.in(Hertz));
     }
   }
 

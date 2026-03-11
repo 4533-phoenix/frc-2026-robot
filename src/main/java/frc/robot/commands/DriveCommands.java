@@ -56,7 +56,7 @@ public class DriveCommands {
    */
   private static Translation2d getLinearVelocityFromJoysticks(double x, double y) {
     // Apply deadband
-    double linearMagnitude = MathUtil.applyDeadband(Math.hypot(x, y), joystickDeadband);
+    double linearMagnitude = MathUtil.applyDeadband(Math.hypot(x, y), JOYSTICK_DEADBAND);
     Rotation2d linearDirection = new Rotation2d(Math.atan2(y, x));
 
     // Cube magnitude for exponential feel with fine low-speed control
@@ -89,7 +89,7 @@ public class DriveCommands {
               getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
 
           // Apply rotation deadband
-          double omega = MathUtil.applyDeadband(omegaSupplier.getAsDouble(), joystickDeadband);
+          double omega = MathUtil.applyDeadband(omegaSupplier.getAsDouble(), JOYSTICK_DEADBAND);
 
           // Cube rotation value for exponential feel with fine low-speed control
           omega = Math.copySign(omega * omega * omega, omega);
@@ -135,10 +135,10 @@ public class DriveCommands {
     // Create PID controller with motion profiling for rotation
     ProfiledPIDController angleController =
         new ProfiledPIDController(
-            angleKp,
+            ANGLE_KP,
             0.0,
-            angleKd,
-            new TrapezoidProfile.Constraints(angleMaxVelocity, angleMaxAcceleration));
+            ANGLE_KD,
+            new TrapezoidProfile.Constraints(ANGLE_MAX_VELOCITY, ANGLE_MAX_ACCELERATION));
     angleController.enableContinuousInput(-Math.PI, Math.PI);
 
     // Construct command
@@ -198,10 +198,10 @@ public class DriveCommands {
     // Create PID controller with motion profiling for rotation
     ProfiledPIDController angleController =
         new ProfiledPIDController(
-            angleKp,
+            ANGLE_KP,
             0.0,
-            angleKd,
-            new TrapezoidProfile.Constraints(angleMaxVelocity, angleMaxAcceleration));
+            ANGLE_KD,
+            new TrapezoidProfile.Constraints(ANGLE_MAX_VELOCITY, ANGLE_MAX_ACCELERATION));
     angleController.enableContinuousInput(-Math.PI, Math.PI);
 
     // Reuse the kinematics instance from Drive to test module speeds against the budget
@@ -218,7 +218,7 @@ public class DriveCommands {
                   angleController.calculate(
                       drive.getRotation().getRadians(), rotationSupplier.get().getRadians());
 
-              double maxSpeed = maxLinearVelocity.in(MetersPerSecond);
+              double maxSpeed = MAX_LINEAR_VELOCITY.in(MetersPerSecond);
 
               double desiredVx = maxSpeed * linearVelocity.getX();
               double desiredVy = maxSpeed * linearVelocity.getY();
@@ -304,7 +304,7 @@ public class DriveCommands {
                   drive.runCharacterization(Volts.zero());
                 },
                 drive)
-            .withTimeout(ffStartDelay),
+            .withTimeout(FF_START_DELAY),
 
         // Start timer
         Commands.runOnce(timer::restart),
@@ -313,7 +313,7 @@ public class DriveCommands {
         Commands.run(
                 () -> {
                   // Ramp voltage linearly over time
-                  Voltage voltage = Volts.of(timer.get() * ffRampRate);
+                  Voltage voltage = Volts.of(timer.get() * FF_RAMP_RATE);
                   drive.runCharacterization(voltage);
                   velocitySamples.add(drive.getFFCharacterizationVelocity());
                   voltageSamples.add(voltage);
@@ -357,7 +357,7 @@ public class DriveCommands {
    * @return A command that spins the robot to calculate effective wheel radius.
    */
   public static Command wheelRadiusCharacterization(Drive drive) {
-    SlewRateLimiter limiter = new SlewRateLimiter(wheelRadiusRampRate);
+    SlewRateLimiter limiter = new SlewRateLimiter(WHEEL_RADIUS_RAMP_RATE);
     WheelRadiusCharacterizationState state = new WheelRadiusCharacterizationState();
 
     return Commands.parallel(
@@ -372,7 +372,7 @@ public class DriveCommands {
             // Turn in place, accelerating up to full speed
             Commands.run(
                 () -> {
-                  double speed = limiter.calculate(wheelRadiusMaxVelocity);
+                  double speed = limiter.calculate(WHEEL_RADIUS_MAX_VELOCITY);
                   drive.runVelocity(new ChassisSpeeds(0.0, 0.0, speed));
                 },
                 drive)),
@@ -410,7 +410,7 @@ public class DriveCommands {
 
                       // Calculate radius: (Angle Delta * Dist to Module) / Wheel Dist Delta
                       double wheelRadius =
-                          (state.gyroDelta * driveBaseRadius.in(Meters)) / wheelDelta;
+                          (state.gyroDelta * DRIVE_BASE_RADIUS.in(Meters)) / wheelDelta;
 
                       NumberFormat formatter = new DecimalFormat("#0.000");
                       System.out.println(

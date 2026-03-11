@@ -55,7 +55,7 @@ public class Vision extends SubsystemBase {
     this.drive = drive;
 
     // Determine the max array size needed to sequentially store camera data
-    maxCameraId = cameraMap.isEmpty() ? 0 : Collections.max(cameraMap.keySet());
+    maxCameraId = CAMERA_MAP.isEmpty() ? 0 : Collections.max(CAMERA_MAP.keySet());
 
     lastTimestamps = new double[maxCameraId + 1];
     alerts = new Alert[maxCameraId + 1];
@@ -64,7 +64,7 @@ public class Vision extends SubsystemBase {
     cameraActiveFlags = new boolean[maxCameraId + 1];
 
     // Initialize arrays for tracking camera status based on Constants
-    for (var entry : cameraMap.entrySet()) {
+    for (var entry : CAMERA_MAP.entrySet()) {
       int id = entry.getKey();
       cameraActiveFlags[id] = true;
       lastTimestamps[id] = Timer.getTimestamp();
@@ -113,12 +113,12 @@ public class Vision extends SubsystemBase {
     for (int id = 0; id <= maxCameraId; id++) {
       if (!cameraActiveFlags[id]) continue;
 
-      boolean isOffline = (currentTime - lastTimestamps[id]) > offlineTimeoutSeconds;
+      boolean isOffline = (currentTime - lastTimestamps[id]) > OFFLINE_TIMEOUT_SECONDS;
 
       // Update Alerts for drivers and log status
       alerts[id].set(isOffline);
       Logger.recordOutput(logPaths[id], !isOffline);
-      boolean seen = (currentTime - lastTimestamps[id]) <= offlineTimeoutSeconds;
+      boolean seen = (currentTime - lastTimestamps[id]) <= OFFLINE_TIMEOUT_SECONDS;
       Logger.recordOutput(seenPaths[id], seen);
     }
   }

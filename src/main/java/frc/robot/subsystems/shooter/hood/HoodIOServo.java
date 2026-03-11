@@ -22,9 +22,9 @@ import edu.wpi.first.wpilibj.Servo;
  * logging.
  */
 public class HoodIOServo implements HoodIO {
-  private final Servo servo = new Servo(hoodServoChannel);
-  private Distance currentLength = servoMinLength;
-  private Distance targetLength = servoMinLength;
+  private final Servo servo = new Servo(SERVO_CHANNEL);
+  private Distance currentLength = SERVO_MIN_LENGTH;
+  private Distance targetLength = SERVO_MIN_LENGTH;
   private double lastTimestamp = 0.0;
 
   /** Creates a new HoodIOServo and configures the servo PWM bounds. */
@@ -45,7 +45,7 @@ public class HoodIOServo implements HoodIO {
     lastTimestamp = currentTime;
 
     // Kinematic Model: Move currentLength toward targetLength based on max velocity
-    double maxStep = maxServoVelocity.in(MetersPerSecond) * dt;
+    double maxStep = MAX_SERVO_VELOCITY.in(MetersPerSecond) * dt;
     double delta = targetLength.minus(currentLength).in(Meters);
 
     // Clamp the step size to the maximum velocity
@@ -55,7 +55,7 @@ public class HoodIOServo implements HoodIO {
     // Log the current physical state of the actuator
     inputs.currentLength = currentLength;
     inputs.targetLength = targetLength;
-    inputs.atSetpoint = Math.abs(delta) < hoodLengthTolerance.in(Meters);
+    inputs.atSetpoint = Math.abs(delta) < HOOD_LENGTH_TOLERANCE.in(Meters);
   }
 
   /**
@@ -69,12 +69,12 @@ public class HoodIOServo implements HoodIO {
     Distance clampedLength =
         Meters.of(
             MathUtil.clamp(
-                length.in(Meters), servoMinLength.in(Meters), servoMaxLength.in(Meters)));
+                length.in(Meters), SERVO_MIN_LENGTH.in(Meters), SERVO_MAX_LENGTH.in(Meters)));
     this.targetLength = clampedLength;
 
     // Map the length to a 0.0 - 1.0 servo value
-    double min = servoMinLength.in(Inches);
-    double max = servoMaxLength.in(Inches);
+    double min = SERVO_MIN_LENGTH.in(Inches);
+    double max = SERVO_MAX_LENGTH.in(Inches);
     double val = (clampedLength.in(Inches) - min) / (max - min);
 
     // Set the servo position

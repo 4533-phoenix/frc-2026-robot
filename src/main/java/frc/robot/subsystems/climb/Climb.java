@@ -76,11 +76,11 @@ public class Climb extends SubsystemBase {
     switch (goal) {
       case UP -> {
         if (upTrigger.getAsBoolean()) io.setLiftVoltage(Volts.zero());
-        else io.setLiftVoltage(defaultVoltage);
+        else io.setLiftVoltage(DEFAULT_VOLTAGE);
       }
       case DOWN -> {
         if (downTrigger.getAsBoolean()) io.setLiftVoltage(Volts.zero());
-        else io.setLiftVoltage(defaultVoltage.unaryMinus());
+        else io.setLiftVoltage(DEFAULT_VOLTAGE.unaryMinus());
       }
       case STOP -> io.setLiftVoltage(Volts.zero());
     }

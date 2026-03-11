@@ -30,7 +30,7 @@ import java.util.function.DoubleSupplier;
  * specific update frequencies for status signals.
  */
 public class SpinnerIOSpark implements SpinnerIO {
-  private final SparkMax spark = new SparkMax(canId, MotorType.kBrushless);
+  private final SparkMax spark = new SparkMax(CAN_ID, MotorType.kBrushless);
   private final RelativeEncoder encoder;
 
   // Debouncers to prevent rapid flickering of connection status
@@ -43,13 +43,13 @@ public class SpinnerIOSpark implements SpinnerIO {
     var config = new SparkMaxConfig();
     config
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) motorCurrentLimit.in(Amps))
+        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
         .voltageCompensation(12.0)
         .inverted(true);
     config
         .encoder
-        .positionConversionFactor(internalEncoderPositionFactor)
-        .velocityConversionFactor(internalEncoderVelocityFactor);
+        .positionConversionFactor(INTERNAL_ENCODER_POSITION_FACTOR)
+        .velocityConversionFactor(INTERNAL_ENCODER_VELOCITY_FACTOR);
     config
         .signals
         .primaryEncoderPositionAlwaysOn(true)

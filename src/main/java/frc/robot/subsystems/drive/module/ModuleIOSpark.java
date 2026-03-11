@@ -91,7 +91,7 @@ public class ModuleIOSpark implements ModuleIO {
    *     back-right).
    */
   public ModuleIOSpark(int module) {
-    var config = moduleConfigs[module];
+    var config = MODULE_CONFIGS[module];
 
     zeroRotation = config.zeroOffset();
     driveSpark = new SparkMax(config.driveCanId(), MotorType.kBrushless);
@@ -114,28 +114,28 @@ public class ModuleIOSpark implements ModuleIO {
             .registerSignal(
                 () ->
                     turnAbsolutePositionSignal.refresh().getValueAsDouble()
-                        * turnEncoderPositionFactor);
+                        * TURN_ENCODER_POSITION_FACTOR);
 
     var driveConfig = new SparkMaxConfig();
     driveConfig
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) driveMotorCurrentLimit.in(Amps))
-        .secondaryCurrentLimit((int) driveMotorSecondaryCurrentLimit.in(Amps))
+        .smartCurrentLimit((int) DRIVE_MOTOR_CURRENT_LIMIT.in(Amps))
+        .secondaryCurrentLimit((int) DRIVE_MOTOR_SECONDARY_CURRENT_LIMIT.in(Amps))
         .voltageCompensation(12.0);
     driveConfig
         .encoder
-        .positionConversionFactor(driveEncoderPositionFactor)
-        .velocityConversionFactor(driveEncoderVelocityFactor)
+        .positionConversionFactor(DRIVE_ENCODER_POSITION_FACTOR)
+        .velocityConversionFactor(DRIVE_ENCODER_VELOCITY_FACTOR)
         .uvwMeasurementPeriod(10)
         .uvwAverageDepth(2);
     driveConfig
         .closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        .pid(driveKp, 0.0, driveKd);
+        .pid(DRIVE_KP, 0.0, DRIVE_KD);
     driveConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
-        .primaryEncoderPositionPeriodMs((int) (1000.0 / odometryFrequency.in(Hertz)))
+        .primaryEncoderPositionPeriodMs((int) (1000.0 / ODOMETRY_FREQUENCY.in(Hertz)))
         .primaryEncoderVelocityAlwaysOn(true)
         .primaryEncoderVelocityPeriodMs(20)
         .appliedOutputPeriodMs(50)
@@ -152,31 +152,31 @@ public class ModuleIOSpark implements ModuleIO {
     var turnEncoderConfig = new CANcoderConfiguration();
     turnEncoderConfig.MagnetSensor.MagnetOffset = 0.0;
     turnEncoderConfig.MagnetSensor.SensorDirection =
-        turnEncoderInverted
+        TURN_ENCODER_INVERTED
             ? SensorDirectionValue.Clockwise_Positive
             : SensorDirectionValue.CounterClockwise_Positive;
     turnEncoder.getConfigurator().apply(turnEncoderConfig);
-    turnAbsolutePositionSignal.setUpdateFrequency(odometryFrequency);
-    turnVelocitySignal.setUpdateFrequency(odometryLowFrequency);
+    turnAbsolutePositionSignal.setUpdateFrequency(ODOMETRY_FREQUENCY);
+    turnVelocitySignal.setUpdateFrequency(ODOMETRY_LOW_FREQUENCY);
 
     // Configure Turn Spark Max
     var turnConfig = new SparkMaxConfig();
     turnConfig
-        .inverted(turnInverted)
+        .inverted(TURN_INVERTED)
         .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) turnMotorCurrentLimit.in(Amps))
-        .secondaryCurrentLimit((int) turnMotorSecondaryCurrentLimit.in(Amps))
+        .smartCurrentLimit((int) TURN_MOTOR_CURRENT_LIMIT.in(Amps))
+        .secondaryCurrentLimit((int) TURN_MOTOR_SECONDARY_CURRENT_LIMIT.in(Amps))
         .voltageCompensation(12.0);
     turnConfig
         .encoder
-        .positionConversionFactor((2.0 * Math.PI) / turnMotorReduction)
-        .velocityConversionFactor(((2.0 * Math.PI) / 60.0) / turnMotorReduction);
+        .positionConversionFactor((2.0 * Math.PI) / TURN_MOTOR_REDUCTION)
+        .velocityConversionFactor(((2.0 * Math.PI) / 60.0) / TURN_MOTOR_REDUCTION);
     turnConfig
         .closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        .pid(turnKp, 0.0, turnKd)
+        .pid(TURN_KP, 0.0, TURN_KD)
         .positionWrappingEnabled(true)
-        .positionWrappingInputRange(turnPIDMinInput, turnPIDMaxInput);
+        .positionWrappingInputRange(TURN_PID_MIN_INPUT, TURN_PID_MAX_INPUT);
     turnConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
@@ -199,7 +199,7 @@ public class ModuleIOSpark implements ModuleIO {
           if (turnAbsolutePositionSignal.getStatus().isOK()) {
             Rotation2d currentRot =
                 new Rotation2d(
-                        turnAbsolutePositionSignal.getValueAsDouble() * turnEncoderPositionFactor)
+                        turnAbsolutePositionSignal.getValueAsDouble() * TURN_ENCODER_POSITION_FACTOR)
                     .minus(zeroRotation);
             return turnInternalEncoder.setPosition(currentRot.getRadians());
           } else {
@@ -243,19 +243,19 @@ public class ModuleIOSpark implements ModuleIO {
     if (turnEncoderOk) {
       // Calculate position relative to the zero offset
       currentTurnPosition =
-          new Rotation2d(turnAbsolutePositionSignal.getValueAsDouble() * turnEncoderPositionFactor)
+          new Rotation2d(turnAbsolutePositionSignal.getValueAsDouble() * TURN_ENCODER_POSITION_FACTOR)
               .minus(zeroRotation);
       inputs.turnVelocity =
-          RadiansPerSecond.of(turnVelocitySignal.getValueAsDouble() * turnEncoderVelocityFactor);
+          RadiansPerSecond.of(turnVelocitySignal.getValueAsDouble() * TURN_ENCODER_VELOCITY_FACTOR);
 
       // Sync internal encoder to CANcoder if still and error is high
       double internalPos = turnInternalEncoder.getPosition();
       double absolutePos = currentTurnPosition.getRadians();
       double turnError = Math.abs(MathUtil.angleModulus(internalPos - absolutePos));
       boolean isStill =
-          inputs.turnVelocity.abs(RadiansPerSecond) < velocityGate.in(RadiansPerSecond);
+          inputs.turnVelocity.abs(RadiansPerSecond) < VELOCITY_GATE.in(RadiansPerSecond);
 
-      if (isStill && turnError > errorThreshold.in(Radians)) {
+      if (isStill && turnError > ERROR_THRESHOLD.in(Radians)) {
         turnInternalEncoder.setPosition(absolutePos);
       }
     } else {
@@ -330,8 +330,8 @@ public class ModuleIOSpark implements ModuleIO {
   public void setDriveVelocity(AngularVelocity velocity) {
     // Calculate Feedforward voltage based on velocity
     double ffVolts =
-        driveKs * Math.signum(velocity.in(RadiansPerSecond))
-            + driveKv * velocity.in(RadiansPerSecond);
+        DRIVE_KS * Math.signum(velocity.in(RadiansPerSecond))
+            + DRIVE_KV * velocity.in(RadiansPerSecond);
     // Use closed-loop velocity control with feedforward
     driveController.setSetpoint(
         velocity.in(RadiansPerSecond),

@@ -9,6 +9,7 @@ package frc.robot.subsystems.vision;
 
 import static edu.wpi.first.units.Units.Centimeters;
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Meters;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -18,6 +19,7 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.measure.Distance;
 import java.util.Map;
 
 /**
@@ -42,7 +44,7 @@ public class VisionConstants {
    * Map of Camera ID to its configuration. IDs should match those used in the native vision
    * pipeline.
    */
-  public static final Map<Integer, CameraConfig> cameraMap =
+  public static final Map<Integer, CameraConfig> CAMERA_MAP =
       Map.of(
           0,
           new CameraConfig(
@@ -86,37 +88,37 @@ public class VisionConstants {
               10.0));
 
   /** Time in seconds before a camera is considered offline if no data is received. */
-  public static final double offlineTimeoutSeconds = 1.0;
+  public static final double OFFLINE_TIMEOUT_SECONDS = 1.0;
   /** Port for communication between Java and the native vision server. */
-  public static final int serverPort = 7001;
+  public static final int SERVER_PORT = 7001;
 
   /**
    * Standard deviations for vision measurements when the data is not valid or should be ignored.
    */
-  public static final Matrix<N3, N1> noStdDevs = VecBuilder.fill(0, 0, 0);
+  public static final Matrix<N3, N1> NO_STD_DEVS = VecBuilder.fill(0, 0, 0);
 
   /** Standard deviations for vision measurements when only one AprilTag is visible. */
-  public static final Matrix<N3, N1> singleTagStdDevs = VecBuilder.fill(2, 2, 4);
+  public static final Matrix<N3, N1> SINGLE_TAG_STD_DEVS = VecBuilder.fill(2, 2, 4);
 
   /**
    * Standard deviations for vision measurements when multiple AprilTags are visible (higher
    * confidence).
    */
-  public static final Matrix<N3, N1> multiTagStdDevs = VecBuilder.fill(0.5, 0.5, 1);
+  public static final Matrix<N3, N1> MULTI_TAG_STD_DEVS = VecBuilder.fill(0.5, 0.5, 1);
 
   /** Standard deviations for vision measurements used for individual tag tracking. */
-  public static final Matrix<N3, N1> tagStdDevs = VecBuilder.fill(0, 0, Double.MAX_VALUE);
+  public static final Matrix<N3, N1> TAG_STD_DEVS = VecBuilder.fill(0, 0, Double.MAX_VALUE);
 
   /** The maximum allowed ambiguity for a single-tag detection to be considered valid. */
-  public static final double ambiguityCutoff = 0.05;
+  public static final double AMBIGUITY_CUTOFF = 0.05;
 
   /** The maximum distance from the camera to a tag for a single-tag detection to be trusted. */
-  public static final double singleTagPoseCutoffMeters = 4.0;
+  public static final Distance SINGLE_TAG_POSE_CUTOFF = Meters.of(4.0);
 
   /** Sentinel value indicating that no ambiguity calculation is applicable (e.g., multi-tag). */
-  public static final int noAmbiguity = -100;
+  public static final int NO_AMBIGUITY = -100;
 
   /** The AprilTag field layout representing the positions of tags on the current year's field. */
-  public static final AprilTagFieldLayout fieldLayout =
+  public static final AprilTagFieldLayout FIELD_LAYOUT =
       AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
 }
