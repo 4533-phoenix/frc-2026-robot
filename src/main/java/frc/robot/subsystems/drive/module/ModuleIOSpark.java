@@ -199,7 +199,8 @@ public class ModuleIOSpark implements ModuleIO {
           if (turnAbsolutePositionSignal.getStatus().isOK()) {
             Rotation2d currentRot =
                 new Rotation2d(
-                        turnAbsolutePositionSignal.getValueAsDouble() * TURN_ENCODER_POSITION_FACTOR)
+                        turnAbsolutePositionSignal.getValueAsDouble()
+                            * TURN_ENCODER_POSITION_FACTOR)
                     .minus(zeroRotation);
             return turnInternalEncoder.setPosition(currentRot.getRadians());
           } else {
@@ -243,7 +244,8 @@ public class ModuleIOSpark implements ModuleIO {
     if (turnEncoderOk) {
       // Calculate position relative to the zero offset
       currentTurnPosition =
-          new Rotation2d(turnAbsolutePositionSignal.getValueAsDouble() * TURN_ENCODER_POSITION_FACTOR)
+          new Rotation2d(
+                  turnAbsolutePositionSignal.getValueAsDouble() * TURN_ENCODER_POSITION_FACTOR)
               .minus(zeroRotation);
       inputs.turnVelocity =
           RadiansPerSecond.of(turnVelocitySignal.getValueAsDouble() * TURN_ENCODER_VELOCITY_FACTOR);
