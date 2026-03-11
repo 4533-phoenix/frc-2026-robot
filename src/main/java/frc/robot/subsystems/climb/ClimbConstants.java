@@ -28,6 +28,7 @@ public final class ClimbConstants {
   // Motor and current limits
   /** Maximum current limit for the lift motor to prevent thermal damage. */
   public static final Current MOTOR_CURRENT_LIMIT = Amps.of(30);
+
   /** The gearbox model for the lift motor. */
   public static final DCMotor GEARBOX = ExtraMotors.getSnowBlower(1);
 
@@ -36,10 +37,13 @@ public final class ClimbConstants {
 
   /** Simulated upper travel limit. */
   public static final Distance UPPER_HEIGHT = Centimeters.of(22.0);
+
   /** Simulated lower travel limit. */
   public static final Distance LOWER_HEIGHT = Centimeters.of(0.0);
+
   /** The radius of the winch drum when empty. */
   public static final Distance DRUM_RADIUS = Centimeters.of(1.0);
+
   /** Gear reduction on the climber */
   public static final double REDUCTION = 2.0;
 }

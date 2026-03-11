@@ -27,17 +27,22 @@ public interface VisionIO {
 
     /** Array of robot poses estimated by the vision system. */
     public Pose2d[] visionPoses = new Pose2d[0];
+
     /** Array of timestamps (seconds) corresponding to when each pose was captured. */
     public double[] timestamps = new double[0];
+
     /** Array of standard deviations for the X axis estimate (meters). */
     public double[] stdDevX = new double[0];
+
     /** Array of standard deviations for the Y axis estimate (meters). */
     public double[] stdDevY = new double[0];
+
     /** Array of standard deviations for the rotation estimate (radians). */
     public double[] stdDevRot = new double[0];
 
     /** Array of IDs corresponding to the camera that produced each pose estimate. */
     public int[] cameraIds = new int[0];
+
     /** Array of the number of AprilTags used to calculate each pose estimate. */
     public int[] tagCounts = new int[0];
   }

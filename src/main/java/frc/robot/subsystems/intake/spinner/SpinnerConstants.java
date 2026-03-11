@@ -26,6 +26,7 @@ public final class SpinnerConstants {
   // ---------- Encoder Conversion Factors ----------
   /** Converts internal motor rotations to radians for the spinner. */
   public static final double INTERNAL_ENCODER_POSITION_FACTOR = (2.0 * Math.PI) / REDUCTION;
+
   /** Converts internal motor velocity (RPM) to radians per second for the spinner. */
   public static final double INTERNAL_ENCODER_VELOCITY_FACTOR =
       ((2.0 * Math.PI) / 60.0) / REDUCTION;
@@ -37,6 +38,7 @@ public final class SpinnerConstants {
   // ---------- Spinner Voltages ----------
   /** Voltage for pulling game pieces in. */
   public static final Voltage INTAKE_VOLTAGE = Volts.of(12.0);
+
   /** Voltage for pushing game pieces out. */
   public static final Voltage EXTAKE_VOLTAGE = Volts.of(-12.0);
 

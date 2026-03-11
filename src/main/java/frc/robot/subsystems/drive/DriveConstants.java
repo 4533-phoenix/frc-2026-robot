@@ -28,14 +28,19 @@ public class DriveConstants {
   // Physical constants
   /** The maximum achievable linear velocity of the robot in meters per second. */
   public static final LinearVelocity MAX_LINEAR_VELOCITY = MetersPerSecond.of(4.0);
+
   /** The frequency at which odometry calculations are updated. */
   public static final Frequency ODOMETRY_FREQUENCY = Hertz.of(100);
+
   /** Less critacal odometry frequency */
   public static final Frequency ODOMETRY_LOW_FREQUENCY = Hertz.of(50);
+
   /** The distance between the left and right wheels. */
   public static final Distance TRACK_WIDTH = Inches.of(20.5);
+
   /** The distance between the front and back wheels. */
   public static final Distance WHEEL_BASE = Inches.of(20.5);
+
   /** The radius of the circle defined by the module locations. */
   public static final Distance DRIVE_BASE_RADIUS =
       Meters.of(Math.hypot(TRACK_WIDTH.in(Meters) / 2.0, WHEEL_BASE.in(Meters) / 2.0));
@@ -115,28 +120,36 @@ public class DriveConstants {
   // Dual gyro parameters for drift compensation
   /** The gain for correcting drift based on the secondary gyro. */
   public static final double DRIFT_GAIN = 0.01;
+
   /** The threshold for angular error before correction is applied. */
   public static final Angle ERROR_THRESHOLD = Degrees.of(0.5);
+
   /** The maximum angular correction allowed per control frame. */
   public static final Angle MAX_CORRECTION_PER_FRAME = Degrees.of(0.1);
+
   /** The velocity threshold below which the robot is considered stationary. */
   public static final AngularVelocity VELOCITY_GATE = DegreesPerSecond.of(1.0);
 
   // Drive motor configuration
   /** Maximum current limit for the drive motors. */
   public static final Current DRIVE_MOTOR_CURRENT_LIMIT = Amps.of(40);
+
   /** Secondary current limit for the drive motors. */
   public static final Current DRIVE_MOTOR_SECONDARY_CURRENT_LIMIT = Amps.of(80);
+
   /** The radius of the drive wheels. */
   public static final Distance WHEEL_RADIUS = Inches.of(1.807);
+
   /** The gear reduction between the drive motor and the wheel. */
   public static final double DRIVE_MOTOR_REDUCTION = 6.75;
+
   /** The gearbox model for the drive motor. */
   public static final DCMotor DRIVE_GEARBOX = DCMotor.getNEO(1);
 
   // Drive encoder configuration
   /** Conversion factor for drive position from motor rotations to meters. */
   public static final double DRIVE_ENCODER_POSITION_FACTOR = 2 * Math.PI / DRIVE_MOTOR_REDUCTION;
+
   /** Conversion factor for drive velocity from motor RPM to meters per second. */
   public static final double DRIVE_ENCODER_VELOCITY_FACTOR =
       (2 * Math.PI) / 60.0 / DRIVE_MOTOR_REDUCTION;
@@ -144,40 +157,52 @@ public class DriveConstants {
   // Drive PID configuration
   /** Proportional gain for the drive motor PID controller. */
   public static final double DRIVE_KP = 0.015;
+
   /** Derivative gain for the drive motor PID controller. */
   public static final double DRIVE_KD = 0.0;
+
   /** Static friction feedforward gain for the drive motor. */
   public static final double DRIVE_KS = 0.0;
+
   /** Velocity feedforward gain for the drive motor. */
   public static final double DRIVE_KV = 0.1;
 
   // Turn motor configuration
   /** Whether the turn motor is inverted. */
   public static final boolean TURN_INVERTED = false;
+
   /** Maximum current limit for the turn motors. */
   public static final Current TURN_MOTOR_CURRENT_LIMIT = Amps.of(40);
+
   /** Secondary current limit for the turn motors. */
   public static final Current TURN_MOTOR_SECONDARY_CURRENT_LIMIT = Amps.of(80);
+
   /** The gear reduction between the turn motor and the module. */
   public static final double TURN_MOTOR_REDUCTION = 12.8;
+
   /** The gearbox model for the turn motor. */
   public static final DCMotor TURN_GEARBOX = DCMotor.getNEO(1);
 
   // Turn encoder configuration
   /** Whether the turn encoder is inverted. */
   public static final boolean TURN_ENCODER_INVERTED = false;
+
   /** Conversion factor for turn position from encoder rotations to radians. */
   public static final double TURN_ENCODER_POSITION_FACTOR = 2 * Math.PI; // Rotations -> Radians
+
   /** Conversion factor for turn velocity from encoder RPM to radians per second. */
   public static final double TURN_ENCODER_VELOCITY_FACTOR = 2 * Math.PI; // Rotations/Sec -> Rad/Sec
 
   // Turn PID configuration
   /** Proportional gain for the turn motor PID controller. */
   public static final double TURN_KP = 0.4;
+
   /** Derivative gain for the turn motor PID controller. */
   public static final double TURN_KD = 0.01;
+
   /** Minimum input range for turn PID (in radians). */
   public static final double TURN_PID_MIN_INPUT = -Math.PI;
+
   /** Maximum input range for turn PID (in radians). */
   public static final double TURN_PID_MAX_INPUT = Math.PI;
 
@@ -192,31 +217,41 @@ public class DriveConstants {
   // Angle PID configuration (for rotation-locked drive commands)
   /** Proportional gain for rotational PID control. */
   public static final double ANGLE_KP = 5.0;
+
   /** Derivative gain for rotational PID control. */
   public static final double ANGLE_KD = 0.0;
+
   /** Maximum angular velocity for the rotation motion profile in radians per second. */
   public static final double ANGLE_MAX_VELOCITY = 16.0;
+
   /** Maximum angular acceleration for the rotation motion profile in radians per second squared. */
   public static final double ANGLE_MAX_ACCELERATION = 40.0;
+
   // TODO: ^ Needs to be in wpilib units
 
   // Feedforward characterization configuration
   /** Delay in seconds before feedforward characterization starts ramping voltage. */
   public static final double FF_START_DELAY = 2.0;
+
   /** Voltage ramp rate in volts per second for feedforward characterization. */
   public static final double FF_RAMP_RATE = 0.1;
+
   // TODO: ^ Needs to be in wpilib units
 
   // Wheel radius characterization configuration
   /** Maximum angular velocity in radians per second for wheel radius characterization. */
   public static final double WHEEL_RADIUS_MAX_VELOCITY = 0.25;
+
   /** Angular velocity ramp rate in radians per second squared for wheel radius characterization. */
   public static final double WHEEL_RADIUS_RAMP_RATE = 0.05;
+
   // TODO: ^ Needs to be in wpilib units
   /** Moment of inertia of the robot in kilogram-square meters. */
   public static final MomentOfInertia ROBOT_MOI = KilogramSquareMeters.of(6.883);
+
   /** Coefficient of friction for the wheels. */
   public static final double WHEEL_COF = 1.1;
+
   /** PathPlanner configuration object. */
   public static final RobotConfig PP_CONFIG =
       new RobotConfig(

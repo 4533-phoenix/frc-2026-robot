@@ -28,12 +28,16 @@ public interface ArmIO {
     // ---------- Arm Motor Inputs ----------
     /** Whether the arm motor controller is connected. */
     public boolean connected = false;
+
     /** The current absolute position of the intake arm. */
     public Angle position = Radians.zero();
+
     /** The current angular velocity of the intake arm. */
     public AngularVelocity velocity = RadiansPerSecond.zero();
+
     /** The voltage currently being applied to the arm motor. */
     public Voltage appliedVoltage = Volts.zero();
+
     /** The current drawn by the arm motor. */
     public Current appliedCurrent = Amps.zero();
   }

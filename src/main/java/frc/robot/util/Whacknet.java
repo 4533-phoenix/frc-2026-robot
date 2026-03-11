@@ -24,8 +24,10 @@ import java.util.function.ObjIntConsumer;
  */
 public class Whacknet {
   private static Whacknet instance;
+
   /** Maximum number of vision packets queued in native memory. */
   private static final int MAX_QUEUE_SIZE = 64;
+
   /** The size in bytes of the C struct representing a vision observation. */
   public static final int STRUCT_SIZE = 64;
 

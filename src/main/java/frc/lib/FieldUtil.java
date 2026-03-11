@@ -28,8 +28,10 @@ public class FieldUtil {
   /** The actual field */
   private static final AprilTagFieldLayout APRILTAG_FIELD =
       AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
+
   /** Total length of the field. */
   public static final Distance FIELD_LENGTH = Meters.of(APRILTAG_FIELD.getFieldLength());
+
   /** Total width of the field. */
   public static final Distance FIELD_WIDTH = Meters.of(APRILTAG_FIELD.getFieldWidth());
 

@@ -28,24 +28,32 @@ public interface ModuleIO {
     // Drive Motor Inputs
     /** Whether the drive motor controller is currently connected. */
     public boolean driveConnected = false;
+
     /** The current position of the drive motor in radians. */
     public Angle drivePosition = Radians.zero();
+
     /** The current velocity of the drive motor in radians per second. */
     public AngularVelocity driveVelocity = RadiansPerSecond.zero();
+
     /** The voltage currently being applied to the drive motor. */
     public Voltage driveAppliedVoltage = Volts.zero();
+
     /** The current being drawn by the drive motor. */
     public Current driveCurrent = Amps.zero();
 
     // Turn Motor Inputs
     /** Whether the turn motor controller is currently connected. */
     public boolean turnConnected = false;
+
     /** The current position of the turn motor in radians. */
     public Angle turnPosition = Radians.zero();
+
     /** The current velocity of the turn motor in radians per second. */
     public AngularVelocity turnVelocity = RadiansPerSecond.zero();
+
     /** The voltage currently being applied to the turn motor. */
     public Voltage turnAppliedVoltage = Volts.zero();
+
     /** The current being drawn by the turn motor. */
     public Current turnCurrent = Amps.zero();
 
@@ -60,12 +68,14 @@ public interface ModuleIO {
      * <p>Measured in seconds via {@link edu.wpi.first.wpilibj.RobotController#getFPGATime()}.
      */
     public double[] odometryTimestamps = new double[] {};
+
     /**
      * Drive positions corresponding to the timestamps in {@link #odometryTimestamps}.
      *
      * <p>Measured in radians.
      */
     public double[] odometryDrivePositionsRad = new double[] {};
+
     /**
      * Turn positions corresponding to the timestamps in {@link #odometryTimestamps}.
      *

@@ -89,6 +89,7 @@ public class VisionConstants {
 
   /** Time in seconds before a camera is considered offline if no data is received. */
   public static final double OFFLINE_TIMEOUT_SECONDS = 1.0;
+
   /** Port for communication between Java and the native vision server. */
   public static final int SERVER_PORT = 7001;
 

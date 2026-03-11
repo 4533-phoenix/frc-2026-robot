@@ -3,7 +3,7 @@ plugins {
     id "c"
     id "edu.wpi.first.GradleRIO" version "2026.2.1"
     id "com.peterabeles.gversion" version "1.10"
-    id "com.diffplug.spotless" version "6.12.0"
+    id "com.diffplug.spotless" version "8.3.0"
 }
 
 java {
@@ -197,7 +197,11 @@ wpi.sim.addDriverstation()
 // in order to make them all available at runtime. Also adding the manifest so WPILib
 // knows where to look for our Robot Class.
 jar {
-    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    from {
+        configurations.runtimeClasspath.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
     from sourceSets.main.allSource
     manifest edu.wpi.first.gradlerio.GradleRIOPlugin.javaManifest(ROBOT_MAIN_CLASS)
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
@@ -260,6 +264,16 @@ createVersionFile.dependsOn(eventDeploy)
 // Spotless formatting
 project.compileJava.dependsOn(spotlessApply)
 spotless {
+    cpp {
+        target project.fileTree(projectDir) {
+            include "src/main/native/c/**/*.c"
+            include "src/main/native/include/**/*.h"
+            exclude "**/build/**"
+        }
+        eclipseCdt("11.3")
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
     java {
         target fileTree(".") {
             include "**/*.java"
@@ -277,7 +291,7 @@ spotless {
             exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
         }
         greclipse()
-        indentWithSpaces(4)
+        leadingTabsToSpaces(4)
         trimTrailingWhitespace()
         endWithNewline()
     }
@@ -294,7 +308,7 @@ spotless {
             exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
         }
         trimTrailingWhitespace()
-        indentWithSpaces(2)
+        leadingTabsToSpaces(2)
         endWithNewline()
     }
 }

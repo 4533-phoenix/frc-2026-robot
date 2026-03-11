@@ -25,8 +25,10 @@ public interface HoodIO {
   public static class HoodIOInputs {
     /** The current physical length of the hood actuator. */
     public Distance currentLength = Inches.of(0);
+
     /** The target length the hood actuator is moving towards. */
     public Distance targetLength = Inches.of(0);
+
     /** Whether the hood has reached its target setpoint. */
     public boolean atSetpoint = false;
   }

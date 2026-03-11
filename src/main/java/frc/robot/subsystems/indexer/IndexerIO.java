@@ -26,8 +26,10 @@ public interface IndexerIO {
   public static class IndexerIOInputs {
     /** Whether the indexer motor controller is currently connected and communicating. */
     public boolean connected = false;
+
     /** The voltage currently being applied to the indexer motor. */
     public Voltage appliedVoltage = Volts.zero();
+
     /** The current being drawn by the indexer motor. */
     public Current appliedCurrent = Amps.zero();
   }

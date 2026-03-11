@@ -2,15 +2,15 @@
 #define _JAVASOFT_JNI_MD_H_
 
 #ifndef JNIEXPORT
-  #define JNIEXPORT __attribute__((visibility("default")))
+#define JNIEXPORT __attribute__((visibility("default")))
 #endif
 
 #ifndef JNIIMPORT
-  #define JNIIMPORT
+#define JNIIMPORT
 #endif
 
 #ifndef JNICALL
-  #define JNICALL
+#define JNICALL
 #endif
 
 typedef int jint;
