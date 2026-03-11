@@ -24,8 +24,8 @@ import frc.lib.WritableTrigger;
 import frc.robot.commands.DriveCommands;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.climb.ClimbIO;
-import frc.robot.subsystems.climb.ClimbIOSpark;
 import frc.robot.subsystems.climb.ClimbIOSim;
+import frc.robot.subsystems.climb.ClimbIOSpark;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveConstants;
 import frc.robot.subsystems.drive.gyro.GyroIO;
@@ -260,9 +260,9 @@ public class RobotContainer {
     // When right trigger held, shooter is ready, and robot is aimed, run the indexer
     driverController
         .rightTrigger()
-        .and(driverController.leftTrigger())
-        .and(isRobotRotated())
-        .and(shooter.isShooterReady())
+        // .and(driverController.leftTrigger())
+        // .and(isRobotRotated())
+        // .and(shooter.isShooterReady())
         .whileTrue(indexer.run());
 
     new Trigger(
@@ -351,6 +351,10 @@ public class RobotContainer {
       } else {
         currentAimingResult = Aiming.noTarget;
       }
+
+      // create a dummy aim result and shooter state at 200 rps and 70 hood angle
+      // currentAimingResult = new AimingResult(Rotation2d.kZero, Meters.of(0), true);
+      // shooter.setShooterState(new ShooterState(RadiansPerSecond.of(600), Degrees.of(45)));
     } else {
       currentAimingResult = Aiming.noTarget;
     }

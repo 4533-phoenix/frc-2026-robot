@@ -31,9 +31,9 @@ import edu.wpi.first.wpilibj.simulation.RoboRioSim;
  * Simulation implementation of {@link FlywheelIO}.
  *
  * <p>This class uses a {@link SparkFlex} with its {@link SparkFlexSim} wrapper to simulate the
- * flywheel motor controller, backed by a {@link DCMotorSim} physics model. The SparkFlex's
- * built-in MAXMotion velocity control is used, matching the real robot's {@link
- * FlywheelIOSparkFlex}. Configuration is identical to the real implementation.
+ * flywheel motor controller, backed by a {@link DCMotorSim} physics model. The SparkFlex's built-in
+ * MAXMotion velocity control is used, matching the real robot's {@link FlywheelIOSparkFlex}.
+ * Configuration is identical to the real implementation.
  */
 public class FlywheelIOSim implements FlywheelIO {
   private final SparkFlex spark;
@@ -95,8 +95,7 @@ public class FlywheelIOSim implements FlywheelIO {
     // Get the motor voltage output and feed it into the physics model
     physicsSim.setInputVoltage(sparkSim.getAppliedOutput() * RoboRioSim.getVInVoltage());
     physicsSim.update(0.02);
-    sparkSim.iterate(
-        physicsSim.getAngularVelocityRadPerSec(), RoboRioSim.getVInVoltage(), 0.02);
+    sparkSim.iterate(physicsSim.getAngularVelocityRadPerSec(), RoboRioSim.getVInVoltage(), 0.02);
 
     // Populate inputs from simulated data
     inputs.connected = true;

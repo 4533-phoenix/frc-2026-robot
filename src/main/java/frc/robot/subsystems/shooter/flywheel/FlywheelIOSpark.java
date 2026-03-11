@@ -48,7 +48,7 @@ public class FlywheelIOSpark implements FlywheelIO {
   /** Creates a new FlywheelIOSpark and configures the motor controller. */
   public FlywheelIOSpark() {
     var config = new SparkFlexConfig();
-    // Configure motor direction and neutral behavior (Coast for flywheels)
+    // Configure motor direction and neutral behavior
     config
         .idleMode(IdleMode.kCoast)
         .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
@@ -104,20 +104,14 @@ public class FlywheelIOSpark implements FlywheelIO {
     boolean sparkOk = true;
 
     sparkOk &=
-        ifOk(
-            spark,
-            encoder::getVelocity,
-            (value) -> inputs.velocity = RadiansPerSecond.of(value));
+        ifOk(spark, encoder::getVelocity, (value) -> inputs.velocity = RadiansPerSecond.of(value));
     sparkOk &=
         ifOk(
             spark,
             new DoubleSupplier[] {spark::getAppliedOutput, spark::getBusVoltage},
             (values) -> inputs.appliedVoltage = Volts.of(values[0] * values[1]));
     sparkOk &=
-        ifOk(
-            spark,
-            spark::getOutputCurrent,
-            (value) -> inputs.appliedCurrent = Amps.of(value));
+        ifOk(spark, spark::getOutputCurrent, (value) -> inputs.appliedCurrent = Amps.of(value));
 
     inputs.connected = connectedDebounce.calculate(sparkOk);
   }

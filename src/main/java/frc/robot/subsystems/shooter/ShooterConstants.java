@@ -86,7 +86,7 @@ public final class ShooterConstants {
 
   // ---------- PID constants for flywheel velocity control ----------
   /** Proportional gain for flywheel velocity control. */
-  public static final double FLYWHEEL_KP = 0.08;
+  public static final double FLYWHEEL_KP = 0.0;
 
   /** Integral gain for flywheel velocity control. */
   public static final double FLYWHEEL_KI = 0.0;
@@ -95,10 +95,10 @@ public final class ShooterConstants {
   public static final double FLYWHEEL_KD = 0.0;
 
   /** Static friction feedforward gain for the flywheel. */
-  public static final double FLYWHEEL_KS = 0.2;
+  public static final double FLYWHEEL_KS = 0.15;
 
   /** Velocity feedforward gain for the flywheel. */
-  public static final double FLYWHEEL_KV = 0.018;
+  public static final double FLYWHEEL_KV = 0.017;
 
   /** Acceleration feedforward gain for the flywheel. */
   public static final double FLYWHEEL_KA = 0.006;
