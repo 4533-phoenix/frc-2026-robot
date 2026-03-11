@@ -31,7 +31,7 @@ import java.util.function.DoubleSupplier;
  * directly to the controller, and implements software limits to prevent driving past the mechanism
  * limits.
  */
-public class ClimbIOReal implements ClimbIO {
+public class ClimbIOSpark implements ClimbIO {
   private final SparkMax spark = new SparkMax(CAN_ID, MotorType.kBrushed);
 
   // References to the limit switches directly connected to the Spark Max
@@ -42,8 +42,8 @@ public class ClimbIOReal implements ClimbIO {
   private final Debouncer liftConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
-  /** Creates a new ClimbIOReal and configures the Spark Max. */
-  public ClimbIOReal() {
+  /** Creates a new ClimbIOSpark and configures the Spark Max. */
+  public ClimbIOSpark() {
     var liftCfg = new SparkMaxConfig();
     liftCfg
         .idleMode(IdleMode.kBrake)

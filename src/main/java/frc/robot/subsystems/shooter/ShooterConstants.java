@@ -54,17 +54,17 @@ public final class ShooterConstants {
   public static final Distance HOOD_LENGTH_TOLERANCE = Meters.of(0.005);
 
   // ---------- Flywheel constants ----------
-  /** Motor model for the flywheel. */
-  public static final DCMotor GEARBOX = DCMotor.getFalcon500(1);
+  /** Motor model for the flywheel (Neo Vortex driven by SparkFlex). */
+  public static final DCMotor GEARBOX = DCMotor.getNeoVortex(1);
 
   /** Gear reduction ratio for the flywheel (motor to wheel). */
   public static final double REDUCTION = 1.0;
 
   /** Moment of inertia of the flywheel assembly. */
-  public static final MomentOfInertia MOI = KilogramSquareMeters.of(0.0042);
+  public static final MomentOfInertia MOI = KilogramSquareMeters.of(0.0021);
 
   /** Radius of the flywheel driving wheel. */
-  public static final Distance WHEEL_RADIUS = Inches.of(2.05);
+  public static final Distance WHEEL_RADIUS = Inches.of(2.0);
 
   /** Allowed velocity error before the shooter is considered "ready". */
   public static final AngularVelocity ANGULAR_TOLERANCE = RadiansPerSecond.of(15.0);
@@ -72,24 +72,36 @@ public final class ShooterConstants {
   /** Maximum current limit for the flywheel motor. */
   public static final Current MOTOR_CURRENT_LIMIT = Amps.of(60.0);
 
+  /** Maximum acceleration for the flywheel MAXMotion velocity profile. */
+  public static final AngularAcceleration FLYWHEEL_MAX_ACCELERATION =
+      RadiansPerSecondPerSecond.of(400.0);
+
+  // ---------- Encoder conversion factors ----------
+  /** Converts motor rotations to mechanism radians. */
+  public static final double FLYWHEEL_ENCODER_POSITION_FACTOR = (2.0 * Math.PI) / REDUCTION;
+
+  /** Converts motor RPM to mechanism rad/s. */
+  public static final double FLYWHEEL_ENCODER_VELOCITY_FACTOR =
+      ((2.0 * Math.PI) / 60.0) / REDUCTION;
+
   // ---------- PID constants for flywheel velocity control ----------
   /** Proportional gain for flywheel velocity control. */
-  public static final double flywheelKp = 0.5;
+  public static final double FLYWHEEL_KP = 0.08;
 
   /** Integral gain for flywheel velocity control. */
-  public static final double flywheelKi = 0.0;
+  public static final double FLYWHEEL_KI = 0.0;
 
   /** Derivative gain for flywheel velocity control. */
-  public static final double flywheelKd = 0.0;
+  public static final double FLYWHEEL_KD = 0.0;
 
   /** Static friction feedforward gain for the flywheel. */
-  public static final double flywheelKs = 0.2;
+  public static final double FLYWHEEL_KS = 0.2;
 
   /** Velocity feedforward gain for the flywheel. */
-  public static final double flywheelKv = 0.113;
+  public static final double FLYWHEEL_KV = 0.018;
 
   /** Acceleration feedforward gain for the flywheel. */
-  public static final double flywheelKa = 0.04;
+  public static final double FLYWHEEL_KA = 0.006;
 
   // ---------- Shooter state constants ----------
   /** Preset shooter state for lobbing game pieces into the coral station. */

@@ -24,7 +24,7 @@ import frc.lib.WritableTrigger;
 import frc.robot.commands.DriveCommands;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.climb.ClimbIO;
-import frc.robot.subsystems.climb.ClimbIOReal;
+import frc.robot.subsystems.climb.ClimbIOSpark;
 import frc.robot.subsystems.climb.ClimbIOSim;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveConstants;
@@ -50,7 +50,7 @@ import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.shooter.ShooterKinematics;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
-import frc.robot.subsystems.shooter.flywheel.FlywheelIOTalonFX;
+import frc.robot.subsystems.shooter.flywheel.FlywheelIOSpark;
 import frc.robot.subsystems.shooter.hood.HoodIO;
 import frc.robot.subsystems.shooter.hood.HoodIOServo;
 import frc.robot.subsystems.shooter.hood.HoodIOSim;
@@ -113,10 +113,10 @@ public class RobotContainer {
                 new ModuleIOSpark(1),
                 new ModuleIOSpark(2),
                 new ModuleIOSpark(3));
-        climb = new Climb(new ClimbIOReal());
+        climb = new Climb(new ClimbIOSpark());
         arm = new Arm(new ArmIOSpark());
         spinner = new Spinner(new SpinnerIOSpark());
-        shooter = new Shooter(new FlywheelIOTalonFX(), new HoodIOServo());
+        shooter = new Shooter(new FlywheelIOSpark(), new HoodIOServo());
         indexer = new Indexer(new IndexerIOSpark());
         vision = new Vision(new VisionIOPhoton(), drive);
         break;

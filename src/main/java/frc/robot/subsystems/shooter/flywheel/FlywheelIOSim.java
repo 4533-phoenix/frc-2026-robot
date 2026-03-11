@@ -10,103 +10,120 @@ package frc.robot.subsystems.shooter.flywheel;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
-import com.ctre.phoenix6.BaseStatusSignal;
-import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.VelocityVoltage;
-import com.ctre.phoenix6.controls.VoltageOut;
-import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.ctre.phoenix6.sim.TalonFXSimState;
+import com.revrobotics.PersistMode;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.ResetMode;
+import com.revrobotics.sim.SparkFlexSim;
+import com.revrobotics.spark.ClosedLoopSlot;
+import com.revrobotics.spark.FeedbackSensor;
+import com.revrobotics.spark.SparkBase.ControlType;
+import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkFlexConfig;
 import edu.wpi.first.math.system.plant.LinearSystemId;
-import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 
 /**
  * Simulation implementation of {@link FlywheelIO}.
  *
- * <p>This class uses a real {@link TalonFX} device with its {@link TalonFXSimState} to simulate the
- * flywheel motor controller, backed by a {@link DCMotorSim} physics model. The TalonFX's built-in
- * closed-loop PID is used for velocity control, matching the real robot's {@link
- * FlywheelIOTalonFX}.
+ * <p>This class uses a {@link SparkFlex} with its {@link SparkFlexSim} wrapper to simulate the
+ * flywheel motor controller, backed by a {@link DCMotorSim} physics model. The SparkFlex's
+ * built-in MAXMotion velocity control is used, matching the real robot's {@link
+ * FlywheelIOSparkFlex}. Configuration is identical to the real implementation.
  */
 public class FlywheelIOSim implements FlywheelIO {
-  private final TalonFX talon = new TalonFX(CAN_ID);
-  private final TalonFXSimState talonSim = talon.getSimState();
-
-  // Status signals for retrieving data
-  private final StatusSignal<Angle> position = talon.getPosition();
-  private final StatusSignal<AngularVelocity> velocity = talon.getVelocity();
-  private final StatusSignal<Voltage> appliedVolts = talon.getMotorVoltage();
-  private final StatusSignal<Current> current = talon.getStatorCurrent();
+  private final SparkFlex spark;
+  private final SparkFlexSim sparkSim;
+  private final RelativeEncoder encoder;
+  private final SparkClosedLoopController controller;
 
   // Physics model for the flywheel
-  private final DCMotorSim physicsSim =
-      new DCMotorSim(
-          LinearSystemId.createDCMotorSystem(GEARBOX, MOI.in(KilogramSquareMeters), REDUCTION),
-          GEARBOX);
+  private final DCMotorSim physicsSim;
 
-  /** Creates a new FlywheelIOSim and configures the TalonFX (identical to FlywheelIOTalonFX). */
+  // Cache the last sent velocity to avoid redundant CAN writes
+  private AngularVelocity sentVelocity = null;
+
+  /**
+   * Creates a new FlywheelIOSim and configures the SparkFlex identically to {@link
+   * FlywheelIOSparkFlex}.
+   */
   public FlywheelIOSim() {
-    var config = new TalonFXConfiguration();
-    config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-    config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+    spark = new SparkFlex(CAN_ID, MotorType.kBrushless);
+    sparkSim = new SparkFlexSim(spark, GEARBOX);
+    encoder = spark.getEncoder();
+    controller = spark.getClosedLoopController();
 
-    config.CurrentLimits.StatorCurrentLimit = MOTOR_CURRENT_LIMIT.in(Amps);
-    config.CurrentLimits.StatorCurrentLimitEnable = true;
+    physicsSim =
+        new DCMotorSim(
+            LinearSystemId.createDCMotorSystem(GEARBOX, MOI.in(KilogramSquareMeters), REDUCTION),
+            GEARBOX);
 
-    config.Slot0.kP = flywheelKp;
-    config.Slot0.kI = flywheelKi;
-    config.Slot0.kD = flywheelKd;
-    config.Slot0.kS = flywheelKs;
-    config.Slot0.kV = flywheelKv;
-    config.Slot0.kA = flywheelKa;
-    talon.getConfigurator().apply(config);
-
-    BaseStatusSignal.setUpdateFrequencyForAll(50.0, position, velocity, appliedVolts, current);
-    talon.optimizeBusUtilization();
+    // Configuration mirrors FlywheelIOSparkFlex exactly
+    var config = new SparkFlexConfig();
+    config
+        .idleMode(IdleMode.kCoast)
+        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
+        .voltageCompensation(12.0);
+    config
+        .encoder
+        .positionConversionFactor(FLYWHEEL_ENCODER_POSITION_FACTOR)
+        .velocityConversionFactor(FLYWHEEL_ENCODER_VELOCITY_FACTOR);
+    config
+        .closedLoop
+        .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+        .pid(FLYWHEEL_KP, FLYWHEEL_KI, FLYWHEEL_KD);
+    config.closedLoop.feedForward.kS(FLYWHEEL_KS).kV(FLYWHEEL_KV).kA(FLYWHEEL_KA);
+    config
+        .closedLoop
+        .maxMotion
+        .maxAcceleration(FLYWHEEL_MAX_ACCELERATION.in(RadiansPerSecondPerSecond))
+        .allowedProfileError(ANGULAR_TOLERANCE.in(RadiansPerSecond));
+    spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
   /**
-   * Updates the physics simulation and populates inputs from the TalonFX sim state.
+   * Updates the physics simulation and populates inputs from the SparkFlex sim state.
    *
    * @param inputs The inputs object to update.
    */
   @Override
   public void updateInputs(FlywheelIOInputs inputs) {
-    // Set supply voltage for the sim
-    talonSim.setSupplyVoltage(RobotController.getBatteryVoltage());
-
     // Get the motor voltage output and feed it into the physics model
-    physicsSim.setInputVoltage(talonSim.getMotorVoltageMeasure().in(Volts));
+    physicsSim.setInputVoltage(sparkSim.getAppliedOutput() * RoboRioSim.getVInVoltage());
     physicsSim.update(0.02);
+    sparkSim.iterate(
+        physicsSim.getAngularVelocityRadPerSec(), RoboRioSim.getVInVoltage(), 0.02);
 
-    // Feed physics results back into TalonFX sim state
-    // DCMotorSim returns mechanism position/velocity (after gear ratio),
-    // but TalonFX expects raw rotor position/velocity (before gear ratio)
-    talonSim.setRawRotorPosition(physicsSim.getAngularPosition().times(REDUCTION));
-    talonSim.setRotorVelocity(physicsSim.getAngularVelocity().times(REDUCTION));
-
-    // Refresh status signals and populate inputs
-    BaseStatusSignal.refreshAll(position, velocity, appliedVolts, current);
-    inputs.connected = BaseStatusSignal.isAllGood(position, velocity, appliedVolts, current);
-    inputs.velocity = velocity.getValue();
-    inputs.appliedVoltage = appliedVolts.getValue();
-    inputs.appliedCurrent = current.getValue();
+    // Populate inputs from simulated data
+    inputs.connected = true;
+    inputs.velocity = RadiansPerSecond.of(encoder.getVelocity());
+    inputs.appliedVoltage = Volts.of(spark.getAppliedOutput() * spark.getBusVoltage());
+    inputs.appliedCurrent = Amps.of(spark.getOutputCurrent());
   }
 
+  /**
+   * Commands the SparkFlex to spin at a specific angular velocity using MAXMotion velocity control.
+   *
+   * @param velocity The target angular velocity.
+   */
   @Override
   public void setAngularVelocity(AngularVelocity velocity) {
-    talon.setControl(new VelocityVoltage(velocity.in(RotationsPerSecond)));
+    if (sentVelocity != null && velocity.isEquivalent(sentVelocity)) return;
+    controller.setSetpoint(
+        velocity.in(RadiansPerSecond),
+        ControlType.kMAXMotionVelocityControl,
+        ClosedLoopSlot.kSlot0);
+    sentVelocity = velocity;
   }
 
+  /** Stops the flywheel motor by setting voltage output to zero. */
   @Override
   public void stop() {
-    talon.setControl(new VoltageOut(0));
+    spark.setVoltage(0.0);
+    sentVelocity = null;
   }
 }
