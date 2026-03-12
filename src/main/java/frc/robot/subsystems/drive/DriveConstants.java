@@ -50,6 +50,7 @@ public class DriveConstants {
   /**
    * Represents the hardware configuration for a single swerve module.
    *
+   * @param name A descriptive name for the module.
    * @param driveCanId The CAN ID of the drive motor controller.
    * @param turnCanId The CAN ID of the turn motor controller.
    * @param encoderCanId The CAN ID of the absolute CANcoder.
@@ -57,6 +58,7 @@ public class DriveConstants {
    * @param translation The physical location of the module relative to the center of the robot.
    */
   public record SwerveModuleConfig(
+      String name,
       int driveCanId,
       int turnCanId,
       int encoderCanId,
@@ -71,6 +73,7 @@ public class DriveConstants {
   public static final SwerveModuleConfig[] MODULE_CONFIGS = {
     // Front Left (Module 0)
     new SwerveModuleConfig(
+        "Front Left",
         2,
         3,
         4,
@@ -78,6 +81,7 @@ public class DriveConstants {
         new Translation2d(TRACK_WIDTH.in(Meters) / 2.0, WHEEL_BASE.in(Meters) / 2.0)),
     // Front Right (Module 1)
     new SwerveModuleConfig(
+        "Front Right",
         5,
         6,
         7,
@@ -85,6 +89,7 @@ public class DriveConstants {
         new Translation2d(TRACK_WIDTH.in(Meters) / 2.0, -WHEEL_BASE.in(Meters) / 2.0)),
     // Back Left (Module 2)
     new SwerveModuleConfig(
+        "Back Left",
         8,
         9,
         10,
@@ -92,6 +97,7 @@ public class DriveConstants {
         new Translation2d(-TRACK_WIDTH.in(Meters) / 2.0, WHEEL_BASE.in(Meters) / 2.0)),
     // Back Right (Module 3)
     new SwerveModuleConfig(
+        "Back Right",
         11,
         12,
         13,
@@ -137,7 +143,7 @@ public class DriveConstants {
   public static final Current DRIVE_MOTOR_SECONDARY_CURRENT_LIMIT = Amps.of(80);
 
   /** The radius of the drive wheels. */
-  public static final Distance WHEEL_RADIUS = Inches.of(1.807);
+  public static final Distance WHEEL_RADIUS = Inches.of(2.654);
 
   /** The gear reduction between the drive motor and the wheel. */
   public static final double DRIVE_MOTOR_REDUCTION = 6.75;

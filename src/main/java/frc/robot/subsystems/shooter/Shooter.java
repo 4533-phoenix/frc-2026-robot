@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.lib.SparkUtil;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOInputsAutoLogged;
 import frc.robot.subsystems.shooter.hood.HoodIO;
@@ -67,7 +68,9 @@ public class Shooter extends SubsystemBase {
   private final Trigger readyToShootTrigger;
 
   private final Alert flywheelDisconnectedAlert =
-      new Alert("Flywheel IO disconnected", AlertType.kWarning);
+      new Alert("Flywheel motor disconnected", AlertType.kError);
+  private final Alert flywheelFaultAlert =
+      new Alert("Flywheel motor fault detected", AlertType.kError);
 
   /**
    * Creates a new Shooter subsystem.
@@ -106,6 +109,13 @@ public class Shooter extends SubsystemBase {
 
     hoodIO.updateInputs(hoodInputs);
     Logger.processInputs("Shooter/Hood", hoodInputs);
+
+    // Check for flywheel faults
+    flywheelFaultAlert.set(!flywheelInputs.healthy);
+    if (!flywheelInputs.healthy) {
+      flywheelFaultAlert.setText(
+          SparkUtil.getArrayString("Flywheel Motor Faults: ", flywheelInputs.faults));
+    }
 
     switch (goal) {
       case STOP -> {

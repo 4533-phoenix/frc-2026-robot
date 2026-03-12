@@ -24,6 +24,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.AngularVelocity;
+import frc.lib.SparkUtil;
 import java.util.function.DoubleSupplier;
 
 /**
@@ -103,6 +104,19 @@ public class FlywheelIOSpark implements FlywheelIO {
         ifOk(spark, spark::getOutputCurrent, (value) -> inputs.appliedCurrent = Amps.of(value));
 
     inputs.connected = connectedDebounce.calculate(sparkOk);
+
+    // Health
+    inputs.healthy = !spark.hasActiveFault();
+    if (spark.hasActiveFault()) {
+      inputs.faults = SparkUtil.getFaultStrings(spark.getFaults());
+    } else if (inputs.faults.length > 0) {
+      inputs.faults = new String[0];
+    }
+    if (spark.hasActiveWarning()) {
+      inputs.warnings = SparkUtil.getWarningStrings(spark.getWarnings());
+    } else if (inputs.warnings.length > 0) {
+      inputs.warnings = new String[0];
+    }
   }
 
   /**

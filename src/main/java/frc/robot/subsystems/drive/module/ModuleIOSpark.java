@@ -34,6 +34,7 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
+import frc.lib.SparkUtil;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.SparkOdometryThread;
 import java.util.Queue;
@@ -126,6 +127,7 @@ public class ModuleIOSpark implements ModuleIO {
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(DRIVE_KP, 0.0, DRIVE_KD);
     driveConfig.closedLoop.feedForward.kS(DRIVE_KS).kV(DRIVE_KV);
+    driveConfig.closedLoop.maxMotion.maxAcceleration(200.0).allowedProfileError(0.0);
     driveConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
@@ -264,6 +266,32 @@ public class ModuleIOSpark implements ModuleIO {
 
     inputs.turnConnected = turnConnectedDebounce.calculate(turnSparkOk);
     inputs.turnEncoderConnected = turnEncoderConnectedDebounce.calculate(turnEncoderOk);
+
+    // Drive Health
+    inputs.driveHealthy = !driveSpark.hasActiveFault();
+    if (driveSpark.hasActiveFault()) {
+      inputs.driveFaults = SparkUtil.getFaultStrings(driveSpark.getFaults());
+    } else if (inputs.driveFaults.length != 0) {
+      inputs.driveFaults = new String[0];
+    }
+    if (driveSpark.hasActiveWarning()) {
+      inputs.driveWarnings = SparkUtil.getWarningStrings(driveSpark.getWarnings());
+    } else if (inputs.driveWarnings.length != 0) {
+      inputs.driveWarnings = new String[0];
+    }
+
+    // Turn Health
+    inputs.turnHealthy = !turnSpark.hasActiveFault();
+    if (turnSpark.hasActiveFault()) {
+      inputs.turnFaults = SparkUtil.getFaultStrings(turnSpark.getFaults());
+    } else if (inputs.turnFaults.length != 0) {
+      inputs.turnFaults = new String[0];
+    }
+    if (turnSpark.hasActiveWarning()) {
+      inputs.turnWarnings = SparkUtil.getWarningStrings(turnSpark.getWarnings());
+    } else if (inputs.turnWarnings.length != 0) {
+      inputs.turnWarnings = new String[0];
+    }
 
     // Empty queues into the inputs object for odometry processing
     Drive.odometryLock.lock();

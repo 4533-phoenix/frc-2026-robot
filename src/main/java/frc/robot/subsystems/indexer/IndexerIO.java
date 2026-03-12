@@ -32,6 +32,15 @@ public interface IndexerIO {
 
     /** The current being drawn by the indexer motor. */
     public Current appliedCurrent = Amps.zero();
+
+    /** Whether the indexer motor is functioning correctly. */
+    public boolean healthy = true;
+
+    /** Any active faults reported by the indexer motor controller. */
+    public String[] faults = new String[] {};
+
+    /** Any active warnings reported by the indexer motor controller. */
+    public String[] warnings = new String[] {};
   }
 
   /**

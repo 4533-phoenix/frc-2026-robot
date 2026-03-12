@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.SparkUtil;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -37,7 +38,8 @@ public class Indexer extends SubsystemBase {
 
   @AutoLogOutput private Goal goal = Goal.STOP;
 
-  private final Alert disconnectedAlert = new Alert("Indexer IO disconnected", AlertType.kWarning);
+  private final Alert disconnectedAlert = new Alert("Indexer motor disconnected", AlertType.kError);
+  private final Alert faultAlert = new Alert("Indexer motor fault detected", AlertType.kError);
 
   /**
    * Creates a new Indexer subsystem.
@@ -63,6 +65,12 @@ public class Indexer extends SubsystemBase {
     io.updateInputs(inputs);
     Logger.processInputs("Indexer", inputs);
     disconnectedAlert.set(!inputs.connected);
+
+    // Check for faults
+    faultAlert.set(!inputs.healthy);
+    if (!inputs.healthy) {
+      faultAlert.setText(SparkUtil.getArrayString("Indexer Motor Faults: ", inputs.faults));
+    }
 
     switch (goal) {
       case RUNNING -> io.setVoltage(DEFAULT_VOLTAGE);

@@ -37,6 +37,15 @@ public interface SpinnerIO {
 
     /** The current drawn by the spinner motor. */
     public Current appliedCurrent = Amps.zero();
+
+    /** Whether the spinner motor is functioning correctly. */
+    public boolean healthy = true;
+
+    /** Any active faults reported by the spinner motor controller. */
+    public String[] faults = new String[] {};
+
+    /** Any active warnings reported by the spinner motor controller. */
+    public String[] warnings = new String[] {};
   }
 
   /**

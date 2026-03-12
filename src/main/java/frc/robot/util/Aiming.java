@@ -34,11 +34,10 @@ public class Aiming {
    * @param hasTarget Whether a valid aiming target was found.
    */
   public record AimingResult(
-      Rotation2d targetRotation, Distance distanceToTarget, boolean hasTarget) {}
+      Rotation2d targetRotation, double distanceToTargetMeters, boolean hasTarget) {}
 
   /** A default empty result to prevent NullPointerExceptions */
-  public static final AimingResult noTarget =
-      new AimingResult(new Rotation2d(), Meters.of(0), false);
+  public static final AimingResult noTarget = new AimingResult(new Rotation2d(), 0.0, false);
 
   /**
    * Computes all aiming outputs for a direct hub shot with lead compensation.
@@ -126,7 +125,7 @@ public class Aiming {
       Logger.recordOutput("Aiming/DistanceToTarget", finalDist);
     }
 
-    return new AimingResult(Rotation2d.fromRadians(finalAngle), Meters.of(finalDist), true);
+    return new AimingResult(Rotation2d.fromRadians(finalAngle), finalDist, true);
   }
 
   /**
@@ -206,7 +205,7 @@ public class Aiming {
       Logger.recordOutput("Aiming/DistanceToTarget", finalDist);
     }
 
-    return new AimingResult(Rotation2d.fromRadians(finalAngle), Meters.of(finalDist), true);
+    return new AimingResult(Rotation2d.fromRadians(finalAngle), finalDist, true);
   }
 
   /**

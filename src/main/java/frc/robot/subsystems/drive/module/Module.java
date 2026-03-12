@@ -18,6 +18,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.*;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import frc.lib.SparkUtil;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -30,9 +31,12 @@ public class Module {
   private final ModuleIO io;
   private final ModuleIOInputsAutoLogged inputs = new ModuleIOInputsAutoLogged();
   private final int index;
+  private final String name;
 
   private final Alert driveDisconnectedAlert;
   private final Alert turnDisconnectedAlert;
+  private final Alert driveFaultAlert;
+  private final Alert turnFaultAlert;
   private final Alert turnEncoderDisconnectedAlert;
   private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
 
@@ -45,17 +49,13 @@ public class Module {
   public Module(ModuleIO io, int index) {
     this.io = io;
     this.index = index;
-    driveDisconnectedAlert =
-        new Alert(
-            "Disconnected drive motor on module " + Integer.toString(index) + ".",
-            AlertType.kError);
-    turnDisconnectedAlert =
-        new Alert(
-            "Disconnected turn motor on module " + Integer.toString(index) + ".", AlertType.kError);
-    turnEncoderDisconnectedAlert =
-        new Alert(
-            "Disconnected turn encoder on module " + Integer.toString(index) + ".",
-            AlertType.kError);
+    this.name = MODULE_CONFIGS[index].name();
+
+    driveDisconnectedAlert = new Alert(name + " drive motor disconnected", AlertType.kError);
+    turnDisconnectedAlert = new Alert(name + " turn motor disconnected", AlertType.kError);
+    driveFaultAlert = new Alert(name + " drive motor fault detected", AlertType.kError);
+    turnFaultAlert = new Alert(name + " turn motor fault detected", AlertType.kError);
+    turnEncoderDisconnectedAlert = new Alert(name + " turn encoder disconnected", AlertType.kError);
   }
 
   /** Updates hardware inputs, calculates odometry data, and updates status alerts. */
@@ -76,6 +76,19 @@ public class Module {
     driveDisconnectedAlert.set(!inputs.driveConnected);
     turnDisconnectedAlert.set(!inputs.turnConnected);
     turnEncoderDisconnectedAlert.set(!inputs.turnEncoderConnected);
+
+    // Check for drive faults/warnings
+    driveFaultAlert.set(!inputs.driveHealthy);
+    if (!inputs.driveHealthy) {
+      driveFaultAlert.setText(
+          SparkUtil.getArrayString(name + " Module Drive Faults: ", inputs.driveFaults));
+    }
+
+    turnFaultAlert.set(!inputs.turnHealthy);
+    if (!inputs.turnHealthy) {
+      turnFaultAlert.setText(
+          SparkUtil.getArrayString(name + " Module Turn Faults: ", inputs.turnFaults));
+    }
   }
 
   /**

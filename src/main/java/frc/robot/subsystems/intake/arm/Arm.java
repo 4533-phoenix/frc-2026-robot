@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.lib.SparkUtil;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -42,7 +43,8 @@ public class Arm extends SubsystemBase {
 
   // Alerts for hardware monitoring
   private final Alert disconnectedAlert =
-      new Alert("Intake arm motor disconnected", AlertType.kWarning);
+      new Alert("Intake arm motor disconnected", AlertType.kError);
+  private final Alert faultAlert = new Alert("Intake arm motor fault detected", AlertType.kError);
 
   private final Trigger deployedTrigger;
   private final Trigger retractedTrigger;
@@ -82,6 +84,12 @@ public class Arm extends SubsystemBase {
     io.updateInputs(inputs);
     Logger.processInputs("Arm", inputs);
     disconnectedAlert.set(!inputs.connected);
+
+    // Check for faults
+    faultAlert.set(!inputs.healthy);
+    if (!inputs.healthy) {
+      faultAlert.setText(SparkUtil.getArrayString("Intake Arm Motor Faults: ", inputs.faults));
+    }
 
     switch (goal) {
       case RETRACT -> io.setPosition(RETRACTED_POSITION);

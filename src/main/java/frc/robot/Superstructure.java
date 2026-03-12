@@ -7,7 +7,7 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -95,7 +95,8 @@ public class Superstructure extends SubsystemBase {
           && (Util.isHubApproaching() || isHubEnabled)) {
         currentAimingResult = hubAiming.get();
         shooter.setShooterState(
-            ShooterKinematics.calculateShooterState(currentAimingResult.distanceToTarget()));
+            ShooterKinematics.calculateShooterState(
+                Meters.of(currentAimingResult.distanceToTargetMeters())));
       }
       // Determine if we are in the Lobbing zone
       else if (FieldUtil.flipAllianceIfNeeded(Constants.LOBBING_ZONE).contains(robotTranslation)) {

@@ -11,7 +11,11 @@ package frc.lib;
 
 import com.revrobotics.REVLibError;
 import com.revrobotics.spark.SparkBase;
+import com.revrobotics.spark.SparkBase.Faults;
+import com.revrobotics.spark.SparkBase.Warnings;
 import edu.wpi.first.util.function.BooleanConsumer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
@@ -118,5 +122,62 @@ public class SparkUtil {
       }
     }
     return false;
+  }
+
+  /**
+   * Converts Active/Sticky Faults to Strings
+   *
+   * @param faults The Faults object containing the fault flags.
+   * @return An array of strings describing the active faults, or an empty array if no faults are
+   *     active.
+   */
+  public static String[] getFaultStrings(Faults faults) {
+    List<String> list = new ArrayList<>();
+    if (faults.motorType) list.add("MotorType");
+    if (faults.sensor) list.add("Sensor");
+    if (faults.can) list.add("CAN");
+    if (faults.temperature) list.add("Temperature");
+    if (faults.gateDriver) list.add("GateDriver");
+    if (faults.escEeprom) list.add("ESCEEPROM");
+    if (faults.firmware) list.add("Firmware");
+    return list.toArray(new String[0]);
+  }
+
+  /**
+   * Converts Active/Sticky Warnings to Strings
+   *
+   * @param warnings The Warnings object containing the warning flags.
+   * @return An array of strings describing the active warnings, or an empty array if no warnings
+   *     are active.
+   */
+  public static String[] getWarningStrings(Warnings warnings) {
+    List<String> list = new ArrayList<>();
+    if (warnings.brownout) list.add("Brownout");
+    if (warnings.overcurrent) list.add("Overcurrent");
+    if (warnings.escEeprom) list.add("ESCEEPROM");
+    if (warnings.extEeprom) list.add("ExtEEPROM");
+    if (warnings.sensor) list.add("Sensor");
+    if (warnings.stall) list.add("Stall");
+    if (warnings.hasReset) list.add("HasReset");
+    if (warnings.other) list.add("Other");
+    return list.toArray(new String[0]);
+  }
+
+  /**
+   * Formats an array of strings into a single comma-separated string, or "None" if the array is
+   * empty.
+   *
+   * @param prefix A prefix to prepend to the result. Can be empty or null for no
+   * @param arr The array of strings to format.
+   * @return A comma-separated string or "None" if the array is empty.
+   */
+  public static String getArrayString(String prefix, String[] arr) {
+    if (arr == null || arr.length == 0) {
+      return "None";
+    }
+    if (prefix != null && !prefix.isEmpty()) {
+      return prefix + String.join(", ", arr);
+    }
+    return String.join(", ", arr);
   }
 }

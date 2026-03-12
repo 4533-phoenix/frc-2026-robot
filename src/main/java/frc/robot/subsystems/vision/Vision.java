@@ -79,8 +79,7 @@ public class Vision extends SubsystemBase {
       int id = entry.getKey();
       cameraActiveFlags[id] = true;
       lastTimestamps[id] = Timer.getTimestamp();
-      alerts[id] =
-          new Alert("Vision: Camera '" + entry.getValue() + "' is offline!", AlertType.kWarning);
+      alerts[id] = new Alert(entry.getValue() + " camera offline", AlertType.kWarning);
       logPaths[id] = "Vision/CameraStatus/" + entry.getValue();
       seenPaths[id] = "Vision/CameraSeen/" + entry.getValue().name();
     }

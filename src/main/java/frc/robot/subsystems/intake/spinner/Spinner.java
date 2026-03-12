@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.SparkUtil;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -35,7 +36,9 @@ public class Spinner extends SubsystemBase {
   @AutoLogOutput private Goal goal = Goal.STOP;
 
   private final Alert spinnerDisconnectedAlert =
-      new Alert("Intake spinner motor disconnected", AlertType.kWarning);
+      new Alert("Intake spinner motor disconnected", AlertType.kError);
+  private final Alert spinnerFaultAlert =
+      new Alert("Intake spinner motor fault detected", AlertType.kError);
 
   /**
    * Creates a new Spinner subsystem.
@@ -60,6 +63,13 @@ public class Spinner extends SubsystemBase {
     io.updateInputs(inputs);
     Logger.processInputs("Spinner", inputs);
     spinnerDisconnectedAlert.set(!inputs.connected);
+
+    // Check for faults
+    spinnerFaultAlert.set(!inputs.healthy);
+    if (!inputs.healthy) {
+      spinnerFaultAlert.setText(
+          SparkUtil.getArrayString("Intake Spinner Motor Faults: ", inputs.faults));
+    }
 
     // Apply the voltage based on the current goal
     switch (goal) {
