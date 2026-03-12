@@ -12,22 +12,18 @@ import static edu.wpi.first.units.Units.*;
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.FieldUtil;
-import frc.lib.WritableTrigger;
 import frc.robot.commands.DriveCommands;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.climb.ClimbIO;
 import frc.robot.subsystems.climb.ClimbIOSim;
 import frc.robot.subsystems.climb.ClimbIOSpark;
 import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.drive.DriveConstants;
 import frc.robot.subsystems.drive.gyro.GyroIO;
 import frc.robot.subsystems.drive.gyro.GyroIODual;
 import frc.robot.subsystems.drive.module.ModuleIO;
@@ -46,8 +42,6 @@ import frc.robot.subsystems.intake.spinner.SpinnerIO;
 import frc.robot.subsystems.intake.spinner.SpinnerIOSim;
 import frc.robot.subsystems.intake.spinner.SpinnerIOSpark;
 import frc.robot.subsystems.shooter.Shooter;
-import frc.robot.subsystems.shooter.ShooterConstants;
-import frc.robot.subsystems.shooter.ShooterKinematics;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSpark;
@@ -58,11 +52,7 @@ import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOPhoton;
 import frc.robot.subsystems.vision.VisionIOSim;
-import frc.robot.util.Aiming;
-import frc.robot.util.Aiming.AimingResult;
 import frc.robot.util.Util;
-import java.util.function.Supplier;
-import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /** Declares the robot's subsystems, operator interface devices, and command bindings. */
@@ -74,6 +64,7 @@ public class RobotContainer {
   private final Spinner spinner;
   private final Shooter shooter;
   private final Indexer indexer;
+  private final Superstructure superstructure;
 
   // Vision
   @SuppressWarnings("unused")
@@ -85,16 +76,8 @@ public class RobotContainer {
   /** Controller for the operator. */
   public final CommandXboxController operatorController = new CommandXboxController(1);
 
-  // Suppliers
-  private final Supplier<AimingResult> hubAiming;
-  private final Supplier<AimingResult> lobAiming;
-
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
-
-  // State variables
-  private final WritableTrigger climbMode = new WritableTrigger(false);
-  private AimingResult currentAimingResult = Aiming.noTarget;
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -156,17 +139,10 @@ public class RobotContainer {
         break;
     }
 
+    superstructure = new Superstructure(drive, climb, arm, spinner, shooter);
+
     // Set up auto routines via PathPlanner
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
-
-    // Set up aiming suppliers
-    hubAiming =
-        Aiming.hubAimingSupplier(
-            drive::getPose,
-            drive::getFieldRelativeVelocity,
-            ShooterConstants.SHOOTER_ROBOT_OFFSET,
-            ShooterConstants.ESTIMATED_TOF);
-    lobAiming = Aiming.lobAimingSupplier(drive::getPose, ShooterConstants.SHOOTER_ROBOT_OFFSET);
 
     autoChooser.addOption(
         "Left Shoot Preload",
@@ -187,7 +163,7 @@ public class RobotContainer {
             Commands.parallel(
                 Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
                 DriveCommands.joystickDriveWithRotationPriority(
-                    drive, () -> 0.0, () -> 0.0, () -> currentAimingResult.targetRotation()))));
+                    drive, () -> 0.0, () -> 0.0, superstructure::getTargetRotation))));
 
     autoChooser.addOption(
         "Middle Shoot Preload",
@@ -208,7 +184,7 @@ public class RobotContainer {
             Commands.parallel(
                 Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
                 DriveCommands.joystickDriveWithRotationPriority(
-                    drive, () -> 0.0, () -> 0.0, () -> currentAimingResult.targetRotation()))));
+                    drive, () -> 0.0, () -> 0.0, superstructure::getTargetRotation))));
 
     autoChooser.addOption(
         "Right Shoot Preload",
@@ -226,7 +202,7 @@ public class RobotContainer {
             Commands.parallel(
                 Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
                 DriveCommands.joystickDriveWithRotationPriority(
-                    drive, () -> 0.0, () -> 0.0, () -> currentAimingResult.targetRotation()))));
+                    drive, () -> 0.0, () -> 0.0, superstructure::getTargetRotation))));
 
     // Configure the commands
     configureDriverButtonBindings();
@@ -242,34 +218,27 @@ public class RobotContainer {
     // When left trigger held and shooter has a target, rotate to aim at the target
     driverController
         .leftTrigger()
-        .and(() -> currentAimingResult.hasTarget())
+        .and(superstructure::hasTarget)
         .whileTrue(
             DriveCommands.joystickDriveWithRotationPriority(
                 drive,
                 () -> -driverController.getLeftY(),
                 () -> -driverController.getLeftX(),
-                () -> currentAimingResult.targetRotation()));
+                superstructure::getTargetRotation));
 
     // Spin up the motor if we are practicing not in match mode
     driverController
         .leftTrigger()
-        .and(() -> currentAimingResult.hasTarget())
+        .and(superstructure::hasTarget)
         .and(() -> !Util.isMatchMode())
         .whileTrue(shooter.runHeld());
 
     // When right trigger held, shooter is ready, and robot is aimed, run the indexer
-    driverController
-        .rightTrigger()
-        // .and(driverController.leftTrigger())
-        // .and(isRobotRotated())
-        // .and(shooter.isShooterReady())
-        .whileTrue(indexer.run());
+    driverController.rightTrigger().whileTrue(indexer.run());
 
-    new Trigger(
-            () ->
-                driverController.leftTrigger().getAsBoolean()
-                    && isRobotRotated().getAsBoolean()
-                    && shooter.isShooterReady().getAsBoolean())
+    driverController
+        .leftTrigger()
+        .and(superstructure.isReadyToShoot())
         .whileTrue(
             Commands.runEnd(
                 () -> driverController.getHID().setRumble(RumbleType.kBothRumble, 0.5),
@@ -281,32 +250,38 @@ public class RobotContainer {
     operatorController
         .leftBumper()
         .or(operatorController.rightBumper())
-        .and(climbMode.negate())
-        .and(climb.isDown())
-        .and(arm.isDeployed().negate())
-        .onTrue(arm.deploy());
-    operatorController.leftBumper().and(arm.isDeployed()).whileTrue(spinner.intake());
-    operatorController.rightBumper().and(arm.isDeployed()).whileTrue(spinner.extake());
+        .and(superstructure.canDeployArm())
+        .onTrue(superstructure.deployArm());
+    operatorController
+        .leftBumper()
+        .and(superstructure.canRunIntake())
+        .whileTrue(superstructure.intake());
+    operatorController
+        .rightBumper()
+        .and(superstructure.canRunIntake())
+        .whileTrue(superstructure.extake());
 
     // If left dpad is pressed, toggle climb mode. If climb mode is on, also retract the arm
-    operatorController
-        .povLeft()
-        .onTrue(
-            Commands.runOnce(
-                () -> {
-                  if (climbMode.toggle()) arm.setRetract();
-                }));
+    operatorController.povLeft().onTrue(Commands.runOnce(superstructure::toggleClimbMode));
 
     // If climb mode is on and the arm is retracted, up dpad raises the climb and down dpad lowers
-    operatorController.povUp().and(climbMode).and(arm.isRetracted()).whileTrue(climb.raise());
-    operatorController.povDown().and(climbMode).and(arm.isRetracted()).whileTrue(climb.lower());
+    operatorController
+        .povUp()
+        .and(superstructure.canClimb())
+        .whileTrue(superstructure.raiseClimb());
+    operatorController
+        .povDown()
+        .and(superstructure.canClimb())
+        .whileTrue(superstructure.lowerClimb());
 
     // Rumble operator controller when climb mode is engaged
-    climbMode.whileTrue(
-        Commands.runEnd(
-            () -> operatorController.getHID().setRumble(RumbleType.kRightRumble, 0.25),
-            () -> operatorController.getHID().setRumble(RumbleType.kBothRumble, 0),
-            climb));
+    superstructure
+        .getClimbMode()
+        .whileTrue(
+            Commands.runEnd(
+                () -> operatorController.getHID().setRumble(RumbleType.kRightRumble, 0.25),
+                () -> operatorController.getHID().setRumble(RumbleType.kBothRumble, 0),
+                climb));
   }
 
   /** Sets up the default commands for subsystems. */
@@ -329,60 +304,5 @@ public class RobotContainer {
     Command autoCommand = autoChooser.get();
     if (autoCommand == null) autoCommand = Commands.none();
     return autoCommand;
-  }
-
-  /** Periodically updates aiming logic and subsystem goals. */
-  public void periodic() {
-    // Get common booleans
-    boolean isHubEnabled = Util.isHubEnabled();
-
-    // Update the current aiming result based on the robot's position on the field
-    Translation2d robotTranslation = drive.getPose().getTranslation();
-    if (!climbMode.get()) {
-      if (FieldUtil.flipAllianceIfNeeded(Constants.SHOOTING_ZONE).contains(robotTranslation)
-          && (Util.isHubApproaching() || isHubEnabled)) {
-        currentAimingResult = hubAiming.get();
-        shooter.setShooterState(
-            ShooterKinematics.calculateShooterState(currentAimingResult.distanceToTarget()));
-      } else if (FieldUtil.flipAllianceIfNeeded(Constants.LOBBING_ZONE)
-          .contains(robotTranslation)) {
-        currentAimingResult = lobAiming.get();
-        shooter.setShooterState(ShooterConstants.LOB_STATE);
-      } else {
-        currentAimingResult = Aiming.noTarget;
-      }
-
-      // create a dummy aim result and shooter state at 200 rps and 70 hood angle
-      // currentAimingResult = new AimingResult(Rotation2d.kZero, Meters.of(0), true);
-      // shooter.setShooterState(new ShooterState(RadiansPerSecond.of(600), Degrees.of(45)));
-    } else {
-      currentAimingResult = Aiming.noTarget;
-    }
-
-    // Tell when the shooter should be on
-    if (Util.isMatchMode()) {
-      if (currentAimingResult.hasTarget() && !climbMode.get()) {
-        shooter.setRunning();
-      } else {
-        shooter.setStop();
-      }
-    }
-
-    // Log some useful values to AdvantageKit
-    Logger.recordOutput("Container/ClimbMode", climbMode);
-    Logger.recordOutput("Container/CurrentAimingResult", currentAimingResult);
-    Logger.recordOutput("Container/IsHubEnabled", isHubEnabled);
-  }
-
-  private Trigger isRobotRotated() {
-    return new Trigger(
-        () ->
-            currentAimingResult.hasTarget()
-                && Math.abs(
-                        currentAimingResult
-                            .targetRotation()
-                            .minus(drive.getPose().getRotation())
-                            .getDegrees())
-                    < DriveConstants.HEADING_ALIGNMENT_TOLERANCE.in(Degrees));
   }
 }

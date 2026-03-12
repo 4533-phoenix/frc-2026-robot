@@ -1,5 +1,11 @@
 {
   "recommendations": [
-    "richardwillis.vscode-spotless-gradle"
+    "wpilibsuite.vscode-wpilib",
+    "redhat.java",
+    "vscjava.vscode-java-debug",
+    "vscjava.vscode-java-dependency",
+    "ms-vscode.cpptools",
+    "richardwillis.vscode-spotless-gradle",
+    "redhat.vscode-yaml"
   ]
 }

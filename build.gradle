@@ -1,142 +1,142 @@
 plugins {
-    id "java"
-    id "c"
-    id "edu.wpi.first.GradleRIO" version "2026.2.1"
-    id "com.peterabeles.gversion" version "1.10"
-    id "com.diffplug.spotless" version "8.3.0"
+  id "java"
+  id "c"
+  id "edu.wpi.first.GradleRIO" version "2026.2.1"
+  id "com.peterabeles.gversion" version "1.10"
+  id "com.diffplug.spotless" version "8.3.0"
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+  sourceCompatibility = JavaVersion.VERSION_17
+  targetCompatibility = JavaVersion.VERSION_17
 }
 
 def ROBOT_MAIN_CLASS = "frc.robot.Main"
 
 // Native build configuration for the vision server
 model {
-    components {
-        // Define a Shared Library for the Vision Server
-        whacknet(NativeLibrarySpec) {
-            targetPlatform wpi.platforms.roborio
+  components {
+    // Define a Shared Library for the Vision Server
+    whacknet(NativeLibrarySpec) {
+      targetPlatform wpi.platforms.roborio
 
-            // Define C sources
-            sources {
-                c {
-                    source {
-                        srcDir 'src/main/native/c'
-                        include '**/*.c'
-                    }
-                    exportedHeaders {
-                        srcDir 'src/main/native/include'
-                    }
-                }
-            }
-
-            // Add JNI includes and force linux headers for cross compilation
-            binaries.all {
-                def javaHome = org.gradle.internal.jvm.Jvm.current().javaHome
-                if (javaHome != null) {
-                    if (toolChain in Gcc || toolChain in Clang) {
-                        // Include generic JNI headers
-                        cCompiler.args "-I", "${javaHome}/include"
-                        cCompiler.args "-I", "${projectDir}/src/main/native/include/linux"
-
-                        // Standard compilation flags
-                        cCompiler.args "-fPIC", "-pthread", "-O2", "-Wall"
-                        linker.args "-pthread"
-                    }
-                }
-            }
+      // Define C sources
+      sources {
+        c {
+          source {
+            srcDir 'src/main/native/c'
+            include '**/*.c'
+          }
+          exportedHeaders {
+            srcDir 'src/main/native/include'
+          }
         }
+      }
+
+      // Add JNI includes and force linux headers for cross compilation
+      binaries.all {
+        def javaHome = org.gradle.internal.jvm.Jvm.current().javaHome
+        if (javaHome != null) {
+          if (toolChain in Gcc || toolChain in Clang) {
+            // Include generic JNI headers
+            cCompiler.args "-I", "${javaHome}/include"
+            cCompiler.args "-I", "${projectDir}/src/main/native/include/linux"
+
+            // Standard compilation flags
+            cCompiler.args "-fPIC", "-pthread", "-O2", "-Wall"
+            linker.args "-pthread"
+          }
+        }
+      }
     }
+  }
 }
 
 // Custom task to flatten the native library for deployment
 task stageNativeLib(type: Copy) {
-    dependsOn 'whacknetReleaseSharedLibrary'
+  dependsOn 'whacknetReleaseSharedLibrary'
 
-    from fileTree('build/libs/whacknet/shared') {
-        include '**/libwhacknet.so'
-        exclude '**/*.debug'
-    }
-    into 'build/staged_lib'
+  from fileTree('build/libs/whacknet/shared') {
+    include '**/libwhacknet.so'
+    exclude '**/*.debug'
+  }
+  into 'build/staged_lib'
 
-    // Handle duplicates by including the last one found (usually Release)
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+  // Handle duplicates by including the last one found (usually Release)
+  duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
-    // Flatten the directory structure
-    eachFile { f -> f.path = f.name }
-    includeEmptyDirs = false
+  // Flatten the directory structure
+  eachFile { f -> f.path = f.name }
+  includeEmptyDirs = false
 }
 
 // Define my targets (RoboRIO) and artifacts (deployable files)
 // This is added by GradleRIO's backing project DeployUtils.
 deploy {
-    targets {
-        roborio(getTargetTypeClass('RoboRIO')) {
-            // Team number is loaded either from the .wpilib/wpilib_preferences.json
-            // or from command line. If not found an exception will be thrown.
-            // You can use getTeamOrDefault(team) instead of getTeamNumber if you
-            // want to store a team number in this file.
-            team = project.frc.getTeamNumber()
-            debug = project.frc.getDebugOrDefault(false)
+  targets {
+    roborio(getTargetTypeClass('RoboRIO')) {
+      // Team number is loaded either from the .wpilib/wpilib_preferences.json
+      // or from command line. If not found an exception will be thrown.
+      // You can use getTeamOrDefault(team) instead of getTeamNumber if you
+      // want to store a team number in this file.
+      team = project.frc.getTeamNumber()
+      debug = project.frc.getDebugOrDefault(false)
 
-            artifacts {
-                // First part is artifact name, 2nd is artifact type
-                // getTargetTypeClass is a shortcut to get the class type using a string
+      artifacts {
+        // First part is artifact name, 2nd is artifact type
+        // getTargetTypeClass is a shortcut to get the class type using a string
 
-                frcJava(getArtifactTypeClass('FRCJavaArtifact')) {
-                    jvmArgs.add("-XX:+UnlockExperimentalVMOptions")
-                    jvmArgs.add("-XX:+AlwaysCompileLoopMethods")
-                    jvmArgs.add("-XX:GCTimeRatio=5")
-                    jvmArgs.add("-XX:+UseSerialGC")
-                    jvmArgs.add("-XX:MaxGCPauseMillis=50")
+        frcJava(getArtifactTypeClass('FRCJavaArtifact')) {
+          jvmArgs.add("-XX:+UnlockExperimentalVMOptions")
+          jvmArgs.add("-XX:+AlwaysCompileLoopMethods")
+          jvmArgs.add("-XX:GCTimeRatio=5")
+          jvmArgs.add("-XX:+UseSerialGC")
+          jvmArgs.add("-XX:MaxGCPauseMillis=50")
 
-                    // The options below may improve performance, but should only be enabled on the RIO 2
-                    final MAX_JAVA_HEAP_SIZE_MB = 100;
-                    jvmArgs.add("-Xmx" + MAX_JAVA_HEAP_SIZE_MB + "M")
-                    jvmArgs.add("-Xms" + MAX_JAVA_HEAP_SIZE_MB + "M")
-                    jvmArgs.add("-XX:+AlwaysPreTouch")
+          // The options below may improve performance, but should only be enabled on the RIO 2
+          final MAX_JAVA_HEAP_SIZE_MB = 100;
+          jvmArgs.add("-Xmx" + MAX_JAVA_HEAP_SIZE_MB + "M")
+          jvmArgs.add("-Xms" + MAX_JAVA_HEAP_SIZE_MB + "M")
+          jvmArgs.add("-XX:+AlwaysPreTouch")
 
-                    // Enable VisualVM connection
-                    // jvmArgs.add("-Dcom.sun.management.jmxremote=true")
-                    // jvmArgs.add("-Dcom.sun.management.jmxremote.port=1198")
-                    // jvmArgs.add("-Dcom.sun.management.jmxremote.local.only=false")
-                    // jvmArgs.add("-Dcom.sun.management.jmxremote.ssl=false")
-                    // jvmArgs.add("-Dcom.sun.management.jmxremote.authenticate=false")
-                    // jvmArgs.add("-Djava.rmi.server.hostname=10.45.33.2")
-                }
-
-                // Native Library artifact
-                // Deploys the flattened .so file to the third-party lib directory
-                visionLib(getArtifactTypeClass('FileTreeArtifact')) {
-                    files = project.fileTree('build/staged_lib')
-                    directory = '/usr/local/frc/third-party/lib'
-                }
-
-                // Static files artifact
-                frcStaticFileDeploy(getArtifactTypeClass('FileTreeArtifact')) {
-                    files = project.fileTree('src/main/deploy')
-                    directory = '/home/lvuser/deploy'
-                    // Change to true to delete files on roboRIO that no
-                    // longer exist in deploy directory on roboRIO
-                    deleteOldFiles = false
-                }
-            }
+          // Enable VisualVM connection
+          // jvmArgs.add("-Dcom.sun.management.jmxremote=true")
+          // jvmArgs.add("-Dcom.sun.management.jmxremote.port=1198")
+          // jvmArgs.add("-Dcom.sun.management.jmxremote.local.only=false")
+          // jvmArgs.add("-Dcom.sun.management.jmxremote.ssl=false")
+          // jvmArgs.add("-Dcom.sun.management.jmxremote.authenticate=false")
+          // jvmArgs.add("-Djava.rmi.server.hostname=10.45.33.2")
         }
+
+        // Native Library artifact
+        // Deploys the flattened .so file to the third-party lib directory
+        visionLib(getArtifactTypeClass('FileTreeArtifact')) {
+          files = project.fileTree('build/staged_lib')
+          directory = '/usr/local/frc/third-party/lib'
+        }
+
+        // Static files artifact
+        frcStaticFileDeploy(getArtifactTypeClass('FileTreeArtifact')) {
+          files = project.fileTree('src/main/deploy')
+          directory = '/home/lvuser/deploy'
+          // Change to true to delete files on roboRIO that no
+          // longer exist in deploy directory on roboRIO
+          deleteOldFiles = false
+        }
+      }
     }
+  }
 }
 
 def deployArtifact = deploy.targets.roborio.artifacts.frcJava
 
 // Ensure native code is staged after compilation and before deployment
 project.afterEvaluate {
-    def deployTask = project.tasks.findByName('deployroborio')
-    if (deployTask) {
-        deployTask.dependsOn(stageNativeLib)
-        stageNativeLib.mustRunAfter 'assemble'
-    }
+  def deployTask = project.tasks.findByName('deployroborio')
+  if (deployTask) {
+    deployTask.dependsOn(stageNativeLib)
+    stageNativeLib.mustRunAfter 'assemble'
+  }
 }
 
 // Set to true to use debug for all targets including JNI, which will drastically impact
@@ -148,41 +148,41 @@ def includeDesktopSupport = true
 
 // Configuration for AdvantageKit
 task(replayWatch, type: JavaExec) {
-    mainClass = "org.littletonrobotics.junction.ReplayWatch"
-    classpath = sourceSets.main.runtimeClasspath
+  mainClass = "org.littletonrobotics.junction.ReplayWatch"
+  classpath = sourceSets.main.runtimeClasspath
 }
 
 // Defining my dependencies. In this case, WPILib (+ friends), and vendor libraries.
 // Also defines JUnit 5.
 dependencies {
-    annotationProcessor wpi.java.deps.wpilibAnnotations()
-    implementation wpi.java.deps.wpilib()
-    implementation wpi.java.vendor.java()
+  annotationProcessor wpi.java.deps.wpilibAnnotations()
+  implementation wpi.java.deps.wpilib()
+  implementation wpi.java.vendor.java()
 
-    roborioDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.roborio)
-    roborioDebug wpi.java.vendor.jniDebug(wpi.platforms.roborio)
+  roborioDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.roborio)
+  roborioDebug wpi.java.vendor.jniDebug(wpi.platforms.roborio)
 
-    roborioRelease wpi.java.deps.wpilibJniRelease(wpi.platforms.roborio)
-    roborioRelease wpi.java.vendor.jniRelease(wpi.platforms.roborio)
+  roborioRelease wpi.java.deps.wpilibJniRelease(wpi.platforms.roborio)
+  roborioRelease wpi.java.vendor.jniRelease(wpi.platforms.roborio)
 
-    nativeDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.desktop)
-    nativeDebug wpi.java.vendor.jniDebug(wpi.platforms.desktop)
-    simulationDebug wpi.sim.enableDebug()
+  nativeDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.desktop)
+  nativeDebug wpi.java.vendor.jniDebug(wpi.platforms.desktop)
+  simulationDebug wpi.sim.enableDebug()
 
-    nativeRelease wpi.java.deps.wpilibJniRelease(wpi.platforms.desktop)
-    nativeRelease wpi.java.vendor.jniRelease(wpi.platforms.desktop)
-    simulationRelease wpi.sim.enableRelease()
+  nativeRelease wpi.java.deps.wpilibJniRelease(wpi.platforms.desktop)
+  nativeRelease wpi.java.vendor.jniRelease(wpi.platforms.desktop)
+  simulationRelease wpi.sim.enableRelease()
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+  testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    def akitJson = new groovy.json.JsonSlurper().parseText(new File(projectDir.getAbsolutePath() + "/vendordeps/AdvantageKit.json").text)
-    annotationProcessor "org.littletonrobotics.akit:akit-autolog:$akitJson.version"
+  def akitJson = new groovy.json.JsonSlurper().parseText(new File(projectDir.getAbsolutePath() + "/vendordeps/AdvantageKit.json").text)
+  annotationProcessor "org.littletonrobotics.akit:akit-autolog:$akitJson.version"
 }
 
 test {
-    useJUnitPlatform()
-    systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
+  useJUnitPlatform()
+  systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
 }
 
 // Simulation configuration (e.g. environment variables).
@@ -197,14 +197,14 @@ wpi.sim.addDriverstation()
 // in order to make them all available at runtime. Also adding the manifest so WPILib
 // knows where to look for our Robot Class.
 jar {
-    from {
-        configurations.runtimeClasspath.collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
+  from {
+    configurations.runtimeClasspath.collect {
+      it.isDirectory() ? it : zipTree(it)
     }
-    from sourceSets.main.allSource
-    manifest edu.wpi.first.gradlerio.GradleRIOPlugin.javaManifest(ROBOT_MAIN_CLASS)
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+  }
+  from sourceSets.main.allSource
+  manifest edu.wpi.first.gradlerio.GradleRIOPlugin.javaManifest(ROBOT_MAIN_CLASS)
+  duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 // Configure jar and deploy tasks
@@ -214,118 +214,118 @@ wpi.java.configureTestTasks(test)
 
 // Configure string concat to always inline compile
 tasks.withType(JavaCompile) {
-    options.compilerArgs.add '-XDstringConcat=inline'
+  options.compilerArgs.add '-XDstringConcat=inline'
 }
 
 // Create version file
 project.compileJava.dependsOn(createVersionFile)
 gversion {
-    srcDir       = "src/main/java/"
-    classPackage = "frc.robot"
-    className    = "BuildConstants"
-    dateFormat   = "yyyy-MM-dd HH:mm:ss z"
-    timeZone     = "America/New_York"
-    indent       = "  "
+  srcDir       = "src/main/java/"
+  classPackage = "frc.robot"
+  className    = "BuildConstants"
+  dateFormat   = "yyyy-MM-dd HH:mm:ss z"
+  timeZone     = "America/New_York"
+  indent       = "  "
 }
 
 // Create commit with working changes on event branches
 task(eventDeploy) {
-    doLast {
-        if (project.gradle.startParameter.taskNames.any({ it.toLowerCase().contains("deploy") })) {
-            def branchPrefix = "event"
-            def branch = 'git branch --show-current'.execute().text.trim()
-            def commitMessage = "Update at '${new Date().toString()}'"
+  doLast {
+    if (project.gradle.startParameter.taskNames.any({ it.toLowerCase().contains("deploy") })) {
+      def branchPrefix = "event"
+      def branch = 'git branch --show-current'.execute().text.trim()
+      def commitMessage = "Update at '${new Date().toString()}'"
 
-            if (branch.startsWith(branchPrefix)) {
-                exec {
-                    workingDir(projectDir)
-                    executable 'git'
-                    args 'add', '-A'
-                }
-                exec {
-                    workingDir(projectDir)
-                    executable 'git'
-                    args 'commit', '-m', commitMessage
-                    ignoreExitValue = true
-                }
-
-                println "Committed to branch: '$branch'"
-                println "Commit message: '$commitMessage'"
-            } else {
-                println "Not on an event branch, skipping commit"
-            }
-        } else {
-            println "Not running deploy task, skipping commit"
+      if (branch.startsWith(branchPrefix)) {
+        exec {
+          workingDir(projectDir)
+          executable 'git'
+          args 'add', '-A'
         }
+        exec {
+          workingDir(projectDir)
+          executable 'git'
+          args 'commit', '-m', commitMessage
+          ignoreExitValue = true
+        }
+
+        println "Committed to branch: '$branch'"
+        println "Commit message: '$commitMessage'"
+      } else {
+        println "Not on an event branch, skipping commit"
+      }
+    } else {
+      println "Not running deploy task, skipping commit"
     }
+  }
 }
 createVersionFile.dependsOn(eventDeploy)
 
 // Spotless formatting
 project.compileJava.dependsOn(spotlessApply)
 spotless {
-    cpp {
-        target project.fileTree(projectDir) {
-            include "src/main/native/c/**/*.c"
-            include "src/main/native/include/**/*.h"
-            exclude "**/build/**"
-        }
-        eclipseCdt("11.3")
-        trimTrailingWhitespace()
-        endWithNewline()
+  cpp {
+    target project.fileTree(projectDir) {
+      include "src/main/native/c/**/*.c"
+      include "src/main/native/include/**/*.h"
+      exclude "**/build/**"
     }
-    java {
-        target fileTree(".") {
-            include "**/*.java"
-            exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
-        }
-        toggleOffOn()
-        googleJavaFormat()
-        removeUnusedImports()
-        trimTrailingWhitespace()
-        endWithNewline()
+    eclipseCdt("11.3")
+    trimTrailingWhitespace()
+    endWithNewline()
+  }
+  java {
+    target fileTree(".") {
+      include "**/*.java"
+      exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
     }
-    groovyGradle {
-        target fileTree(".") {
-            include "**/*.gradle"
-            exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
-        }
-        greclipse()
-        leadingTabsToSpaces(4)
-        trimTrailingWhitespace()
-        endWithNewline()
+    toggleOffOn()
+    googleJavaFormat()
+    removeUnusedImports()
+    trimTrailingWhitespace()
+    endWithNewline()
+  }
+  groovyGradle {
+    target fileTree(".") {
+      include "**/*.gradle"
+      exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
     }
-    json {
-        target fileTree(".") {
-            include "**/*.json"
-            exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
-        }
-        gson().indentWithSpaces(2)
+    greclipse()
+    leadingTabsToSpaces(2)
+    trimTrailingWhitespace()
+    endWithNewline()
+  }
+  json {
+    target fileTree(".") {
+      include "**/*.json"
+      exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
     }
-    format "misc", {
-        target fileTree(".") {
-            include "**/*.md", "**/.gitignore"
-            exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
-        }
-        trimTrailingWhitespace()
-        leadingTabsToSpaces(2)
-        endWithNewline()
+    gson().indentWithSpaces(2)
+  }
+  format "misc", {
+    target fileTree(".") {
+      include "**/*.md", "**/.gitignore"
+      exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
     }
+    trimTrailingWhitespace()
+    leadingTabsToSpaces(2)
+    endWithNewline()
+  }
 }
 
 javadoc {
-    options {
-        addBooleanOption('html5', true)
+  options {
+    addBooleanOption('html5', true)
 
-        links "https://github.wpilib.org/allwpilib/docs/release/java/"
-        links "https://pathplanner.dev/api/java/"
-        links "https://codedocs.revrobotics.com/java/"
-        links "https://docs.oracle.com/en/java/javase/17/docs/api/"
+    links "https://github.wpilib.org/allwpilib/docs/release/java/"
+    links "https://pathplanner.dev/api/java/"
+    links "https://codedocs.revrobotics.com/java/"
+    links "https://docs.oracle.com/en/java/javase/17/docs/api/"
 
-        windowTitle = "4533 Phoenix 2026 Robot Docs"
-        docTitle = "<h1>Team 4533 - 2026 Robot Code</h1>"
-        bottom = "Generated on ${new Date().format('yyyy-MM-dd HH:mm')}"
-    }
+    windowTitle = "4533 Phoenix 2026 Robot Docs"
+    docTitle = "<h1>Team 4533 - 2026 Robot Code</h1>"
+    bottom = "Generated on ${new Date().format('yyyy-MM-dd HH:mm')}"
+  }
 
-    exclude "**/BuildConstants.java"
+  exclude "**/BuildConstants.java"
 }
