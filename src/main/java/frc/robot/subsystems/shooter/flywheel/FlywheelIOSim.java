@@ -32,7 +32,7 @@ import edu.wpi.first.wpilibj.simulation.RoboRioSim;
  *
  * <p>This class uses a {@link SparkFlex} with its {@link SparkFlexSim} wrapper to simulate the
  * flywheel motor controller, backed by a {@link DCMotorSim} physics model. The SparkFlex's built-in
- * MAXMotion velocity control is used, matching the real robot's {@link FlywheelIOSparkFlex}.
+ * MAXMotion velocity control is used, matching the real robot's {@link FlywheelIOSpark}.
  * Configuration is identical to the real implementation.
  */
 public class FlywheelIOSim implements FlywheelIO {
@@ -49,7 +49,7 @@ public class FlywheelIOSim implements FlywheelIO {
 
   /**
    * Creates a new FlywheelIOSim and configures the SparkFlex identically to {@link
-   * FlywheelIOSparkFlex}.
+   * FlywheelIOSpark}.
    */
   public FlywheelIOSim() {
     spark = new SparkFlex(CAN_ID, MotorType.kBrushless);
