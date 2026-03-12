@@ -21,7 +21,6 @@ public class WritableTrigger extends Trigger {
    * constructed.
    */
   private WritableTrigger(AtomicBoolean state) {
-    // Pass a lambda to the base Trigger that reads our AtomicBoolean
     super(state::get);
     m_state = state;
   }
@@ -31,7 +30,11 @@ public class WritableTrigger extends Trigger {
     this(new AtomicBoolean(false));
   }
 
-  /** Creates a new WritableTrigger with the specified initial state. */
+  /**
+   * Creates a new WritableTrigger with the specified initial state.
+   *
+   * @param initialState The initial value to seed the trigger.
+   */
   public WritableTrigger(boolean initialState) {
     this(new AtomicBoolean(initialState));
   }

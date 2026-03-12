@@ -35,7 +35,7 @@ import frc.robot.subsystems.drive.DriveConstants;
  * <p>This class uses {@link SparkMaxSim} to simulate the Spark MAX motor controller for the climb
  * mechanism, backed by a {@link DCMotorSim} physics model. Limit switch behavior is emulated via
  * {@link SparkLimitSwitchSim} based on the simulated position. Configuration mirrors {@link
- * ClimbIOReal}.
+ * ClimbIOSpark}.
  */
 public class ClimbIOSim implements ClimbIO {
   private final SparkMax spark;
@@ -125,7 +125,6 @@ public class ClimbIOSim implements ClimbIO {
 
   @Override
   public void setLiftVoltage(Voltage voltage) {
-    // Safety checks matching ClimbIOReal: stop motor if driving into a pressed limit switch
     boolean atUpper = forwardLimit.isPressed();
     boolean atLower = reverseLimit.isPressed();
 

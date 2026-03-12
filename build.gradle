@@ -315,9 +315,17 @@ spotless {
 
 javadoc {
     options {
+        addBooleanOption('html5', true)
+
         links "https://github.wpilib.org/allwpilib/docs/release/java/"
         links "https://pathplanner.dev/api/java/"
         links "https://codedocs.revrobotics.com/java/"
         links "https://docs.oracle.com/en/java/javase/17/docs/api/"
+
+        windowTitle = "4533 Phoenix 2026 Robot Docs"
+        docTitle = "<h1>Team 4533 - 2026 Robot Code</h1>"
+        bottom = "Generated on ${new Date().format('yyyy-MM-dd HH:mm')}"
     }
+
+    exclude "**/BuildConstants.java"
 }

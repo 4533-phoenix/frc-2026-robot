@@ -1,34 +1,42 @@
 {
   "configurations": [
     {
-      "name": "RoboRIO",
+      "name": "RoboRIO-Linux",
       "includePath": [
-        "${workspaceFolder}/src/main/native/include",
-        "${workspaceFolder}/src/main/native/include/linux",
-        "${workspaceFolder}/src/main/native/c/**",
+        "${workspaceFolder}/src/main/native/include/**",
+        "${userHome}/wpilib/2026/jdk/include",
+        "${userHome}/wpilib/2026/jdk/include/linux",
+        "${userHome}/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot/usr/include"
+      ],
+      "compilerPath": "${userHome}/wpilib/2026/roborio/bin/arm-frc2025-linux-gnueabi-gcc",
+      "compilerArgs": [
+        "-mcpu=cortex-a9",
+        "-mfloat-abi=softfp",
+        "-mfpu=neon-vfpv3",
+        "--sysroot=${userHome}/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot"
+      ],
+      "intelliSenseMode": "linux-gcc-arm",
+      "cStandard": "gnu11",
+      "cppStandard": "gnu++17"
+    },
+    {
+      "name": "RoboRIO-Windows",
+      "includePath": [
+        "${workspaceFolder}/src/main/native/include/**",
         "C:/Users/Public/wpilib/2026/jdk/include",
         "C:/Users/Public/wpilib/2026/jdk/include/win32",
-        "C:/Users/Public/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot/usr/lib/gcc/arm-nilrt-linux-gnueabi/12/include",
-        "C:/Users/Public/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot/usr/lib/gcc/arm-nilrt-linux-gnueabi/12/include-fixed",
         "C:/Users/Public/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot/usr/include"
-      ],
-      "defines": [
-        "_GNU_SOURCE",
-        "__GNUC__=12",
-        "__arm__",
-        "__STDC_VERSION__=201112L"
       ],
       "compilerPath": "C:/Users/Public/wpilib/2026/roborio/bin/arm-frc2025-linux-gnueabi-gcc.exe",
       "compilerArgs": [
         "-mcpu=cortex-a9",
         "-mfloat-abi=softfp",
         "-mfpu=neon-vfpv3",
-        "-pthread",
         "--sysroot=C:/Users/Public/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot"
       ],
+      "intelliSenseMode": "windows-gcc-arm",
       "cStandard": "gnu11",
-      "cppStandard": "gnu++17",
-      "intelliSenseMode": "linux-gcc-arm"
+      "cppStandard": "gnu++17"
     }
   ],
   "version": 4
