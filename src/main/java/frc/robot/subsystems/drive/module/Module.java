@@ -18,6 +18,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.*;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -33,6 +34,7 @@ public class Module {
 
   private final Alert driveDisconnectedAlert;
   private final Alert turnDisconnectedAlert;
+  private final Alert turnEncoderDisconnectedAlert;
   private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
 
   /**
@@ -51,6 +53,10 @@ public class Module {
     turnDisconnectedAlert =
         new Alert(
             "Disconnected turn motor on module " + Integer.toString(index) + ".", AlertType.kError);
+    turnEncoderDisconnectedAlert =
+        new Alert(
+            "Disconnected turn encoder on module " + Integer.toString(index) + ".",
+            AlertType.kError);
   }
 
   /** Updates hardware inputs, calculates odometry data, and updates status alerts. */
@@ -59,18 +65,19 @@ public class Module {
     Logger.processInputs("Drive/Module" + Integer.toString(index), inputs);
 
     // Calculate positions for odometry
-    int sampleCount = inputs.odometryTimestamps.length; // All signals are sampled together
+    int sampleCount = inputs.odometryTimestamps.length;
     odometryPositions = new SwerveModulePosition[sampleCount];
     for (int i = 0; i < sampleCount; i++) {
-      // Convert angular position (radians) to linear distance (meters)
-      double positionMeters = inputs.odometryDrivePositionsRad[i] * WHEEL_RADIUS.in(Meters);
-      Rotation2d angle = inputs.odometryTurnPositions[i];
+      Distance positionMeters =
+          WHEEL_RADIUS.times(inputs.odometryDrivePositionsRad[i]);
+      Rotation2d angle = new Rotation2d(inputs.odometryTurnPositionsRad[i]);
       odometryPositions[i] = new SwerveModulePosition(positionMeters, angle);
     }
 
     // Update alerts
     driveDisconnectedAlert.set(!inputs.driveConnected);
     turnDisconnectedAlert.set(!inputs.turnConnected);
+    turnEncoderDisconnectedAlert.set(!inputs.turnEncoderConnected);
   }
 
   /**
@@ -84,10 +91,10 @@ public class Module {
    */
   public void runSetpoint(SwerveModuleState state) {
     // Optimize velocity setpoint to minimize turning
-    state.optimize(Rotation2d.fromRadians(getCurrentAngle().in(Radians)));
+    state.optimize(new Rotation2d(getCurrentAngle()));
 
     // Scale speed based on angle error to prevent driving while turning
-    state.cosineScale(Rotation2d.fromRadians(inputs.turnPosition.in(Radians)));
+    state.cosineScale(new Rotation2d(inputs.turnPosition));
 
     // Apply setpoints to hardware
     io.setDriveVelocity(RadiansPerSecond.of(state.speedMetersPerSecond / WHEEL_RADIUS.in(Meters)));
@@ -125,7 +132,7 @@ public class Module {
    * @return The current distance as a Distance measure.
    */
   public Distance getCurrentPosition() {
-    return Meters.of(inputs.drivePosition.in(Radians) * WHEEL_RADIUS.in(Meters));
+    return WHEEL_RADIUS.times(inputs.drivePosition.in(Radians));
   }
 
   /**
@@ -133,7 +140,7 @@ public class Module {
    *
    * @return The current velocity as a LinearVelocity measure.
    */
-  public LinearVelocity getCurrentVelocityMetersPerSec() {
+  public LinearVelocity getCurrentVelocity() {
     return MetersPerSecond.of(inputs.driveVelocity.in(RadiansPerSecond) * WHEEL_RADIUS.in(Meters));
   }
 
@@ -143,8 +150,7 @@ public class Module {
    * @return The current SwerveModulePosition.
    */
   public SwerveModulePosition getPosition() {
-    return new SwerveModulePosition(
-        getCurrentPosition().in(Meters), Rotation2d.fromRadians(getCurrentAngle().in(Radians)));
+    return new SwerveModulePosition(getCurrentPosition(), new Rotation2d(getCurrentAngle()));
   }
 
   /**
@@ -153,9 +159,7 @@ public class Module {
    * @return The current SwerveModuleState.
    */
   public SwerveModuleState getState() {
-    return new SwerveModuleState(
-        getCurrentVelocityMetersPerSec().in(MetersPerSecond),
-        Rotation2d.fromRadians(getCurrentAngle().in(Radians)));
+    return new SwerveModuleState(getCurrentVelocity(), new Rotation2d(getCurrentAngle()));
   }
 
   /**
@@ -174,6 +178,7 @@ public class Module {
    */
   public double[] getOdometryTimestamps() {
     return inputs.odometryTimestamps;
+    
   }
 
   /**

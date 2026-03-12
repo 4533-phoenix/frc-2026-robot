@@ -25,7 +25,6 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.*;
 import edu.wpi.first.wpilibj.Timer;
@@ -120,12 +119,6 @@ public class ModuleIOSim implements ModuleIO {
     turnSpark.configure(turnConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
-  /**
-   * Updates the simulation state using SparkMaxSim and physics models, then updates loggable
-   * inputs.
-   *
-   * @param inputs The inputs object to update with simulated data.
-   */
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
     // Update physics models with the voltage applied by the Spark sim
@@ -160,11 +153,16 @@ public class ModuleIOSim implements ModuleIO {
     inputs.turnAppliedVoltage = Volts.of(turnSpark.getAppliedOutput() * turnSpark.getBusVoltage());
     inputs.turnCurrent = Amps.of(turnSpark.getOutputCurrent());
 
-    // Update odometry inputs (single sample per loop in sim)
-    inputs.odometryTimestamps = new double[] {Timer.getFPGATimestamp()};
-    inputs.odometryDrivePositionsRad = new double[] {driveEncoder.getPosition()};
-    inputs.odometryTurnPositions =
-        new Rotation2d[] {Rotation2d.fromRadians(turnEncoder.getPosition())};
+    // Update odometry inputs
+    if (inputs.odometryTimestamps.length != 1) {
+      inputs.odometryTimestamps = new double[1];
+      inputs.odometryDrivePositionsRad = new double[1];
+      inputs.odometryTurnPositionsRad = new double[1];
+    }
+
+    inputs.odometryTimestamps[0] = Timer.getFPGATimestamp();
+    inputs.odometryDrivePositionsRad[0] = driveEncoder.getPosition();
+    inputs.odometryTurnPositionsRad[0] = turnEncoder.getPosition();
   }
 
   @Override

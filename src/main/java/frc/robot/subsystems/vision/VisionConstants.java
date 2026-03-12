@@ -7,9 +7,7 @@
 
 package frc.robot.subsystems.vision;
 
-import static edu.wpi.first.units.Units.Centimeters;
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;

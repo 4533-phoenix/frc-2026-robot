@@ -20,6 +20,8 @@ import frc.robot.Constants;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
+// TODO reimplement DRY here after I optimized the hell out of this code
+
 /** Utility class for calculating aiming solutions for the shooter. */
 public class Aiming {
   private Aiming() {} // Prevent instantiation

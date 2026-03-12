@@ -220,7 +220,8 @@ public class Drive extends SubsystemBase {
       }
 
       // Apply update using pre-allocated buffers
-      poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, odometryPositionsBuffer);
+      poseEstimator.updateWithTime(
+          sampleTimestamps[i], rawGyroRotation, odometryPositionsBuffer);
     }
 
     // Update gyro alert

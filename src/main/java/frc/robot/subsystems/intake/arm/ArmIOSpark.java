@@ -100,6 +100,7 @@ public class ArmIOSpark implements ArmIO {
           double initialPos = absoluteEncoder.getPosition();
           return spark.getEncoder().setPosition(initialPos);
         });
+    tryUntilOk(5, () -> spark.getEncoder().setPosition(absoluteEncoder.getPosition()));
   }
 
   /**

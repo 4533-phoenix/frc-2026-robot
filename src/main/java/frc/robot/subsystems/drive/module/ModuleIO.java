@@ -11,7 +11,6 @@ package frc.robot.subsystems.drive.module;
 
 import static edu.wpi.first.units.Units.*;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.*;
 import org.littletonrobotics.junction.AutoLog;
 
@@ -61,27 +60,13 @@ public interface ModuleIO {
     /** Whether the turn encoder is currently connected. */
     public boolean turnEncoderConnected = false;
 
-    // High-Frequency Odometry Inputs
-    /**
-     * Timestamps for high-frequency measurements used for odometry.
-     *
-     * <p>Measured in seconds via {@link edu.wpi.first.wpilibj.RobotController#getFPGATime()}.
-     */
+    // Odometry Inputs
+    /** Timestamps for odometry measurements. */
     public double[] odometryTimestamps = new double[] {};
-
-    /**
-     * Drive positions corresponding to the timestamps in {@link #odometryTimestamps}.
-     *
-     * <p>Measured in radians.
-     */
+    /** Drive positions for odometry measurements. */
     public double[] odometryDrivePositionsRad = new double[] {};
-
-    /**
-     * Turn positions corresponding to the timestamps in {@link #odometryTimestamps}.
-     *
-     * <p>Measured as a {@link Rotation2d}.
-     */
-    public Rotation2d[] odometryTurnPositions = new Rotation2d[] {};
+    /** Turn positions for odometry measurements. */
+    public double[] odometryTurnPositionsRad = new double[] {};
   }
 
   /**
