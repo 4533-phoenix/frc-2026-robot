@@ -8,7 +8,6 @@
 package frc.robot.util;
 
 import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.Seconds;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -18,7 +17,6 @@ import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Timer;
 import frc.lib.FieldUtil;
 import frc.robot.Constants;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
@@ -26,7 +24,13 @@ import org.littletonrobotics.junction.Logger;
 public class Aiming {
   private Aiming() {} // Prevent instantiation
 
-  /** Cached result of the aiming pipeline. */
+  /**
+   * Cached result of the aiming pipeline.
+   *
+   * @param targetRotation The field-relative rotation the robot should face.
+   * @param distanceToTarget The linear distance from the shooter to the target.
+   * @param hasTarget Whether a valid aiming target was found.
+   */
   public record AimingResult(
       Rotation2d targetRotation, Distance distanceToTarget, boolean hasTarget) {}
 
@@ -35,14 +39,18 @@ public class Aiming {
       new AimingResult(new Rotation2d(), Meters.of(0), false);
 
   /**
-   * Computes all aiming outputs for a direct hub shot.
+   * Computes all aiming outputs for a direct hub shot with lead compensation.
+   *
+   * <p>This method uses a two-pass approach: Pass 1 estimates the shooter's position at the current
+   * robot heading to find a rough target angle. Pass 2 re-calculates the shooter's position at that
+   * estimated heading to provide a final, precise aiming solution.
    *
    * @param robotCenter The current center position of the robot.
    * @param currentRobotRotation The current rotation of the robot.
-   * @param fieldVelocity The robot's field-relative velocity.
+   * @param fieldVelocity The robot's field-relative velocity (m/s).
    * @param targetPosition The blue-alliance target position.
    * @param shooterRobotOffset The physical offset of the shooter from the robot's center.
-   * @param estimatedTimeOfFlight Estimated time for the note to travel to the target.
+   * @param estimatedTimeOfFlight Estimated time for the projectile to travel to the target.
    * @param log Whether to publish outputs to AdvantageKit for visualization.
    * @return The computed aiming result.
    */
@@ -55,23 +63,75 @@ public class Aiming {
       Time estimatedTimeOfFlight,
       boolean log) {
 
-    Translation2d targetTranslation = FieldUtil.flipAllianceIfNeeded(targetPosition);
+    Translation2d target = FieldUtil.flipAllianceIfNeeded(targetPosition);
+    double targetX = target.getX();
+    double targetY = target.getY();
+    double robotX = robotCenter.getX();
+    double robotY = robotCenter.getY();
+    double robotAngle = currentRobotRotation.getRadians();
+    double offsetX = shooterRobotOffset.getX();
+    double offsetY = shooterRobotOffset.getY();
+    double velX = fieldVelocity.getX();
+    double velY = fieldVelocity.getY();
+    double tof = estimatedTimeOfFlight.in(edu.wpi.first.units.Units.Seconds);
 
-    return calculateTwoPassAiming(
-        robotCenter,
-        currentRobotRotation,
-        shooterRobotOffset,
-        (shooterPos) -> {
-          Translation2d lead =
-              Util.calculateClampedLead(
-                  shooterPos, targetTranslation, fieldVelocity, estimatedTimeOfFlight.in(Seconds));
-          return targetTranslation.minus(lead);
-        },
-        log);
+    // Estimate rotation from current position
+    double cos = Math.cos(robotAngle);
+    double sin = Math.sin(robotAngle);
+    double shooterX = robotX + (offsetX * cos - offsetY * sin);
+    double shooterY = robotY + (offsetX * sin + offsetY * cos);
+
+    double virtualTargetX = targetX - (velX * tof);
+    double virtualTargetY = targetY - (velY * tof);
+
+    // Clamp lead
+    double dxRaw = virtualTargetX - shooterX;
+    double dyRaw = virtualTargetY - shooterY;
+    double distToVirtual = Math.sqrt(dxRaw * dxRaw + dyRaw * dyRaw);
+    double leadX = velX * tof;
+    double leadY = velY * tof;
+    double leadMag = Math.sqrt(leadX * leadX + leadY * leadY);
+    double maxLead = distToVirtual * 0.5;
+
+    if (leadMag > maxLead && leadMag > 1e-6) {
+      double scale = maxLead / leadMag;
+      virtualTargetX = targetX - (leadX * scale);
+      virtualTargetY = targetY - (leadY * scale);
+    }
+
+    double estimatedAngle = Math.atan2(virtualTargetY - shooterY, virtualTargetX - shooterX);
+
+    // Recompute with predicted shooter position
+    cos = Math.cos(estimatedAngle);
+    sin = Math.sin(estimatedAngle);
+    double predShooterX = robotX + (offsetX * cos - offsetY * sin);
+    double predShooterY = robotY + (offsetX * sin + offsetY * cos);
+
+    double finalDx = virtualTargetX - predShooterX;
+    double finalDy = virtualTargetY - predShooterY;
+    double finalAngle = Math.atan2(finalDy, finalDx);
+    double finalDist = Math.sqrt(finalDx * finalDx + finalDy * finalDy);
+
+    if (log) {
+      Logger.recordOutput(
+          "Aiming/VirtualTarget", new Pose2d(virtualTargetX, virtualTargetY, Rotation2d.kZero));
+      Logger.recordOutput(
+          "Aiming/ShooterPosition", new Pose2d(shooterX, shooterY, currentRobotRotation));
+      Logger.recordOutput(
+          "Aiming/PredictedShooterPosition",
+          new Pose2d(predShooterX, predShooterY, Rotation2d.fromRadians(estimatedAngle)));
+      Logger.recordOutput("Aiming/TargetRotation", Math.toDegrees(finalAngle));
+      Logger.recordOutput("Aiming/DistanceToTarget", finalDist);
+    }
+
+    return new AimingResult(Rotation2d.fromRadians(finalAngle), Meters.of(finalDist), true);
   }
 
   /**
-   * Computes aiming for lobbed shots.
+   * Computes aiming for lobbed shots targeted at specific field line segments.
+   *
+   * <p>The robot will automatically select the closest of the two provided lob targets and
+   * calculate the closest point on that line segment to the shooter.
    *
    * @param robotCenter The current center position of the robot.
    * @param currentRobotRotation The current rotation of the robot.
@@ -93,83 +153,63 @@ public class Aiming {
 
     Translation2d leftCenter = FieldUtil.flipAllianceIfNeeded(lobTargetLeftCenter);
     Translation2d rightCenter = FieldUtil.flipAllianceIfNeeded(lobTargetRightCenter);
-    Translation2d currentShooterPos =
-        robotCenter.plus(shooterRobotOffset.rotateBy(currentRobotRotation));
+    double robotX = robotCenter.getX();
+    double robotY = robotCenter.getY();
+    double robotAngle = currentRobotRotation.getRadians();
+    double offsetX = shooterRobotOffset.getX();
+    double offsetY = shooterRobotOffset.getY();
+    double halfLen = lobTargetHalfLength.in(Meters);
 
-    // Find closest point on each line segment to the current shooter position
-    Translation2d closestLeft =
-        Util.closestPointOnLobLine(currentShooterPos, leftCenter, lobTargetHalfLength.in(Meters));
-    Translation2d closestRight =
-        Util.closestPointOnLobLine(currentShooterPos, rightCenter, lobTargetHalfLength.in(Meters));
+    double cos = Math.cos(robotAngle);
+    double sin = Math.sin(robotAngle);
+    double shooterX = robotX + (offsetX * cos - offsetY * sin);
+    double shooterY = robotY + (offsetX * sin + offsetY * cos);
 
-    double distLeft = currentShooterPos.getDistance(closestLeft);
-    double distRight = currentShooterPos.getDistance(closestRight);
+    double leftClampedY =
+        Math.max(leftCenter.getY() - halfLen, Math.min(leftCenter.getY() + halfLen, shooterY));
+    double rightClampedY =
+        Math.max(rightCenter.getY() - halfLen, Math.min(rightCenter.getY() + halfLen, shooterY));
 
-    final Translation2d closestLineCenter = distLeft < distRight ? leftCenter : rightCenter;
+    double dxL = leftCenter.getX() - shooterX;
+    double dyL = leftClampedY - shooterY;
+    double dxR = rightCenter.getX() - shooterX;
+    double dyR = rightClampedY - shooterY;
 
-    return calculateTwoPassAiming(
-        robotCenter,
-        currentRobotRotation,
-        shooterRobotOffset,
-        (shooterPos) -> {
-          return Util.closestPointOnLobLine(
-              shooterPos, closestLineCenter, lobTargetHalfLength.in(Meters));
-        },
-        log);
-  }
+    boolean useLeft = (dxL * dxL + dyL * dyL) < (dxR * dxR + dyR * dyR);
+    double targetX = useLeft ? leftCenter.getX() : rightCenter.getX();
+    double targetCenterY = useLeft ? leftCenter.getY() : rightCenter.getY();
 
-  /**
-   * Computes aiming outputs using a two-pass approach to account for the physical offset of the
-   * shooter relative to the robot's center.
-   *
-   * @param robotCenter The current center position of the robot.
-   * @param currentRobotRotation The current rotation of the robot.
-   * @param shooterRobotOffset The physical offset of the shooter from the robot's center.
-   * @param virtualTargetProvider A function that takes a shooter position and returns the target to
-   *     aim at.
-   * @param log Whether to publish outputs to AdvantageKit for visualization.
-   * @return The computed aiming result.
-   */
-  public static AimingResult calculateTwoPassAiming(
-      Translation2d robotCenter,
-      Rotation2d currentRobotRotation,
-      Translation2d shooterRobotOffset,
-      Function<Translation2d, Translation2d> virtualTargetProvider,
-      boolean log) {
+    // Use shooter position at current robot rotation
+    double clampedY =
+        Math.max(targetCenterY - halfLen, Math.min(targetCenterY + halfLen, shooterY));
+    double estimatedAngle = Math.atan2(clampedY - shooterY, targetX - shooterX);
 
-    // Estimate rotation from current shooter position
-    Translation2d currentShooterPos =
-        robotCenter.plus(shooterRobotOffset.rotateBy(currentRobotRotation));
-    Translation2d initialVirtualTarget = virtualTargetProvider.apply(currentShooterPos);
-    Rotation2d estimatedRotation = initialVirtualTarget.minus(currentShooterPos).getAngle();
+    // Predict shooter position
+    cos = Math.cos(estimatedAngle);
+    sin = Math.sin(estimatedAngle);
+    double predShooterX = robotX + (offsetX * cos - offsetY * sin);
+    double predShooterY = robotY + (offsetX * sin + offsetY * cos);
+    double finalClampedY =
+        Math.max(targetCenterY - halfLen, Math.min(targetCenterY + halfLen, predShooterY));
 
-    // Predict shooter position at the estimated rotation and recompute
-    Translation2d predictedShooterPos =
-        robotCenter.plus(shooterRobotOffset.rotateBy(estimatedRotation));
-    Translation2d finalVirtualTarget = virtualTargetProvider.apply(predictedShooterPos);
-
-    // Final calculation
-    Translation2d shooterToTarget = finalVirtualTarget.minus(predictedShooterPos);
-    Rotation2d targetRotation = shooterToTarget.getAngle();
-    double distanceMeters = shooterToTarget.getNorm();
+    double finalDx = targetX - predShooterX;
+    double finalDy = finalClampedY - predShooterY;
+    double finalAngle = Math.atan2(finalDy, finalDx);
+    double finalDist = Math.sqrt(finalDx * finalDx + finalDy * finalDy);
 
     if (log) {
-      Logger.recordOutput("Aiming/VirtualTarget", new Pose2d(finalVirtualTarget, Rotation2d.kZero));
       Logger.recordOutput(
-          "Aiming/ShooterPosition", new Pose2d(currentShooterPos, currentRobotRotation));
-      Logger.recordOutput(
-          "Aiming/PredictedShooterPosition", new Pose2d(predictedShooterPos, estimatedRotation));
-      Logger.recordOutput("Aiming/TargetRotation", targetRotation.getDegrees());
-      Logger.recordOutput("Aiming/DistanceToTarget", distanceMeters);
+          "Aiming/VirtualTarget", new Pose2d(targetX, finalClampedY, Rotation2d.kZero));
+      Logger.recordOutput("Aiming/TargetRotation", Math.toDegrees(finalAngle));
+      Logger.recordOutput("Aiming/DistanceToTarget", finalDist);
     }
 
-    // Pass true for hasTarget
-    return new AimingResult(targetRotation, Meters.of(distanceMeters), true);
+    return new AimingResult(Rotation2d.fromRadians(finalAngle), Meters.of(finalDist), true);
   }
 
   /**
-   * Creates a supplier that calculates aiming results for the central hub. The results are cached
-   * per control loop cycle to optimize performance.
+   * Creates a supplier for central hub aiming results. Caches results based on 20ms timestamps to
+   * prevent redundant calculation within a single control loop.
    *
    * @param robotPoseSupplier A supplier for the robot's current {@link Pose2d}.
    * @param fieldVelocitySupplier A supplier for the robot's field-relative velocity.
@@ -189,7 +229,6 @@ public class Aiming {
       @Override
       public AimingResult get() {
         double currentTime = Math.round(Timer.getFPGATimestamp() * 50.0) / 50.0;
-
         if (currentTime != lastTimestamp) {
           Pose2d robotPose = robotPoseSupplier.get();
           lastResult =
@@ -203,15 +242,13 @@ public class Aiming {
                   true);
           lastTimestamp = currentTime;
         }
-
         return lastResult;
       }
     };
   }
 
   /**
-   * Creates a supplier that calculates aiming results for lobbing. The results are cached per
-   * control loop cycle to optimize performance.
+   * Creates a supplier for lobbing aiming results. Caches results based on 20ms timestamps.
    *
    * @param robotPoseSupplier A supplier for the robot's current {@link Pose2d}.
    * @param shooterRobotOffset The physical offset of the shooter from the robot's center.
@@ -226,7 +263,6 @@ public class Aiming {
       @Override
       public AimingResult get() {
         double currentTime = Math.round(Timer.getFPGATimestamp() * 50.0) / 50.0;
-
         if (currentTime != lastTimestamp) {
           Pose2d robotPose = robotPoseSupplier.get();
           lastResult =
@@ -240,7 +276,6 @@ public class Aiming {
                   true);
           lastTimestamp = currentTime;
         }
-
         return lastResult;
       }
     };

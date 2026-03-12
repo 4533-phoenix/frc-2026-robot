@@ -13,7 +13,6 @@ import static edu.wpi.first.units.Units.*;
 
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.RobotConfig;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.*;
@@ -61,7 +60,7 @@ public class DriveConstants {
       int driveCanId,
       int turnCanId,
       int encoderCanId,
-      Rotation2d zeroOffset,
+      Angle zeroOffset,
       Translation2d translation) {}
 
   /**
@@ -75,28 +74,28 @@ public class DriveConstants {
         2,
         3,
         4,
-        Rotation2d.fromDegrees(35.51),
+        Degrees.of(35.51),
         new Translation2d(TRACK_WIDTH.in(Meters) / 2.0, WHEEL_BASE.in(Meters) / 2.0)),
     // Front Right (Module 1)
     new SwerveModuleConfig(
         5,
         6,
         7,
-        Rotation2d.fromDegrees(293.03),
+        Degrees.of(293.03),
         new Translation2d(TRACK_WIDTH.in(Meters) / 2.0, -WHEEL_BASE.in(Meters) / 2.0)),
     // Back Left (Module 2)
     new SwerveModuleConfig(
         8,
         9,
         10,
-        Rotation2d.fromDegrees(123.49),
+        Degrees.of(123.49),
         new Translation2d(-TRACK_WIDTH.in(Meters) / 2.0, WHEEL_BASE.in(Meters) / 2.0)),
     // Back Right (Module 3)
     new SwerveModuleConfig(
         11,
         12,
         13,
-        Rotation2d.fromDegrees(7.73),
+        Degrees.of(7.73),
         new Translation2d(-TRACK_WIDTH.in(Meters) / 2.0, -WHEEL_BASE.in(Meters) / 2.0))
   };
 
@@ -188,10 +187,10 @@ public class DriveConstants {
   public static final boolean TURN_ENCODER_INVERTED = false;
 
   /** Conversion factor for turn position from encoder rotations to radians. */
-  public static final double TURN_ENCODER_POSITION_FACTOR = 2 * Math.PI; // Rotations -> Radians
+  public static final double TURN_ENCODER_POSITION_FACTOR = 2 * Math.PI;
 
   /** Conversion factor for turn velocity from encoder RPM to radians per second. */
-  public static final double TURN_ENCODER_VELOCITY_FACTOR = 2 * Math.PI; // Rotations/Sec -> Rad/Sec
+  public static final double TURN_ENCODER_VELOCITY_FACTOR = 2 * Math.PI;
 
   // Turn PID configuration
   /** Proportional gain for the turn motor PID controller. */

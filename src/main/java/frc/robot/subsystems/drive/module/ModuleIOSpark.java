@@ -41,6 +41,9 @@ import frc.robot.subsystems.drive.SparkOdometryThread;
 import java.util.Queue;
 import java.util.function.DoubleSupplier;
 
+// TODO: Need to use maxmotion velocity instead of arbff
+// TODO: Need to clean up this file and optimize more
+
 /**
  * Real IO implementation for a swerve drive module using Spark Max motor controllers and a CANcoder
  * for absolute positioning.
@@ -50,7 +53,7 @@ import java.util.function.DoubleSupplier;
  * internal motor encoder.
  */
 public class ModuleIOSpark implements ModuleIO {
-  private final Rotation2d zeroRotation;
+  private final Angle zeroRotation;
   private Rotation2d currentTurnPosition = new Rotation2d();
 
   private final SparkMax driveSpark;
@@ -77,8 +80,7 @@ public class ModuleIOSpark implements ModuleIO {
   private final Debouncer turnEncoderConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
-  // Pre-allocated buffers for draining odometry queues without GC pressure (sized to queue
-  // capacity)
+  // Pre-allocated buffers for draining odometry queues without GC pressure
   private static final int ODOMETRY_BUFFER_SIZE = 20;
   private final double[] odometryTimestampBuffer = new double[ODOMETRY_BUFFER_SIZE];
   private final double[] odometryDrivePositionBuffer = new double[ODOMETRY_BUFFER_SIZE];
@@ -197,12 +199,9 @@ public class ModuleIOSpark implements ModuleIO {
         () -> {
           turnAbsolutePositionSignal.refresh();
           if (turnAbsolutePositionSignal.getStatus().isOK()) {
-            Rotation2d currentRot =
-                new Rotation2d(
-                        turnAbsolutePositionSignal.getValueAsDouble()
-                            * TURN_ENCODER_POSITION_FACTOR)
-                    .minus(zeroRotation);
-            return turnInternalEncoder.setPosition(currentRot.getRadians());
+            return turnInternalEncoder.setPosition(
+                (turnAbsolutePositionSignal.getValueAsDouble() * TURN_ENCODER_POSITION_FACTOR)
+                    - zeroRotation.in(Radians));
           } else {
             return turnInternalEncoder.setPosition(0.0);
           }
@@ -243,16 +242,14 @@ public class ModuleIOSpark implements ModuleIO {
 
     if (turnEncoderOk) {
       // Calculate position relative to the zero offset
-      currentTurnPosition =
-          new Rotation2d(
-                  turnAbsolutePositionSignal.getValueAsDouble() * TURN_ENCODER_POSITION_FACTOR)
-              .minus(zeroRotation);
       inputs.turnVelocity =
           RadiansPerSecond.of(turnVelocitySignal.getValueAsDouble() * TURN_ENCODER_VELOCITY_FACTOR);
 
       // Sync internal encoder to CANcoder if still and error is high
       double internalPos = turnInternalEncoder.getPosition();
-      double absolutePos = currentTurnPosition.getRadians();
+      double absolutePos =
+          (turnAbsolutePositionSignal.getValueAsDouble() * TURN_ENCODER_POSITION_FACTOR)
+              - zeroRotation.in(Radians);
       double turnError = Math.abs(MathUtil.angleModulus(internalPos - absolutePos));
       boolean isStill =
           inputs.turnVelocity.abs(RadiansPerSecond) < VELOCITY_GATE.in(RadiansPerSecond);
@@ -301,16 +298,18 @@ public class ModuleIOSpark implements ModuleIO {
         odometryTurnPositionBuffer[i] = (val != null) ? val : 0.0;
       }
 
-      // Copy from buffers into inputs arrays (arrays must be exact-sized for downstream code)
-      inputs.odometryTimestamps = new double[count];
-      inputs.odometryDrivePositionsRad = new double[count];
-      inputs.odometryTurnPositions = new Rotation2d[count];
+      // Copy from buffers into inputs arrays
+      if (inputs.odometryTimestamps.length != count) {
+        inputs.odometryTimestamps = new double[count];
+        inputs.odometryDrivePositionsRad = new double[count];
+        inputs.odometryTurnPositions = new Rotation2d[count];
+      }
 
       for (int i = 0; i < count; i++) {
         inputs.odometryTimestamps[i] = odometryTimestampBuffer[i];
         inputs.odometryDrivePositionsRad[i] = odometryDrivePositionBuffer[i];
         inputs.odometryTurnPositions[i] =
-            new Rotation2d(odometryTurnPositionBuffer[i]).minus(zeroRotation);
+            Rotation2d.fromRadians(odometryTurnPositionBuffer[i] - zeroRotation.in(Radians));
       }
 
     } finally {
@@ -345,7 +344,6 @@ public class ModuleIOSpark implements ModuleIO {
 
   @Override
   public void setTurnPosition(Angle rotation) {
-    // Use closed-loop position control
     turnController.setSetpoint(rotation.in(Radians), ControlType.kPosition, ClosedLoopSlot.kSlot0);
   }
 }

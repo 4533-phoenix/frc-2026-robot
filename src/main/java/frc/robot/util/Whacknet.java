@@ -74,8 +74,6 @@ public class Whacknet {
     buffer.order(ByteOrder.nativeOrder());
   }
 
-  // Native Methods
-
   /**
    * Starts the native vision server thread.
    *
@@ -246,8 +244,6 @@ public class Whacknet {
     public int getNumTags() {
       return Byte.toUnsignedInt(buffer.get(baseOffset + OFFSET_NUM_TAGS));
     }
-
-    // WPILib Methods
 
     /**
      * Easily converts the raw data into a WPILib Pose2d.

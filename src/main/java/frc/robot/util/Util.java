@@ -9,8 +9,6 @@
 
 package frc.robot.util;
 
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -114,49 +112,5 @@ public class Util {
     double time = DriverStation.getMatchTime();
     boolean isTimedMatch = DriverStation.isFMSAttached() || time > 0;
     return isTimedMatch && time <= 30.0 && time > 0;
-  }
-
-  /**
-   * Calculates the closest point on a vertical (Y-axis) lobbing line segment to the given position.
-   * The line is centered at {@code center} and extends {@code halfLen} meters in each Y direction.
-   *
-   * @param from The position to calculate the closest point from.
-   * @param center The center translation of the vertical line segment.
-   * @param halfLen The half length of the vertical line segment in meters.
-   * @return The closest point on the line segment to the given position.
-   */
-  public static Translation2d closestPointOnLobLine(
-      Translation2d from, Translation2d center, double halfLen) {
-    double clampedY = MathUtil.clamp(from.getY(), center.getY() - halfLen, center.getY() + halfLen);
-    return new Translation2d(center.getX(), clampedY);
-  }
-
-  /**
-   * Calculates the lead offset to apply to the static target, accounting for the robot's current
-   * velocity and the estimated time of flight. The lead magnitude is clamped to 50% of the
-   * shooter-to-target distance so the virtual target can never overshoot past the real target.
-   *
-   * @param shooterPos The current position of the shooter.
-   * @param targetTranslation The translation of the static target.
-   * @param fieldVelocity The field-relative velocity of the robot.
-   * @param tofSeconds The estimated time of flight in seconds.
-   * @return The calculated and clamped lead translation to apply.
-   */
-  public static Translation2d calculateClampedLead(
-      Translation2d shooterPos,
-      Translation2d targetTranslation,
-      Translation2d fieldVelocity,
-      double tofSeconds) {
-    Translation2d rawLead =
-        new Translation2d(fieldVelocity.getX() * tofSeconds, fieldVelocity.getY() * tofSeconds);
-
-    double distToTarget = shooterPos.getDistance(targetTranslation);
-    double maxLead = distToTarget * 0.5;
-    double leadMag = rawLead.getNorm();
-
-    if (leadMag > maxLead && leadMag > 1e-6) {
-      return rawLead.times(maxLead / leadMag);
-    }
-    return rawLead;
   }
 }

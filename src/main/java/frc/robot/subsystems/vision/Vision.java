@@ -11,6 +11,7 @@ import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
@@ -29,6 +30,16 @@ import org.littletonrobotics.junction.Logger;
  * monitors camera health and status using highly optimized zero-allocation data structures.
  */
 public class Vision extends SubsystemBase {
+  /** A record representing a single vision observation. */
+  public record VisionObservation(
+      Pose2d visionPose,
+      double timestamp,
+      int cameraId,
+      int tagCount,
+      double stdDevX,
+      double stdDevY,
+      double stdDevRot) {}
+
   private final VisionIO io;
   private final VisionIOInputsAutoLogged inputs = new VisionIOInputsAutoLogged();
   private final Drive drive;
@@ -39,7 +50,7 @@ public class Vision extends SubsystemBase {
   private final Alert[] alerts;
   private final String[] logPaths;
   private final String[] seenPaths;
-  private final boolean[] cameraActiveFlags; // Tracks if an ID actually exists
+  private final boolean[] cameraActiveFlags;
 
   // Pre-allocated standard deviation vector to avoid allocations in periodic()
   private final Matrix<N3, N1> stdVector = VecBuilder.fill(0, 0, 0);
@@ -90,23 +101,24 @@ public class Vision extends SubsystemBase {
     double currentTime = Timer.getTimestamp();
 
     // Process all detections received this frame
-    for (int i = 0; i < inputs.visionPoses.length; i++) {
-      int id = inputs.cameraIds[i];
+    for (int i = 0; i < inputs.observations.length; i++) {
+      int id = inputs.observations[i].cameraId();
       if (id >= 0 && id <= maxCameraId && cameraActiveFlags[id]) {
         lastTimestamps[id] = currentTime;
       }
 
       // Single-tag detections are often unreliable for field position
-      if (inputs.tagCounts[i] <= 1) {
+      if (inputs.observations[i].tagCount() <= 1) {
         continue;
       }
 
       // Update Drive Subsystem with refined pose
-      stdVector.set(0, 0, inputs.stdDevX[i]);
-      stdVector.set(1, 0, inputs.stdDevY[i]);
-      stdVector.set(2, 0, inputs.stdDevRot[i]);
+      stdVector.set(0, 0, inputs.observations[i].stdDevX());
+      stdVector.set(1, 0, inputs.observations[i].stdDevY());
+      stdVector.set(2, 0, inputs.observations[i].stdDevRot());
 
-      drive.addVisionMeasurement(inputs.visionPoses[i], inputs.timestamps[i], stdVector);
+      drive.addVisionMeasurement(
+          inputs.observations[i].visionPose(), inputs.observations[i].timestamp(), stdVector);
     }
 
     // Check for offline cameras

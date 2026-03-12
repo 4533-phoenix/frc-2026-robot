@@ -73,7 +73,21 @@ public class Drive extends SubsystemBase {
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(MODULE_TRANSLATIONS);
   private Rotation2d rawGyroRotation = Rotation2d.kZero;
-  private SwerveModulePosition[] lastModulePositions = // For delta tracking
+
+  // Pre-allocate sweve module positions for odometry to avoid allocations in the main loop
+  private final SwerveModulePosition[] odometryPositionsBuffer =
+      new SwerveModulePosition[] {
+        new SwerveModulePosition(), new SwerveModulePosition(),
+        new SwerveModulePosition(), new SwerveModulePosition()
+      };
+
+  private final SwerveModulePosition[] odometryDeltasBuffer =
+      new SwerveModulePosition[] {
+        new SwerveModulePosition(), new SwerveModulePosition(),
+        new SwerveModulePosition(), new SwerveModulePosition()
+      };
+
+  private final SwerveModulePosition[] lastModulePositions =
       new SwerveModulePosition[] {
         new SwerveModulePosition(),
         new SwerveModulePosition(),
@@ -179,16 +193,20 @@ public class Drive extends SubsystemBase {
     }
     for (int i = 0; i < sampleCount; i++) {
       // Read wheel positions and deltas from each module
-      SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
-      SwerveModulePosition[] moduleDeltas = new SwerveModulePosition[4];
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
-        modulePositions[moduleIndex] = modules[moduleIndex].getOdometryPositions()[i];
-        moduleDeltas[moduleIndex] =
-            new SwerveModulePosition(
-                modulePositions[moduleIndex].distanceMeters
-                    - lastModulePositions[moduleIndex].distanceMeters,
-                modulePositions[moduleIndex].angle);
-        lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
+        SwerveModulePosition sample = modules[moduleIndex].getOdometryPositions()[i];
+
+        // Overwrite values in pre-allocated buffers instead of allocating new objects
+        odometryPositionsBuffer[moduleIndex].distanceMeters = sample.distanceMeters;
+        odometryPositionsBuffer[moduleIndex].angle = sample.angle;
+
+        odometryDeltasBuffer[moduleIndex].distanceMeters =
+            sample.distanceMeters - lastModulePositions[moduleIndex].distanceMeters;
+        odometryDeltasBuffer[moduleIndex].angle = sample.angle;
+
+        // Update tracking for next iteration
+        lastModulePositions[moduleIndex].distanceMeters = sample.distanceMeters;
+        lastModulePositions[moduleIndex].angle = sample.angle;
       }
 
       // Update gyro angle, fallback to kinematics if missing sample
@@ -197,12 +215,12 @@ public class Drive extends SubsystemBase {
         rawGyroRotation = Rotation2d.fromRadians(gyroInputs.odometryYawPositions[i]);
       } else {
         // Use the angle delta from the kinematics and module deltas
-        Twist2d twist = kinematics.toTwist2d(moduleDeltas);
-        rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
+        Twist2d twist = kinematics.toTwist2d(odometryDeltasBuffer);
+        rawGyroRotation = rawGyroRotation.plus(Rotation2d.fromRadians(twist.dtheta));
       }
 
-      // Apply update
-      poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
+      // Apply update using pre-allocated buffers
+      poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, odometryPositionsBuffer);
     }
 
     // Update gyro alert

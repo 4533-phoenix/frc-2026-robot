@@ -52,7 +52,7 @@ public class SparkOdometryThread {
   @SuppressWarnings("unchecked")
   private Queue<Double>[] bakedTimestampQueues = new Queue[0];
 
-  // reusable buffers to avoid allocating on every sample
+  // Reusable buffers to avoid allocating on every sample
   private double[] sparkValueBuffer = new double[0];
   private double[] genericValueBuffer = new double[0];
 

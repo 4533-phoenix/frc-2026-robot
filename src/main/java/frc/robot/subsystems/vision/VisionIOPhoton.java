@@ -15,6 +15,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import frc.robot.subsystems.vision.Vision.VisionObservation;
 import frc.robot.subsystems.vision.VisionConstants.CameraConfig;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,14 +36,8 @@ public class VisionIOPhoton implements VisionIO {
 
   // Pre-allocated buffers to avoid ArrayList/stream/boxing allocations every cycle.
   // Sized to a reasonable max; if more results arrive they are silently dropped.
-  private static final int MAX_OBSERVATIONS = 16;
-  private final Pose2d[] poseBuffer = new Pose2d[MAX_OBSERVATIONS];
-  private final double[] timestampBuffer = new double[MAX_OBSERVATIONS];
-  private final int[] cameraIdBuffer = new int[MAX_OBSERVATIONS];
-  private final int[] tagCountBuffer = new int[MAX_OBSERVATIONS];
-  private final double[] stdXBuffer = new double[MAX_OBSERVATIONS];
-  private final double[] stdYBuffer = new double[MAX_OBSERVATIONS];
-  private final double[] stdRotBuffer = new double[MAX_OBSERVATIONS];
+  private static final int MAX_OBSERVATIONS = 64;
+  private final VisionObservation[] observationBuffer = new VisionObservation[MAX_OBSERVATIONS];
 
   private static class CameraContext {
     public final int id;
@@ -75,47 +70,37 @@ public class VisionIOPhoton implements VisionIO {
       }
 
       for (PhotonPipelineResult result : ctx.camera.getAllUnreadResults()) {
-        if (!result.hasTargets()) continue;
+        if (!result.hasTargets() || count >= MAX_OBSERVATIONS) continue;
 
         Optional<EstimatedRobotPose> estimation =
             ctx.estimator
                 .estimateCoprocMultiTagPose(result)
                 .or(() -> ctx.estimator.estimateLowestAmbiguityPose(result));
 
-        if (estimation.isPresent() && count < MAX_OBSERVATIONS) {
+        if (estimation.isPresent()) {
           EstimatedRobotPose estimatedPose = estimation.get();
           Pose2d pose2d = estimatedPose.estimatedPose.toPose2d();
           List<PhotonTrackedTarget> targets = result.getTargets();
 
-          // Apply single-tag usage filter
-          if (targets.size() == 1 && !isUsableSingleTag(targets.get(0))) {
-            continue;
-          }
+          if (targets.size() == 1 && !isUsableSingleTag(targets.get(0))) continue;
 
-          // Calculate Standard Deviations
           Matrix<N3, N1> stdDevs = getEstimationStdDevs(pose2d, targets);
 
-          poseBuffer[count] = pose2d;
-          timestampBuffer[count] = estimatedPose.timestampSeconds;
-          cameraIdBuffer[count] = ctx.id;
-          tagCountBuffer[count] = targets.size();
-          stdXBuffer[count] = stdDevs.get(0, 0);
-          stdYBuffer[count] = stdDevs.get(1, 0);
-          stdRotBuffer[count] = stdDevs.get(2, 0);
-          count++;
+          observationBuffer[count++] =
+              new VisionObservation(
+                  pose2d,
+                  estimatedPose.timestampSeconds,
+                  ctx.id,
+                  targets.size(),
+                  stdDevs.get(0, 0),
+                  stdDevs.get(1, 0),
+                  stdDevs.get(2, 0));
         }
       }
     }
 
-    // Copy from buffers into exact-sized arrays for AutoLog
     inputs.serverLoaded = allConnected;
-    inputs.visionPoses = Arrays.copyOf(poseBuffer, count);
-    inputs.timestamps = Arrays.copyOf(timestampBuffer, count);
-    inputs.cameraIds = Arrays.copyOf(cameraIdBuffer, count);
-    inputs.tagCounts = Arrays.copyOf(tagCountBuffer, count);
-    inputs.stdDevX = Arrays.copyOf(stdXBuffer, count);
-    inputs.stdDevY = Arrays.copyOf(stdYBuffer, count);
-    inputs.stdDevRot = Arrays.copyOf(stdRotBuffer, count);
+    inputs.observations = Arrays.copyOf(observationBuffer, count);
   }
 
   /** Logic from Riptide's AprilTagAlgorithms.java */
