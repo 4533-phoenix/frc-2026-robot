@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-// Increased queue size to handle jitter (Java GC pauses)
+// Increased queue size to handle jitter
 #define MAX_QUEUE_SIZE 64
 #define MASK (MAX_QUEUE_SIZE - 1)
 #define RECIEVE_BUF_SIZE 4194304
@@ -29,7 +29,7 @@
 #define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
-// Structs that are given from our rust code (Packed to match Java)
+// Structs that are given from our rust code
 typedef struct __attribute__((packed)) {
 	double x, y, rot;
 } RobotPos;
@@ -47,9 +47,9 @@ typedef struct __attribute__((packed)) {
 	uint8_t padding[6];
 } VisionMeasurement;
 
-// Cache-line-padded ring buffer (prevents false sharing)
+// Cache-line-padded ring buffer
 typedef struct {
-	// Volatile removed on array: we use atomic indices + memcpy to ensure ordering
+	// We use atomic indices + memcpy to ensure ordering
 	VisionMeasurement data[MAX_QUEUE_SIZE];
 
 	// Written by Worker

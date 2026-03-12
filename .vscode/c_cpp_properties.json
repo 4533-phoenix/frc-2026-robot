@@ -22,9 +22,13 @@
     {
       "name": "RoboRIO-Windows",
       "includePath": [
-        "${workspaceFolder}/src/main/native/include/**",
+        "${workspaceFolder}/src/main/native/include",
+        "${workspaceFolder}/src/main/native/include/linux",
+        "${workspaceFolder}/src/main/native/c/**",
         "C:/Users/Public/wpilib/2026/jdk/include",
         "C:/Users/Public/wpilib/2026/jdk/include/win32",
+        "C:/Users/Public/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot/usr/lib/gcc/arm-nilrt-linux-gnueabi/12/include",
+        "C:/Users/Public/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot/usr/lib/gcc/arm-nilrt-linux-gnueabi/12/include-fixed",
         "C:/Users/Public/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot/usr/include"
       ],
       "compilerPath": "C:/Users/Public/wpilib/2026/roborio/bin/arm-frc2025-linux-gnueabi-gcc.exe",
