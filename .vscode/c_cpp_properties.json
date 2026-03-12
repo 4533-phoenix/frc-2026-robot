@@ -1,25 +1,6 @@
 {
   "configurations": [
     {
-      "name": "RoboRIO-Linux",
-      "includePath": [
-        "${workspaceFolder}/src/main/native/include/**",
-        "${userHome}/wpilib/2026/jdk/include",
-        "${userHome}/wpilib/2026/jdk/include/linux",
-        "${userHome}/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot/usr/include"
-      ],
-      "compilerPath": "${userHome}/wpilib/2026/roborio/bin/arm-frc2025-linux-gnueabi-gcc",
-      "compilerArgs": [
-        "-mcpu=cortex-a9",
-        "-mfloat-abi=softfp",
-        "-mfpu=neon-vfpv3",
-        "--sysroot=${userHome}/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot"
-      ],
-      "intelliSenseMode": "linux-gcc-arm",
-      "cStandard": "gnu11",
-      "cppStandard": "gnu++17"
-    },
-    {
       "name": "RoboRIO-Windows",
       "includePath": [
         "${workspaceFolder}/src/main/native/include",
@@ -39,6 +20,25 @@
         "--sysroot=C:/Users/Public/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot"
       ],
       "intelliSenseMode": "windows-gcc-arm",
+      "cStandard": "gnu11",
+      "cppStandard": "gnu++17"
+    },
+    {
+      "name": "RoboRIO-Linux",
+      "includePath": [
+        "${workspaceFolder}/src/main/native/include/**",
+        "${userHome}/wpilib/2026/jdk/include",
+        "${userHome}/wpilib/2026/jdk/include/linux",
+        "${userHome}/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot/usr/include"
+      ],
+      "compilerPath": "${userHome}/wpilib/2026/roborio/bin/arm-frc2025-linux-gnueabi-gcc",
+      "compilerArgs": [
+        "-mcpu=cortex-a9",
+        "-mfloat-abi=softfp",
+        "-mfpu=neon-vfpv3",
+        "--sysroot=${userHome}/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot"
+      ],
+      "intelliSenseMode": "linux-gcc-arm",
       "cStandard": "gnu11",
       "cppStandard": "gnu++17"
     }
