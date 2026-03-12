@@ -234,7 +234,10 @@ public class RobotContainer {
         .whileTrue(shooter.runHeld());
 
     // When right trigger held, shooter is ready, and robot is aimed, run the indexer
-    driverController.rightTrigger().whileTrue(indexer.run());
+    driverController.rightTrigger()
+        .and(driverController.leftTrigger())
+        .and(superstructure.isReadyToShoot())
+        .whileTrue(indexer.run());
 
     driverController
         .leftTrigger()
