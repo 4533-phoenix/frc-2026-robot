@@ -48,37 +48,26 @@ public class FlywheelIOSpark implements FlywheelIO {
   /** Creates a new FlywheelIOSpark and configures the motor controller. */
   public FlywheelIOSpark() {
     var config = new SparkFlexConfig();
-    // Configure motor direction and neutral behavior
     config
         .idleMode(IdleMode.kCoast)
         .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
         .voltageCompensation(12.0);
-
-    // Set encoder conversion factors so velocity reads in rad/s
     config
         .encoder
         .positionConversionFactor(FLYWHEEL_ENCODER_POSITION_FACTOR)
         .velocityConversionFactor(FLYWHEEL_ENCODER_VELOCITY_FACTOR)
         .uvwMeasurementPeriod(10)
         .uvwAverageDepth(2);
-
-    // Configure PID gains for closed-loop velocity control
     config
         .closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(FLYWHEEL_KP, FLYWHEEL_KI, FLYWHEEL_KD);
-
-    // Configure feedforward gains (handled internally by MAXMotion)
     config.closedLoop.feedForward.kS(FLYWHEEL_KS).kV(FLYWHEEL_KV).kA(FLYWHEEL_KA);
-
-    // Configure MAXMotion velocity profile constraints
     config
         .closedLoop
         .maxMotion
         .maxAcceleration(FLYWHEEL_MAX_ACCELERATION.in(RadiansPerSecondPerSecond))
         .allowedProfileError(ANGULAR_TOLERANCE.in(RadiansPerSecond));
-
-    // Configure signal update rates
     config
         .signals
         .primaryEncoderVelocityAlwaysOn(true)

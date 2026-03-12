@@ -18,7 +18,6 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.*;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -68,8 +67,7 @@ public class Module {
     int sampleCount = inputs.odometryTimestamps.length;
     odometryPositions = new SwerveModulePosition[sampleCount];
     for (int i = 0; i < sampleCount; i++) {
-      Distance positionMeters =
-          WHEEL_RADIUS.times(inputs.odometryDrivePositionsRad[i]);
+      Distance positionMeters = WHEEL_RADIUS.times(inputs.odometryDrivePositionsRad[i]);
       Rotation2d angle = new Rotation2d(inputs.odometryTurnPositionsRad[i]);
       odometryPositions[i] = new SwerveModulePosition(positionMeters, angle);
     }
@@ -178,7 +176,6 @@ public class Module {
    */
   public double[] getOdometryTimestamps() {
     return inputs.odometryTimestamps;
-    
   }
 
   /**

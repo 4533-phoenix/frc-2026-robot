@@ -295,7 +295,7 @@ public class ModuleIOSpark implements ModuleIO {
       // Bulk copy data into inputs
       System.arraycopy(odometryTimestampBuffer, 0, inputs.odometryTimestamps, 0, count);
       System.arraycopy(odometryDrivePositionBuffer, 0, inputs.odometryDrivePositionsRad, 0, count);
-      
+
       double zeroOffset = zeroRotation.in(Radians);
       for (int i = 0; i < count; i++) {
         inputs.odometryTurnPositionsRad[i] = odometryTurnPositionBuffer[i] - zeroOffset;

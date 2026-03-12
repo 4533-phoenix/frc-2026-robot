@@ -63,8 +63,10 @@ public interface ModuleIO {
     // Odometry Inputs
     /** Timestamps for odometry measurements. */
     public double[] odometryTimestamps = new double[] {};
+
     /** Drive positions for odometry measurements. */
     public double[] odometryDrivePositionsRad = new double[] {};
+
     /** Turn positions for odometry measurements. */
     public double[] odometryTurnPositionsRad = new double[] {};
   }
