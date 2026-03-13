@@ -134,4 +134,10 @@ public class ArmIOSim implements ArmIO {
         angle.in(Radians), ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
     sentPosition = angle;
   }
+
+  @Override
+  public void stop() {
+    armSpark.stopMotor();
+    sentPosition = null;
+  }
 }

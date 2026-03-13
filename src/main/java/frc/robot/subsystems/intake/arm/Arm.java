@@ -12,6 +12,7 @@ import static frc.robot.subsystems.intake.arm.ArmConstants.*;
 
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -86,15 +87,27 @@ public class Arm extends SubsystemBase {
     disconnectedAlert.set(!inputs.connected);
 
     // Check for faults
-    faultAlert.set(!inputs.healthy);
-    if (!inputs.healthy) {
-      faultAlert.setText(SparkUtil.getArrayString("Intake Arm Motor Faults: ", inputs.faults));
+    if (inputs.connected) {
+      faultAlert.set(!inputs.healthy);
+      if (!inputs.healthy) {
+        faultAlert.setText(
+            SparkUtil.getArrayString(
+                "Intake Arm Motor Faults: ", SparkUtil.getFaultStrings(inputs.status[0])));
+      }
+    } else {
+      faultAlert.set(false);
+    }
+
+    // If the robot is disabled we lose control over the arm
+    if (goal != Goal.UNKNOWN && DriverStation.isDisabled()) {
+      setGoal(Goal.UNKNOWN);
     }
 
     switch (goal) {
       case RETRACT -> io.setPosition(RETRACTED_POSITION);
       case DEPLOY -> io.setPosition(DEPLOYED_POSITION);
       case UNKNOWN -> {
+        io.stop();
         if (deployedTrigger.getAsBoolean()) {
           setGoal(Goal.DEPLOY);
         } else if (retractedTrigger.getAsBoolean()) {
@@ -148,5 +161,14 @@ public class Arm extends SubsystemBase {
   /** Convenience method to set the deploy goal directly. */
   public void setDeploy() {
     setGoal(Goal.DEPLOY);
+  }
+
+  /**
+   * Returns whether or not the subsystem is healthy
+   *
+   * @return True if the subsystem is healthy, false otherwise.
+   */
+  public boolean isHealthy() {
+    return inputs.healthy && inputs.connected;
   }
 }

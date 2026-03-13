@@ -67,9 +67,15 @@ public class Indexer extends SubsystemBase {
     disconnectedAlert.set(!inputs.connected);
 
     // Check for faults
-    faultAlert.set(!inputs.healthy);
-    if (!inputs.healthy) {
-      faultAlert.setText(SparkUtil.getArrayString("Indexer Motor Faults: ", inputs.faults));
+    if (inputs.connected) {
+      faultAlert.set(!inputs.healthy);
+      if (!inputs.healthy) {
+        faultAlert.setText(
+            SparkUtil.getArrayString(
+                "Indexer Motor Faults: ", SparkUtil.getFaultStrings(inputs.status[0])));
+      }
+    } else {
+      faultAlert.set(false);
     }
 
     switch (goal) {
@@ -94,5 +100,14 @@ public class Indexer extends SubsystemBase {
    */
   public Command stop() {
     return this.runOnce(() -> setGoal(Goal.STOP));
+  }
+
+  /**
+   * Returns whether or not the subsystem is healthy
+   *
+   * @return True if the subsystem is healthy, false otherwise.
+   */
+  public boolean isHealthy() {
+    return inputs.healthy && inputs.connected;
   }
 }

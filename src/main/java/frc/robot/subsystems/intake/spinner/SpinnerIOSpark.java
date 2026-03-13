@@ -20,7 +20,6 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Voltage;
-import frc.lib.SparkUtil;
 import java.util.function.DoubleSupplier;
 
 /**
@@ -57,9 +56,9 @@ public class SpinnerIOSpark implements SpinnerIO {
         .primaryEncoderPositionPeriodMs(20)
         .primaryEncoderVelocityAlwaysOn(true)
         .primaryEncoderVelocityPeriodMs(20)
-        .appliedOutputPeriodMs(50)
-        .busVoltagePeriodMs(50)
-        .outputCurrentPeriodMs(50);
+        .appliedOutputPeriodMs(20)
+        .busVoltagePeriodMs(20)
+        .outputCurrentPeriodMs(20);
     tryUntilOk(
         5,
         () ->
@@ -96,17 +95,11 @@ public class SpinnerIOSpark implements SpinnerIO {
     inputs.connected = connectedDebounce.calculate(spinnerSparkOk);
 
     // Health
-    inputs.healthy = !spark.hasActiveFault();
-    if (spark.hasActiveFault()) {
-      inputs.faults = SparkUtil.getFaultStrings(spark.getFaults());
-    } else if (inputs.faults.length > 0) {
-      inputs.faults = new String[0];
-    }
-    if (spark.hasActiveWarning()) {
-      inputs.warnings = SparkUtil.getWarningStrings(spark.getWarnings());
-    } else if (inputs.warnings.length > 0) {
-      inputs.warnings = new String[0];
-    }
+    inputs.status[0] = spark.getFaults().rawBits;
+    inputs.healthy = inputs.status[0] == 0;
+    inputs.status[1] = spark.getStickyFaults().rawBits;
+    inputs.status[2] = spark.getWarnings().rawBits;
+    inputs.status[3] = spark.getStickyWarnings().rawBits;
   }
 
   /**

@@ -36,11 +36,8 @@ public interface IndexerIO {
     /** Whether the indexer motor is functioning correctly. */
     public boolean healthy = true;
 
-    /** Any active faults reported by the indexer motor controller. */
-    public String[] faults = new String[] {};
-
-    /** Any active warnings reported by the indexer motor controller. */
-    public String[] warnings = new String[] {};
+    /** The full status of the indexer motor controller. */
+    public int[] status = new int[] {0, 0, 0, 0};
   }
 
   /**

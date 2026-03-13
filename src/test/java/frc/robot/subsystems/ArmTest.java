@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import frc.robot.subsystems.intake.arm.Arm;
 import frc.robot.subsystems.intake.arm.ArmConstants;
 import frc.robot.subsystems.intake.arm.ArmIO;
@@ -48,7 +49,12 @@ public class ArmTest {
     DummyArmIO dummyIO = new DummyArmIO();
     Arm arm = new Arm(dummyIO);
 
-    // Initial state: robot turns on, arm is somewhere random.
+    // The Driver Station is connected and enabled
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.setDsAttached(true);
+    DriverStationSim.notifyNewData();
+
+    // Robot turns on, arm is somewhere random.
     dummyIO.inputsToInject.position = Degrees.of(90.0);
     arm.periodic();
     assertFalse(arm.isDeployed().getAsBoolean());

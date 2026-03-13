@@ -43,11 +43,8 @@ public interface ModuleIO {
     /** Whether the drive motor is functioning correctly. */
     public boolean driveHealthy = true;
 
-    /** Any active faults reported by the drive motor controller. */
-    public String[] driveFaults = new String[] {};
-
-    /** Any active warnings reported by the drive motor controller. */
-    public String[] driveWarnings = new String[] {};
+    /** The full status of the drive motor controller. */
+    public int[] driveStatus = new int[] {0, 0, 0, 0};
 
     // Turn Motor Inputs
     /** Whether the turn motor controller is currently connected. */
@@ -65,9 +62,11 @@ public interface ModuleIO {
     /** The current being drawn by the turn motor. */
     public Current turnCurrent = Amps.zero();
 
+    /** Whether the turn motor is functioning correctly. */
     public boolean turnHealthy = true;
-    public String[] turnFaults = new String[] {};
-    public String[] turnWarnings = new String[] {};
+
+    /** The full status of the turn motor controller. */
+    public int[] turnStatus = new int[] {0, 0, 0, 0};
 
     // Turn Encoder Inputs
     /** Whether the turn encoder is currently connected. */

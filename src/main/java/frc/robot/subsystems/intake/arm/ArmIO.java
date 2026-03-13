@@ -44,11 +44,8 @@ public interface ArmIO {
     /** Whether the arm motor is functioning correctly. */
     public boolean healthy = true;
 
-    /** Any active faults reported by the arm motor controller. */
-    public String[] faults = new String[] {};
-
-    /** Any active warnings reported by the arm motor controller. */
-    public String[] warnings = new String[] {};
+    /** The full status of the arm motor controller. */
+    public int[] status = new int[] {0, 0, 0, 0};
   }
 
   /**
@@ -64,4 +61,7 @@ public interface ArmIO {
    * @param angle The target angle for the arm.
    */
   public default void setPosition(Angle angle) {}
+
+  /** Tells the motor to stop trying to reach its setpoint */
+  public default void stop() {}
 }

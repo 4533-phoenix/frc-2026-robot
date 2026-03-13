@@ -133,4 +133,19 @@ public class Vision extends SubsystemBase {
       Logger.recordOutput(seenPaths[id], seen);
     }
   }
+
+  /**
+   * Returns whether or not the subsystem is healthy
+   *
+   * @return True if the subsystem is healthy, false otherwise.
+   */
+  public boolean isHealthy() {
+    double currentTime = Timer.getTimestamp();
+    for (int id = 0; id <= maxCameraId; id++) {
+      if (cameraActiveFlags[id] && (currentTime - lastTimestamps[id]) <= OFFLINE_TIMEOUT_SECONDS) {
+        return true;
+      }
+    }
+    return false;
+  }
 }

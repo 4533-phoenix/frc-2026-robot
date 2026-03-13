@@ -470,4 +470,21 @@ public class Drive extends SubsystemBase {
   public boolean isAlignedWithTarget(Rotation2d targetAngle, Rotation2d tolerance) {
     return Math.abs(getRotation().minus(targetAngle).getRadians()) < tolerance.getRadians();
   }
+
+  /**
+   * Returns whether or not the subsystem is healthy
+   *
+   * @return True if the subsystem is healthy, false otherwise.
+   */
+  public boolean isHealthy() {
+    if (!gyroInputs.connected) {
+      return false;
+    }
+    for (var module : modules) {
+      if (!module.isHealthy()) {
+        return false;
+      }
+    }
+    return true;
+  }
 }

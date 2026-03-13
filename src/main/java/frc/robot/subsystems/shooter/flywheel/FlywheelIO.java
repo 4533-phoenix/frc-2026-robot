@@ -35,14 +35,14 @@ public interface FlywheelIO {
     /** The current being drawn by the motor. */
     public Current appliedCurrent = Amps.zero();
 
+    /** Whether the flywheel has reached its target setpoint. */
+    public boolean atSetpoint = false;
+
     /** Whether the motor is functioning correctly. */
     public boolean healthy = true;
 
-    /** Any active faults reported by the motor controller. */
-    public String[] faults = new String[] {};
-
-    /** Any active warnings reported by the motor controller. */
-    public String[] warnings = new String[] {};
+    /** The full status of the flywheel motor controller. */
+    public int[] status = new int[] {0, 0, 0, 0};
   }
 
   /**

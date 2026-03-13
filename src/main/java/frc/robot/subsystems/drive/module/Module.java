@@ -78,16 +78,26 @@ public class Module {
     turnEncoderDisconnectedAlert.set(!inputs.turnEncoderConnected);
 
     // Check for drive faults/warnings
-    driveFaultAlert.set(!inputs.driveHealthy);
-    if (!inputs.driveHealthy) {
-      driveFaultAlert.setText(
-          SparkUtil.getArrayString(name + " Module Drive Faults: ", inputs.driveFaults));
+    if (inputs.driveConnected) {
+      driveFaultAlert.set(!inputs.driveHealthy);
+      if (!inputs.driveHealthy) {
+        driveFaultAlert.setText(
+            SparkUtil.getArrayString(
+                name + " Module Drive Faults: ", SparkUtil.getFaultStrings(inputs.driveStatus[0])));
+      }
+    } else {
+      driveFaultAlert.set(false);
     }
 
-    turnFaultAlert.set(!inputs.turnHealthy);
-    if (!inputs.turnHealthy) {
-      turnFaultAlert.setText(
-          SparkUtil.getArrayString(name + " Module Turn Faults: ", inputs.turnFaults));
+    if (inputs.turnConnected) {
+      turnFaultAlert.set(!inputs.turnHealthy);
+      if (!inputs.turnHealthy) {
+        turnFaultAlert.setText(
+            SparkUtil.getArrayString(
+                name + " Module Turn Faults: ", SparkUtil.getFaultStrings(inputs.turnStatus[0])));
+      }
+    } else {
+      turnFaultAlert.set(false);
     }
   }
 
@@ -207,5 +217,18 @@ public class Module {
    */
   public AngularVelocity getFFCharacterizationVelocity() {
     return inputs.driveVelocity;
+  }
+
+  /**
+   * Returns whether or not the subsystem is healthy
+   *
+   * @return True if the subsystem is healthy, false otherwise.
+   */
+  public boolean isHealthy() {
+    return inputs.driveHealthy
+        && inputs.turnHealthy
+        && inputs.driveConnected
+        && inputs.turnConnected
+        && inputs.turnEncoderConnected;
   }
 }

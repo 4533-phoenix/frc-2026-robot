@@ -36,11 +36,8 @@ public interface ClimbIO {
     /** Whether the lift motor is functioning correctly. */
     public boolean healthy = true;
 
-    /** Any active faults reported by the lift motor controller. */
-    public String[] faults = new String[] {};
-
-    /** Any active warnings reported by the lift motor controller. */
-    public String[] warnings = new String[] {};
+    /** The full status of the lift motor controller. */
+    public int[] status = new int[] {0, 0, 0, 0};
 
     // Limit switches
     /** Whether the lower limit switch is currently pressed. */

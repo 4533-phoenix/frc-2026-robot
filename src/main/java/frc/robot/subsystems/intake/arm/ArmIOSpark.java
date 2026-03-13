@@ -25,7 +25,6 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
-import frc.lib.SparkUtil;
 import java.util.function.DoubleSupplier;
 
 /**
@@ -80,9 +79,12 @@ public class ArmIOSpark implements ArmIO {
     armConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
-        .primaryEncoderPositionPeriodMs(20)
+        .primaryEncoderPositionPeriodMs(50)
         .primaryEncoderVelocityAlwaysOn(true)
-        .primaryEncoderVelocityPeriodMs(20);
+        .primaryEncoderVelocityPeriodMs(50)
+        .appliedOutputPeriodMs(50)
+        .busVoltagePeriodMs(50)
+        .outputCurrentPeriodMs(50);
     armConfig
         .softLimit
         .forwardSoftLimitEnabled(true)
@@ -145,17 +147,11 @@ public class ArmIOSpark implements ArmIO {
       inputs.velocity = RadiansPerSecond.of(currentVel);
 
       // Health
-      inputs.healthy = !spark.hasActiveFault();
-      if (spark.hasActiveFault()) {
-        inputs.faults = SparkUtil.getFaultStrings(spark.getFaults());
-      } else if (inputs.faults.length > 0) {
-        inputs.faults = new String[0];
-      }
-      if (spark.hasActiveWarning()) {
-        inputs.warnings = SparkUtil.getWarningStrings(spark.getWarnings());
-      } else if (inputs.warnings.length > 0) {
-        inputs.warnings = new String[0];
-      }
+      inputs.status[0] = spark.getFaults().rawBits;
+      inputs.healthy = inputs.status[0] == 0;
+      inputs.status[1] = spark.getStickyFaults().rawBits;
+      inputs.status[2] = spark.getWarnings().rawBits;
+      inputs.status[3] = spark.getStickyWarnings().rawBits;
     }
 
     // Power and current inputs
@@ -171,16 +167,17 @@ public class ArmIOSpark implements ArmIO {
     inputs.connected = connectedDebounce.calculate(armSparkOk);
   }
 
-  /**
-   * Commands the arm motor to move to a specified position using Motion Profiling.
-   *
-   * @param angle The target angle for the intake arm.
-   */
   @Override
   public void setPosition(Angle angle) {
     if (sentPosition != null && angle.isEquivalent(sentPosition)) return;
     controller.setSetpoint(
         angle.in(Radians), ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
     sentPosition = angle;
+  }
+
+  @Override
+  public void stop() {
+    spark.stopMotor();
+    sentPosition = null;
   }
 }

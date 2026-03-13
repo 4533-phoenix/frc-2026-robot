@@ -34,7 +34,6 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
-import frc.lib.SparkUtil;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.SparkOdometryThread;
 import java.util.Queue;
@@ -268,30 +267,18 @@ public class ModuleIOSpark implements ModuleIO {
     inputs.turnEncoderConnected = turnEncoderConnectedDebounce.calculate(turnEncoderOk);
 
     // Drive Health
-    inputs.driveHealthy = !driveSpark.hasActiveFault();
-    if (driveSpark.hasActiveFault()) {
-      inputs.driveFaults = SparkUtil.getFaultStrings(driveSpark.getFaults());
-    } else if (inputs.driveFaults.length != 0) {
-      inputs.driveFaults = new String[0];
-    }
-    if (driveSpark.hasActiveWarning()) {
-      inputs.driveWarnings = SparkUtil.getWarningStrings(driveSpark.getWarnings());
-    } else if (inputs.driveWarnings.length != 0) {
-      inputs.driveWarnings = new String[0];
-    }
+    inputs.driveStatus[0] = driveSpark.getFaults().rawBits;
+    inputs.driveHealthy = inputs.driveStatus[0] == 0;
+    inputs.driveStatus[1] = driveSpark.getStickyFaults().rawBits;
+    inputs.driveStatus[2] = driveSpark.getWarnings().rawBits;
+    inputs.driveStatus[3] = driveSpark.getStickyWarnings().rawBits;
 
     // Turn Health
-    inputs.turnHealthy = !turnSpark.hasActiveFault();
-    if (turnSpark.hasActiveFault()) {
-      inputs.turnFaults = SparkUtil.getFaultStrings(turnSpark.getFaults());
-    } else if (inputs.turnFaults.length != 0) {
-      inputs.turnFaults = new String[0];
-    }
-    if (turnSpark.hasActiveWarning()) {
-      inputs.turnWarnings = SparkUtil.getWarningStrings(turnSpark.getWarnings());
-    } else if (inputs.turnWarnings.length != 0) {
-      inputs.turnWarnings = new String[0];
-    }
+    inputs.turnStatus[0] = turnSpark.getFaults().rawBits;
+    inputs.turnHealthy = inputs.turnStatus[0] == 0;
+    inputs.turnStatus[1] = turnSpark.getStickyFaults().rawBits;
+    inputs.turnStatus[2] = turnSpark.getWarnings().rawBits;
+    inputs.turnStatus[3] = turnSpark.getStickyWarnings().rawBits;
 
     // Empty queues into the inputs object for odometry processing
     Drive.odometryLock.lock();

@@ -83,9 +83,7 @@ public class Shooter extends SubsystemBase {
     this.hoodIO = hoodIO;
 
     // Build triggers once; lambdas capture 'this' and evaluate live state each poll
-    flywheelReadyTrigger =
-        new Trigger(
-            () -> Math.abs(getFlywheelErrorRadPerSec()) <= ANGULAR_TOLERANCE.in(RadiansPerSecond));
+    flywheelReadyTrigger = new Trigger(() -> flywheelInputs.atSetpoint);
     hoodReadyTrigger = new Trigger(() -> hoodInputs.atSetpoint);
     readyToShootTrigger =
         flywheelReadyTrigger.and(hoodReadyTrigger).and(() -> goal == Goal.RUNNING);
@@ -111,10 +109,15 @@ public class Shooter extends SubsystemBase {
     Logger.processInputs("Shooter/Hood", hoodInputs);
 
     // Check for flywheel faults
-    flywheelFaultAlert.set(!flywheelInputs.healthy);
-    if (!flywheelInputs.healthy) {
-      flywheelFaultAlert.setText(
-          SparkUtil.getArrayString("Flywheel Motor Faults: ", flywheelInputs.faults));
+    if (flywheelInputs.connected) {
+      flywheelFaultAlert.set(!flywheelInputs.healthy);
+      if (!flywheelInputs.healthy) {
+        flywheelFaultAlert.setText(
+            SparkUtil.getArrayString(
+                "Flywheel Motor Faults: ", SparkUtil.getFaultStrings(flywheelInputs.status[0])));
+      }
+    } else {
+      flywheelFaultAlert.set(false);
     }
 
     switch (goal) {
@@ -240,5 +243,14 @@ public class Shooter extends SubsystemBase {
   /** Convenience method to set the stop goal directly. */
   public void setStop() {
     setGoal(Goal.STOP);
+  }
+
+  /**
+   * Returns whether or not the subsystem is healthy
+   *
+   * @return True if the subsystem is healthy, false otherwise.
+   */
+  public boolean isHealthy() {
+    return flywheelInputs.healthy && flywheelInputs.connected;
   }
 }

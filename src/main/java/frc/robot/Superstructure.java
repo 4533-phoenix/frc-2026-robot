@@ -19,15 +19,19 @@ import frc.lib.WritableTrigger;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveConstants;
+import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.intake.arm.Arm;
 import frc.robot.subsystems.intake.spinner.Spinner;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.shooter.ShooterKinematics;
+import frc.robot.subsystems.vision.Vision;
 import frc.robot.util.Aiming;
 import frc.robot.util.Aiming.AimingResult;
 import frc.robot.util.Util;
 import java.util.function.Supplier;
+
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -43,6 +47,8 @@ public class Superstructure extends SubsystemBase {
   private final Arm arm;
   private final Spinner spinner;
   private final Shooter shooter;
+  private final Indexer indexer;
+  private final Vision vision;
 
   // Aiming Suppliers
   private final Supplier<AimingResult> hubAiming;
@@ -60,13 +66,17 @@ public class Superstructure extends SubsystemBase {
    * @param arm The intake arm subsystem.
    * @param spinner The intake spinner subsystem.
    * @param shooter The shooter subsystem.
+   * @param indexer The indexer subsystem.
+   * @param vision The vision subsystem.
    */
-  public Superstructure(Drive drive, Climb climb, Arm arm, Spinner spinner, Shooter shooter) {
+  public Superstructure(Drive drive, Climb climb, Arm arm, Spinner spinner, Shooter shooter, Indexer indexer, Vision vision) {
     this.drive = drive;
     this.climb = climb;
     this.arm = arm;
     this.spinner = spinner;
     this.shooter = shooter;
+    this.indexer = indexer;
+    this.vision = vision;
 
     this.hubAiming =
         Aiming.hubAimingSupplier(
@@ -227,5 +237,21 @@ public class Superstructure extends SubsystemBase {
    */
   public WritableTrigger getClimbMode() {
     return climbMode;
+  }
+
+  /**
+   * Returns whether or not all subsystems in the superstructure are healthy
+   * 
+   * @return True if all subsystems are healthy, false otherwise.
+   */
+  @AutoLogOutput(key = "Superstructure/IsHealthy")
+  public boolean isHealthy() {
+    return drive.isHealthy()
+        && climb.isHealthy()
+        && arm.isHealthy()
+        && spinner.isHealthy()
+        && shooter.isHealthy()
+        && indexer.isHealthy()
+        && vision.isHealthy();
   }
 }

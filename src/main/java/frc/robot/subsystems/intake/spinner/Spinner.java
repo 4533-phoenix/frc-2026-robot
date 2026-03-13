@@ -35,9 +35,9 @@ public class Spinner extends SubsystemBase {
 
   @AutoLogOutput private Goal goal = Goal.STOP;
 
-  private final Alert spinnerDisconnectedAlert =
+  private final Alert disconnectedAlert =
       new Alert("Intake spinner motor disconnected", AlertType.kError);
-  private final Alert spinnerFaultAlert =
+  private final Alert faultAlert =
       new Alert("Intake spinner motor fault detected", AlertType.kError);
 
   /**
@@ -62,13 +62,18 @@ public class Spinner extends SubsystemBase {
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Spinner", inputs);
-    spinnerDisconnectedAlert.set(!inputs.connected);
+    disconnectedAlert.set(!inputs.connected);
 
     // Check for faults
-    spinnerFaultAlert.set(!inputs.healthy);
-    if (!inputs.healthy) {
-      spinnerFaultAlert.setText(
-          SparkUtil.getArrayString("Intake Spinner Motor Faults: ", inputs.faults));
+    if (inputs.connected) {
+      faultAlert.set(!inputs.healthy);
+      if (!inputs.healthy) {
+        faultAlert.setText(
+            SparkUtil.getArrayString(
+                "Intake Spinner Motor Faults: ", SparkUtil.getFaultStrings(inputs.status[0])));
+      }
+    } else {
+      faultAlert.set(false);
     }
 
     // Apply the voltage based on the current goal
@@ -104,5 +109,14 @@ public class Spinner extends SubsystemBase {
    */
   public Command stop() {
     return this.runOnce(() -> setGoal(Goal.STOP));
+  }
+
+  /**
+   * Returns whether or not the subsystem is healthy
+   *
+   * @return True if the subsystem is healthy, false otherwise.
+   */
+  public boolean isHealthy() {
+    return inputs.healthy && inputs.connected;
   }
 }

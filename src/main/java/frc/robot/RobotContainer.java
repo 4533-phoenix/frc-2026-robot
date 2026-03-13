@@ -140,7 +140,8 @@ public class RobotContainer {
         break;
     }
 
-    superstructure = new Superstructure(drive, climb, arm, spinner, shooter);
+    // Create the superstructure, which coordinates between subsystems
+    superstructure = new Superstructure(drive, climb, arm, spinner, shooter, indexer, vision);
 
     // Set up auto routines via PathPlanner
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());

@@ -144,6 +144,26 @@ public class SparkUtil {
   }
 
   /**
+   * Converts Active/Sticky Faults to Strings
+   *
+   * @param faults The raw integer representing the fault flags.
+   * @return An array of strings describing the active faults, or an empty array if no faults are
+   *     active.
+   */
+  public static String[] getFaultStrings(int faults) {
+    List<String> list = new ArrayList<>();
+    if ((faults & 0x1) != 0) list.add("Other");
+    if ((faults & 0x2) != 0) list.add("MotorType");
+    if ((faults & 0x4) != 0) list.add("Sensor");
+    if ((faults & 0x8) != 0) list.add("CAN");
+    if ((faults & 0x10) != 0) list.add("Temperature");
+    if ((faults & 0x20) != 0) list.add("GateDriver");
+    if ((faults & 0x40) != 0) list.add("ESCEEPROM");
+    if ((faults & 0x80) != 0) list.add("Firmware");
+    return list.toArray(new String[0]);
+  }
+
+  /**
    * Converts Active/Sticky Warnings to Strings
    *
    * @param warnings The Warnings object containing the warning flags.
@@ -160,6 +180,26 @@ public class SparkUtil {
     if (warnings.stall) list.add("Stall");
     if (warnings.hasReset) list.add("HasReset");
     if (warnings.other) list.add("Other");
+    return list.toArray(new String[0]);
+  }
+
+  /**
+   * Converts Active/Sticky Warnings to Strings
+   *
+   * @param warnings The raw integer representing the warning flags.
+   * @return An array of strings describing the active warnings, or an empty array if no warnings
+   *     are active.
+   */
+  public static String[] getWarningStrings(int warnings) {
+    List<String> list = new ArrayList<>();
+    if ((warnings & 0x1) != 0) list.add("Brownout");
+    if ((warnings & 0x2) != 0) list.add("Overcurrent");
+    if ((warnings & 0x4) != 0) list.add("ESCEEPROM");
+    if ((warnings & 0x8) != 0) list.add("ExtEEPROM");
+    if ((warnings & 0x10) != 0) list.add("Sensor");
+    if ((warnings & 0x20) != 0) list.add("Stall");
+    if ((warnings & 0x40) != 0) list.add("HasReset");
+    if ((warnings & 0x80) != 0) list.add("Other");
     return list.toArray(new String[0]);
   }
 
