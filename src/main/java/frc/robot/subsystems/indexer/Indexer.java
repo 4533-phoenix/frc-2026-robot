@@ -40,6 +40,8 @@ public class Indexer extends SubsystemBase {
 
   private final Alert disconnectedAlert = new Alert("Indexer motor disconnected", AlertType.kError);
   private final Alert faultAlert = new Alert("Indexer motor fault detected", AlertType.kError);
+  private final Alert warningAlert =
+      new Alert("Indexer motor warning detected", AlertType.kWarning);
 
   /**
    * Creates a new Indexer subsystem.
@@ -74,8 +76,15 @@ public class Indexer extends SubsystemBase {
             FaultUtil.getArrayString(
                 "Indexer Motor Faults: ", FaultUtil.getSparkFaults(inputs.status[0])));
       }
+      warningAlert.set(inputs.status[2] != 0);
+      if (inputs.status[2] != 0) {
+        warningAlert.setText(
+            FaultUtil.getArrayString(
+                "Indexer Motor Warnings: ", FaultUtil.getSparkWarnings(inputs.status[2])));
+      }
     } else {
       faultAlert.set(false);
+      warningAlert.set(false);
     }
 
     switch (goal) {

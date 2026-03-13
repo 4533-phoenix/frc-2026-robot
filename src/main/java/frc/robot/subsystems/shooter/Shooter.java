@@ -71,6 +71,8 @@ public class Shooter extends SubsystemBase {
       new Alert("Flywheel motor disconnected", AlertType.kError);
   private final Alert flywheelFaultAlert =
       new Alert("Flywheel motor fault detected", AlertType.kError);
+  private final Alert flywheelWarningAlert =
+      new Alert("Flywheel motor warning detected", AlertType.kWarning);
 
   /**
    * Creates a new Shooter subsystem.
@@ -116,8 +118,16 @@ public class Shooter extends SubsystemBase {
             FaultUtil.getArrayString(
                 "Flywheel Motor Faults: ", FaultUtil.getSparkFaults(flywheelInputs.status[0])));
       }
+      flywheelWarningAlert.set(flywheelInputs.status[2] != 0);
+      if (flywheelInputs.status[2] != 0) {
+        flywheelWarningAlert.setText(
+            FaultUtil.getArrayString(
+                "Flywheel Motor Warnings: ", FaultUtil.getSparkWarnings(flywheelInputs.status[2])));
+      }
+
     } else {
       flywheelFaultAlert.set(false);
+      flywheelWarningAlert.set(false);
     }
 
     switch (goal) {

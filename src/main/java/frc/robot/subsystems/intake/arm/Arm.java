@@ -46,6 +46,8 @@ public class Arm extends SubsystemBase {
   private final Alert disconnectedAlert =
       new Alert("Intake arm motor disconnected", AlertType.kError);
   private final Alert faultAlert = new Alert("Intake arm motor fault detected", AlertType.kError);
+  private final Alert warningAlert =
+      new Alert("Intake arm motor warning detected", AlertType.kWarning);
 
   private final Trigger deployedTrigger;
   private final Trigger retractedTrigger;
@@ -94,8 +96,15 @@ public class Arm extends SubsystemBase {
             FaultUtil.getArrayString(
                 "Intake Arm Motor Faults: ", FaultUtil.getSparkFaults(inputs.status[0])));
       }
+      warningAlert.set(inputs.status[2] != 0);
+      if (inputs.status[2] != 0) {
+        warningAlert.setText(
+            FaultUtil.getArrayString(
+                "Intake Arm Motor Warnings: ", FaultUtil.getSparkWarnings(inputs.status[2])));
+      }
     } else {
       faultAlert.set(false);
+      warningAlert.set(false);
     }
 
     // If the robot is disabled we lose control over the arm

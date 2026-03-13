@@ -39,6 +39,8 @@ public class Spinner extends SubsystemBase {
       new Alert("Intake spinner motor disconnected", AlertType.kError);
   private final Alert faultAlert =
       new Alert("Intake spinner motor fault detected", AlertType.kError);
+  private final Alert warningAlert =
+      new Alert("Intake spinner motor warning detected", AlertType.kWarning);
 
   /**
    * Creates a new Spinner subsystem.
@@ -72,8 +74,15 @@ public class Spinner extends SubsystemBase {
             FaultUtil.getArrayString(
                 "Intake Spinner Motor Faults: ", FaultUtil.getSparkFaults(inputs.status[0])));
       }
+      warningAlert.set(inputs.status[2] != 0);
+      if (inputs.status[2] != 0) {
+        warningAlert.setText(
+            FaultUtil.getArrayString(
+                "Intake Spinner Motor Warnings: ", FaultUtil.getSparkWarnings(inputs.status[2])));
+      }
     } else {
       faultAlert.set(false);
+      warningAlert.set(false);
     }
 
     // Apply the voltage based on the current goal

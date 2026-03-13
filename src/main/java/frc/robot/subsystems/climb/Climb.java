@@ -43,6 +43,7 @@ public class Climb extends SubsystemBase {
 
   private final Alert disconnectedAlert = new Alert("Climb motor disconnected", AlertType.kError);
   private final Alert faultAlert = new Alert("Climb motor fault detected", AlertType.kError);
+  private final Alert warningAlert = new Alert("Climb motor warning detected", AlertType.kWarning);
 
   private final Trigger upTrigger;
   private final Trigger downTrigger;
@@ -83,8 +84,15 @@ public class Climb extends SubsystemBase {
             FaultUtil.getArrayString(
                 "Climb Motor Faults: ", FaultUtil.getSparkFaults(inputs.status[0])));
       }
+      warningAlert.set(inputs.status[2] != 0);
+      if (inputs.status[2] != 0) {
+        warningAlert.setText(
+            FaultUtil.getArrayString(
+                "Climb Motor Warnings: ", FaultUtil.getSparkWarnings(inputs.status[2])));
+      }
     } else {
       faultAlert.set(false);
+      warningAlert.set(false);
     }
 
     switch (goal) {
