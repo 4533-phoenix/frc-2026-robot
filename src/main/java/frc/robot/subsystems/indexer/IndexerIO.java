@@ -53,4 +53,7 @@ public interface IndexerIO {
    * @param voltage The voltage to apply to the motor controller.
    */
   public default void setVoltage(Voltage voltage) {}
+
+  /** Clears all faults and warnings. */
+  public default void clearFaults() {}
 }

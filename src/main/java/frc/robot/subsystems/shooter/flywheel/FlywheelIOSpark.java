@@ -83,11 +83,6 @@ public class FlywheelIOSpark implements FlywheelIO {
                 config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
   }
 
-  /**
-   * Updates inputs by reading telemetry from the SparkFlex.
-   *
-   * @param inputs The inputs object to update.
-   */
   @Override
   public void updateInputs(FlywheelIOInputs inputs) {
     boolean sparkOk = true;
@@ -113,14 +108,6 @@ public class FlywheelIOSpark implements FlywheelIO {
     inputs.status[3] = spark.getStickyWarnings().rawBits;
   }
 
-  /**
-   * Commands the SparkFlex to spin at a specific angular velocity using MAXMotion velocity control.
-   *
-   * <p>The controller internally applies the configured feedforward (kS, kV, kA) and generates a
-   * smooth acceleration profile to reach the target velocity.
-   *
-   * @param velocity The target angular velocity.
-   */
   @Override
   public void setAngularVelocity(AngularVelocity velocity) {
     if (sentVelocity != null && velocity.isEquivalent(sentVelocity)) return;
@@ -131,10 +118,14 @@ public class FlywheelIOSpark implements FlywheelIO {
     sentVelocity = velocity;
   }
 
-  /** Stops the flywheel motor by setting voltage output to zero. */
   @Override
   public void stop() {
     spark.setVoltage(0.0);
     sentVelocity = null;
+  }
+
+  @Override
+  public void clearFaults() {
+    spark.clearFaults();
   }
 }

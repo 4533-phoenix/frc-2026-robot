@@ -62,7 +62,6 @@ public class ClimbIOSpark implements ClimbIO {
                 liftCfg, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
   }
 
-  /** Updates hardware inputs, monitors connectivity, and reads limit switch states. */
   @Override
   public void updateInputs(ClimbIOInputs inputs) {
     boolean sparkOk = true;
@@ -96,11 +95,6 @@ public class ClimbIOSpark implements ClimbIO {
     inputs.status[3] = spark.getStickyWarnings().rawBits;
   }
 
-  /**
-   * Sets the lift motor voltage, enforcing limit switch safety checks.
-   *
-   * @param voltage The requested voltage to apply.
-   */
   @Override
   public void setLiftVoltage(Voltage voltage) {
     // Assuming normally open switches, we stop if the switch is closed.
@@ -113,5 +107,10 @@ public class ClimbIOSpark implements ClimbIO {
     } else {
       spark.setVoltage(voltage);
     }
+  }
+
+  @Override
+  public void clearFaults() {
+    spark.clearFaults();
   }
 }

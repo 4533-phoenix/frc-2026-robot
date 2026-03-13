@@ -11,6 +11,7 @@ import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -50,6 +51,9 @@ public class Superstructure extends SubsystemBase {
   private final Indexer indexer;
   private final Vision vision;
   private final PDH pdh;
+
+  // Dashboard helpers
+  private final String CLEAR_FAULTS_KEY = "Clear Faults";
 
   // Aiming Suppliers
   private final Supplier<AimingResult> hubAiming;
@@ -97,6 +101,9 @@ public class Superstructure extends SubsystemBase {
 
     this.lobAiming =
         Aiming.lobAimingSupplier(drive::getPose, ShooterConstants.SHOOTER_ROBOT_OFFSET);
+
+    // Initialize dashboard values
+    SmartDashboard.putBoolean(CLEAR_FAULTS_KEY, false);
   }
 
   /**
@@ -138,6 +145,12 @@ public class Superstructure extends SubsystemBase {
       } else {
         shooter.setStop();
       }
+    }
+
+    // Check for sticky fault clear command from dashboard
+    if (SmartDashboard.getBoolean(CLEAR_FAULTS_KEY, false)) {
+      clearFaults();
+      SmartDashboard.putBoolean(CLEAR_FAULTS_KEY, false);
     }
 
     // Logging state to AdvantageKit
@@ -264,5 +277,16 @@ public class Superstructure extends SubsystemBase {
         && indexer.isHealthy()
         && vision.isHealthy()
         && pdh.isHealthy();
+  }
+
+  /** Clears all faults and warnings from all subsystems. */
+  public void clearFaults() {
+    drive.clearFaults();
+    climb.clearFaults();
+    arm.clearFaults();
+    spinner.clearFaults();
+    shooter.clearFaults();
+    indexer.clearFaults();
+    pdh.clearFaults();
   }
 }

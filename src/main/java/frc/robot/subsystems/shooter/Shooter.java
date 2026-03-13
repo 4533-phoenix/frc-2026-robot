@@ -253,4 +253,9 @@ public class Shooter extends SubsystemBase {
   public boolean isHealthy() {
     return flywheelInputs.healthy && flywheelInputs.connected;
   }
+
+  /** Clears all faults and warnings. */
+  public void clearFaults() {
+    flywheelIO.clearFaults();
+  }
 }

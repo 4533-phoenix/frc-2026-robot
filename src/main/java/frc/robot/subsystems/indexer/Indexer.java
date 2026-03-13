@@ -110,4 +110,9 @@ public class Indexer extends SubsystemBase {
   public boolean isHealthy() {
     return inputs.healthy && inputs.connected;
   }
+
+  /** Clears all faults and warnings. */
+  public void clearFaults() {
+    io.clearFaults();
+  }
 }

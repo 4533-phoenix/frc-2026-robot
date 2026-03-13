@@ -60,4 +60,7 @@ public interface ClimbIO {
    * @param voltage The voltage to apply to the motor controller.
    */
   public default void setLiftVoltage(Voltage voltage) {}
+
+  /** Clears all faults and warnings. */
+  public default void clearFaults() {}
 }

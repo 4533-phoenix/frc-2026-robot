@@ -16,21 +16,19 @@ import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 
 public class PDHIORev implements PDHIO {
   PowerDistribution pdh = new PowerDistribution(CAN_ID, ModuleType.kRev);
-  private final int numChannels = pdh.getNumChannels();
 
   private final Debouncer connectedDebounce = new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
   @Override
   public void updateInputs(PDHIOInputs inputs) {
-    if (numChannels != inputs.currents.length) {
-      inputs.currents = new double[numChannels];
-    }
-    double[] allCurrents = pdh.getAllCurrents();
-    System.arraycopy(allCurrents, 0, inputs.currents, 0, allCurrents.length);
-
     inputs.connected = connectedDebounce.calculate(pdh.getVoltage() > 0.0);
     inputs.status[0] = PowerDistributionJNI.getFaultsNative(pdh.getModule());
     inputs.healthy = inputs.status[0] == 0;
     inputs.status[1] = PowerDistributionJNI.getStickyFaultsNative(pdh.getModule());
+  }
+
+  @Override
+  public void clearFaults() {
+    pdh.clearStickyFaults();
   }
 }

@@ -61,4 +61,7 @@ public interface FlywheelIO {
 
   /** Stops the flywheel motor. */
   public default void stop() {}
+
+  /** Clears all faults and warnings. */
+  public default void clearFaults() {}
 }

@@ -64,4 +64,7 @@ public interface ArmIO {
 
   /** Tells the motor to stop trying to reach its setpoint */
   public default void stop() {}
+
+  /** Clears all faults and warnings. */
+  public default void clearFaults() {}
 }

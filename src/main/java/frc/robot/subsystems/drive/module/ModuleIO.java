@@ -117,4 +117,7 @@ public interface ModuleIO {
    * @param rotation The target angle as an Angle measure.
    */
   public default void setTurnPosition(Angle rotation) {}
+
+  /** Clears all faults and warnings. */
+  public default void clearFaults() {}
 }

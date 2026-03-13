@@ -113,4 +113,9 @@ public class Util {
     boolean isTimedMatch = DriverStation.isFMSAttached() || time > 0;
     return isTimedMatch && time <= 30.0 && time > 0;
   }
+
+  /** Publish the match mode state to the SmartDashboard for testing purposes. */
+  public static void publishMatchMode() {
+    SmartDashboard.putBoolean(MATCH_MODE_KEY, isMatchMode());
+  }
 }

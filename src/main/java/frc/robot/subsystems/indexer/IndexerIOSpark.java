@@ -82,4 +82,9 @@ public class IndexerIOSpark implements IndexerIO {
   public void setVoltage(Voltage voltage) {
     spark.setVoltage(voltage.in(Volts));
   }
+
+  @Override
+  public void clearFaults() {
+    spark.clearFaults();
+  }
 }

@@ -180,4 +180,9 @@ public class ArmIOSpark implements ArmIO {
     spark.stopMotor();
     sentPosition = null;
   }
+
+  @Override
+  public void clearFaults() {
+    spark.clearFaults();
+  }
 }

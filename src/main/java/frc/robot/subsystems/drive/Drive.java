@@ -487,4 +487,11 @@ public class Drive extends SubsystemBase {
     }
     return true;
   }
+
+  /** Clears all faults and warnings. */
+  public void clearFaults() {
+    for (var module : modules) {
+      module.clearFaults();
+    }
+  }
 }

@@ -72,11 +72,6 @@ public class SpinnerIOSpark implements SpinnerIO {
         });
   }
 
-  /**
-   * Updates inputs by refreshing data from the SparkMax controllers.
-   *
-   * @param inputs The inputs object to update.
-   */
   @Override
   public void updateInputs(SpinnerIOInputs inputs) {
     // Spinner Motor Inputs
@@ -102,13 +97,13 @@ public class SpinnerIOSpark implements SpinnerIO {
     inputs.status[3] = spark.getStickyWarnings().rawBits;
   }
 
-  /**
-   * Commands the spinner motor to run at a specific voltage.
-   *
-   * @param voltage The target voltage for the spinner rollers.
-   */
   @Override
   public void setVoltage(Voltage voltage) {
     spark.setVoltage(voltage.in(Volts));
+  }
+
+  @Override
+  public void clearFaults() {
+    spark.clearFaults();
   }
 }

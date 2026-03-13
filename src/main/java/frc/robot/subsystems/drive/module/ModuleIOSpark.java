@@ -343,4 +343,10 @@ public class ModuleIOSpark implements ModuleIO {
   public void setTurnPosition(Angle rotation) {
     turnController.setSetpoint(rotation.in(Radians), ControlType.kPosition, ClosedLoopSlot.kSlot0);
   }
+
+  @Override
+  public void clearFaults() {
+    driveSpark.clearFaults();
+    turnSpark.clearFaults();
+  }
 }

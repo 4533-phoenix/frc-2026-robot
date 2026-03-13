@@ -231,4 +231,9 @@ public class Module {
         && inputs.turnConnected
         && inputs.turnEncoderConnected;
   }
+
+  /** Clears all faults and warnings. */
+  public void clearFaults() {
+    io.clearFaults();
+  }
 }

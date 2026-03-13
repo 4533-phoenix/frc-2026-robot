@@ -150,9 +150,13 @@ public class RobotContainer {
     // Create the superstructure, which coordinates between subsystems
     superstructure = new Superstructure(drive, climb, arm, spinner, shooter, indexer, vision, pdh);
 
+    // Set up match mode toggle
+    Util.publishMatchMode();
+
     // Set up auto routines via PathPlanner
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
+    // Assign auto commands to the chooser
     autoChooser.addOption(
         "Left Shoot Preload",
         Commands.sequence(

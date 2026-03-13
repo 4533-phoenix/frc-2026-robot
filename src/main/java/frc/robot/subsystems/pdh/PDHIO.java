@@ -18,9 +18,6 @@ public interface PDHIO {
     /** Whether the pdh is functioning correctly. */
     public boolean healthy = true;
 
-    /** The current in amps on all channels. */
-    public double[] currents = new double[0];
-
     /** The full status of the pdh. */
     public int[] status = new int[] {0, 0};
   }
@@ -31,4 +28,7 @@ public interface PDHIO {
    * @param inputs The inputs object to update.
    */
   public default void updateInputs(PDHIOInputs inputs) {}
+
+  /** Clears all faults and warnings. */
+  public default void clearFaults() {}
 }

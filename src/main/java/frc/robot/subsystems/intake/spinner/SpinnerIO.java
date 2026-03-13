@@ -58,4 +58,7 @@ public interface SpinnerIO {
    * @param voltage The target voltage for the spinner rollers.
    */
   public default void setVoltage(Voltage voltage) {}
+
+  /** Clears all faults and warnings. */
+  public default void clearFaults() {}
 }
