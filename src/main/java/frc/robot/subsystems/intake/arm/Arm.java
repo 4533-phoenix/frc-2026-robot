@@ -48,8 +48,10 @@ public class Arm extends SubsystemBase {
   private final Alert faultAlert = new Alert("Intake arm motor fault detected", AlertType.kError);
   private final Alert warningAlert =
       new Alert("Intake arm motor warning detected", AlertType.kWarning);
-  private final Alert stickyFaultAlert = new Alert("Intake arm motor sticky fault detected", AlertType.kInfo);
-  private final Alert stickyWarningAlert = new Alert("Intake arm motor sticky warning detected", AlertType.kInfo);
+  private final Alert stickyFaultAlert =
+      new Alert("Intake arm motor sticky fault detected", AlertType.kInfo);
+  private final Alert stickyWarningAlert =
+      new Alert("Intake arm motor sticky warning detected", AlertType.kInfo);
 
   private final Trigger deployedTrigger;
   private final Trigger retractedTrigger;
@@ -105,7 +107,7 @@ public class Arm extends SubsystemBase {
                 "Intake Arm Motor Warnings: ", FaultUtil.getSparkWarnings(inputs.status[2])));
       }
 
-            stickyFaultAlert.set(inputs.status[1] != 0);
+      stickyFaultAlert.set(inputs.status[1] != 0);
       if (inputs.status[1] != 0) {
         stickyFaultAlert.setText(
             FaultUtil.getArrayString(
@@ -115,7 +117,8 @@ public class Arm extends SubsystemBase {
       if (inputs.status[3] != 0) {
         stickyWarningAlert.setText(
             FaultUtil.getArrayString(
-                "Intake Arm Motor Sticky Warnings: ", FaultUtil.getSparkWarnings(inputs.status[3])));
+                "Intake Arm Motor Sticky Warnings: ",
+                FaultUtil.getSparkWarnings(inputs.status[3])));
       }
     } else {
       faultAlert.set(false);

@@ -10,6 +10,7 @@ package frc.robot.commands;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
@@ -138,7 +139,9 @@ public class DriveCommands {
             ANGLE_KP,
             0.0,
             ANGLE_KD,
-            new TrapezoidProfile.Constraints(ANGLE_MAX_VELOCITY, ANGLE_MAX_ACCELERATION));
+            new TrapezoidProfile.Constraints(
+                ANGLE_MAX_VELOCITY.in(RadiansPerSecond),
+                ANGLE_MAX_ACCELERATION.in(RadiansPerSecondPerSecond)));
     angleController.enableContinuousInput(-Math.PI, Math.PI);
 
     // Construct command
@@ -201,7 +204,9 @@ public class DriveCommands {
             ANGLE_KP,
             0.0,
             ANGLE_KD,
-            new TrapezoidProfile.Constraints(ANGLE_MAX_VELOCITY, ANGLE_MAX_ACCELERATION));
+            new TrapezoidProfile.Constraints(
+                ANGLE_MAX_VELOCITY.in(RadiansPerSecond),
+                ANGLE_MAX_ACCELERATION.in(RadiansPerSecondPerSecond)));
     angleController.enableContinuousInput(-Math.PI, Math.PI);
 
     // Reuse the kinematics instance from Drive to test module speeds against the budget
@@ -357,7 +362,8 @@ public class DriveCommands {
    * @return A command that spins the robot to calculate effective wheel radius.
    */
   public static Command wheelRadiusCharacterization(Drive drive) {
-    SlewRateLimiter limiter = new SlewRateLimiter(WHEEL_RADIUS_RAMP_RATE);
+    SlewRateLimiter limiter =
+        new SlewRateLimiter(WHEEL_RADIUS_RAMP_RATE.in(RadiansPerSecondPerSecond));
     WheelRadiusCharacterizationState state = new WheelRadiusCharacterizationState();
 
     return Commands.parallel(
@@ -372,7 +378,7 @@ public class DriveCommands {
             // Turn in place, accelerating up to full speed
             Commands.run(
                 () -> {
-                  double speed = limiter.calculate(WHEEL_RADIUS_MAX_VELOCITY);
+                  double speed = limiter.calculate(WHEEL_RADIUS_MAX_VELOCITY.in(RadiansPerSecond));
                   drive.runVelocity(new ChassisSpeeds(0.0, 0.0, speed));
                 },
                 drive)),
