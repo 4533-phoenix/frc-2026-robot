@@ -12,54 +12,47 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages-${{ github.workflow }}"
+  group: "pages-${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Setup Pages
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      # Setup Java
       - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # Setup Gradle
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # Make Gradle wrapper executable
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
-      # Install Toolchain
       - name: Install toolchain
         run: ./gradlew installRoboRioToolchain
 
-      # Generate Javadoc
       - name: Generate Javadoc
         run: ./gradlew javadoc
 
-      # Upload the Javadoc as a Pages artifact
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: build/docs/javadoc
 
-      # Deploy to GitHub Pages
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
