@@ -67,22 +67,17 @@ public class Superstructure extends SubsystemBase {
    * @param arm The intake arm subsystem.
    * @param spinner The intake spinner subsystem.
    * @param shooter The shooter subsystem.
-   * @param drive The drive subsystem.
-   * @param climb The climb subsystem.
-   * @param arm The arm subsystem.
-   * @param spinner The spinner subsystem.
-   * @param shooter The shooter subsystem.
    * @param indexer The indexer subsystem.
    * @param vision The vision subsystem.
    */
   public Superstructure(
-    Drive drive,
-    Climb climb,
-    Arm arm,
-    Spinner spinner,
-    Shooter shooter,
-    Indexer indexer,
-    Vision vision,
+      Drive drive,
+      Climb climb,
+      Arm arm,
+      Spinner spinner,
+      Shooter shooter,
+      Indexer indexer,
+      Vision vision,
       PDH pdh) {
     this.drive = drive;
     this.climb = climb;

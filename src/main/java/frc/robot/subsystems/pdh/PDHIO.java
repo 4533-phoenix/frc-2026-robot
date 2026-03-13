@@ -9,14 +9,8 @@ package frc.robot.subsystems.pdh;
 
 import org.littletonrobotics.junction.AutoLog;
 
-/**
- * Interface for PDH hardware abstraction.
- */
 public interface PDHIO {
   @AutoLog
-  /**
-   * Loggable inputs for the PDH subsystem.
-   */
   public static class PDHIOInputs {
     /** Whether the pdh is currently connected and communicating. */
     public boolean connected = false;
