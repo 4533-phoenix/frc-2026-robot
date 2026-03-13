@@ -7,29 +7,24 @@
 
 package frc.robot.subsystems.pdh;
 
-import static frc.robot.subsystems.pdh.PDHConstants.*;
-
-import edu.wpi.first.hal.PowerDistributionJNI;
 import edu.wpi.first.math.filter.Debouncer;
-import edu.wpi.first.wpilibj.PowerDistribution;
-import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
+import org.littletonrobotics.conduit.ConduitApi;
 
 /** Real IO implementation for the PDH subsystem. */
-public class PDHIORev implements PDHIO {
-  PowerDistribution pdh = new PowerDistribution(CAN_ID, ModuleType.kRev);
-
+public class PDHIOReal implements PDHIO {
+  private final ConduitApi conduit = ConduitApi.getInstance();
   private final Debouncer connectedDebounce = new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
   @Override
   public void updateInputs(PDHIOInputs inputs) {
-    inputs.connected = connectedDebounce.calculate(pdh.getVoltage() > 0.0);
-    inputs.status[0] = PowerDistributionJNI.getFaultsNative(pdh.getModule());
+    inputs.connected = connectedDebounce.calculate(conduit.getPDPVoltage() > 0.0);
+    inputs.status[0] = (int) conduit.getPDPFaults();
     inputs.healthy = inputs.status[0] == 0;
-    inputs.status[1] = PowerDistributionJNI.getStickyFaultsNative(pdh.getModule());
+    inputs.status[1] = (int) conduit.getPDPStickyFaults();
   }
 
   @Override
   public void clearFaults() {
-    pdh.clearStickyFaults();
+    // Find a way to clear these but ak hides the handle
   }
 }

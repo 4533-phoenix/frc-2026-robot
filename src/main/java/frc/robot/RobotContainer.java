@@ -44,7 +44,7 @@ import frc.robot.subsystems.intake.spinner.SpinnerIOSim;
 import frc.robot.subsystems.intake.spinner.SpinnerIOSpark;
 import frc.robot.subsystems.pdh.PDH;
 import frc.robot.subsystems.pdh.PDHIO;
-import frc.robot.subsystems.pdh.PDHIORev;
+import frc.robot.subsystems.pdh.PDHIOReal;
 import frc.robot.subsystems.pdh.PDHIOSim;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
@@ -107,7 +107,7 @@ public class RobotContainer {
         shooter = new Shooter(new FlywheelIOSpark(), new HoodIOServo());
         indexer = new Indexer(new IndexerIOSpark());
         vision = new Vision(new VisionIOPhoton(), drive);
-        pdh = new PDH(new PDHIORev());
+        pdh = new PDH(new PDHIOReal());
         break;
 
       case SIM:

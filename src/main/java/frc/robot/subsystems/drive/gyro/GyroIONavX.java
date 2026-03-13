@@ -48,13 +48,10 @@ public class GyroIONavX implements GyroIO {
     inputs.connected = navX.isConnected();
     inputs.yawPosition = Degrees.of(-navX.getAngle());
     inputs.yawVelocity = DegreesPerSecond.of(-navX.getRawGyroZ());
-    inputs.healthy = inputs.connected && !navX.isMagneticDisturbance() && !navX.isCalibrating();
+    inputs.healthy = inputs.connected && !navX.isCalibrating();
 
     if (!inputs.healthy) {
       ArrayList<String> reasons = new ArrayList<>();
-      if (navX.isMagneticDisturbance()) {
-        reasons.add("Magnetic Disturbance");
-      }
       if (navX.isCalibrating()) {
         reasons.add("Calibrating");
       }
