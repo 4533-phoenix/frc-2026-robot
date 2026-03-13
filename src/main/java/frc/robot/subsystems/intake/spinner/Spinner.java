@@ -41,6 +41,10 @@ public class Spinner extends SubsystemBase {
       new Alert("Intake spinner motor fault detected", AlertType.kError);
   private final Alert warningAlert =
       new Alert("Intake spinner motor warning detected", AlertType.kWarning);
+  private final Alert stickyFaultAlert =
+      new Alert("Intake spinner motor sticky fault detected", AlertType.kInfo);
+  private final Alert stickyWarningAlert =
+      new Alert("Intake spinner motor sticky warning detected", AlertType.kInfo);
 
   /**
    * Creates a new Spinner subsystem.
@@ -80,9 +84,24 @@ public class Spinner extends SubsystemBase {
             FaultUtil.getArrayString(
                 "Intake Spinner Motor Warnings: ", FaultUtil.getSparkWarnings(inputs.status[2])));
       }
+
+      stickyFaultAlert.set(inputs.status[1] != 0);
+      if (inputs.status[1] != 0) {
+        stickyFaultAlert.setText(
+            FaultUtil.getArrayString(
+                "Intake Spinner Motor Sticky Faults: ", FaultUtil.getSparkFaults(inputs.status[1])));
+      }
+      stickyWarningAlert.set(inputs.status[3] != 0);
+      if (inputs.status[3] != 0) {
+        stickyWarningAlert.setText(
+            FaultUtil.getArrayString(
+                "Intake Spinner Motor Sticky Warnings: ", FaultUtil.getSparkWarnings(inputs.status[3])));
+      }
     } else {
       faultAlert.set(false);
       warningAlert.set(false);
+        stickyFaultAlert.set(false);
+        stickyWarningAlert.set(false);
     }
 
     // Apply the voltage based on the current goal

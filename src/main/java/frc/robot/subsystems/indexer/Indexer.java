@@ -42,6 +42,8 @@ public class Indexer extends SubsystemBase {
   private final Alert faultAlert = new Alert("Indexer motor fault detected", AlertType.kError);
   private final Alert warningAlert =
       new Alert("Indexer motor warning detected", AlertType.kWarning);
+  private final Alert stickyFaultAlert = new Alert("Indexer motor sticky fault detected", AlertType.kInfo);
+  private final Alert stickyWarningAlert = new Alert("Indexer motor sticky warning detected", AlertType.kInfo);
 
   /**
    * Creates a new Indexer subsystem.
@@ -82,9 +84,24 @@ public class Indexer extends SubsystemBase {
             FaultUtil.getArrayString(
                 "Indexer Motor Warnings: ", FaultUtil.getSparkWarnings(inputs.status[2])));
       }
+
+      stickyFaultAlert.set(inputs.status[1] != 0);
+      if (inputs.status[1] != 0) {
+        stickyFaultAlert.setText(
+            FaultUtil.getArrayString(
+                "Indexer Motor Sticky Faults: ", FaultUtil.getSparkFaults(inputs.status[1])));
+      }
+      stickyWarningAlert.set(inputs.status[3] != 0);
+      if (inputs.status[3] != 0) {
+        stickyWarningAlert.setText(
+            FaultUtil.getArrayString(
+                "Indexer Motor Sticky Warnings: ", FaultUtil.getSparkWarnings(inputs.status[3])));
+      }
     } else {
       faultAlert.set(false);
       warningAlert.set(false);
+      stickyFaultAlert.set(false);
+      stickyWarningAlert.set(false);
     }
 
     switch (goal) {

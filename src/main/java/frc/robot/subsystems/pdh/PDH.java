@@ -20,6 +20,7 @@ public class PDH extends SubsystemBase {
 
   private final Alert disconnectedAlert = new Alert("PDH disconnected", AlertType.kError);
   private final Alert faultAlert = new Alert("PDH fault detected", AlertType.kError);
+  private final Alert stickyFaultAlert = new Alert("PDH sticky fault detected", AlertType.kInfo);
 
   /**
    * Creates a new PDH subsystem.
@@ -44,8 +45,16 @@ public class PDH extends SubsystemBase {
             FaultUtil.getArrayString(
                 "PDH Faults: ", FaultUtil.getPdhActiveFaults(inputs.status[0])));
       }
+
+      stickyFaultAlert.set(inputs.status[1] != 0);
+      if (inputs.status[1] != 0) {
+        stickyFaultAlert.setText(
+            FaultUtil.getArrayString(
+                "PDH Sticky Faults: ", FaultUtil.getPdhStickyFaults(inputs.status[1])));
+      }
     } else {
       faultAlert.set(false);
+      stickyFaultAlert.set(false);
     }
   }
 

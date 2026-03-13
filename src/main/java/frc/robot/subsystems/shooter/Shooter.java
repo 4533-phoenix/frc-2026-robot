@@ -73,6 +73,10 @@ public class Shooter extends SubsystemBase {
       new Alert("Flywheel motor fault detected", AlertType.kError);
   private final Alert flywheelWarningAlert =
       new Alert("Flywheel motor warning detected", AlertType.kWarning);
+  private final Alert stickyFaultAlert =
+      new Alert("Flywheel motor sticky fault detected", AlertType.kInfo);
+  private final Alert stickyWarningAlert =
+    new Alert("Flywheel motor sticky warning detected", AlertType.kInfo);
 
   /**
    * Creates a new Shooter subsystem.
@@ -125,9 +129,23 @@ public class Shooter extends SubsystemBase {
                 "Flywheel Motor Warnings: ", FaultUtil.getSparkWarnings(flywheelInputs.status[2])));
       }
 
+      stickyFaultAlert.set(flywheelInputs.status[1] != 0);
+      if (flywheelInputs.status[1] != 0) {
+        stickyFaultAlert.setText(
+            FaultUtil.getArrayString(
+                "Flywheel Motor Sticky Faults: ", FaultUtil.getSparkFaults(flywheelInputs.status[1])));
+      }
+      stickyWarningAlert.set(flywheelInputs.status[3] != 0);
+      if (flywheelInputs.status[3] != 0) {
+        stickyWarningAlert.setText(
+            FaultUtil.getArrayString(
+                "Flywheel Motor Sticky Warnings: ", FaultUtil.getSparkWarnings(flywheelInputs.status[3])));
+      }
     } else {
       flywheelFaultAlert.set(false);
       flywheelWarningAlert.set(false);
+      stickyFaultAlert.set(false);
+      stickyWarningAlert.set(false);
     }
 
     switch (goal) {

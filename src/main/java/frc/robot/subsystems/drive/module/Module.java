@@ -36,7 +36,13 @@ public class Module {
   private final Alert driveDisconnectedAlert;
   private final Alert turnDisconnectedAlert;
   private final Alert driveFaultAlert;
+  private final Alert driveWarningAlert;
+  private final Alert driveStickyFaultAlert;
+  private final Alert driveStickyWarningAlert;
   private final Alert turnFaultAlert;
+  private final Alert turnWarningAlert;
+  private final Alert turnStickyFaultAlert;
+  private final Alert turnStickyWarningAlert;
   private final Alert turnEncoderDisconnectedAlert;
   private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
 
@@ -52,9 +58,19 @@ public class Module {
     this.name = MODULE_CONFIGS[index].name();
 
     driveDisconnectedAlert = new Alert(name + " drive motor disconnected", AlertType.kError);
-    turnDisconnectedAlert = new Alert(name + " turn motor disconnected", AlertType.kError);
     driveFaultAlert = new Alert(name + " drive motor fault detected", AlertType.kError);
+    driveWarningAlert = new Alert(name + " drive motor warning detected", AlertType.kWarning);
+    driveStickyFaultAlert = new Alert(name + " drive motor sticky fault detected", AlertType.kInfo);
+    driveStickyWarningAlert =
+        new Alert(name + " drive motor sticky warning detected", AlertType.kInfo);
+
+    turnDisconnectedAlert = new Alert(name + " turn motor disconnected", AlertType.kError);
     turnFaultAlert = new Alert(name + " turn motor fault detected", AlertType.kError);
+    turnWarningAlert = new Alert(name + " turn motor warning detected", AlertType.kWarning);
+    turnStickyFaultAlert = new Alert(name + " turn motor sticky fault detected", AlertType.kInfo);
+    turnStickyWarningAlert =
+        new Alert(name + " turn motor sticky warning detected", AlertType.kInfo);
+
     turnEncoderDisconnectedAlert = new Alert(name + " turn encoder disconnected", AlertType.kError);
   }
 
@@ -85,10 +101,35 @@ public class Module {
             FaultUtil.getArrayString(
                 name + " Module Drive Faults: ", FaultUtil.getSparkFaults(inputs.driveStatus[0])));
       }
+      driveWarningAlert.set(inputs.driveStatus[2] != 0);
+      if (inputs.driveStatus[2] != 0) {
+        driveWarningAlert.setText(
+            FaultUtil.getArrayString(
+                name + " Module Drive Warnings: ",
+                FaultUtil.getSparkWarnings(inputs.driveStatus[2])));
+      }
+      driveStickyFaultAlert.set(inputs.driveStatus[1] != 0);
+      if (inputs.driveStatus[1] != 0) {
+        driveStickyFaultAlert.setText(
+            FaultUtil.getArrayString(
+                name + " Module Drive Sticky Faults: ",
+                FaultUtil.getSparkFaults(inputs.driveStatus[1])));
+      }
+      driveStickyWarningAlert.set(inputs.driveStatus[3] != 0);
+      if (inputs.driveStatus[3] != 0) {
+        driveStickyWarningAlert.setText(
+            FaultUtil.getArrayString(
+                name + " Module Drive Sticky Warnings: ",
+                FaultUtil.getSparkWarnings(inputs.driveStatus[3])));
+      }
     } else {
       driveFaultAlert.set(false);
+      driveWarningAlert.set(false);
+      driveStickyFaultAlert.set(false);
+      driveStickyWarningAlert.set(false);
     }
 
+    // Check for turn faults/warnings
     if (inputs.turnConnected) {
       turnFaultAlert.set(!inputs.turnHealthy);
       if (!inputs.turnHealthy) {
@@ -96,8 +137,31 @@ public class Module {
             FaultUtil.getArrayString(
                 name + " Module Turn Faults: ", FaultUtil.getSparkFaults(inputs.turnStatus[0])));
       }
+      turnWarningAlert.set(inputs.turnStatus[2] != 0);
+      if (inputs.turnStatus[2] != 0) {
+        turnWarningAlert.setText(
+            FaultUtil.getArrayString(
+                name + " Module Turn Warnings: ", FaultUtil.getSparkWarnings(inputs.turnStatus[2])));
+      }
+      turnStickyFaultAlert.set(inputs.turnStatus[1] != 0);
+      if (inputs.turnStatus[1] != 0) {
+        turnStickyFaultAlert.setText(
+            FaultUtil.getArrayString(
+                name + " Module Turn Sticky Faults: ",
+                FaultUtil.getSparkFaults(inputs.turnStatus[1])));
+      }
+      turnStickyWarningAlert.set(inputs.turnStatus[3] != 0);
+      if (inputs.turnStatus[3] != 0) {
+        turnStickyWarningAlert.setText(
+            FaultUtil.getArrayString(
+                name + " Module Turn Sticky Warnings: ",
+                FaultUtil.getSparkWarnings(inputs.turnStatus[3])));
+      }
     } else {
       turnFaultAlert.set(false);
+      turnWarningAlert.set(false);
+      turnStickyFaultAlert.set(false);
+      turnStickyWarningAlert.set(false);
     }
   }
 
