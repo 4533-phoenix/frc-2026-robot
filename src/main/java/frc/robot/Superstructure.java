@@ -30,7 +30,6 @@ import frc.robot.util.Aiming;
 import frc.robot.util.Aiming.AimingResult;
 import frc.robot.util.Util;
 import java.util.function.Supplier;
-
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -69,7 +68,14 @@ public class Superstructure extends SubsystemBase {
    * @param indexer The indexer subsystem.
    * @param vision The vision subsystem.
    */
-  public Superstructure(Drive drive, Climb climb, Arm arm, Spinner spinner, Shooter shooter, Indexer indexer, Vision vision) {
+  public Superstructure(
+      Drive drive,
+      Climb climb,
+      Arm arm,
+      Spinner spinner,
+      Shooter shooter,
+      Indexer indexer,
+      Vision vision) {
     this.drive = drive;
     this.climb = climb;
     this.arm = arm;
@@ -241,7 +247,7 @@ public class Superstructure extends SubsystemBase {
 
   /**
    * Returns whether or not all subsystems in the superstructure are healthy
-   * 
+   *
    * @return True if all subsystems are healthy, false otherwise.
    */
   @AutoLogOutput(key = "Superstructure/IsHealthy")
