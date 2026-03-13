@@ -11,11 +11,7 @@ package frc.lib;
 
 import com.revrobotics.REVLibError;
 import com.revrobotics.spark.SparkBase;
-import com.revrobotics.spark.SparkBase.Faults;
-import com.revrobotics.spark.SparkBase.Warnings;
 import edu.wpi.first.util.function.BooleanConsumer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
@@ -122,102 +118,5 @@ public class SparkUtil {
       }
     }
     return false;
-  }
-
-  /**
-   * Converts Active/Sticky Faults to Strings
-   *
-   * @param faults The Faults object containing the fault flags.
-   * @return An array of strings describing the active faults, or an empty array if no faults are
-   *     active.
-   */
-  public static String[] getFaultStrings(Faults faults) {
-    List<String> list = new ArrayList<>();
-    if (faults.motorType) list.add("MotorType");
-    if (faults.sensor) list.add("Sensor");
-    if (faults.can) list.add("CAN");
-    if (faults.temperature) list.add("Temperature");
-    if (faults.gateDriver) list.add("GateDriver");
-    if (faults.escEeprom) list.add("ESCEEPROM");
-    if (faults.firmware) list.add("Firmware");
-    return list.toArray(new String[0]);
-  }
-
-  /**
-   * Converts Active/Sticky Faults to Strings
-   *
-   * @param faults The raw integer representing the fault flags.
-   * @return An array of strings describing the active faults, or an empty array if no faults are
-   *     active.
-   */
-  public static String[] getFaultStrings(int faults) {
-    List<String> list = new ArrayList<>();
-    if ((faults & 0x1) != 0) list.add("Other");
-    if ((faults & 0x2) != 0) list.add("MotorType");
-    if ((faults & 0x4) != 0) list.add("Sensor");
-    if ((faults & 0x8) != 0) list.add("CAN");
-    if ((faults & 0x10) != 0) list.add("Temperature");
-    if ((faults & 0x20) != 0) list.add("GateDriver");
-    if ((faults & 0x40) != 0) list.add("ESCEEPROM");
-    if ((faults & 0x80) != 0) list.add("Firmware");
-    return list.toArray(new String[0]);
-  }
-
-  /**
-   * Converts Active/Sticky Warnings to Strings
-   *
-   * @param warnings The Warnings object containing the warning flags.
-   * @return An array of strings describing the active warnings, or an empty array if no warnings
-   *     are active.
-   */
-  public static String[] getWarningStrings(Warnings warnings) {
-    List<String> list = new ArrayList<>();
-    if (warnings.brownout) list.add("Brownout");
-    if (warnings.overcurrent) list.add("Overcurrent");
-    if (warnings.escEeprom) list.add("ESCEEPROM");
-    if (warnings.extEeprom) list.add("ExtEEPROM");
-    if (warnings.sensor) list.add("Sensor");
-    if (warnings.stall) list.add("Stall");
-    if (warnings.hasReset) list.add("HasReset");
-    if (warnings.other) list.add("Other");
-    return list.toArray(new String[0]);
-  }
-
-  /**
-   * Converts Active/Sticky Warnings to Strings
-   *
-   * @param warnings The raw integer representing the warning flags.
-   * @return An array of strings describing the active warnings, or an empty array if no warnings
-   *     are active.
-   */
-  public static String[] getWarningStrings(int warnings) {
-    List<String> list = new ArrayList<>();
-    if ((warnings & 0x1) != 0) list.add("Brownout");
-    if ((warnings & 0x2) != 0) list.add("Overcurrent");
-    if ((warnings & 0x4) != 0) list.add("ESCEEPROM");
-    if ((warnings & 0x8) != 0) list.add("ExtEEPROM");
-    if ((warnings & 0x10) != 0) list.add("Sensor");
-    if ((warnings & 0x20) != 0) list.add("Stall");
-    if ((warnings & 0x40) != 0) list.add("HasReset");
-    if ((warnings & 0x80) != 0) list.add("Other");
-    return list.toArray(new String[0]);
-  }
-
-  /**
-   * Formats an array of strings into a single comma-separated string, or "None" if the array is
-   * empty.
-   *
-   * @param prefix A prefix to prepend to the result. Can be empty or null for no
-   * @param arr The array of strings to format.
-   * @return A comma-separated string or "None" if the array is empty.
-   */
-  public static String getArrayString(String prefix, String[] arr) {
-    if (arr == null || arr.length == 0) {
-      return "None";
-    }
-    if (prefix != null && !prefix.isEmpty()) {
-      return prefix + String.join(", ", arr);
-    }
-    return String.join(", ", arr);
   }
 }

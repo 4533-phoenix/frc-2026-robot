@@ -16,7 +16,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.lib.SparkUtil;
+import frc.lib.FaultUtil;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -91,8 +91,8 @@ public class Arm extends SubsystemBase {
       faultAlert.set(!inputs.healthy);
       if (!inputs.healthy) {
         faultAlert.setText(
-            SparkUtil.getArrayString(
-                "Intake Arm Motor Faults: ", SparkUtil.getFaultStrings(inputs.status[0])));
+            FaultUtil.getArrayString(
+                "Intake Arm Motor Faults: ", FaultUtil.getSparkFaults(inputs.status[0])));
       }
     } else {
       faultAlert.set(false);

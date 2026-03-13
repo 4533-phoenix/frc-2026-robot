@@ -20,7 +20,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.lib.SparkUtil;
+import frc.lib.FaultUtil;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOInputsAutoLogged;
 import frc.robot.subsystems.shooter.hood.HoodIO;
@@ -113,8 +113,8 @@ public class Shooter extends SubsystemBase {
       flywheelFaultAlert.set(!flywheelInputs.healthy);
       if (!flywheelInputs.healthy) {
         flywheelFaultAlert.setText(
-            SparkUtil.getArrayString(
-                "Flywheel Motor Faults: ", SparkUtil.getFaultStrings(flywheelInputs.status[0])));
+            FaultUtil.getArrayString(
+                "Flywheel Motor Faults: ", FaultUtil.getSparkFaults(flywheelInputs.status[0])));
       }
     } else {
       flywheelFaultAlert.set(false);

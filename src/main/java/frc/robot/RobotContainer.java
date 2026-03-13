@@ -42,6 +42,10 @@ import frc.robot.subsystems.intake.spinner.Spinner;
 import frc.robot.subsystems.intake.spinner.SpinnerIO;
 import frc.robot.subsystems.intake.spinner.SpinnerIOSim;
 import frc.robot.subsystems.intake.spinner.SpinnerIOSpark;
+import frc.robot.subsystems.pdh.PDH;
+import frc.robot.subsystems.pdh.PDHIO;
+import frc.robot.subsystems.pdh.PDHIORev;
+import frc.robot.subsystems.pdh.PDHIOSim;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
@@ -65,11 +69,11 @@ public class RobotContainer {
   private final Spinner spinner;
   private final Shooter shooter;
   private final Indexer indexer;
-  private final Superstructure superstructure;
-
-  // Vision
-  @SuppressWarnings("unused")
   private final Vision vision;
+  private final PDH pdh;
+
+  // Superstructure
+  private final Superstructure superstructure;
 
   /** Controller for the driver. */
   public final CommandXboxController driverController = new CommandXboxController(0);
@@ -103,6 +107,7 @@ public class RobotContainer {
         shooter = new Shooter(new FlywheelIOSpark(), new HoodIOServo());
         indexer = new Indexer(new IndexerIOSpark());
         vision = new Vision(new VisionIOPhoton(), drive);
+        pdh = new PDH(new PDHIORev());
         break;
 
       case SIM:
@@ -120,6 +125,7 @@ public class RobotContainer {
         shooter = new Shooter(new FlywheelIOSim(), new HoodIOSim());
         indexer = new Indexer(new IndexerIOSim());
         vision = new Vision(new VisionIOSim(drive::getPose), drive);
+        pdh = new PDH(new PDHIOSim());
         break;
 
       default:
@@ -137,11 +143,12 @@ public class RobotContainer {
         shooter = new Shooter(new FlywheelIO() {}, new HoodIO() {});
         indexer = new Indexer(new IndexerIO() {});
         vision = new Vision(new VisionIO() {}, drive);
+        pdh = new PDH(new PDHIO() {});
         break;
     }
 
     // Create the superstructure, which coordinates between subsystems
-    superstructure = new Superstructure(drive, climb, arm, spinner, shooter, indexer, vision);
+    superstructure = new Superstructure(drive, climb, arm, spinner, shooter, indexer, vision, pdh);
 
     // Set up auto routines via PathPlanner
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());

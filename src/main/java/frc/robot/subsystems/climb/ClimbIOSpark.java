@@ -39,8 +39,7 @@ public class ClimbIOSpark implements ClimbIO {
   private final SparkLimitSwitch lowerLimit = spark.getReverseLimitSwitch();
 
   // Debouncer to prevent rapidly toggling connection status
-  private final Debouncer liftConnectedDebounce =
-      new Debouncer(0.5, Debouncer.DebounceType.kFalling);
+  private final Debouncer connectedDebounce = new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
   /** Creates a new ClimbIOSpark and configures the Spark Max. */
   public ClimbIOSpark() {
@@ -87,7 +86,7 @@ public class ClimbIOSpark implements ClimbIO {
             });
 
     // Debounce the connection status to ensure stability
-    inputs.connected = liftConnectedDebounce.calculate(sparkOk);
+    inputs.connected = connectedDebounce.calculate(sparkOk);
 
     // Health
     inputs.status[0] = spark.getFaults().rawBits;

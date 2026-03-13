@@ -27,11 +27,7 @@ public class Aiming {
   private Aiming() {} // Prevent instantiation
 
   /**
-   * Cached result of the aiming pipeline.
-   *
-   * @param targetRotation The field-relative rotation the robot should face.
-   * @param distanceToTarget The linear distance from the shooter to the target.
-   * @param hasTarget Whether a valid aiming target was found.
+   * Cached result of the aiming pipeline, including target rotation, distance, and target presence.
    */
   public record AimingResult(
       Rotation2d targetRotation, double distanceToTargetMeters, boolean hasTarget) {}

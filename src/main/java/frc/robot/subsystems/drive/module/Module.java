@@ -18,7 +18,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.*;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-import frc.lib.SparkUtil;
+import frc.lib.FaultUtil;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -82,8 +82,8 @@ public class Module {
       driveFaultAlert.set(!inputs.driveHealthy);
       if (!inputs.driveHealthy) {
         driveFaultAlert.setText(
-            SparkUtil.getArrayString(
-                name + " Module Drive Faults: ", SparkUtil.getFaultStrings(inputs.driveStatus[0])));
+            FaultUtil.getArrayString(
+                name + " Module Drive Faults: ", FaultUtil.getSparkFaults(inputs.driveStatus[0])));
       }
     } else {
       driveFaultAlert.set(false);
@@ -93,8 +93,8 @@ public class Module {
       turnFaultAlert.set(!inputs.turnHealthy);
       if (!inputs.turnHealthy) {
         turnFaultAlert.setText(
-            SparkUtil.getArrayString(
-                name + " Module Turn Faults: ", SparkUtil.getFaultStrings(inputs.turnStatus[0])));
+            FaultUtil.getArrayString(
+                name + " Module Turn Faults: ", FaultUtil.getSparkFaults(inputs.turnStatus[0])));
       }
     } else {
       turnFaultAlert.set(false);

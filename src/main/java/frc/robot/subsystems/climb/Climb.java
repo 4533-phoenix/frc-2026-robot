@@ -15,7 +15,7 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.lib.SparkUtil;
+import frc.lib.FaultUtil;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -80,8 +80,8 @@ public class Climb extends SubsystemBase {
       faultAlert.set(!inputs.healthy);
       if (!inputs.healthy) {
         faultAlert.setText(
-            SparkUtil.getArrayString(
-                "Climb Motor Faults: ", SparkUtil.getFaultStrings(inputs.status[0])));
+            FaultUtil.getArrayString(
+                "Climb Motor Faults: ", FaultUtil.getSparkFaults(inputs.status[0])));
       }
     } else {
       faultAlert.set(false);
@@ -99,9 +99,6 @@ public class Climb extends SubsystemBase {
       case STOP -> io.setLiftVoltage(Volts.zero());
     }
   }
-
-  @Override
-  public void simulationPeriodic() {}
 
   /**
    * Returns a trigger that is true when the upper limit switch is triggered.

@@ -22,6 +22,7 @@ import frc.robot.subsystems.drive.DriveConstants;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.intake.arm.Arm;
 import frc.robot.subsystems.intake.spinner.Spinner;
+import frc.robot.subsystems.pdh.PDH;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.shooter.ShooterKinematics;
@@ -48,6 +49,7 @@ public class Superstructure extends SubsystemBase {
   private final Shooter shooter;
   private final Indexer indexer;
   private final Vision vision;
+  private final PDH pdh;
 
   // Aiming Suppliers
   private final Supplier<AimingResult> hubAiming;
@@ -75,7 +77,8 @@ public class Superstructure extends SubsystemBase {
       Spinner spinner,
       Shooter shooter,
       Indexer indexer,
-      Vision vision) {
+      Vision vision,
+      PDH pdh) {
     this.drive = drive;
     this.climb = climb;
     this.arm = arm;
@@ -83,6 +86,7 @@ public class Superstructure extends SubsystemBase {
     this.shooter = shooter;
     this.indexer = indexer;
     this.vision = vision;
+    this.pdh = pdh;
 
     this.hubAiming =
         Aiming.hubAimingSupplier(
@@ -258,6 +262,7 @@ public class Superstructure extends SubsystemBase {
         && spinner.isHealthy()
         && shooter.isHealthy()
         && indexer.isHealthy()
-        && vision.isHealthy();
+        && vision.isHealthy()
+        && pdh.isHealthy();
   }
 }
