@@ -14,6 +14,7 @@ import com.reduxrobotics.sensors.canandgyro.Canandgyro;
 import com.reduxrobotics.sensors.canandgyro.CanandgyroSettings;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.SparkOdometryThread;
+import java.util.ArrayList;
 import java.util.Queue;
 
 /**
@@ -54,6 +55,20 @@ public class GyroIOCanAndGyro implements GyroIO {
     // Hardware returns rotations
     inputs.yawPosition = Rotations.of(canandgyro.getYaw());
     inputs.yawVelocity = RotationsPerSecond.of(canandgyro.getAngularVelocityYaw());
+    inputs.healthy = inputs.connected && !canandgyro.isCalibrating();
+
+    if (!inputs.healthy) {
+      ArrayList<String> reasons = new ArrayList<>();
+      if (canandgyro.isCalibrating()) {
+        reasons.add("Calibrating");
+      }
+      if (!canandgyro.isConnected()) {
+        reasons.add("Disconnected");
+      }
+      inputs.unhealthyReasons = reasons.toArray(new String[0]);
+    } else if (inputs.unhealthyReasons.length > 0) {
+      inputs.unhealthyReasons = new String[0];
+    }
 
     // Empty the queues into the inputs object for logging and odometry processing
     frc.robot.subsystems.drive.Drive.odometryLock.lock();

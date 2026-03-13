@@ -42,6 +42,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.lib.FaultUtil;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
 import frc.robot.subsystems.drive.gyro.GyroIO;
@@ -70,6 +71,7 @@ public class Drive extends SubsystemBase {
   private final SysIdRoutine sysId;
   private final Alert gyroDisconnectedAlert =
       new Alert("Disconnected gyro, using kinematics as fallback.", AlertType.kError);
+  private final Alert gyroFaultAlert = new Alert("Gyro fault detected.", AlertType.kError);
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(MODULE_TRANSLATIONS);
   private Rotation2d rawGyroRotation = Rotation2d.kZero;
@@ -224,7 +226,19 @@ public class Drive extends SubsystemBase {
     }
 
     // Update gyro alert
-    gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.CURRENT_MODE != Mode.SIM);
+    boolean gyroConnected = gyroInputs.connected && Constants.CURRENT_MODE != Mode.SIM;
+    gyroDisconnectedAlert.set(!gyroConnected);
+
+    // Update gyro fault alert
+    if (gyroConnected) {
+      gyroFaultAlert.set(!gyroInputs.healthy);
+      if (!gyroInputs.healthy) {
+        gyroFaultAlert.setText(
+            FaultUtil.getArrayString("Gyro Faults: ", gyroInputs.unhealthyReasons));
+      }
+    } else {
+      gyroFaultAlert.set(false);
+    }
   }
 
   /**
@@ -477,7 +491,7 @@ public class Drive extends SubsystemBase {
    * @return True if the subsystem is healthy, false otherwise.
    */
   public boolean isHealthy() {
-    if (!gyroInputs.connected) {
+    if (!gyroInputs.healthy) {
       return false;
     }
     for (var module : modules) {

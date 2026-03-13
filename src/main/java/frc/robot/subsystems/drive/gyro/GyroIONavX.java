@@ -16,6 +16,7 @@ import com.studica.frc.AHRS.NavXComType;
 import com.studica.frc.AHRS.NavXUpdateRate;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.SparkOdometryThread;
+import java.util.ArrayList;
 import java.util.Queue;
 
 /**
@@ -47,6 +48,23 @@ public class GyroIONavX implements GyroIO {
     inputs.connected = navX.isConnected();
     inputs.yawPosition = Degrees.of(-navX.getAngle());
     inputs.yawVelocity = DegreesPerSecond.of(-navX.getRawGyroZ());
+    inputs.healthy = inputs.connected && !navX.isMagneticDisturbance() && !navX.isCalibrating();
+
+    if (!inputs.healthy) {
+      ArrayList<String> reasons = new ArrayList<>();
+      if (navX.isMagneticDisturbance()) {
+        reasons.add("Magnetic Disturbance");
+      }
+      if (navX.isCalibrating()) {
+        reasons.add("Calibrating");
+      }
+      if (!navX.isConnected()) {
+        reasons.add("Disconnected");
+      }
+      inputs.unhealthyReasons = reasons.toArray(new String[0]);
+    } else if (inputs.unhealthyReasons.length > 0) {
+      inputs.unhealthyReasons = new String[0];
+    }
 
     // Empty the queues into the inputs object for logging and odometry processing
     Drive.odometryLock.lock();

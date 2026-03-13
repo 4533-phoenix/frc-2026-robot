@@ -33,6 +33,12 @@ public interface GyroIO {
     /** The current angular velocity around the yaw axis. */
     public AngularVelocity yawVelocity = RadiansPerSecond.zero();
 
+    /** Whether the gyro is healthy. */
+    public boolean healthy = false;
+
+    /** Why the gyro is not healthy as an array of strings. */
+    public String[] unhealthyReasons = new String[] {};
+
     /**
      * Timestamps for high-frequency yaw measurements used for odometry.
      *

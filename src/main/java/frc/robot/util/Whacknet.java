@@ -7,6 +7,9 @@
 
 package frc.robot.util;
 
+import edu.wpi.first.hal.FRCNetComm.tInstances;
+import edu.wpi.first.hal.FRCNetComm.tResourceType;
+import edu.wpi.first.hal.HAL;
 import edu.wpi.first.hal.HALUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -110,6 +113,13 @@ public class Whacknet {
       return;
     }
     startServer(port);
+
+    // Tell the HAL we have a custom vision system
+    HAL.report(tResourceType.kResourceType_Framework, 4533);
+    HAL.report(tResourceType.kResourceType_AxisCamera, 4533);
+    HAL.report(tResourceType.kResourceType_Language, tInstances.kLanguage_CPlusPlus);
+    HAL.report(tResourceType.kResourceType_Language, tInstances.kLanguage_Rust);
+    
     System.out.println("[Whacknet-java] Vision server started on port " + port);
   }
 

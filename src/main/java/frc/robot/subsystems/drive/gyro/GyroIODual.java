@@ -12,6 +12,8 @@ import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
+import java.util.ArrayList;
+import java.util.List;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -24,14 +26,14 @@ public class GyroIODual implements GyroIO {
   private final GyroIONavX navx = new GyroIONavX();
   private final GyroIOCanAndGyro canandgyro = new GyroIOCanAndGyro();
 
+  private final GyroIOInputs navxIn = new GyroIOInputs();
+  private final GyroIOInputs canIn = new GyroIOInputs();
+
   private Angle driftOffset = Radians.zero();
 
   /** Updates the combined gyro inputs and manages drift compensation. */
   @Override
   public void updateInputs(GyroIOInputs inputs) {
-    GyroIOInputs navxIn = new GyroIOInputs();
-    GyroIOInputs canIn = new GyroIOInputs();
-
     // Update inputs from both physical sensors
     navx.updateInputs(navxIn);
     canandgyro.updateInputs(canIn);
@@ -82,6 +84,26 @@ public class GyroIODual implements GyroIO {
     } else {
       // No gyro data available
       inputs.connected = false;
+    }
+
+    // Health
+    inputs.healthy = navxIn.healthy && canIn.healthy;
+    if (!inputs.healthy) {
+      List<String> reasons = new ArrayList<>();
+      if (!navxIn.healthy) {
+        for (String r : navxIn.unhealthyReasons) {
+          reasons.add("NavX: " + r);
+        }
+      }
+
+      if (!canIn.healthy) {
+        for (String r : canIn.unhealthyReasons) {
+          reasons.add("CanAndGyro: " + r);
+        }
+      }
+      inputs.unhealthyReasons = reasons.toArray(new String[0]);
+    } else if (inputs.unhealthyReasons.length > 0) {
+      inputs.unhealthyReasons = new String[0];
     }
 
     // Log the current drift offset
