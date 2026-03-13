@@ -1,4 +1,3 @@
-// Copyright (c) 2026 FRC Team 4533 (Phoenix)
 // Derived from the AdvantageKit framework by Littleton Robotics
 //
 // Use of this source code is governed by a BSD
@@ -13,6 +12,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.FaultUtil;
 import org.littletonrobotics.junction.Logger;
 
+/**
+ * Subsystem for managing the Power Distribution Hub (PDH).
+ */
 public class PDH extends SubsystemBase {
   private final PDHIO io;
   private final PDHIOInputsAutoLogged inputs = new PDHIOInputsAutoLogged();
@@ -20,6 +22,11 @@ public class PDH extends SubsystemBase {
   private final Alert disconnectedAlert = new Alert("PDH disconnected", AlertType.kError);
   private final Alert faultAlert = new Alert("PDH fault detected", AlertType.kError);
 
+  /**
+   * Constructs the PDH subsystem.
+   *
+   * @param io The PDHIO implementation to use for hardware interaction.
+   */
   public PDH(PDHIO io) {
     this.io = io;
   }

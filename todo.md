@@ -9,3 +9,4 @@
 * Log all sticky faults, warnings, active faults and warnings on a prematch page for pit, also have a button to clear all sticky faults etc
 * Make gyro into own subsystem so dual gro wont be as jank idk? Maybe better logging for what gyro is disconnected?
 * Add LICENSE
+* Add docs to pdh

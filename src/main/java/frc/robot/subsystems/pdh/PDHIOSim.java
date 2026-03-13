@@ -7,6 +7,9 @@
 
 package frc.robot.subsystems.pdh;
 
+/**
+ * Simulation implementation of PDHIO for testing without hardware.
+ */
 public class PDHIOSim implements PDHIO {
   @Override
   public void updateInputs(PDHIOInputs inputs) {
