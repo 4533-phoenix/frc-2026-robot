@@ -14,6 +14,7 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 
+/** Real IO implementation for the PDH subsystem. */
 public class PDHIORev implements PDHIO {
   PowerDistribution pdh = new PowerDistribution(CAN_ID, ModuleType.kRev);
 

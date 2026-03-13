@@ -120,7 +120,13 @@ public class FaultUtil {
     return list.toArray(new String[0]);
   }
 
-  /** Formats an array of strings into a single comma-separated string. */
+  /**
+   * Formats an array of strings into a single comma-separated string.
+   *
+   * @param prefix An optional prefix to prepend to the result. Can be null or empty for no prefix.
+   * @param arr The array of strings to format.
+   * @return A single string with the array elements joined by commas, or "None"
+   */
   public static String getArrayString(String prefix, String[] arr) {
     if (arr == null || arr.length == 0) {
       return "None";

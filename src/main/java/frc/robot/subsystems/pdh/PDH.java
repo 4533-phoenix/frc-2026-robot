@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.FaultUtil;
 import org.littletonrobotics.junction.Logger;
 
+/** Subsystem for monitoring the Power Distribution Hub (PDH) health and status. */
 public class PDH extends SubsystemBase {
   private final PDHIO io;
   private final PDHIOInputsAutoLogged inputs = new PDHIOInputsAutoLogged();
@@ -20,6 +21,11 @@ public class PDH extends SubsystemBase {
   private final Alert disconnectedAlert = new Alert("PDH disconnected", AlertType.kError);
   private final Alert faultAlert = new Alert("PDH fault detected", AlertType.kError);
 
+  /**
+   * Creates a new PDH subsystem.
+   *
+   * @param io The IO implementation to use.
+   */
   public PDH(PDHIO io) {
     this.io = io;
   }

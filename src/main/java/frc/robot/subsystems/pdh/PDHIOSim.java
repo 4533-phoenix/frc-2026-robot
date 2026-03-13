@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems.pdh;
 
+/** Simulated IO implementation for the PDH subsystem. */
 public class PDHIOSim implements PDHIO {
   @Override
   public void updateInputs(PDHIOInputs inputs) {

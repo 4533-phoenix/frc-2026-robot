@@ -7,8 +7,8 @@
 
 package frc.robot.subsystems.pdh;
 
+/** Constants for the PDH subsystem. */
 public final class PDHConstants {
-  // CAN IDs
   /** CAN ID for the PDH. */
   public static final int CAN_ID = 19;
 }

@@ -73,6 +73,7 @@ public class Superstructure extends SubsystemBase {
    * @param shooter The shooter subsystem.
    * @param indexer The indexer subsystem.
    * @param vision The vision subsystem.
+   * @param pdh The power distribution hub subsystem.
    */
   public Superstructure(
       Drive drive,
