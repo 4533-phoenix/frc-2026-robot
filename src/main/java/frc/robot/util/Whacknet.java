@@ -119,7 +119,7 @@ public class Whacknet {
     HAL.report(tResourceType.kResourceType_AxisCamera, 4533);
     HAL.report(tResourceType.kResourceType_Language, tInstances.kLanguage_CPlusPlus);
     HAL.report(tResourceType.kResourceType_Language, tInstances.kLanguage_Rust);
-    
+
     System.out.println("[Whacknet-java] Vision server started on port " + port);
   }
 
