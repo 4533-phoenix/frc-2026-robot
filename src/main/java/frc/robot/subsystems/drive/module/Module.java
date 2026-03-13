@@ -141,7 +141,8 @@ public class Module {
       if (inputs.turnStatus[2] != 0) {
         turnWarningAlert.setText(
             FaultUtil.getArrayString(
-                name + " Module Turn Warnings: ", FaultUtil.getSparkWarnings(inputs.turnStatus[2])));
+                name + " Module Turn Warnings: ",
+                FaultUtil.getSparkWarnings(inputs.turnStatus[2])));
       }
       turnStickyFaultAlert.set(inputs.turnStatus[1] != 0);
       if (inputs.turnStatus[1] != 0) {

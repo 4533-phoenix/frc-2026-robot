@@ -227,30 +227,27 @@ public class DriveConstants {
   public static final double ANGLE_KD = 0.0;
 
   /** Maximum angular velocity for the rotation motion profile in radians per second. */
-  public static final double ANGLE_MAX_VELOCITY = 16.0;
+  public static final AngularVelocity ANGLE_MAX_VELOCITY = RadiansPerSecond.of(16.0);
 
   /** Maximum angular acceleration for the rotation motion profile in radians per second squared. */
-  public static final double ANGLE_MAX_ACCELERATION = 40.0;
-
-  // TODO: ^ Needs to be in wpilib units
+  public static final AngularAcceleration ANGLE_MAX_ACCELERATION =
+      RadiansPerSecondPerSecond.of(40.0);
 
   // Feedforward characterization configuration
   /** Delay in seconds before feedforward characterization starts ramping voltage. */
-  public static final double FF_START_DELAY = 2.0;
+  public static final Time FF_START_DELAY = Seconds.of(2.0);
 
   /** Voltage ramp rate in volts per second for feedforward characterization. */
   public static final double FF_RAMP_RATE = 0.1;
 
-  // TODO: ^ Needs to be in wpilib units
-
   // Wheel radius characterization configuration
   /** Maximum angular velocity in radians per second for wheel radius characterization. */
-  public static final double WHEEL_RADIUS_MAX_VELOCITY = 0.25;
+  public static final AngularVelocity WHEEL_RADIUS_MAX_VELOCITY = RadiansPerSecond.of(0.25);
 
   /** Angular velocity ramp rate in radians per second squared for wheel radius characterization. */
-  public static final double WHEEL_RADIUS_RAMP_RATE = 0.05;
+  public static final AngularAcceleration WHEEL_RADIUS_RAMP_RATE =
+      RadiansPerSecondPerSecond.of(0.05);
 
-  // TODO: ^ Needs to be in wpilib units
   /** Moment of inertia of the robot in kilogram-square meters. */
   public static final MomentOfInertia ROBOT_MOI = KilogramSquareMeters.of(6.883);
 

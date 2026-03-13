@@ -89,19 +89,21 @@ public class Spinner extends SubsystemBase {
       if (inputs.status[1] != 0) {
         stickyFaultAlert.setText(
             FaultUtil.getArrayString(
-                "Intake Spinner Motor Sticky Faults: ", FaultUtil.getSparkFaults(inputs.status[1])));
+                "Intake Spinner Motor Sticky Faults: ",
+                FaultUtil.getSparkFaults(inputs.status[1])));
       }
       stickyWarningAlert.set(inputs.status[3] != 0);
       if (inputs.status[3] != 0) {
         stickyWarningAlert.setText(
             FaultUtil.getArrayString(
-                "Intake Spinner Motor Sticky Warnings: ", FaultUtil.getSparkWarnings(inputs.status[3])));
+                "Intake Spinner Motor Sticky Warnings: ",
+                FaultUtil.getSparkWarnings(inputs.status[3])));
       }
     } else {
       faultAlert.set(false);
       warningAlert.set(false);
-        stickyFaultAlert.set(false);
-        stickyWarningAlert.set(false);
+      stickyFaultAlert.set(false);
+      stickyWarningAlert.set(false);
     }
 
     // Apply the voltage based on the current goal
