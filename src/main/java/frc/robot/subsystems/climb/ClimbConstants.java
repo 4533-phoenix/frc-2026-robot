@@ -12,6 +12,8 @@ import static edu.wpi.first.units.Units.*;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.Force;
+import edu.wpi.first.units.measure.Mass;
 import edu.wpi.first.units.measure.Voltage;
 import frc.lib.ExtraMotors;
 
@@ -46,4 +48,10 @@ public final class ClimbConstants {
 
   /** Gear reduction on the climber */
   public static final double REDUCTION = 2.0;
+
+  /** The mass of the climber mechanism in kilograms. */
+  public static final Mass CLIMBER_MASS = Kilograms.of(0.46 + 0.227 + 0.151 + 0.15);
+
+  /** The spring constant for the climber mechanism in Newtons per meter. */
+  public static final Force SPRING_CONSTANT = Newtons.of(52.8449);
 }

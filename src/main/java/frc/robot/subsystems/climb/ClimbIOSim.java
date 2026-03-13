@@ -7,10 +7,7 @@
 
 package frc.robot.subsystems.climb;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Kilograms;
-import static edu.wpi.first.units.Units.Meter;
-import static edu.wpi.first.units.Units.Volts;
+import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.climb.ClimbConstants.*;
 
 import com.revrobotics.PersistMode;
@@ -59,13 +56,12 @@ public class ClimbIOSim implements ClimbIO {
         new ClimbSim(
             GEARBOX,
             REDUCTION,
-            1.5,
+            CLIMBER_MASS.in(Kilograms),
             DriveConstants.ROBOT_MASS.in(Kilograms),
             DRUM_RADIUS.in(Meter),
             LOWER_HEIGHT.in(Meter),
             UPPER_HEIGHT.in(Meter),
-            40.0 // TODO: Get actual arm mass and spring force values
-            );
+            SPRING_CONSTANT.in(Newtons));
 
     // Disable hardware limit switch behavior so the Spark's internal firmware does not block output
     var liftCfg = new SparkMaxConfig();
