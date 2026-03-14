@@ -20,8 +20,8 @@ import java.util.Queue;
  * IO implementation for the Redux Robotics Canandgyro.
  *
  * <p>This implementation configures the gyro to send data frames at the frequency defined in {@link
- * frc.robot.subsystems.drive.DriveConstants#ODOMETRY_FREQUENCY} and registers these signals with
- * the {@link SparkOdometryThread} for accurate, high-frequency odometry.
+ * frc.robot.subsystems.drive.DriveConstants#ODOMETRY_LOW_FREQUENCY} and registers these signals
+ * with the {@link SparkOdometryThread} for accurate, high-frequency odometry.
  */
 public class GyroIOCanAndGyro implements GyroIO {
   private final Canandgyro canandgyro = new Canandgyro(IMU_CAN_ID);
@@ -32,7 +32,7 @@ public class GyroIOCanAndGyro implements GyroIO {
   public GyroIOCanAndGyro() {
     final CanandgyroSettings settings = new CanandgyroSettings();
     settings.setYawFramePeriod(1 / ODOMETRY_FREQUENCY.in(Hertz));
-    settings.setAngularVelocityFramePeriod(1 / ODOMETRY_LOW_FREQUENCY.in(Hertz));
+    settings.setAngularVelocityFramePeriod(1 / ODOMETRY_FREQUENCY.in(Hertz));
     canandgyro.setSettings(settings);
     canandgyro.setYaw(0.0);
 
@@ -68,24 +68,17 @@ public class GyroIOCanAndGyro implements GyroIO {
     }
 
     // Empty the queues into the inputs object for logging and odometry processing
-    try {
-      int count = Math.min(yawTimestampQueue.size(), yawPositionQueue.size());
-      inputs.odometryYawTimestamps = new double[count];
-      inputs.odometryYawPositions = new double[count];
+    int count = Math.min(yawTimestampQueue.size(), yawPositionQueue.size());
+    inputs.odometryYawTimestamps = new double[count];
+    inputs.odometryYawPositions = new double[count];
 
-      for (int i = 0; i < count; i++) {
-        Double timestamp = yawTimestampQueue.poll();
-        Double angle = yawPositionQueue.poll();
-        if (timestamp != null && angle != null) {
-          inputs.odometryYawTimestamps[i] = timestamp;
-          inputs.odometryYawPositions[i] = angle * 2 * Math.PI;
-        }
+    for (int i = 0; i < count; i++) {
+      Double timestamp = yawTimestampQueue.poll();
+      Double angle = yawPositionQueue.poll();
+      if (timestamp != null && angle != null) {
+        inputs.odometryYawTimestamps[i] = timestamp;
+        inputs.odometryYawPositions[i] = angle * 2 * Math.PI;
       }
-
-      // Clear any remaining elements in case of mismatch
-      yawTimestampQueue.clear();
-      yawPositionQueue.clear();
-    } finally {
-    }
+      }
   }
 }

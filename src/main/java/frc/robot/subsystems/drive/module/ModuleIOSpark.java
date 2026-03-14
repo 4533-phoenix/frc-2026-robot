@@ -146,9 +146,9 @@ public class ModuleIOSpark implements ModuleIO {
     driveConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
-        .primaryEncoderPositionPeriodMs((int) (1000.0 / 250.0)) // 250 Hz
+        .primaryEncoderPositionPeriodMs((int) (1000.0 / ODOMETRY_FREQUENCY.in(Hertz)))
         .primaryEncoderVelocityAlwaysOn(true)
-        .primaryEncoderVelocityPeriodMs((int) (1000.0 / 250.0)) // 250 Hz
+        .primaryEncoderVelocityPeriodMs((int) (1000.0 / ODOMETRY_FREQUENCY.in(Hertz)))
         .appliedOutputPeriodMs(50)
         .busVoltagePeriodMs(50)
         .outputCurrentPeriodMs(50);
@@ -168,7 +168,7 @@ public class ModuleIOSpark implements ModuleIO {
             : SensorDirectionValue.CounterClockwise_Positive;
     turnEncoder.getConfigurator().apply(turnEncoderConfig);
     turnAbsolutePositionSignal.setUpdateFrequency(ODOMETRY_FREQUENCY);
-    turnVelocitySignal.setUpdateFrequency(ODOMETRY_LOW_FREQUENCY);
+    turnVelocitySignal.setUpdateFrequency(ODOMETRY_FREQUENCY);
 
     // Configure Turn Spark Max
     var turnConfig = new SparkMaxConfig();
@@ -191,9 +191,9 @@ public class ModuleIOSpark implements ModuleIO {
     turnConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
-        .primaryEncoderPositionPeriodMs((int) (1000.0 / 250.0))
+        .primaryEncoderPositionPeriodMs((int) (1000.0 / ODOMETRY_FREQUENCY.in(Hertz)))
         .primaryEncoderVelocityAlwaysOn(false)
-        .primaryEncoderVelocityPeriodMs((int) (1000.0 / 250.0))
+        .primaryEncoderVelocityPeriodMs((int) (1000.0 / ODOMETRY_FREQUENCY.in(Hertz)))
         .appliedOutputPeriodMs(50)
         .busVoltagePeriodMs(50)
         .outputCurrentPeriodMs(50);
@@ -288,11 +288,7 @@ public class ModuleIOSpark implements ModuleIO {
       // Bulk copy data into inputs
       System.arraycopy(odometryTimestampBuffer, 0, inputs.odometryTimestamps, 0, count);
       System.arraycopy(odometryDrivePositionBuffer, 0, inputs.odometryDrivePositionsRad, 0, count);
-
-      double zeroOffset = zeroRotation.in(Radians);
-      for (int i = 0; i < count; i++) {
-        inputs.odometryTurnPositionsRad[i] = odometryTurnPositionBuffer[i] - zeroOffset;
-      }
+      System.arraycopy(odometryTurnPositionBuffer, 0, inputs.odometryTurnPositionsRad, 0, count);
 
       if (count > 0) {
         inputs.drivePosition = Radians.of(odometryDrivePositionBuffer[count - 1]);

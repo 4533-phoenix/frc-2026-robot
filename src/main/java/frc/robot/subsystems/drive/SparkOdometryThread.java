@@ -21,8 +21,13 @@ public class SparkOdometryThread extends Thread {
   private final List<Queue<Double>> timestampQueues = new ArrayList<>();
 
   private DoubleSupplier[] bakedSignals = new DoubleSupplier[0];
+
+  @SuppressWarnings("unchecked")
   private Queue<Double>[] bakedSignalQueues = new Queue[0];
+
+  @SuppressWarnings("unchecked")
   private Queue<Double>[] bakedTimestampQueues = new Queue[0];
+
   private double[] valueBuffer = new double[0];
 
   private boolean isStarted = false;
@@ -47,6 +52,7 @@ public class SparkOdometryThread extends Thread {
     this.syncDeviceId = canId;
   }
 
+  @SuppressWarnings("unchecked")
   public void startThread() {
     Drive.odometryLock.lock();
     try {

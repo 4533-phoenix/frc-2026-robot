@@ -26,6 +26,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
+import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -75,6 +76,9 @@ public class Drive extends SubsystemBase {
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(MODULE_TRANSLATIONS);
   private Rotation2d rawGyroRotation = Rotation2d.kZero;
+
+  private final TimeInterpolatableBuffer<Rotation2d> gyroHistory =
+      TimeInterpolatableBuffer.createBuffer(0.5);
 
   // Pre-allocate sweve module positions for odometry to avoid allocations in the main loop
   private final SwerveModulePosition[] odometryPositionsBuffer =
@@ -163,6 +167,13 @@ public class Drive extends SubsystemBase {
     odometryLock.lock();
     try {
       gyroIO.updateInputs(gyroInputs);
+
+      for (int i = 0; i < gyroInputs.odometryYawTimestamps.length; i++) {
+        gyroHistory.addSample(
+            gyroInputs.odometryYawTimestamps[i],
+            Rotation2d.fromRadians(gyroInputs.odometryYawPositions[i]));
+      }
+
       Logger.processInputs("Drive/Gyro", gyroInputs);
       for (var module : modules) {
         module.periodic();
@@ -194,35 +205,33 @@ public class Drive extends SubsystemBase {
       sampleCount = Math.min(sampleCount, modules[i].getOdometryPositions().length);
     }
     for (int i = 0; i < sampleCount; i++) {
-      // Read wheel positions and deltas from each module
+      double timestamp = sampleTimestamps[i];
+
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
         SwerveModulePosition sample = modules[moduleIndex].getOdometryPositions()[i];
-
-        // Overwrite values in pre-allocated buffers instead of allocating new objects
         odometryPositionsBuffer[moduleIndex].distanceMeters = sample.distanceMeters;
         odometryPositionsBuffer[moduleIndex].angle = sample.angle;
 
+        // Calculate deltas for kinematics fallback if needed
         odometryDeltasBuffer[moduleIndex].distanceMeters =
             sample.distanceMeters - lastModulePositions[moduleIndex].distanceMeters;
         odometryDeltasBuffer[moduleIndex].angle = sample.angle;
 
-        // Update tracking for next iteration
         lastModulePositions[moduleIndex].distanceMeters = sample.distanceMeters;
         lastModulePositions[moduleIndex].angle = sample.angle;
       }
 
-      // Update gyro angle, fallback to kinematics if missing sample
-      if (gyroInputs.connected && i < gyroInputs.odometryYawPositions.length) {
-        // Use the real gyro angle
-        rawGyroRotation = Rotation2d.fromRadians(gyroInputs.odometryYawPositions[i]);
+      // Interpolate the gyro rotation at the exact timestamp of this module sample
+      var interpolatedRotation = gyroHistory.getSample(timestamp);
+
+      if (interpolatedRotation.isPresent()) {
+        rawGyroRotation = interpolatedRotation.get();
       } else {
-        // Use the angle delta from the kinematics and module deltas
         Twist2d twist = kinematics.toTwist2d(odometryDeltasBuffer);
         rawGyroRotation = rawGyroRotation.plus(Rotation2d.fromRadians(twist.dtheta));
       }
 
-      // Apply update using pre-allocated buffers
-      poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, odometryPositionsBuffer);
+      poseEstimator.updateWithTime(timestamp, rawGyroRotation, odometryPositionsBuffer);
     }
 
     // Update gyro alert
