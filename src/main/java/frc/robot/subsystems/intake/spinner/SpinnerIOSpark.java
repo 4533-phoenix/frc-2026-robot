@@ -53,12 +53,12 @@ public class SpinnerIOSpark implements SpinnerIO {
     config
         .signals
         .primaryEncoderPositionAlwaysOn(true)
-        .primaryEncoderPositionPeriodMs(20)
+        .primaryEncoderPositionPeriodMs(50)
         .primaryEncoderVelocityAlwaysOn(true)
-        .primaryEncoderVelocityPeriodMs(20)
-        .appliedOutputPeriodMs(20)
-        .busVoltagePeriodMs(20)
-        .outputCurrentPeriodMs(20);
+        .primaryEncoderVelocityPeriodMs(50)
+        .appliedOutputPeriodMs(50)
+        .busVoltagePeriodMs(50)
+        .outputCurrentPeriodMs(50);
     tryUntilOk(
         5,
         () ->

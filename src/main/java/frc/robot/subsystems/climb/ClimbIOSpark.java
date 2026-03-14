@@ -51,10 +51,10 @@ public class ClimbIOSpark implements ClimbIO {
         .voltageCompensation(12.0);
     liftCfg
         .signals
-        .appliedOutputPeriodMs(20)
-        .busVoltagePeriodMs(20)
-        .outputCurrentPeriodMs(20)
-        .limitsPeriodMs(20);
+        .appliedOutputPeriodMs(50)
+        .busVoltagePeriodMs(50)
+        .outputCurrentPeriodMs(50)
+        .limitsPeriodMs(50);
     tryUntilOk(
         5,
         () ->
