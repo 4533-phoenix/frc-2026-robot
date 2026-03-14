@@ -112,10 +112,11 @@ public class ModuleIOSpark implements ModuleIO {
     turnPositionQueue =
         SparkOdometryThread.getInstance()
             .registerSignal(turnSpark, turnInternalEncoder::getPosition);
-    driveVelocityQueue = 
+    driveVelocityQueue =
         SparkOdometryThread.getInstance().registerSignal(driveSpark, driveEncoder::getVelocity);
-    turnVelocityQueue = 
-        SparkOdometryThread.getInstance().registerSignal(turnSpark, turnInternalEncoder::getVelocity);
+    turnVelocityQueue =
+        SparkOdometryThread.getInstance()
+            .registerSignal(turnSpark, turnInternalEncoder::getVelocity);
 
     var driveConfig = new SparkMaxConfig();
     driveConfig
@@ -247,7 +248,11 @@ public class ModuleIOSpark implements ModuleIO {
         Double driveVel = driveVelocityQueue.poll();
         Double turnVel = turnVelocityQueue.poll();
 
-        if (timestamp != null && drivePos != null && turnPos != null && driveVel != null && turnVel != null) {
+        if (timestamp != null
+            && drivePos != null
+            && turnPos != null
+            && driveVel != null
+            && turnVel != null) {
           odometryTimestampBuffer[count] = timestamp;
           odometryDrivePositionBuffer[count] = drivePos;
           odometryTurnPositionBuffer[count] = turnPos;
@@ -299,7 +304,8 @@ public class ModuleIOSpark implements ModuleIO {
           (turnAbsolutePositionSignal.getValueAsDouble() * TURN_ENCODER_POSITION_FACTOR)
               - zeroRotation.in(Radians);
       double turnError = Math.abs(MathUtil.angleModulus(internalPos - absolutePos));
-      boolean isStill = inputs.turnVelocity.abs(RadiansPerSecond) < VELOCITY_GATE.in(RadiansPerSecond);
+      boolean isStill =
+          inputs.turnVelocity.abs(RadiansPerSecond) < VELOCITY_GATE.in(RadiansPerSecond);
 
       if (isStill && turnError > ERROR_THRESHOLD.in(Radians)) {
         turnInternalEncoder.setPosition(absolutePos);

@@ -10,7 +10,8 @@
         "C:/Users/Public/wpilib/2026/jdk/include/win32",
         "C:/Users/Public/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot/usr/lib/gcc/arm-nilrt-linux-gnueabi/12/include",
         "C:/Users/Public/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot/usr/lib/gcc/arm-nilrt-linux-gnueabi/12/include-fixed",
-        "C:/Users/Public/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot/usr/include"
+        "C:/Users/Public/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot/usr/include",
+        "${userHome}/.gradle/caches/8.11/transforms/**/transformed/*-headers"
       ],
       "compilerPath": "C:/Users/Public/wpilib/2026/roborio/bin/arm-frc2025-linux-gnueabi-gcc.exe",
       "compilerArgs": [
@@ -29,7 +30,8 @@
         "${workspaceFolder}/src/main/native/include/**",
         "${userHome}/wpilib/2026/jdk/include",
         "${userHome}/wpilib/2026/jdk/include/linux",
-        "${userHome}/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot/usr/include"
+        "${userHome}/wpilib/2026/roborio/arm-nilrt-linux-gnueabi/sysroot/usr/include",
+        "${userHome}/.gradle/caches/8.11/transforms/**/transformed/*-headers"
       ],
       "compilerPath": "${userHome}/wpilib/2026/roborio/bin/arm-frc2025-linux-gnueabi-gcc",
       "compilerArgs": [

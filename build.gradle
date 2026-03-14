@@ -16,36 +16,52 @@ def ROBOT_MAIN_CLASS = "frc.robot.Main"
 // Native build configuration for the vision server
 model {
   components {
-    // Define a Shared Library for the Vision Server
+    // Whacknet (UDP Vision Server)
     whacknet(NativeLibrarySpec) {
       targetPlatform wpi.platforms.roborio
-
-      // Define C sources
       sources {
         c {
           source {
             srcDir 'src/main/native/c'
-            include '**/*.c'
+            include 'whacknet.c'
           }
-          exportedHeaders {
-            srcDir 'src/main/native/include'
-          }
+          exportedHeaders { srcDir 'src/main/native/include' }
         }
       }
-
-      // Add JNI includes and force linux headers for cross compilation
       binaries.all {
         def javaHome = org.gradle.internal.jvm.Jvm.current().javaHome
-        if (javaHome != null) {
-          if (toolChain in Gcc || toolChain in Clang) {
-            // Include generic JNI headers
-            cCompiler.args "-I", "${javaHome}/include"
-            cCompiler.args "-I", "${projectDir}/src/main/native/include/linux"
+        if (javaHome != null && (toolChain in Gcc || toolChain in Clang)) {
+          cCompiler.args "-I", "${javaHome}/include"
+          cCompiler.args "-I", "${projectDir}/src/main/native/include/linux"
+          cCompiler.args "-fPIC", "-pthread", "-O2", "-Wall", "-std=c11"
+          linker.args "-pthread"
+        }
+      }
+    }
 
-            // Standard compilation flags
-            cCompiler.args "-fPIC", "-pthread", "-O2", "-Wall"
-            linker.args "-pthread"
+    // SparkTap (CAN Interceptor)
+    sparktap(NativeLibrarySpec) {
+      targetPlatform wpi.platforms.roborio
+      sources {
+        c {
+          source {
+            srcDir 'src/main/native/c'
+            include 'sparktap.c'
           }
+          exportedHeaders { srcDir 'src/main/native/include' }
+        }
+      }
+      binaries.all {
+        nativeUtils.useRequiredLibrary(it, "driver_shared")
+        nativeUtils.useRequiredLibrary(it, "wpilib_shared")
+
+        def javaHome = org.gradle.internal.jvm.Jvm.current().javaHome
+        if (javaHome != null && (toolChain in Gcc || toolChain in Clang)) {
+          cCompiler.args "-I", "${javaHome}/include"
+          cCompiler.args "-I", "${projectDir}/src/main/native/include/linux"
+          cCompiler.args "-fPIC", "-pthread", "-O2", "-Wall", "-std=c11"
+          cCompiler.args "-v"
+          linker.args "-pthread"
         }
       }
     }
@@ -55,9 +71,14 @@ model {
 // Custom task to flatten the native library for deployment
 task stageNativeLib(type: Copy) {
   dependsOn 'whacknetReleaseSharedLibrary'
+  dependsOn 'sparktapReleaseSharedLibrary'
 
   from fileTree('build/libs/whacknet/shared') {
     include '**/libwhacknet.so'
+    exclude '**/*.debug'
+  }
+  from fileTree('build/libs/sparktap/shared') {
+    include '**/libsparktap.so'
     exclude '**/*.debug'
   }
   into 'build/staged_lib'
