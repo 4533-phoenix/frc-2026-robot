@@ -6,3 +6,5 @@
 * Move sticky faults to own channel?
 * Add elastic integration
 * Make one gyro a warn instead of a unhealthy?
+* Gyro correction broken?
+* SmartDashboard.updateValues() taking long ass time in loops?

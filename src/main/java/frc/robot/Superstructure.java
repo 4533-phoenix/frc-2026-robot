@@ -268,7 +268,7 @@ public class Superstructure extends SubsystemBase {
    *
    * @return True if all subsystems are healthy, false otherwise.
    */
-  @AutoLogOutput(key = "Superstructure/Is Healthy")
+  @AutoLogOutput(key = "Superstructure/IsHealthy")
   public boolean isHealthy() {
     return drive.isHealthy()
         && climb.isHealthy()
