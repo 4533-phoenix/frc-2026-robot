@@ -72,10 +72,6 @@ public final class ShooterConstants {
   /** Maximum current limit for the flywheel motor. */
   public static final Current MOTOR_CURRENT_LIMIT = Amps.of(60.0);
 
-  /** Maximum acceleration for the flywheel MAXMotion velocity profile. */
-  public static final AngularAcceleration FLYWHEEL_MAX_ACCELERATION =
-      RadiansPerSecondPerSecond.of(400.0);
-
   // ---------- Encoder conversion factors ----------
   /** Converts motor rotations to mechanism radians. */
   public static final double FLYWHEEL_ENCODER_POSITION_FACTOR = (2.0 * Math.PI) / REDUCTION;
@@ -86,22 +82,22 @@ public final class ShooterConstants {
 
   // ---------- PID constants for flywheel velocity control ----------
   /** Proportional gain for flywheel velocity control. */
-  public static final double FLYWHEEL_KP = 0.0;
+  public static final double FLYWHEEL_KP = 0.0085;
 
   /** Integral gain for flywheel velocity control. */
   public static final double FLYWHEEL_KI = 0.0;
 
   /** Derivative gain for flywheel velocity control. */
-  public static final double FLYWHEEL_KD = 0.0;
+  public static final double FLYWHEEL_KD = 0.0001;
 
   /** Static friction feedforward gain for the flywheel. */
-  public static final double FLYWHEEL_KS = 0.15;
+  public static final double FLYWHEEL_KS = 0.0;
 
   /** Velocity feedforward gain for the flywheel. */
-  public static final double FLYWHEEL_KV = 0.017;
+  public static final double FLYWHEEL_KV = 0.0175;
 
   /** Acceleration feedforward gain for the flywheel. */
-  public static final double FLYWHEEL_KA = 0.006;
+  public static final double FLYWHEEL_KA = 0.0;
 
   // ---------- Shooter state constants ----------
   /** Preset shooter state for lobbing game pieces into the coral station. */

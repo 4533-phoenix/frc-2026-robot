@@ -24,6 +24,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Voltage;
 import java.util.function.DoubleSupplier;
 
 /**
@@ -56,7 +57,7 @@ public class FlywheelIOSpark implements FlywheelIO {
         .encoder
         .positionConversionFactor(FLYWHEEL_ENCODER_POSITION_FACTOR)
         .velocityConversionFactor(FLYWHEEL_ENCODER_VELOCITY_FACTOR)
-        .uvwMeasurementPeriod(10)
+        .uvwMeasurementPeriod(8)
         .uvwAverageDepth(2);
     config
         .closedLoop
@@ -64,18 +65,12 @@ public class FlywheelIOSpark implements FlywheelIO {
         .pid(FLYWHEEL_KP, FLYWHEEL_KI, FLYWHEEL_KD);
     config.closedLoop.feedForward.kS(FLYWHEEL_KS).kV(FLYWHEEL_KV).kA(FLYWHEEL_KA);
     config
-        .closedLoop
-        .maxMotion
-        .maxAcceleration(FLYWHEEL_MAX_ACCELERATION.in(RadiansPerSecondPerSecond))
-        .allowedProfileError(ANGULAR_TOLERANCE.in(RadiansPerSecond));
-    config
         .signals
         .primaryEncoderVelocityAlwaysOn(true)
         .primaryEncoderVelocityPeriodMs(20)
         .appliedOutputPeriodMs(20)
         .busVoltagePeriodMs(20)
-        .outputCurrentPeriodMs(20)
-        .isAtSetpointPeriodMs(20);
+        .outputCurrentPeriodMs(20);
     tryUntilOk(
         5,
         () ->
@@ -87,6 +82,7 @@ public class FlywheelIOSpark implements FlywheelIO {
   public void updateInputs(FlywheelIOInputs inputs) {
     boolean sparkOk = true;
 
+    sparkOk &= ifOk(spark, encoder::getPosition, (value) -> inputs.position = Radians.of(value));
     sparkOk &=
         ifOk(spark, encoder::getVelocity, (value) -> inputs.velocity = RadiansPerSecond.of(value));
     sparkOk &=
@@ -96,7 +92,6 @@ public class FlywheelIOSpark implements FlywheelIO {
             (values) -> inputs.appliedVoltage = Volts.of(values[0] * values[1]));
     sparkOk &=
         ifOk(spark, spark::getOutputCurrent, (value) -> inputs.appliedCurrent = Amps.of(value));
-    sparkOk &= ifOk(spark, controller::isAtSetpoint, (value) -> inputs.atSetpoint = value);
 
     inputs.connected = connectedDebounce.calculate(sparkOk);
 
@@ -112,10 +107,13 @@ public class FlywheelIOSpark implements FlywheelIO {
   public void setAngularVelocity(AngularVelocity velocity) {
     if (sentVelocity != null && velocity.isEquivalent(sentVelocity)) return;
     controller.setSetpoint(
-        velocity.in(RadiansPerSecond),
-        ControlType.kMAXMotionVelocityControl,
-        ClosedLoopSlot.kSlot0);
+        velocity.in(RadiansPerSecond), ControlType.kVelocity, ClosedLoopSlot.kSlot0);
     sentVelocity = velocity;
+  }
+
+  @Override
+  public void runCharacterization(Voltage voltage) {
+    spark.setVoltage(voltage.in(Volts));
   }
 
   @Override

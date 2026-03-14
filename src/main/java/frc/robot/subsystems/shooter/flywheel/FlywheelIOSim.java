@@ -24,6 +24,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 
@@ -77,11 +78,6 @@ public class FlywheelIOSim implements FlywheelIO {
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(FLYWHEEL_KP, FLYWHEEL_KI, FLYWHEEL_KD);
     config.closedLoop.feedForward.kS(FLYWHEEL_KS).kV(FLYWHEEL_KV).kA(FLYWHEEL_KA);
-    config
-        .closedLoop
-        .maxMotion
-        .maxAcceleration(FLYWHEEL_MAX_ACCELERATION.in(RadiansPerSecondPerSecond))
-        .allowedProfileError(ANGULAR_TOLERANCE.in(RadiansPerSecond));
     spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
@@ -99,27 +95,25 @@ public class FlywheelIOSim implements FlywheelIO {
 
     // Populate inputs from simulated data
     inputs.connected = true;
+    inputs.position = Radians.of(encoder.getPosition());
     inputs.velocity = RadiansPerSecond.of(encoder.getVelocity());
     inputs.appliedVoltage = Volts.of(spark.getAppliedOutput() * spark.getBusVoltage());
     inputs.appliedCurrent = Amps.of(spark.getOutputCurrent());
   }
 
-  /**
-   * Commands the SparkFlex to spin at a specific angular velocity using MAXMotion velocity control.
-   *
-   * @param velocity The target angular velocity.
-   */
+  @Override
+  public void runCharacterization(Voltage voltage) {
+    spark.setVoltage(voltage.in(Volts));
+  }
+
   @Override
   public void setAngularVelocity(AngularVelocity velocity) {
     if (sentVelocity != null && velocity.isEquivalent(sentVelocity)) return;
     controller.setSetpoint(
-        velocity.in(RadiansPerSecond),
-        ControlType.kMAXMotionVelocityControl,
-        ClosedLoopSlot.kSlot0);
+        velocity.in(RadiansPerSecond), ControlType.kVelocity, ClosedLoopSlot.kSlot0);
     sentVelocity = velocity;
   }
 
-  /** Stops the flywheel motor by setting voltage output to zero. */
   @Override
   public void stop() {
     spark.setVoltage(0.0);

@@ -26,6 +26,9 @@ public interface FlywheelIO {
     /** Whether the motor controller is successfully connected. */
     public boolean connected = false;
 
+    /** The current position of the flywheel. */
+    public Angle position = Radians.zero();
+
     /** The current angular velocity of the flywheel. */
     public AngularVelocity velocity = RadiansPerSecond.zero();
 
@@ -34,9 +37,6 @@ public interface FlywheelIO {
 
     /** The current being drawn by the motor. */
     public Current appliedCurrent = Amps.zero();
-
-    /** Whether the flywheel has reached its target setpoint. */
-    public boolean atSetpoint = false;
 
     /** Whether the motor is functioning correctly. */
     public boolean healthy = true;
@@ -58,6 +58,13 @@ public interface FlywheelIO {
    * @param velocity The target angular velocity for the flywheel.
    */
   public default void setAngularVelocity(AngularVelocity velocity) {}
+
+  /**
+   * Runs a characterization routine on the flywheel to determine its feedforward constants.
+   *
+   * @param voltage The voltage to apply during characterization.
+   */
+  public default void runCharacterization(Voltage voltage) {}
 
   /** Stops the flywheel motor. */
   public default void stop() {}

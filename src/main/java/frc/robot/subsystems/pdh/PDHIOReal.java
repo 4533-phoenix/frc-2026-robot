@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems.pdh;
 
+import edu.wpi.first.hal.PowerDistributionJNI;
 import edu.wpi.first.math.filter.Debouncer;
 import org.littletonrobotics.conduit.ConduitApi;
 
@@ -14,17 +15,24 @@ import org.littletonrobotics.conduit.ConduitApi;
 public class PDHIOReal implements PDHIO {
   private final ConduitApi conduit = ConduitApi.getInstance();
   private final Debouncer connectedDebounce = new Debouncer(0.5, Debouncer.DebounceType.kFalling);
+  private int handle = -1;
 
   @Override
   public void updateInputs(PDHIOInputs inputs) {
+    if (handle == -1) {
+      handle = conduit.getPDPHandle();
+    }
+
     inputs.connected = connectedDebounce.calculate(conduit.getPDPVoltage() > 0.0);
     inputs.status[0] = (int) conduit.getPDPFaults();
-    inputs.healthy = inputs.status[0] == 0;
     inputs.status[1] = (int) conduit.getPDPStickyFaults();
+    inputs.healthy = inputs.status[0] == 0;
   }
 
   @Override
   public void clearFaults() {
-    // Find a way to clear these but ak hides the handle
+    if (handle != -1) {
+      PowerDistributionJNI.clearStickyFaults(handle);
+    }
   }
 }

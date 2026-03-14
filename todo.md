@@ -5,3 +5,4 @@
 * Make vision 0 alloc again
 * Move sticky faults to own channel?
 * Add elastic integration
+* Make one gyro a warn instead of a unhealthy?

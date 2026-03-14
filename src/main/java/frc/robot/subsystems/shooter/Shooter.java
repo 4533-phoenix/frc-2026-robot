@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.lib.FaultUtil;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOInputsAutoLogged;
@@ -52,12 +53,16 @@ public class Shooter extends SubsystemBase {
   private final HoodIO hoodIO;
   private final HoodIOInputsAutoLogged hoodInputs = new HoodIOInputsAutoLogged();
 
+  private final SysIdRoutine sysId;
+
   /** High-level goals for the shooter subsystem. */
   public enum Goal {
     /** Stop all movement and motors. */
     STOP,
     /** Active and tracking a target state. */
-    RUNNING
+    RUNNING,
+    /** Only when we are characterizing the flywheel. */
+    CHARACTERIZATION
   }
 
   @AutoLogOutput private Goal goal = Goal.STOP;
@@ -88,11 +93,29 @@ public class Shooter extends SubsystemBase {
     this.flywheelIO = flywheelIO;
     this.hoodIO = hoodIO;
 
-    // Build triggers once; lambdas capture 'this' and evaluate live state each poll
-    flywheelReadyTrigger = new Trigger(() -> flywheelInputs.atSetpoint);
+    // Build triggers once
+    flywheelReadyTrigger =
+        new Trigger(
+            () ->
+                Math.abs(
+                        flywheelInputs.velocity.in(RadiansPerSecond)
+                            - state.flywheelSpeed().in(RadiansPerSecond))
+                    < ShooterConstants.ANGULAR_TOLERANCE.in(RadiansPerSecond));
     hoodReadyTrigger = new Trigger(() -> hoodInputs.atSetpoint);
     readyToShootTrigger =
         flywheelReadyTrigger.and(hoodReadyTrigger).and(() -> goal == Goal.RUNNING);
+
+    sysId =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null, // Use default ramp rate
+                null, // Use default step voltage
+                null, // Use default timeout
+                (state) -> Logger.recordOutput("Shooter/FlywheelSysIdState", state.toString())),
+            new SysIdRoutine.Mechanism(
+                (voltage) -> flywheelIO.runCharacterization(voltage),
+                null, // Telemetry is handled by standard AdvantageKit logging in periodic()
+                this));
   }
 
   /**
@@ -158,6 +181,9 @@ public class Shooter extends SubsystemBase {
       case RUNNING -> {
         flywheelIO.setAngularVelocity(state.flywheelSpeed());
         hoodIO.setLength(convertHoodAngleToServoLength(state.hoodAngle()));
+      }
+      case CHARACTERIZATION -> {
+        hoodIO.retract();
       }
     }
   }
@@ -273,6 +299,26 @@ public class Shooter extends SubsystemBase {
   /** Convenience method to set the stop goal directly. */
   public void setStop() {
     setGoal(Goal.STOP);
+  }
+
+  /** Returns a command to run a quasistatic SysId test. */
+  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+    return runOnce(() -> setGoal(Goal.CHARACTERIZATION))
+        .andThen(
+            run(() -> flywheelIO.runCharacterization(Volts.zero()))
+                .withTimeout(1.0)
+                .andThen(sysId.quasistatic(direction)))
+        .finallyDo(() -> setGoal(Goal.STOP));
+  }
+
+  /** Returns a command to run a dynamic SysId test. */
+  public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+    return runOnce(() -> setGoal(Goal.CHARACTERIZATION))
+        .andThen(
+            run(() -> flywheelIO.runCharacterization(Volts.zero()))
+                .withTimeout(1.0)
+                .andThen(sysId.dynamic(direction)))
+        .finallyDo(() -> setGoal(Goal.STOP));
   }
 
   /**
