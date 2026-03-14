@@ -7,6 +7,9 @@
 
 package frc.robot.util.sparktap;
 
+import edu.wpi.first.hal.FRCNetComm.tInstances;
+import edu.wpi.first.hal.FRCNetComm.tResourceType;
+import edu.wpi.first.hal.HAL;
 import edu.wpi.first.wpilibj.RobotBase;
 import java.nio.ByteBuffer;
 
@@ -16,6 +19,7 @@ public class SparkTapJNI {
     if (RobotBase.isReal()) {
       try {
         System.loadLibrary("sparktap");
+        HAL.report(tResourceType.kResourceType_Language, tInstances.kLanguage_CPlusPlus);
       } catch (UnsatisfiedLinkError e) {
         System.err.println("[SparkTap-java] Native library failed to load!");
       }
