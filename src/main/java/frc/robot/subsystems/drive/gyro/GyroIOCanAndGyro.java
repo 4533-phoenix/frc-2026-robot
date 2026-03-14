@@ -79,6 +79,6 @@ public class GyroIOCanAndGyro implements GyroIO {
         inputs.odometryYawTimestamps[i] = timestamp;
         inputs.odometryYawPositions[i] = angle * 2 * Math.PI;
       }
-      }
+    }
   }
 }
