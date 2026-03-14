@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.littletonrobotics.junction.Logger;
 
+import com.studica.frc.AHRS.NavXComType;
+
 /**
  * IO implementation that combines inputs from a {@link GyroIONavX} and a {@link GyroIOCanAndGyro}.
  *
@@ -23,7 +25,7 @@ import org.littletonrobotics.junction.Logger;
  * CanAndGyro to calculate and correct for gyro drift when the robot is detected to be stationary.
  */
 public class GyroIODual implements GyroIO {
-  private final GyroIONavX navx = new GyroIONavX();
+  private final GyroIONavX navx = new GyroIONavX(NavXComType.kUSB1);
   private final GyroIOCanAndGyro canandgyro = new GyroIOCanAndGyro();
 
   private final GyroIOInputs navxIn = new GyroIOInputs();

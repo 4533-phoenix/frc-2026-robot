@@ -27,12 +27,13 @@ import java.util.Queue;
  * returns angles in degrees, which are converted to radians for standard units usage.
  */
 public class GyroIONavX implements GyroIO {
-  private final AHRS navX = new AHRS(NavXComType.kUSB1, NavXUpdateRate.k200Hz);
+  private final AHRS navX;
   private final Queue<Double> yawPositionQueue;
   private final Queue<Double> yawTimestampQueue;
 
   /** Creates a new GyroIONavX. */
-  public GyroIONavX() {
+  public GyroIONavX(NavXComType comType) {
+    navX = new AHRS(comType, NavXUpdateRate.k200Hz);
     yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
     yawPositionQueue = SparkOdometryThread.getInstance().registerSignal(navX::getAngle);
     navX.zeroYaw();
