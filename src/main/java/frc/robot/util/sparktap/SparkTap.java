@@ -26,9 +26,18 @@ public class SparkTap {
   private final MotorView[] motors = new MotorView[MAX_MOTORS];
 
   public enum Frame {
-    S0(0), S1(1), S2(2), S3(3), S4(4), S5(5), S6(6);
+    S0(0),
+    S1(1),
+    S2(2),
+    S3(3),
+    S4(4),
+    S5(5),
+    S6(6);
     public final int idx;
-    Frame(int i) { this.idx = i; }
+
+    Frame(int i) {
+      this.idx = i;
+    }
   }
 
   public static synchronized SparkTap getInstance() {
@@ -41,7 +50,9 @@ public class SparkTap {
     if (raw != null) {
       buffer = raw.order(ByteOrder.LITTLE_ENDIAN);
     } else {
-      buffer = ByteBuffer.allocate(MAX_MOTORS * MOTOR_BLOCK_SIZE).order(ByteOrder.LITTLE_ENDIAN); // Simulation fallback
+      buffer =
+          ByteBuffer.allocate(MAX_MOTORS * MOTOR_BLOCK_SIZE)
+              .order(ByteOrder.LITTLE_ENDIAN); // Simulation fallback
     }
 
     // Pre-allocate thread-safe views for all possible CAN IDs
@@ -50,16 +61,12 @@ public class SparkTap {
     }
   }
 
-  /**
-   * Blocks the calling thread until the motor sends the specified status frame.
-   */
+  /** Blocks the calling thread until the motor sends the specified status frame. */
   public void sync(int deviceId, Frame frame) {
     SparkTapJNI.waitForFrame(deviceId, frame.idx);
   }
 
-  /**
-   * Returns a dedicated, thread-safe view into a specific motor's status data.
-   */
+  /** Returns a dedicated, thread-safe view into a specific motor's status data. */
   public MotorView getMotor(int deviceId) {
     return motors[deviceId];
   }
@@ -89,7 +96,8 @@ public class SparkTap {
     /** Decodes Motor Current from Status 1 (Bytes 4-5, 12-bit). */
     public double getCurrent() {
       int offset = motorOffset + (Frame.S1.idx * SLOT_SIZE);
-      int raw = (Byte.toUnsignedInt(buffer.get(offset + 4)))
+      int raw =
+          (Byte.toUnsignedInt(buffer.get(offset + 4)))
               | ((Byte.toUnsignedInt(buffer.get(offset + 5)) & 0xF) << 8);
       return raw * 0.125;
     }
@@ -97,7 +105,8 @@ public class SparkTap {
     /** Decodes Bus Voltage from Status 1 (Bytes 5-7, 12-bit). */
     public double getBusVoltage() {
       int offset = motorOffset + (Frame.S1.idx * SLOT_SIZE);
-      int raw = ((Byte.toUnsignedInt(buffer.get(offset + 5)) & 0xF0) >> 4)
+      int raw =
+          ((Byte.toUnsignedInt(buffer.get(offset + 5)) & 0xF0) >> 4)
               | (Byte.toUnsignedInt(buffer.get(offset + 6)) << 4);
       return raw * 0.125;
     }
