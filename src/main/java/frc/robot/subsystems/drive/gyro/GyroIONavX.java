@@ -14,7 +14,6 @@ import static edu.wpi.first.units.Units.*;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 import com.studica.frc.AHRS.NavXUpdateRate;
-import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.SparkOdometryThread;
 import java.util.ArrayList;
 import java.util.Queue;
@@ -65,7 +64,6 @@ public class GyroIONavX implements GyroIO {
     }
 
     // Empty the queues into the inputs object for logging and odometry processing
-    Drive.odometryLock.lock();
     try {
       int count = Math.min(yawTimestampQueue.size(), yawPositionQueue.size());
       inputs.odometryYawTimestamps = new double[count];
@@ -84,7 +82,6 @@ public class GyroIONavX implements GyroIO {
       yawTimestampQueue.clear();
       yawPositionQueue.clear();
     } finally {
-      Drive.odometryLock.unlock();
     }
   }
 }

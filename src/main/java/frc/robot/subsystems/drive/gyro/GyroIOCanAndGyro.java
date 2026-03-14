@@ -12,7 +12,6 @@ import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import com.reduxrobotics.sensors.canandgyro.Canandgyro;
 import com.reduxrobotics.sensors.canandgyro.CanandgyroSettings;
-import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.SparkOdometryThread;
 import java.util.ArrayList;
 import java.util.Queue;
@@ -32,9 +31,7 @@ public class GyroIOCanAndGyro implements GyroIO {
   /** Creates a new GyroIOCanAndGyro. */
   public GyroIOCanAndGyro() {
     final CanandgyroSettings settings = new CanandgyroSettings();
-    // Configure hardware frames to match the desired odometry frequency
     settings.setYawFramePeriod(1 / ODOMETRY_FREQUENCY.in(Hertz));
-    // Set standard less critical velocity data
     settings.setAngularVelocityFramePeriod(1 / ODOMETRY_LOW_FREQUENCY.in(Hertz));
     canandgyro.setSettings(settings);
     canandgyro.setYaw(0.0);
@@ -71,7 +68,6 @@ public class GyroIOCanAndGyro implements GyroIO {
     }
 
     // Empty the queues into the inputs object for logging and odometry processing
-    frc.robot.subsystems.drive.Drive.odometryLock.lock();
     try {
       int count = Math.min(yawTimestampQueue.size(), yawPositionQueue.size());
       inputs.odometryYawTimestamps = new double[count];
@@ -90,7 +86,6 @@ public class GyroIOCanAndGyro implements GyroIO {
       yawTimestampQueue.clear();
       yawPositionQueue.clear();
     } finally {
-      Drive.odometryLock.unlock();
     }
   }
 }

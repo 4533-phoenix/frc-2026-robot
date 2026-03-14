@@ -124,7 +124,7 @@ public class Drive extends SubsystemBase {
     HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_AdvantageKit);
 
     // Start odometry thread
-    SparkOdometryThread.getInstance().start();
+    SparkOdometryThread.getInstance().startThread();
 
     // Configure AutoBuilder for PathPlanner
     AutoBuilder.configure(
