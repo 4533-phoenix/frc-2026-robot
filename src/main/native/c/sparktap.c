@@ -1,3 +1,9 @@
+// Copyright (c) 2026 FRC Team 4533 (Phoenix)
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file
+// at the root directory of this project.
+
 #define _GNU_SOURCE
 #include <jni.h>
 #include <stdint.h>
@@ -74,8 +80,6 @@ static void* worker_loop(void *arg) {
 	return NULL;
 }
 
-// ... init and waitForFrame stay the same ...
-
 JNIEXPORT jobject JNICALL Java_frc_robot_util_sparktap_SparkTapJNI_init(
 		JNIEnv *env, jclass clazz) {
 	if (shared_buffer == NULL) {
@@ -98,7 +102,7 @@ JNIEXPORT jboolean JNICALL Java_frc_robot_util_sparktap_SparkTapJNI_waitForFrame
 	uint8_t bit = 1 << frameIdx;
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
-	ts.tv_nsec += 20000000; // 20ms timeout
+	ts.tv_nsec += 20000000;
 	if (ts.tv_nsec >= 1000000000) {
 		ts.tv_sec++;
 		ts.tv_nsec -= 1000000000;
@@ -109,7 +113,6 @@ JNIEXPORT jboolean JNICALL Java_frc_robot_util_sparktap_SparkTapJNI_waitForFrame
 
 	int result = 0;
 	while (!(atomic_load(&last_updated_mask[deviceId]) & bit) && result == 0) {
-		// Use timedwait so we don't hang the robot if CAN stops
 		result = pthread_cond_timedwait(&wakeup_cv, &wakeup_mutex, &ts);
 	}
 	pthread_mutex_unlock(&wakeup_mutex);

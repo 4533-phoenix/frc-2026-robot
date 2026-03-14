@@ -1,7 +1,5 @@
-// Copyright (c) 2021-2026 Littleton Robotics
-// http://github.com/Mechanical-Advantage
-//
-// Modified by FRC Team 4533 (Phoenix) 2026
+// Copyright (c) 2026 FRC Team 4533 (Phoenix)
+// Derived from the AdvantageKit framework by Littleton Robotics
 //
 // Use of this source code is governed by a BSD
 // license that can be found in the LICENSE file
