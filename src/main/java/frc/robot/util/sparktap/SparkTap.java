@@ -50,9 +50,7 @@ public class SparkTap {
     if (raw != null) {
       buffer = raw.order(ByteOrder.LITTLE_ENDIAN);
     } else {
-      buffer =
-          ByteBuffer.allocate(MAX_MOTORS * MOTOR_BLOCK_SIZE)
-              .order(ByteOrder.LITTLE_ENDIAN); // Simulation fallback
+      buffer = ByteBuffer.allocate(MAX_MOTORS * MOTOR_BLOCK_SIZE).order(ByteOrder.LITTLE_ENDIAN);
     }
 
     // Pre-allocate thread-safe views for all possible CAN IDs
@@ -85,12 +83,12 @@ public class SparkTap {
 
     /** Decodes Position (float32) from Status 2. */
     public double getPosition() {
-      return buffer.getFloat(motorOffset + (Frame.S2.idx * SLOT_SIZE));
+      return buffer.getFloat(motorOffset + (Frame.S2.idx * SLOT_SIZE) + 4);
     }
 
     /** Decodes Velocity (float32) from Status 1. */
     public double getVelocity() {
-      return buffer.getFloat(motorOffset + (Frame.S1.idx * SLOT_SIZE));
+      return buffer.getFloat(motorOffset + (Frame.S2.idx * SLOT_SIZE));
     }
 
     /** Decodes Motor Current from Status 1 (Bytes 4-5, 12-bit). */

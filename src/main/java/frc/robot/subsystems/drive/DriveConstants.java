@@ -29,10 +29,7 @@ public class DriveConstants {
   public static final LinearVelocity MAX_LINEAR_VELOCITY = MetersPerSecond.of(4.0);
 
   /** The frequency at which odometry calculations are updated. */
-  public static final Frequency ODOMETRY_FREQUENCY = Hertz.of(100);
-
-  /** Less critacal odometry frequency */
-  public static final Frequency ODOMETRY_LOW_FREQUENCY = Hertz.of(50);
+  public static final Frequency ODOMETRY_FREQUENCY = Hertz.of(200);
 
   /** The distance between the left and right wheels. */
   public static final Distance TRACK_WIDTH = Inches.of(20.5);
