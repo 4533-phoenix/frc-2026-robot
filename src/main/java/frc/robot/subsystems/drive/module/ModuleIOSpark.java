@@ -65,6 +65,8 @@ public class ModuleIOSpark implements ModuleIO {
   private final Queue<Double> timestampQueue;
   private final Queue<Double> drivePositionQueue;
   private final Queue<Double> turnPositionQueue;
+  private final Queue<Double> driveVelocityQueue;
+  private final Queue<Double> turnVelocityQueue;
 
   // Debouncers for connectivity monitoring
   private final Debouncer driveConnectedDebounce =
@@ -79,6 +81,8 @@ public class ModuleIOSpark implements ModuleIO {
   private final double[] odometryTimestampBuffer = new double[ODOMETRY_BUFFER_SIZE];
   private final double[] odometryDrivePositionBuffer = new double[ODOMETRY_BUFFER_SIZE];
   private final double[] odometryTurnPositionBuffer = new double[ODOMETRY_BUFFER_SIZE];
+  private final double[] odometryDriveVelocityBuffer = new double[ODOMETRY_BUFFER_SIZE];
+  private final double[] odometryTurnVelocityBuffer = new double[ODOMETRY_BUFFER_SIZE];
 
   /**
    * Creates a new ModuleIOSpark.
@@ -108,6 +112,10 @@ public class ModuleIOSpark implements ModuleIO {
     turnPositionQueue =
         SparkOdometryThread.getInstance()
             .registerSignal(turnSpark, turnInternalEncoder::getPosition);
+    driveVelocityQueue = 
+        SparkOdometryThread.getInstance().registerSignal(driveSpark, driveEncoder::getVelocity);
+    turnVelocityQueue = 
+        SparkOdometryThread.getInstance().registerSignal(turnSpark, turnInternalEncoder::getVelocity);
 
     var driveConfig = new SparkMaxConfig();
     driveConfig
@@ -208,16 +216,6 @@ public class ModuleIOSpark implements ModuleIO {
     driveOk &=
         ifOk(
             driveSpark,
-            driveEncoder::getPosition,
-            (value) -> inputs.drivePosition = Radians.of(value));
-    driveOk &=
-        ifOk(
-            driveSpark,
-            driveEncoder::getVelocity,
-            (value) -> inputs.driveVelocity = RadiansPerSecond.of(value));
-    driveOk &=
-        ifOk(
-            driveSpark,
             new DoubleSupplier[] {driveSpark::getAppliedOutput, driveSpark::getBusVoltage},
             (values) -> inputs.driveAppliedVoltage = Volts.of(values[0] * values[1]));
     driveOk &=
@@ -225,32 +223,6 @@ public class ModuleIOSpark implements ModuleIO {
             driveSpark,
             driveSpark::getOutputCurrent,
             (value) -> inputs.driveCurrent = Amps.of(value));
-
-    inputs.driveConnected = driveConnectedDebounce.calculate(driveOk);
-
-    // Turn Encoder Inputs
-    BaseStatusSignal.refreshAll(turnAbsolutePositionSignal, turnVelocitySignal);
-    boolean turnEncoderOk = turnAbsolutePositionSignal.getStatus().isOK();
-
-    if (turnEncoderOk) {
-      // Calculate position relative to the zero offset
-      AngularVelocity turnVelocity =
-          RadiansPerSecond.of(turnVelocitySignal.getValueAsDouble() * TURN_ENCODER_VELOCITY_FACTOR);
-
-      // Sync internal encoder to CANcoder if still and error is high
-      double internalPos = turnInternalEncoder.getPosition();
-      double absolutePos =
-          (turnAbsolutePositionSignal.getValueAsDouble() * TURN_ENCODER_POSITION_FACTOR)
-              - zeroRotation.in(Radians);
-      double turnError = Math.abs(MathUtil.angleModulus(internalPos - absolutePos));
-      boolean isStill = turnVelocity.abs(RadiansPerSecond) < VELOCITY_GATE.in(RadiansPerSecond);
-
-      if (isStill && turnError > ERROR_THRESHOLD.in(Radians)) {
-        turnInternalEncoder.setPosition(absolutePos);
-      }
-    }
-    inputs.turnPosition = Radians.of(turnInternalEncoder.getPosition());
-    inputs.turnVelocity = RadiansPerSecond.of(turnInternalEncoder.getVelocity());
 
     // Turn Motor Inputs
     boolean turnSparkOk = true;
@@ -263,23 +235,6 @@ public class ModuleIOSpark implements ModuleIO {
         ifOk(
             turnSpark, turnSpark::getOutputCurrent, (value) -> inputs.turnCurrent = Amps.of(value));
 
-    inputs.turnConnected = turnConnectedDebounce.calculate(turnSparkOk);
-    inputs.turnEncoderConnected = turnEncoderConnectedDebounce.calculate(turnEncoderOk);
-
-    // Drive Health
-    inputs.driveStatus[0] = driveSpark.getFaults().rawBits;
-    inputs.driveHealthy = inputs.driveStatus[0] == 0;
-    inputs.driveStatus[1] = driveSpark.getStickyFaults().rawBits;
-    inputs.driveStatus[2] = driveSpark.getWarnings().rawBits;
-    inputs.driveStatus[3] = driveSpark.getStickyWarnings().rawBits;
-
-    // Turn Health
-    inputs.turnStatus[0] = turnSpark.getFaults().rawBits;
-    inputs.turnHealthy = inputs.turnStatus[0] == 0;
-    inputs.turnStatus[1] = turnSpark.getStickyFaults().rawBits;
-    inputs.turnStatus[2] = turnSpark.getWarnings().rawBits;
-    inputs.turnStatus[3] = turnSpark.getStickyWarnings().rawBits;
-
     // Empty queues into the inputs object for odometry processing
     Drive.odometryLock.lock();
     try {
@@ -289,11 +244,15 @@ public class ModuleIOSpark implements ModuleIO {
         Double timestamp = timestampQueue.poll();
         Double drivePos = drivePositionQueue.poll();
         Double turnPos = turnPositionQueue.poll();
+        Double driveVel = driveVelocityQueue.poll();
+        Double turnVel = turnVelocityQueue.poll();
 
-        if (timestamp != null && drivePos != null && turnPos != null) {
+        if (timestamp != null && drivePos != null && turnPos != null && driveVel != null && turnVel != null) {
           odometryTimestampBuffer[count] = timestamp;
           odometryDrivePositionBuffer[count] = drivePos;
           odometryTurnPositionBuffer[count] = turnPos;
+          odometryDriveVelocityBuffer[count] = driveVel;
+          odometryTurnVelocityBuffer[count] = turnVel;
           count++;
         } else {
           break;
@@ -316,9 +275,53 @@ public class ModuleIOSpark implements ModuleIO {
         inputs.odometryTurnPositionsRad[i] = odometryTurnPositionBuffer[i] - zeroOffset;
       }
 
+      if (count > 0) {
+        inputs.drivePosition = Radians.of(odometryDrivePositionBuffer[count - 1]);
+        inputs.driveVelocity = RadiansPerSecond.of(odometryDriveVelocityBuffer[count - 1]);
+        inputs.turnPosition = Radians.of(odometryTurnPositionBuffer[count - 1]);
+        inputs.turnVelocity = RadiansPerSecond.of(odometryTurnVelocityBuffer[count - 1]);
+      }
+
     } finally {
       Drive.odometryLock.unlock();
     }
+
+    inputs.driveConnected = driveConnectedDebounce.calculate(driveOk);
+
+    // Turn Encoder Inputs
+    BaseStatusSignal.refreshAll(turnAbsolutePositionSignal, turnVelocitySignal);
+    boolean turnEncoderOk = turnAbsolutePositionSignal.getStatus().isOK();
+
+    if (turnEncoderOk) {
+      // Sync internal encoder to CANcoder if still and error is high
+      double internalPos = inputs.turnPosition.in(Radians);
+      double absolutePos =
+          (turnAbsolutePositionSignal.getValueAsDouble() * TURN_ENCODER_POSITION_FACTOR)
+              - zeroRotation.in(Radians);
+      double turnError = Math.abs(MathUtil.angleModulus(internalPos - absolutePos));
+      boolean isStill = inputs.turnVelocity.abs(RadiansPerSecond) < VELOCITY_GATE.in(RadiansPerSecond);
+
+      if (isStill && turnError > ERROR_THRESHOLD.in(Radians)) {
+        turnInternalEncoder.setPosition(absolutePos);
+      }
+    }
+
+    inputs.turnConnected = turnConnectedDebounce.calculate(turnSparkOk);
+    inputs.turnEncoderConnected = turnEncoderConnectedDebounce.calculate(turnEncoderOk);
+
+    // Drive Health
+    inputs.driveStatus[0] = driveSpark.getFaults().rawBits;
+    inputs.driveHealthy = inputs.driveStatus[0] == 0;
+    inputs.driveStatus[1] = driveSpark.getStickyFaults().rawBits;
+    inputs.driveStatus[2] = driveSpark.getWarnings().rawBits;
+    inputs.driveStatus[3] = driveSpark.getStickyWarnings().rawBits;
+
+    // Turn Health
+    inputs.turnStatus[0] = turnSpark.getFaults().rawBits;
+    inputs.turnHealthy = inputs.turnStatus[0] == 0;
+    inputs.turnStatus[1] = turnSpark.getStickyFaults().rawBits;
+    inputs.turnStatus[2] = turnSpark.getWarnings().rawBits;
+    inputs.turnStatus[3] = turnSpark.getStickyWarnings().rawBits;
   }
 
   @Override
