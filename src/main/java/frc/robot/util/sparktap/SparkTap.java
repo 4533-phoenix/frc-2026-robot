@@ -13,8 +13,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- * High-performance Spark Max CAN Interceptor.
- * Provides sub-millisecond access to motor telemetry via shared native memory.
+ * High-performance Spark Max CAN Interceptor. Provides sub-millisecond access to motor telemetry
+ * via shared native memory.
  */
 public class SparkTap {
   private static SparkTap instance;
@@ -28,9 +28,18 @@ public class SparkTap {
   private final StatusView view = new StatusView();
 
   public enum Frame {
-    S0(0), S1(1), S2(2), S3(3), S4(4), S5(5), S6(6);
+    S0(0),
+    S1(1),
+    S2(2),
+    S3(3),
+    S4(4),
+    S5(5),
+    S6(6);
     public final int idx;
-    Frame(int i) { this.idx = i; }
+
+    Frame(int i) {
+      this.idx = i;
+    }
   }
 
   public static synchronized SparkTap getInstance() {
@@ -58,8 +67,8 @@ public class SparkTap {
   }
 
   /**
-   * Returns a view into a specific motor's status data.
-   * This does NOT allocate memory; it reuses a flyweight object.
+   * Returns a view into a specific motor's status data. This does NOT allocate memory; it reuses a
+   * flyweight object.
    */
   public StatusView lookup(int deviceId) {
     view.setMotor(deviceId);
@@ -83,34 +92,36 @@ public class SparkTap {
 
     /** Decodes Position (float32) from Status 2. */
     public double getPosition() {
-        int offset = motorOffset + (Frame.S2.idx * SLOT_SIZE);
-        return buffer.getFloat(offset);
+      int offset = motorOffset + (Frame.S2.idx * SLOT_SIZE);
+      return buffer.getFloat(offset);
     }
 
     // --- DECODERS FOR STATUS 1 (Current/Voltage/Velocity) ---
 
     /** Decodes Velocity (float32) from Status 1. */
     public double getVelocity() {
-        int offset = motorOffset + (Frame.S1.idx * SLOT_SIZE);
-        return buffer.getFloat(offset);
+      int offset = motorOffset + (Frame.S1.idx * SLOT_SIZE);
+      return buffer.getFloat(offset);
     }
 
     /** Decodes Motor Current from Status 1 (Bytes 4-5, 12-bit). */
     public double getCurrent() {
-        int offset = motorOffset + (Frame.S1.idx * SLOT_SIZE);
-        // Byte 4: bits 0-7, Byte 5: bits 0-3
-        int raw = (Byte.toUnsignedInt(buffer.get(offset + 4))) | 
-                 ((Byte.toUnsignedInt(buffer.get(offset + 5)) & 0xF) << 8);
-        return raw * 0.125; // Standard REV scaling
+      int offset = motorOffset + (Frame.S1.idx * SLOT_SIZE);
+      // Byte 4: bits 0-7, Byte 5: bits 0-3
+      int raw =
+          (Byte.toUnsignedInt(buffer.get(offset + 4)))
+              | ((Byte.toUnsignedInt(buffer.get(offset + 5)) & 0xF) << 8);
+      return raw * 0.125; // Standard REV scaling
     }
 
     /** Decodes Bus Voltage from Status 1 (Bytes 5-7, 12-bit). */
     public double getBusVoltage() {
-        int offset = motorOffset + (Frame.S1.idx * SLOT_SIZE);
-        // Byte 5: bits 4-7, Byte 6: bits 0-7
-        int raw = ((Byte.toUnsignedInt(buffer.get(offset + 5)) & 0xF0) >> 4) | 
-                  (Byte.toUnsignedInt(buffer.get(offset + 6)) << 4);
-        return raw * 0.125; // Standard REV scaling
+      int offset = motorOffset + (Frame.S1.idx * SLOT_SIZE);
+      // Byte 5: bits 4-7, Byte 6: bits 0-7
+      int raw =
+          ((Byte.toUnsignedInt(buffer.get(offset + 5)) & 0xF0) >> 4)
+              | (Byte.toUnsignedInt(buffer.get(offset + 6)) << 4);
+      return raw * 0.125; // Standard REV scaling
     }
 
     /** Returns raw 8-byte data for custom decoding. */

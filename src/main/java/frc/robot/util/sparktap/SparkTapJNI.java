@@ -19,7 +19,7 @@ public class SparkTapJNI {
       try {
         System.loadLibrary("sparktap");
       } catch (UnsatisfiedLinkError e) {
-        System.err.println("[SparkTap] Native library failed to load!");
+        System.err.println("[SparkTap-java] Native library failed to load!");
       }
     }
   }
