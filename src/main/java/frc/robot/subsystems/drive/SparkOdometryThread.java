@@ -1,7 +1,5 @@
-// Copyright (c) 2021-2026 Littleton Robotics
-// http://github.com/Mechanical-Advantage
-//
-// Modified by FRC Team 4533 (Phoenix) 2026
+// Copyright (c) 2026 FRC Team 4533 (Phoenix)
+// Derived from the AdvantageKit framework by Littleton Robotics
 //
 // Use of this source code is governed by a BSD
 // license that can be found in the LICENSE file
@@ -9,131 +7,73 @@
 
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.units.Units.Hertz;
+import static frc.robot.subsystems.drive.DriveConstants.*;
+
+import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
-import frc.robot.util.sparktap.SparkTap;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.function.DoubleSupplier;
 
-/**
- * Asynchronous thread that blocks on native CAN hardware frames to read high-frequency measurements
- * to a set of queues.
- */
-public class SparkOdometryThread extends Thread {
-  private final List<DoubleSupplier> signals = new ArrayList<>();
-  private final List<Queue<Double>> signalQueues = new ArrayList<>();
-  private final List<Queue<Double>> timestampQueues = new ArrayList<>();
+public class SparkOdometryThread {
+  /** A GC-Free queue for holding primitive doubles. */
+  public static class PrimitiveQueue {
+    public final double[] data = new double[50];
+    public int size = 0;
 
-  private DoubleSupplier[] bakedSignals = new DoubleSupplier[0];
+    public void offer(double val) {
+      if (size < 50) data[size++] = val;
+    }
 
-  @SuppressWarnings("unchecked")
-  private Queue<Double>[] bakedSignalQueues = new Queue[0];
+    public void clear() {
+      size = 0;
+    }
+  }
 
-  @SuppressWarnings("unchecked")
-  private Queue<Double>[] bakedTimestampQueues = new Queue[0];
-
-  private double[] valueBuffer = new double[0];
-
-  private boolean isStarted = false;
-  private int syncDeviceId = -1; // The motor we wait for to trigger a loop
-
-  private static SparkOdometryThread instance = null;
+  private static SparkOdometryThread instance;
 
   public static SparkOdometryThread getInstance() {
-    if (instance == null) {
-      instance = new SparkOdometryThread();
-    }
+    if (instance == null) instance = new SparkOdometryThread();
     return instance;
   }
 
+  private final Notifier notifier;
+  private boolean isStarted = false;
+
+  private final List<Runnable> signals = new ArrayList<>();
+  private final PrimitiveQueue timestampQueue = new PrimitiveQueue();
+
   private SparkOdometryThread() {
-    setName("SparkTap-OdometryThread");
-    setDaemon(true); // Don't block JVM shutdown
+    notifier = new Notifier(this::updateLoop);
   }
 
-  /** Sets the CAN ID of the motor to block and wait for (e.g., Front Left Drive). */
-  public void setSyncDevice(int canId) {
-    this.syncDeviceId = canId;
+  public void registerSignal(Runnable signal) {
+    if (isStarted) throw new IllegalStateException("Cannot register after start.");
+    signals.add(signal);
   }
 
-  @SuppressWarnings("unchecked")
+  public PrimitiveQueue makeTimestampQueue() {
+    return timestampQueue;
+  }
+
   public void startThread() {
-    Drive.odometryLock.lock();
-    try {
-      if (isStarted) return;
-
-      bakedSignals = signals.toArray(new DoubleSupplier[0]);
-      bakedSignalQueues = signalQueues.toArray(new Queue[0]);
-      bakedTimestampQueues = timestampQueues.toArray(new Queue[0]);
-      valueBuffer = new double[bakedSignals.length];
-
-      isStarted = true;
-      super.start();
-    } finally {
-      Drive.odometryLock.unlock();
-    }
+    if (isStarted) return;
+    isStarted = true;
+    notifier.startPeriodic((1000.0) / ODOMETRY_FREQUENCY.in(Hertz));
   }
 
-  /** Registers a signal (like a SparkTap MotorView method) to be snapshot. */
-  public Queue<Double> registerSignal(DoubleSupplier signal) {
-    if (isStarted) throw new IllegalStateException("Cannot register after start.");
-    Queue<Double> queue = new ArrayBlockingQueue<>(20);
+  private void updateLoop() {
     Drive.odometryLock.lock();
     try {
-      signals.add(signal);
-      signalQueues.add(queue);
+      double currentTimestampSec = RobotController.getFPGATime() / 1.0e6;
+      timestampQueue.offer(currentTimestampSec);
+
+      // Snapshot all modules exactly now
+      for (Runnable signal : signals) {
+        signal.run();
+      }
     } finally {
       Drive.odometryLock.unlock();
-    }
-    return queue;
-  }
-
-  public Queue<Double> makeTimestampQueue() {
-    if (isStarted) throw new IllegalStateException("Cannot register after start.");
-    Queue<Double> queue = new ArrayBlockingQueue<>(20);
-    Drive.odometryLock.lock();
-    try {
-      timestampQueues.add(queue);
-    } finally {
-      Drive.odometryLock.unlock();
-    }
-    return queue;
-  }
-
-  @Override
-  public void run() {
-    while (!isInterrupted()) {
-      // Block until the master motor sends a Status 2 frame
-      if (syncDeviceId != -1) {
-        SparkTap.getInstance().sync(syncDeviceId, SparkTap.Frame.S2);
-      } else {
-        try {
-          Thread.sleep(5);
-        } catch (InterruptedException e) {
-          break;
-        }
-      }
-
-      // Read timestamp and all memory-mapped values instantly
-      double timestamp = RobotController.getFPGATime() / 1e6;
-      for (int i = 0; i < bakedSignals.length; i++) {
-        valueBuffer[i] = bakedSignals[i].getAsDouble();
-      }
-
-      // 3. Atomically push to queues
-      Drive.odometryLock.lock();
-      try {
-        for (int i = 0; i < bakedSignalQueues.length; i++) {
-          bakedSignalQueues[i].offer(valueBuffer[i]);
-        }
-        for (int i = 0; i < bakedTimestampQueues.length; i++) {
-          bakedTimestampQueues[i].offer(timestamp);
-        }
-      } finally {
-        Drive.odometryLock.unlock();
-      }
     }
   }
 }

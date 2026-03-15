@@ -35,18 +35,14 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.subsystems.drive.SparkOdometryThread;
-import frc.robot.util.sparktap.SparkTap;
-import frc.robot.util.sparktap.SparkTap.MotorView;
-import java.util.Queue;
+import frc.robot.subsystems.drive.SparkOdometryThread.PrimitiveQueue;
+import frc.robot.util.SparkTap;
+import frc.robot.util.SparkTap.MotorView;
 import java.util.function.DoubleSupplier;
 
 /**
  * Real IO implementation for a swerve drive module using Spark Max motor controllers and a CANcoder
  * for absolute positioning.
- *
- * <p>This implementation configures CAN devices, registers high-frequency signals with the {@link
- * SparkOdometryThread}, and handles drift compensation between the absolute encoder and the
- * internal motor encoder.
  */
 public class ModuleIOSpark implements ModuleIO {
   private final Angle zeroRotation;
@@ -65,14 +61,13 @@ public class ModuleIOSpark implements ModuleIO {
   private final MotorView driveTap;
   private final MotorView turnTap;
 
-  // Queues for high-frequency data from the asynchronous thread
-  private final Queue<Double> timestampQueue;
-  private final Queue<Double> drivePositionQueue;
-  private final Queue<Double> turnPositionQueue;
-  private final Queue<Double> driveVelocityQueue;
-  private final Queue<Double> turnVelocityQueue;
+  // Primitive Zero-GC Queues for high-frequency data
+  private final PrimitiveQueue timestampQueue;
+  private final PrimitiveQueue drivePositionQueue = new PrimitiveQueue();
+  private final PrimitiveQueue turnPositionQueue = new PrimitiveQueue();
+  private final PrimitiveQueue driveVelocityQueue = new PrimitiveQueue();
+  private final PrimitiveQueue turnVelocityQueue = new PrimitiveQueue();
 
-  // Debouncers for connectivity monitoring
   private final Debouncer driveConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
   private final Debouncer turnConnectedDebounce =
@@ -80,20 +75,6 @@ public class ModuleIOSpark implements ModuleIO {
   private final Debouncer turnEncoderConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
-  // Pre-allocated buffers for draining odometry queues without GC pressure
-  private static final int ODOMETRY_BUFFER_SIZE = 20;
-  private final double[] odometryTimestampBuffer = new double[ODOMETRY_BUFFER_SIZE];
-  private final double[] odometryDrivePositionBuffer = new double[ODOMETRY_BUFFER_SIZE];
-  private final double[] odometryTurnPositionBuffer = new double[ODOMETRY_BUFFER_SIZE];
-  private final double[] odometryDriveVelocityBuffer = new double[ODOMETRY_BUFFER_SIZE];
-  private final double[] odometryTurnVelocityBuffer = new double[ODOMETRY_BUFFER_SIZE];
-
-  /**
-   * Creates a new ModuleIOSpark.
-   *
-   * @param module The module index (0 for front-left, 1 for front-right, 2 for back-left, 3 for
-   *     back-right).
-   */
   public ModuleIOSpark(int module) {
     var config = MODULE_CONFIGS[module];
 
@@ -112,18 +93,20 @@ public class ModuleIOSpark implements ModuleIO {
     driveTap = SparkTap.getInstance().getMotor(config.driveCanId());
     turnTap = SparkTap.getInstance().getMotor(config.turnCanId());
 
-    // Register this module's drive motor with the SparkOdometryThread for synchronization
-    if (module == 0) {
-      SparkOdometryThread.getInstance().setSyncDevice(config.driveCanId());
-    }
-
-    // Register signals with the asynchronous odometry thread immediately
     SparkOdometryThread odometry = SparkOdometryThread.getInstance();
     timestampQueue = odometry.makeTimestampQueue();
-    drivePositionQueue = odometry.registerSignal(driveTap::getPosition);
-    turnPositionQueue = odometry.registerSignal(turnTap::getPosition);
-    driveVelocityQueue = odometry.registerSignal(driveTap::getVelocity);
-    turnVelocityQueue = odometry.registerSignal(turnTap::getVelocity);
+    odometry.registerSignal(
+        () -> {
+          // Snapshot mathematically time-aligned positions
+          drivePositionQueue.offer(
+              driveTap.getLatencyCompensatedPosition() * DRIVE_ENCODER_POSITION_FACTOR);
+          turnPositionQueue.offer(
+              turnTap.getLatencyCompensatedPosition() * TURN_ENCODER_POSITION_FACTOR);
+
+          // Capture raw velocity (RPM)
+          driveVelocityQueue.offer(driveTap.getVelocity());
+          turnVelocityQueue.offer(turnTap.getVelocity());
+        });
 
     var driveConfig = new SparkMaxConfig();
     driveConfig
@@ -244,61 +227,32 @@ public class ModuleIOSpark implements ModuleIO {
         ifOk(
             turnSpark, turnSpark::getOutputCurrent, (value) -> inputs.turnCurrent = Amps.of(value));
 
-    // Empty queues into the inputs object for odometry processing
-    try {
-      // Drain queues into pre-allocated buffers
-      int count = 0;
-      while (count < ODOMETRY_BUFFER_SIZE) {
-        Double timestamp = timestampQueue.poll();
-        Double drivePos = drivePositionQueue.poll();
-        Double turnPos = turnPositionQueue.poll();
-        Double driveVel = driveVelocityQueue.poll();
-        Double turnVel = turnVelocityQueue.poll();
-
-        if (timestamp != null
-            && drivePos != null
-            && turnPos != null
-            && driveVel != null
-            && turnVel != null) {
-          odometryTimestampBuffer[count] = timestamp;
-          odometryDrivePositionBuffer[count] = drivePos;
-          odometryTurnPositionBuffer[count] = turnPos;
-          odometryDriveVelocityBuffer[count] = driveVel;
-          odometryTurnVelocityBuffer[count] = turnVel;
-          count++;
-        } else {
-          break;
-        }
-      }
-
-      // Resync queues if there was a mismatch to prevent stale data on the next update
-      timestampQueue.clear();
-      drivePositionQueue.clear();
-      turnPositionQueue.clear();
-      driveVelocityQueue.clear();
-      turnVelocityQueue.clear();
-
-      // Resize arrays only if the sample count changed
-      if (inputs.odometryTimestamps.length != count) {
-        inputs.odometryTimestamps = new double[count];
-        inputs.odometryDrivePositionsRad = new double[count];
-        inputs.odometryTurnPositionsRad = new double[count];
-      }
-
-      // Bulk copy data into inputs
-      System.arraycopy(odometryTimestampBuffer, 0, inputs.odometryTimestamps, 0, count);
-      System.arraycopy(odometryDrivePositionBuffer, 0, inputs.odometryDrivePositionsRad, 0, count);
-      System.arraycopy(odometryTurnPositionBuffer, 0, inputs.odometryTurnPositionsRad, 0, count);
-
-      if (count > 0) {
-        inputs.drivePosition = Radians.of(odometryDrivePositionBuffer[count - 1]);
-        inputs.driveVelocity = RadiansPerSecond.of(odometryDriveVelocityBuffer[count - 1]);
-        inputs.turnPosition = Radians.of(odometryTurnPositionBuffer[count - 1]);
-        inputs.turnVelocity = RadiansPerSecond.of(odometryTurnVelocityBuffer[count - 1]);
-      }
-
-    } finally {
+    // Transfer primitive data to AdvantageKit inputs
+    int count = timestampQueue.size;
+    if (inputs.odometryTimestamps == null || inputs.odometryTimestamps.length != count) {
+      inputs.odometryTimestamps = new double[count];
+      inputs.odometryDrivePositionsRad = new double[count];
+      inputs.odometryTurnPositionsRad = new double[count];
     }
+
+    System.arraycopy(timestampQueue.data, 0, inputs.odometryTimestamps, 0, count);
+    System.arraycopy(drivePositionQueue.data, 0, inputs.odometryDrivePositionsRad, 0, count);
+    System.arraycopy(turnPositionQueue.data, 0, inputs.odometryTurnPositionsRad, 0, count);
+
+    if (count > 0) {
+      inputs.drivePosition = Radians.of(drivePositionQueue.data[count - 1]);
+      inputs.turnPosition = Radians.of(turnPositionQueue.data[count - 1]);
+      inputs.driveVelocity =
+          RadiansPerSecond.of(driveVelocityQueue.data[count - 1] * DRIVE_ENCODER_VELOCITY_FACTOR);
+      inputs.turnVelocity =
+          RadiansPerSecond.of(turnVelocityQueue.data[count - 1] * TURN_ENCODER_VELOCITY_FACTOR);
+    }
+
+    timestampQueue.clear();
+    drivePositionQueue.clear();
+    turnPositionQueue.clear();
+    driveVelocityQueue.clear();
+    turnVelocityQueue.clear();
 
     inputs.driveConnected = driveConnectedDebounce.calculate(driveOk);
 

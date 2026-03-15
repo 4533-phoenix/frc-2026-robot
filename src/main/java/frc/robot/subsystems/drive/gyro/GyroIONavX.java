@@ -15,8 +15,8 @@ import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 import com.studica.frc.AHRS.NavXUpdateRate;
 import frc.robot.subsystems.drive.SparkOdometryThread;
+import frc.robot.subsystems.drive.SparkOdometryThread.PrimitiveQueue;
 import java.util.ArrayList;
-import java.util.Queue;
 
 /**
  * IO implementation for the Studica NavX gyro.
@@ -27,14 +27,20 @@ import java.util.Queue;
  */
 public class GyroIONavX implements GyroIO {
   private final AHRS navX;
-  private final Queue<Double> yawPositionQueue;
-  private final Queue<Double> yawTimestampQueue;
+  private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
+  private final PrimitiveQueue yawTimestampQueue;
 
   /** Creates a new GyroIONavX. */
   public GyroIONavX(NavXComType comType) {
     navX = new AHRS(comType, NavXUpdateRate.k200Hz);
     yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
-    yawPositionQueue = SparkOdometryThread.getInstance().registerSignal(navX::getAngle);
+    SparkOdometryThread.getInstance()
+        .registerSignal(
+            () -> {
+              double rawAngle = navX.getAngle();
+              double rate = navX.getRate();
+              yawPositionQueue.offer(rawAngle + (rate * 0.001));
+            });
     navX.zeroYaw();
   }
 
@@ -64,17 +70,17 @@ public class GyroIONavX implements GyroIO {
     }
 
     // Empty the queues into the inputs object for logging and odometry processing
-    int count = Math.min(yawTimestampQueue.size(), yawPositionQueue.size());
-    inputs.odometryYawTimestamps = new double[count];
-    inputs.odometryYawPositions = new double[count];
+    int count = yawTimestampQueue.size;
+    if (inputs.odometryYawTimestamps == null || inputs.odometryYawTimestamps.length != count) {
+      inputs.odometryYawTimestamps = new double[count];
+      inputs.odometryYawPositions = new double[count];
+    }
 
     for (int i = 0; i < count; i++) {
-      Double timestamp = yawTimestampQueue.poll();
-      Double angle = yawPositionQueue.poll();
-      if (timestamp != null && angle != null) {
-        inputs.odometryYawTimestamps[i] = timestamp;
-        inputs.odometryYawPositions[i] = Math.toRadians(-angle);
-      }
+      inputs.odometryYawTimestamps[i] = yawTimestampQueue.data[i];
+      inputs.odometryYawPositions[i] = Math.toRadians(-yawPositionQueue.data[i]);
     }
+
+    yawPositionQueue.clear();
   }
 }

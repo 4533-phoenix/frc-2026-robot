@@ -13,8 +13,8 @@ import static frc.robot.subsystems.drive.DriveConstants.*;
 import com.reduxrobotics.sensors.canandgyro.Canandgyro;
 import com.reduxrobotics.sensors.canandgyro.CanandgyroSettings;
 import frc.robot.subsystems.drive.SparkOdometryThread;
+import frc.robot.subsystems.drive.SparkOdometryThread.PrimitiveQueue;
 import java.util.ArrayList;
-import java.util.Queue;
 
 /**
  * IO implementation for the Redux Robotics Canandgyro.
@@ -25,8 +25,8 @@ import java.util.Queue;
  */
 public class GyroIOCanAndGyro implements GyroIO {
   private final Canandgyro canandgyro = new Canandgyro(IMU_CAN_ID);
-  private final Queue<Double> yawPositionQueue;
-  private final Queue<Double> yawTimestampQueue;
+  private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
+  private final PrimitiveQueue yawTimestampQueue;
 
   /** Creates a new GyroIOCanAndGyro. */
   public GyroIOCanAndGyro() {
@@ -38,7 +38,13 @@ public class GyroIOCanAndGyro implements GyroIO {
 
     // Register signals with the asynchronous odometry thread
     yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
-    yawPositionQueue = SparkOdometryThread.getInstance().registerSignal(canandgyro::getYaw);
+    SparkOdometryThread.getInstance()
+        .registerSignal(
+            () -> {
+              double rawYaw = canandgyro.getYaw();
+              double velocity = canandgyro.getAngularVelocityYaw();
+              yawPositionQueue.offer(rawYaw + (velocity * 0.0025));
+            });
   }
 
   /**
@@ -49,7 +55,6 @@ public class GyroIOCanAndGyro implements GyroIO {
   @Override
   public void updateInputs(GyroIOInputs inputs) {
     inputs.connected = canandgyro.isConnected();
-    // Hardware returns rotations
     inputs.yawPosition = Rotations.of(canandgyro.getYaw());
     inputs.yawVelocity = RotationsPerSecond.of(canandgyro.getAngularVelocityYaw());
     inputs.healthy = inputs.connected && !canandgyro.isCalibrating();
@@ -68,17 +73,17 @@ public class GyroIOCanAndGyro implements GyroIO {
     }
 
     // Empty the queues into the inputs object for logging and odometry processing
-    int count = Math.min(yawTimestampQueue.size(), yawPositionQueue.size());
-    inputs.odometryYawTimestamps = new double[count];
-    inputs.odometryYawPositions = new double[count];
+    int count = yawTimestampQueue.size;
+    if (inputs.odometryYawTimestamps == null || inputs.odometryYawTimestamps.length != count) {
+      inputs.odometryYawTimestamps = new double[count];
+      inputs.odometryYawPositions = new double[count];
+    }
 
     for (int i = 0; i < count; i++) {
-      Double timestamp = yawTimestampQueue.poll();
-      Double angle = yawPositionQueue.poll();
-      if (timestamp != null && angle != null) {
-        inputs.odometryYawTimestamps[i] = timestamp;
-        inputs.odometryYawPositions[i] = angle * 2 * Math.PI;
-      }
+      inputs.odometryYawTimestamps[i] = yawTimestampQueue.data[i];
+      inputs.odometryYawPositions[i] = yawPositionQueue.data[i] * 2 * Math.PI;
     }
+
+    yawPositionQueue.clear();
   }
 }
