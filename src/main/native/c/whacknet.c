@@ -114,24 +114,24 @@ static void* vision_worker_thread(void *arg) {
 
   pthread_setname_np(pthread_self(), "VisionUDPRecv");
 
-  // Pin to WORKER_CPU (keeps L1 cache hot)
+  // Pin to WORKER_CPU
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   CPU_SET(WORKER_CPU, &cpuset);
   if (pthread_setaffinity_np(pthread_self(), sizeof(cpuset), &cpuset) != 0)
-    perror("[Whacknet-c] Warning: CPU affinity failed");
+    perror("[Whacknet-C] Warning: CPU affinity failed");
 
-  // Elevate to SCHED_FIFO real-time priority (preempts JVM)
+  // Elevate to SCHED_FIFO real-time priority
   struct sched_param sp = { .sched_priority = 50 };
   if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0)
-    perror("[Whacknet-c] Warning: SCHED_FIFO failed (need RT permissions)");
+    perror("[Whacknet-C] Warning: SCHED_FIFO failed (need RT permissions)");
 
   // Hoist all recvmmsg structures out of the hot loop
   VisionMeasurement recv_bufs[RECV_BATCH];
   struct iovec iovecs[RECV_BATCH];
   struct mmsghdr msgs[RECV_BATCH];
 
-  // Control message buffers for SO_TIMESTAMPNS (Union ensures 8-byte alignment for ARM)
+  // Control message buffers for SO_TIMESTAMPNS
   union {
     char buf[CMSG_SPACE(sizeof(struct timespec))];
     struct timespec align;
@@ -218,7 +218,7 @@ JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_startServer(JNIEnv *env, jcl
   listenfd = socket(AF_INET, SOCK_DGRAM, 0);
   if (listenfd < 0)
   {
-    perror("[Whacknet-c] Socket creation failed");
+    perror("[Whacknet-C] Socket creation failed");
     return;
   }
 
@@ -231,7 +231,7 @@ JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_startServer(JNIEnv *env, jcl
   // Enable kernel-level nanosecond timestamps on received packets
   int ts_on = 1;
   if (setsockopt(listenfd, SOL_SOCKET, SO_TIMESTAMPNS, &ts_on, sizeof(ts_on)) < 0)
-    perror("[Whacknet-c] Warning: SO_TIMESTAMPNS failed");
+    perror("[Whacknet-C] Warning: SO_TIMESTAMPNS failed");
 
   servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
   servaddr.sin_port = htons(port);
@@ -240,11 +240,11 @@ JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_startServer(JNIEnv *env, jcl
   // Bind server address to socket descriptor
   if (bind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) == -1)
   {
-    perror("[Whacknet-c] Bind failed");
+    perror("[Whacknet-C] Bind failed");
     close(listenfd);
     return;
   }
-  printf("[Whacknet-c] Ready to receive on port %d\n", port);
+  printf("[Whacknet-C] Ready to receive on port %d\n", port);
 
   // Use malloc so the FD pointer persists for the thread
   int *arg = malloc(sizeof(int));
@@ -262,19 +262,19 @@ JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_startServer(JNIEnv *env, jcl
   if (pthread_create(&thread_id, &attr, vision_worker_thread, arg) != 0)
   {
     // Fallback to normal thread if RT creation fails
-    printf("[Whacknet-c] RT thread creation failed, falling back to normal thread\n");
+    printf("[Whacknet-C] RT thread creation failed, falling back to normal thread\n");
     pthread_create(&thread_id, NULL, vision_worker_thread, arg);
   }
   pthread_attr_destroy(&attr);
 
   // Initialize broadcast socket
   if (broadcast_fd != -1) return;
-  printf("[Whacknet-c] Initializing broadcast socket\n");
+  printf("[Whacknet-C] Initializing broadcast socket\n");
 
   int b_fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (b_fd < 0)
   {
-    perror("[Whacknet-c] Broadcast socket creation failed");
+    perror("[Whacknet-C] Broadcast socket creation failed");
     return;
   }
 
@@ -283,7 +283,7 @@ JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_startServer(JNIEnv *env, jcl
   setsockopt(b_fd, SOL_SOCKET, SO_REUSEADDR, &b_reuse, sizeof(b_reuse));
   if (setsockopt(b_fd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0)
   {
-    perror("[Whacknet-c] Error setting broadcast permission");
+    perror("[Whacknet-C] Error setting broadcast permission");
     close(b_fd);
     return;
   }
@@ -326,7 +326,7 @@ if (unlikely(now_monotonic - last_check > 2000000)) { // 2 seconds
   unsigned long drops = atomic_exchange_explicit(&vq.dropped_packets, 0,
       memory_order_relaxed);
   if (drops > 0) {
-    printf("[Whacknet-c] Warning: Dropped %lu packets due to full queue\n",
+    printf("[Whacknet-C] Warning: Dropped %lu packets due to full queue\n",
         drops);
   }
   last_check = now_monotonic;
