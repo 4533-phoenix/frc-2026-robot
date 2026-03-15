@@ -7,39 +7,28 @@
 
 package frc.robot.subsystems.climb;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Volts;
+import static edu.wpi.first.units.Units.*;
 import static frc.lib.SparkUtil.*;
 import static frc.robot.subsystems.climb.ClimbConstants.*;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
-import com.revrobotics.spark.SparkLimitSwitch;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Voltage;
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
+import frc.robot.util.SparkTap;
+import frc.robot.util.SparkTap.MotorView;
 
-/**
- * Real IO implementation for the climb subsystem using a Spark Max motor controller.
- *
- * <p>This implementation configures the Spark Max, monitors physical limit switches connected
- * directly to the controller, and implements software limits to prevent driving past the mechanism
- * limits.
- */
+/** Real IO implementation for the climb subsystem using a Spark Max motor controller. */
 public class ClimbIOSpark implements ClimbIO {
   private final SparkMax spark = new SparkMax(CAN_ID, MotorType.kBrushed);
-
-  // References to the limit switches directly connected to the Spark Max
-  private final SparkLimitSwitch upperLimit = spark.getForwardLimitSwitch();
-  private final SparkLimitSwitch lowerLimit = spark.getReverseLimitSwitch();
+  private final MotorView motorView = SparkTap.getInstance().getMotor(CAN_ID);
 
   // Debouncer to prevent rapidly toggling connection status
-  private final Debouncer connectedDebounce = new Debouncer(0.5, Debouncer.DebounceType.kFalling);
+  private final Debouncer connectedDebounce = new Debouncer(0.1, Debouncer.DebounceType.kFalling);
 
   /** Creates a new ClimbIOSpark and configures the Spark Max. */
   public ClimbIOSpark() {
@@ -54,7 +43,12 @@ public class ClimbIOSpark implements ClimbIO {
         .appliedOutputPeriodMs(50)
         .busVoltagePeriodMs(50)
         .outputCurrentPeriodMs(50)
-        .limitsPeriodMs(50);
+        .limitsPeriodMs(20)
+        .faultsPeriodMs(250)
+        .faultsAlwaysOn(true)
+        .warningsPeriodMs(250)
+        .warningsAlwaysOn(true);
+
     tryUntilOk(
         5,
         () ->
@@ -64,48 +58,31 @@ public class ClimbIOSpark implements ClimbIO {
 
   @Override
   public void updateInputs(ClimbIOInputs inputs) {
-    boolean sparkOk = true;
+    inputs.connected = connectedDebounce.calculate(motorView.isConnected());
 
-    // Safely retrieve telemetry from the motor controller
-    sparkOk &=
-        ifOk(
-            spark,
-            new DoubleSupplier[] {spark::getAppliedOutput, spark::getBusVoltage},
-            (vals) -> inputs.appliedVoltage = Volts.of(vals[0] * vals[1]));
-    sparkOk &= ifOk(spark, spark::getOutputCurrent, (v) -> inputs.appliedCurrent = Amps.of(v));
+    // Power Telemetry
+    inputs.appliedVoltage = Volts.of(motorView.getAppliedOutput() * motorView.getBusVoltage());
+    inputs.appliedCurrent = Amps.of(motorView.getOutputCurrent());
 
-    // Safely retrieve limit switch states
-    sparkOk &=
-        ifOk(
-            spark,
-            new BooleanSupplier[] {upperLimit::isPressed, lowerLimit::isPressed},
-            (vals) -> {
-              inputs.upperLimit = vals[0];
-              inputs.lowerLimit = vals[1];
-            });
-
-    // Debounce the connection status to ensure stability
-    inputs.connected = connectedDebounce.calculate(sparkOk);
+    // Limit Switches
+    inputs.upperLimit = motorView.getForwardLimit();
+    inputs.lowerLimit = motorView.getReverseLimit();
 
     // Health
-    inputs.status[0] = spark.getFaults().rawBits;
+    inputs.status[0] = motorView.getActiveFaults();
+    inputs.status[1] = motorView.getStickyFaults();
+    inputs.status[2] = motorView.getActiveWarnings();
+    inputs.status[3] = motorView.getStickyWarnings();
     inputs.healthy = inputs.status[0] == 0;
-    inputs.status[1] = spark.getStickyFaults().rawBits;
-    inputs.status[2] = spark.getWarnings().rawBits;
-    inputs.status[3] = spark.getStickyWarnings().rawBits;
   }
 
   @Override
   public void setLiftVoltage(Voltage voltage) {
-    // Assuming normally open switches, we stop if the switch is closed.
-    boolean atUpper = upperLimit.isPressed();
-    boolean atLower = lowerLimit.isPressed();
-
-    // Stop the motor if trying to move past a limit switch
-    if ((voltage.gt(Volts.zero()) && atUpper) || (voltage.lt(Volts.zero()) && atLower)) {
+    if ((voltage.gt(Volts.zero()) && motorView.getForwardLimit())
+        || (voltage.lt(Volts.zero()) && motorView.getReverseLimit())) {
       spark.setVoltage(0.0);
     } else {
-      spark.setVoltage(voltage);
+      spark.setVoltage(voltage.magnitude());
     }
   }
 

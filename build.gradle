@@ -292,6 +292,7 @@ spotless {
     }
     eclipseCdt("11.3")
     trimTrailingWhitespace()
+    leadingTabsToSpaces(2)
     endWithNewline()
   }
   java {

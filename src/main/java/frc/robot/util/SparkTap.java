@@ -24,8 +24,10 @@ public class SparkTap {
 
   private static final int MAX_MOTORS = 64;
   private static final int STATUS_FRAMES = 7;
-  private static final int SLOT_SIZE = 24; // 4 byte SeqLock + 4 byte pad + 8 data + 8 timestamp
-  private static final int MOTOR_BLOCK_SIZE = SLOT_SIZE * STATUS_FRAMES;
+  private static final int SLOT_SIZE = 24;
+  private static final int METADATA_SIZE = 24;
+  private static final int MOTOR_BLOCK_SIZE = (SLOT_SIZE * STATUS_FRAMES) + METADATA_SIZE;
+  private static final int METADATA_OFFSET = STATUS_FRAMES * SLOT_SIZE;
 
   private final ByteBuffer buffer;
   private final MotorView[] motors = new MotorView[MAX_MOTORS];
@@ -128,9 +130,44 @@ public class SparkTap {
       return ts;
     }
 
+    /**
+     * Gets the timestamp of the most recent CAN frame in microseconds, or 0 if no frame has been
+     * received.
+     */
+    public long getLastSeenTimestampUs() {
+      int offset = motorOffset + METADATA_OFFSET;
+      int seq1, seq2 = -1;
+      long ts = 0;
+      do {
+        seq1 = buffer.getInt(offset);
+        if ((seq1 & 1) != 0) continue;
+        ts = buffer.getLong(offset + 16);
+        seq2 = buffer.getInt(offset);
+      } while (seq1 != seq2);
+      return ts;
+    }
+
     /** Gets the current sequence number for a given frame. */
     public int getSequenceNumber(Frame frame) {
       return buffer.getInt(motorOffset + (frame.idx * SLOT_SIZE));
+    }
+
+    /**
+     * Checks if the motor has sent any CAN frames within the specified timeout.
+     *
+     * @param timeoutSeconds Time to wait before considering the device disconnected.
+     */
+    public boolean isConnected(double timeoutSeconds) {
+      long lastSeen = getLastSeenTimestampUs();
+      if (lastSeen == 0) return false;
+
+      long delta = RobotController.getFPGATime() - lastSeen;
+      return delta >= 0 && delta < (timeoutSeconds * 1.0e6);
+    }
+
+    /** Checks if the motor is connected (defaults to 100ms timeout). */
+    public boolean isConnected() {
+      return isConnected(0.1);
     }
 
     // Status 0 (Bus, Power, and Limits)
