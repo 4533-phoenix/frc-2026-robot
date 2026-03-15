@@ -71,7 +71,7 @@ static void* worker_loop(void *arg) {
     HAL_CAN_ReadStreamSession(streamHandle, messages, 32, &messageCount,
         &status);
 
-    if (status != 0) {
+    if (unlikely(status != 0)) {
       usleep(100000);
       continue;
     }
