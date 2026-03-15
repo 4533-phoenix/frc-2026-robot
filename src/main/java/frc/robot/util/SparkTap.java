@@ -101,42 +101,24 @@ public class SparkTap {
       this.motorOffset = deviceId * MOTOR_BLOCK_SIZE;
     }
 
-    /** Gets the raw position in Rotations from the most recent CAN frame. */
-    public double getPosition() {
-      int offset = motorOffset + (Frame.S2.idx * SLOT_SIZE);
-      int seq1;
-      int seq2 = 0;
-      float pos = 0.0f;
+    private long readDataAtomic(Frame frame) {
+      int offset = motorOffset + (frame.idx * SLOT_SIZE);
+      int seq1, seq2 = -1;
+      long data = 0;
       do {
         seq1 = buffer.getInt(offset);
         if ((seq1 & 1) != 0) continue;
-        pos = buffer.getFloat(offset + 12);
+        data = buffer.getLong(offset + 8);
         seq2 = buffer.getInt(offset);
       } while (seq1 != seq2);
-      return pos;
+      return data;
     }
 
-    /** Gets the raw velocity in RPM from the most recent CAN frame. */
-    public double getVelocity() {
-      int offset = motorOffset + (Frame.S2.idx * SLOT_SIZE);
-      int seq1;
-      int seq2 = 0;
-      float vel = 0.0f;
-      do {
-        seq1 = buffer.getInt(offset);
-        if ((seq1 & 1) != 0) continue;
-        vel = buffer.getFloat(offset + 8);
-        seq2 = buffer.getInt(offset);
-      } while (seq1 != seq2);
-      return vel;
-    }
-
-    /** Gets the exact FPGA microsecond timestamp of the most recent Status 2 frame. */
-    public long getTimestampUs() {
-      int offset = motorOffset + (Frame.S2.idx * SLOT_SIZE);
-      int seq1;
-      int seq2 = 0;
-      long ts = 0L;
+    /** Gets the exact FPGA microsecond timestamp of the most recent CAN frame. */
+    public long getTimestampUs(Frame frame) {
+      int offset = motorOffset + (frame.idx * SLOT_SIZE);
+      int seq1, seq2 = -1;
+      long ts = 0;
       do {
         seq1 = buffer.getInt(offset);
         if ((seq1 & 1) != 0) continue;
@@ -144,6 +126,125 @@ public class SparkTap {
         seq2 = buffer.getInt(offset);
       } while (seq1 != seq2);
       return ts;
+    }
+
+    /** Gets the current sequence number for a given frame. */
+    public int getSequenceNumber(Frame frame) {
+      return buffer.getInt(motorOffset + (frame.idx * SLOT_SIZE));
+    }
+
+    // Status 0 (Bus, Power, and Limits)
+
+    /** Checks if the forward hard limit switch is reached. Found in Status 0. */
+    public boolean getForwardLimit() {
+      return (readDataAtomic(Frame.S0) & (1L << 48)) != 0;
+    }
+
+    /** Checks if the reverse hard limit switch is reached. Found in Status 0. */
+    public boolean getReverseLimit() {
+      return (readDataAtomic(Frame.S0) & (1L << 49)) != 0;
+    }
+
+    /** Checks if the forward soft limit is reached. Found in Status 0. */
+    public boolean getForwardSoftLimit() {
+      return (readDataAtomic(Frame.S0) & (1L << 50)) != 0;
+    }
+
+    /** Checks if the reverse soft limit is reached. Found in Status 0. */
+    public boolean getReverseSoftLimit() {
+      return (readDataAtomic(Frame.S0) & (1L << 51)) != 0;
+    }
+
+    /** Checks if the motor is currently configured as inverted. Found in Status 0. */
+    public boolean getInverted() {
+      return (readDataAtomic(Frame.S0) & (1L << 52)) != 0;
+    }
+
+    /** Gets the Applied Output (Duty Cycle) from -1.0 to 1.0. Found in Status 0. */
+    public double getAppliedOutput() {
+      return ((short) readDataAtomic(Frame.S0)) * 0.00003082369457075716;
+    }
+
+    /** Gets the Bus Voltage (Input Voltage) in Volts. Found in Status 0. */
+    public double getBusVoltage() {
+      return ((readDataAtomic(Frame.S0) >> 16) & 0xFFF) * 0.0073260073260073;
+    }
+
+    /** Gets the Output Current (Stator Current) in Amps. Found in Status 0. */
+    public double getOutputCurrent() {
+      return ((readDataAtomic(Frame.S0) >> 28) & 0xFFF) * 0.0366300366300366;
+    }
+
+    /** Gets the Motor Temperature in Celsius from Status 0. */
+    public int getMotorTemperature() {
+      return (int) ((readDataAtomic(Frame.S0) >> 40) & 0xFF);
+    }
+
+    /**
+     * Calculates the estimated Input (Supply) Current in Amps. This is derived from Applied Output
+     * * Output Current.
+     */
+    public double getInputCurrent() {
+      long data = readDataAtomic(Frame.S0);
+      double applied = ((short) data) * 0.00003082369457075716;
+      double outputCurrent = ((data >> 28) & 0xFFF) * 0.0366300366300366;
+      return Math.abs(outputCurrent * applied);
+    }
+
+    // Status 1 (Diagnostics and Status)
+
+    /** Gets the full 64-bit fault and warning bitfield. Found in Status 1. */
+    public long getFaults() {
+      return readDataAtomic(Frame.S1);
+    }
+
+    /** Gets the 8-bit bitfield of currently active faults. Found in Status 1. */
+    public int getActiveFaults() {
+      return (int) (readDataAtomic(Frame.S1) & 0xFF);
+    }
+
+    /**
+     * Gets the 8-bit bitfield of sticky faults (faults that occurred since boot). Found in Status
+     * 1.
+     */
+    public int getStickyFaults() {
+      return (int) ((readDataAtomic(Frame.S1) >> 24) & 0xFF);
+    }
+
+    /** Gets the 8-bit bitfield of currently active warnings. Found in Status 1. */
+    public int getActiveWarnings() {
+      return (int) ((readDataAtomic(Frame.S1) >> 16) & 0xFF);
+    }
+
+    /** Gets the 8-bit bitfield of sticky warnings. Found in Status 1. */
+    public int getStickyWarnings() {
+      return (int) ((readDataAtomic(Frame.S1) >> 40) & 0xFF);
+    }
+
+    /** Checks if the motor is currently in Follower Mode. Found in Status 1. */
+    public boolean isFollower() {
+      return (readDataAtomic(Frame.S1) & (1L << 48)) != 0;
+    }
+
+    /**
+     * Checks if the device has reset since the last time faults were cleared. Found in Status 1.
+     */
+    public boolean hasResetOccurred() {
+      return (readDataAtomic(Frame.S1) & (1L << 22)) != 0;
+    }
+
+    // Status 2 (Primary Encoder)
+
+    /** Gets the raw position in Rotations from the most recent CAN frame. */
+    public double getPosition() {
+      long data = readDataAtomic(Frame.S2);
+      return Float.intBitsToFloat((int) (data >> 32));
+    }
+
+    /** Gets the raw velocity in RPM from the most recent CAN frame. */
+    public double getVelocity() {
+      long data = readDataAtomic(Frame.S2);
+      return Float.intBitsToFloat((int) data);
     }
 
     /**
@@ -154,34 +255,20 @@ public class SparkTap {
      */
     public double getLatencyCompensatedPosition() {
       int offset = motorOffset + (Frame.S2.idx * SLOT_SIZE);
-      int seq1;
-      int seq2 = 0;
-      float rawPos = 0.0f, rawVelRpm = 0.0f;
-      long rawTsUs = 0L;
-
+      int seq1, seq2 = -1;
+      long data = 0, ts = 0;
       do {
         seq1 = buffer.getInt(offset);
         if ((seq1 & 1) != 0) continue;
-        rawVelRpm = buffer.getFloat(offset + 8);
-        rawPos = buffer.getFloat(offset + 12);
-        rawTsUs = buffer.getLong(offset + 16);
+        data = buffer.getLong(offset + 8);
+        ts = buffer.getLong(offset + 16);
         seq2 = buffer.getInt(offset);
       } while (seq1 != seq2);
 
-      long currentTsUs = RobotController.getFPGATime();
-      double latencySec = (currentTsUs - rawTsUs) / 1.0e6;
-
-      // Cap extrapolation at 100ms to prevent runaway values if CAN bus drops
-      if (latencySec < 0.0 || latencySec > 0.1) {
-        latencySec = 0.0;
-      }
-
-      return rawPos + ((rawVelRpm / 60.0) * latencySec);
-    }
-
-    /** Gets the current sequence number for a given frame. */
-    public int getSequenceNumber(Frame frame) {
-      return buffer.getInt(motorOffset + (frame.idx * SLOT_SIZE));
+      double pos = Float.intBitsToFloat((int) (data >> 32));
+      double vel = Float.intBitsToFloat((int) data);
+      double dt = Math.min(Math.max(0, (RobotController.getFPGATime() - ts) / 1.0e6), 0.1);
+      return pos + ((vel / 60.0) * dt);
     }
   }
 }
