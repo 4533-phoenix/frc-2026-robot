@@ -12,7 +12,6 @@ import static frc.lib.SparkUtil.*;
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
 import com.revrobotics.PersistMode;
-import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.FeedbackSensor;
@@ -25,7 +24,8 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
-import java.util.function.DoubleSupplier;
+import frc.robot.util.SparkTap;
+import frc.robot.util.SparkTap.MotorView;
 
 /**
  * Real IO implementation for the shooter flywheel using a SparkFlex motor controller (Neo Vortex).
@@ -37,7 +37,7 @@ import java.util.function.DoubleSupplier;
  */
 public class FlywheelIOSpark implements FlywheelIO {
   private final SparkFlex spark = new SparkFlex(CAN_ID, MotorType.kBrushless);
-  private final RelativeEncoder encoder = spark.getEncoder();
+  private final MotorView motorView = SparkTap.getInstance().getMotor(CAN_ID);
   private final SparkClosedLoopController controller = spark.getClosedLoopController();
 
   // Debouncer to prevent rapidly toggling connection status
@@ -66,11 +66,15 @@ public class FlywheelIOSpark implements FlywheelIO {
     config.closedLoop.feedForward.kS(FLYWHEEL_KS).kV(FLYWHEEL_KV).kA(FLYWHEEL_KA);
     config
         .signals
+        .primaryEncoderPositionAlwaysOn(true)
+        .primaryEncoderPositionPeriodMs(20)
         .primaryEncoderVelocityAlwaysOn(true)
         .primaryEncoderVelocityPeriodMs(20)
-        .appliedOutputPeriodMs(20)
-        .busVoltagePeriodMs(20)
-        .outputCurrentPeriodMs(20);
+        .appliedOutputPeriodMs(50)
+        .busVoltagePeriodMs(50)
+        .outputCurrentPeriodMs(50)
+        .faultsAlwaysOn(true)
+        .warningsAlwaysOn(true);
     tryUntilOk(
         5,
         () ->
@@ -80,27 +84,22 @@ public class FlywheelIOSpark implements FlywheelIO {
 
   @Override
   public void updateInputs(FlywheelIOInputs inputs) {
-    boolean sparkOk = true;
+    inputs.connected = connectedDebounce.calculate(motorView.isConnected());
 
-    sparkOk &= ifOk(spark, encoder::getPosition, (value) -> inputs.position = Radians.of(value));
-    sparkOk &=
-        ifOk(spark, encoder::getVelocity, (value) -> inputs.velocity = RadiansPerSecond.of(value));
-    sparkOk &=
-        ifOk(
-            spark,
-            new DoubleSupplier[] {spark::getAppliedOutput, spark::getBusVoltage},
-            (values) -> inputs.appliedVoltage = Volts.of(values[0] * values[1]));
-    sparkOk &=
-        ifOk(spark, spark::getOutputCurrent, (value) -> inputs.appliedCurrent = Amps.of(value));
+    // Encoder Data
+    inputs.position = Radians.of(motorView.getPosition());
+    inputs.velocity = RadiansPerSecond.of(motorView.getVelocity());
 
-    inputs.connected = connectedDebounce.calculate(sparkOk);
+    // Power Telemetry
+    inputs.appliedVoltage = Volts.of(motorView.getAppliedOutput() * motorView.getBusVoltage());
+    inputs.appliedCurrent = Amps.of(motorView.getOutputCurrent());
 
     // Health
-    inputs.status[0] = spark.getFaults().rawBits;
+    inputs.status[0] = motorView.getActiveFaults();
+    inputs.status[1] = motorView.getStickyFaults();
+    inputs.status[2] = motorView.getActiveWarnings();
+    inputs.status[3] = motorView.getStickyWarnings();
     inputs.healthy = inputs.status[0] == 0;
-    inputs.status[1] = spark.getStickyFaults().rawBits;
-    inputs.status[2] = spark.getWarnings().rawBits;
-    inputs.status[3] = spark.getStickyWarnings().rawBits;
   }
 
   @Override
