@@ -14,9 +14,7 @@ import static edu.wpi.first.units.Units.*;
 import edu.wpi.first.units.measure.*;
 import org.littletonrobotics.junction.AutoLog;
 
-/**
- * Interface for the gyroscope input/output abstraction.
- */
+/** Interface for the gyroscope input/output abstraction. */
 public interface GyroIO {
   /** Contains all of the inputs received from the gyro hardware. */
   @AutoLog
