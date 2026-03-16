@@ -38,7 +38,6 @@ import frc.robot.subsystems.drive.SparkOdometryThread;
 import frc.robot.subsystems.drive.SparkOdometryThread.PrimitiveQueue;
 import frc.robot.util.SparkTap;
 import frc.robot.util.SparkTap.MotorView;
-import java.util.function.DoubleSupplier;
 
 /**
  * Real IO implementation for a swerve drive module using Spark Max motor controllers and a CANcoder
@@ -109,8 +108,6 @@ public class ModuleIOSpark implements ModuleIO {
               driveTap.getLatencyCompensatedPosition() * DRIVE_ENCODER_POSITION_FACTOR);
           turnPositionQueue.offer(
               turnTap.getLatencyCompensatedPosition() * TURN_ENCODER_POSITION_FACTOR);
-
-          // Capture raw velocity (RPM)
           driveVelocityQueue.offer(driveTap.getVelocity());
           turnVelocityQueue.offer(turnTap.getVelocity());
         });
@@ -211,28 +208,14 @@ public class ModuleIOSpark implements ModuleIO {
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
     // Drive Motor Inputs
-    boolean driveOk = true;
-    driveOk &=
-        ifOk(
-            driveSpark,
-            new DoubleSupplier[] {driveSpark::getAppliedOutput, driveSpark::getBusVoltage},
-            (values) -> inputs.driveAppliedVoltage = Volts.of(values[0] * values[1]));
-    driveOk &=
-        ifOk(
-            driveSpark,
-            driveSpark::getOutputCurrent,
-            (value) -> inputs.driveCurrent = Amps.of(value));
+    boolean driveOk = driveTap.isConnected();
+    inputs.driveAppliedVoltage = Volts.of(driveTap.getAppliedOutput() * driveTap.getBusVoltage());
+    inputs.driveCurrent = Amps.of(driveTap.getOutputCurrent());
 
     // Turn Motor Inputs
-    boolean turnSparkOk = true;
-    turnSparkOk &=
-        ifOk(
-            turnSpark,
-            new DoubleSupplier[] {turnSpark::getAppliedOutput, turnSpark::getBusVoltage},
-            (values) -> inputs.turnAppliedVoltage = Volts.of(values[0] * values[1]));
-    turnSparkOk &=
-        ifOk(
-            turnSpark, turnSpark::getOutputCurrent, (value) -> inputs.turnCurrent = Amps.of(value));
+    boolean turnSparkOk = turnTap.isConnected();
+    inputs.turnAppliedVoltage = Volts.of(turnTap.getAppliedOutput() * turnTap.getBusVoltage());
+    inputs.turnCurrent = Amps.of(turnTap.getOutputCurrent());
 
     // Transfer primitive data to AdvantageKit inputs
     int count = timestampQueue.size;
@@ -286,18 +269,18 @@ public class ModuleIOSpark implements ModuleIO {
     inputs.turnEncoderConnected = turnEncoderConnectedDebounce.calculate(turnEncoderOk);
 
     // Drive Health
-    inputs.driveStatus[0] = driveSpark.getFaults().rawBits;
+    inputs.driveStatus[0] = driveTap.getActiveFaults();
+    inputs.driveStatus[1] = driveTap.getStickyFaults();
+    inputs.driveStatus[2] = driveTap.getActiveWarnings();
+    inputs.driveStatus[3] = driveTap.getStickyWarnings();
     inputs.driveHealthy = inputs.driveStatus[0] == 0;
-    inputs.driveStatus[1] = driveSpark.getStickyFaults().rawBits;
-    inputs.driveStatus[2] = driveSpark.getWarnings().rawBits;
-    inputs.driveStatus[3] = driveSpark.getStickyWarnings().rawBits;
 
     // Turn Health
-    inputs.turnStatus[0] = turnSpark.getFaults().rawBits;
+    inputs.turnStatus[0] = turnTap.getActiveFaults();
+    inputs.turnStatus[1] = turnTap.getStickyFaults();
+    inputs.turnStatus[2] = turnTap.getActiveWarnings();
+    inputs.turnStatus[3] = turnTap.getStickyWarnings();
     inputs.turnHealthy = inputs.turnStatus[0] == 0;
-    inputs.turnStatus[1] = turnSpark.getStickyFaults().rawBits;
-    inputs.turnStatus[2] = turnSpark.getWarnings().rawBits;
-    inputs.turnStatus[3] = turnSpark.getStickyWarnings().rawBits;
   }
 
   @Override
