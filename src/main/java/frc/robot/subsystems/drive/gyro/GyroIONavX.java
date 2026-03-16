@@ -10,10 +10,10 @@
 package frc.robot.subsystems.drive.gyro;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.robot.subsystems.drive.DriveConstants.ODOMETRY_FREQUENCY;
 
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
-import com.studica.frc.AHRS.NavXUpdateRate;
 import frc.robot.subsystems.drive.SparkOdometryThread;
 import frc.robot.subsystems.drive.SparkOdometryThread.PrimitiveQueue;
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class GyroIONavX implements GyroIO {
    * @param comType The communication type to use for the NavX (e.g., USB, SPI, I2C).
    */
   public GyroIONavX(NavXComType comType) {
-    navX = new AHRS(comType, NavXUpdateRate.k200Hz);
+    navX = new AHRS(comType, (int) ODOMETRY_FREQUENCY.in(Hertz));
     yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
     SparkOdometryThread.getInstance()
         .registerSignal(
