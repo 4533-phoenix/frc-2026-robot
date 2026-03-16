@@ -416,5 +416,19 @@ public class SparkTap {
       double dt = Math.min(Math.max(0, (RobotController.getFPGATime() - ts) / 1.0e6), 0.1);
       return pos + ((vel / 60.0) * dt);
     }
+
+    // Status 5 (Duty Cycle Absolute Encoder)
+
+    /** Gets the absolute encoder velocity. Found in Status 5. */
+    public double getAbsoluteEncoderVelocity() {
+      long data = readDataAtomic(Frame.S5);
+      return Float.intBitsToFloat((int) data);
+    }
+
+    /** Gets the absolute encoder position. Found in Status 5. */
+    public double getAbsoluteEncoderPosition() {
+      long data = readDataAtomic(Frame.S5);
+      return Float.intBitsToFloat((int) (data >> 32));
+    }
   }
 }

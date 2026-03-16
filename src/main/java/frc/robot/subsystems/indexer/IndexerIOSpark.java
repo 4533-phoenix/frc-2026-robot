@@ -61,7 +61,7 @@ public class IndexerIOSpark implements IndexerIO {
   public void updateInputs(IndexerIOInputs inputs) {
     inputs.connected = connectedDebounce.calculate(motorView.isConnected());
 
-    // Safely retrieve telemetry from the motor controller
+    // Power Telemetry
     inputs.appliedVoltage = Volts.of(motorView.getAppliedOutput() * motorView.getBusVoltage());
     inputs.appliedCurrent = Amps.of(motorView.getOutputCurrent());
 

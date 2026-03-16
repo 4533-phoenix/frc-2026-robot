@@ -25,7 +25,8 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
-import java.util.function.DoubleSupplier;
+import frc.robot.util.SparkTap;
+import frc.robot.util.SparkTap.MotorView;
 
 /**
  * Real IO implementation for the intake using REV SparkMax controllers.
@@ -36,6 +37,7 @@ import java.util.function.DoubleSupplier;
  */
 public class ArmIOSpark implements ArmIO {
   private final SparkMax spark = new SparkMax(CAN_ID, MotorType.kBrushless);
+  private final MotorView motorView = SparkTap.getInstance().getMotor(CAN_ID);
   private final AbsoluteEncoder absoluteEncoder;
   private final RelativeEncoder internalEncoder;
   private final SparkClosedLoopController controller;
@@ -66,8 +68,6 @@ public class ArmIOSpark implements ArmIO {
         .positionConversionFactor(2.0 * Math.PI)
         .zeroOffset(GLOBAL_ENCODER_OFFSET.in(Rotations))
         .inverted(true);
-
-    // PID runs off the primary internal encoder for maximum smoothness and high D-gains
     armConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(KP, 0.0, KD);
     armConfig.closedLoop.feedForward.kV(KV).kA(KA).kS(KS).kCos(KG).kCosRatio(1.0 / (2.0 * Math.PI));
     armConfig
@@ -82,9 +82,13 @@ public class ArmIOSpark implements ArmIO {
         .primaryEncoderPositionPeriodMs(50)
         .primaryEncoderVelocityAlwaysOn(true)
         .primaryEncoderVelocityPeriodMs(50)
+        .absoluteEncoderPositionAlwaysOn(true)
+        .absoluteEncoderPositionPeriodMs(50)
         .appliedOutputPeriodMs(50)
         .busVoltagePeriodMs(50)
-        .outputCurrentPeriodMs(50);
+        .outputCurrentPeriodMs(50)
+        .faultsAlwaysOn(true)
+        .warningsAlwaysOn(true);
     armConfig
         .softLimit
         .forwardSoftLimitEnabled(true)
@@ -97,12 +101,6 @@ public class ArmIOSpark implements ArmIO {
         () ->
             spark.configure(
                 armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
-    tryUntilOk(
-        5,
-        () -> {
-          double initialPos = absoluteEncoder.getPosition();
-          return spark.getEncoder().setPosition(initialPos);
-        });
     tryUntilOk(5, () -> spark.getEncoder().setPosition(absoluteEncoder.getPosition()));
   }
 
@@ -113,58 +111,36 @@ public class ArmIOSpark implements ArmIO {
    */
   @Override
   public void updateInputs(ArmIOInputs inputs) {
-    boolean armSparkOk = true;
+    inputs.connected = connectedDebounce.calculate(motorView.isConnected());
 
-    // Temporary containers to extract values from ifOk checks
-    final double[] absPosContainer = new double[1];
-    final double[] intPosContainer = new double[1];
-    final double[] velContainer = new double[1];
+    double absPos = motorView.getAbsoluteEncoderPosition();
+    double internalPos = motorView.getPosition();
+    double currentVel = motorView.getVelocity();
 
-    boolean absOk = ifOk(spark, absoluteEncoder::getPosition, (val) -> absPosContainer[0] = val);
-    boolean intPosOk = ifOk(spark, internalEncoder::getPosition, (val) -> intPosContainer[0] = val);
-    boolean velOk = ifOk(spark, internalEncoder::getVelocity, (val) -> velContainer[0] = val);
-
-    armSparkOk &= (absOk && intPosOk && velOk);
-
-    // If CAN communications for position/velocity were successful, process drift compensation
-    if (armSparkOk) {
-      double absPos = absPosContainer[0];
-      double internalPos = intPosContainer[0];
-      double currentVel = velContainer[0];
+    if (inputs.connected) {
       boolean absEncoderReady = (absPos != 0.0);
-
       boolean isStill = Math.abs(currentVel) < VELOCITY_GATE.in(RadiansPerSecond);
       double armError = Math.abs(internalPos - absPos);
-
-      // Apply Synchronization
       if (absEncoderReady && isStill && armError > ERROR_THRESHOLD.in(Radians)) {
         internalEncoder.setPosition(absPos);
         internalPos = absPos;
       }
-
-      // Log the internal encoder data
-      inputs.position = Radians.of(internalPos);
-      inputs.velocity = RadiansPerSecond.of(currentVel);
-
-      // Health
-      inputs.status[0] = spark.getFaults().rawBits;
-      inputs.healthy = inputs.status[0] == 0;
-      inputs.status[1] = spark.getStickyFaults().rawBits;
-      inputs.status[2] = spark.getWarnings().rawBits;
-      inputs.status[3] = spark.getStickyWarnings().rawBits;
     }
 
-    // Power and current inputs
-    armSparkOk &=
-        ifOk(
-            spark,
-            new DoubleSupplier[] {spark::getAppliedOutput, spark::getBusVoltage},
-            (values) -> inputs.appliedVoltage = Volts.of(values[0] * values[1]));
-    armSparkOk &=
-        ifOk(spark, spark::getOutputCurrent, (value) -> inputs.appliedCurrent = Amps.of(value));
+    // Log the internal encoder data
+    inputs.position = Radians.of(internalPos);
+    inputs.velocity = RadiansPerSecond.of(currentVel);
 
-    // Debounce the connection status
-    inputs.connected = connectedDebounce.calculate(armSparkOk);
+    // Power Telemetry
+    inputs.appliedVoltage = Volts.of(motorView.getAppliedOutput() * motorView.getBusVoltage());
+    inputs.appliedCurrent = Amps.of(motorView.getOutputCurrent());
+
+    // Health
+    inputs.status[0] = motorView.getActiveFaults();
+    inputs.status[1] = motorView.getStickyFaults();
+    inputs.status[2] = motorView.getActiveWarnings();
+    inputs.status[3] = motorView.getStickyWarnings();
+    inputs.healthy = inputs.status[0] == 0;
   }
 
   @Override
