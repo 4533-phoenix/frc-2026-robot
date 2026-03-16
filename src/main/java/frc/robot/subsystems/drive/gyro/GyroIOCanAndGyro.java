@@ -86,4 +86,9 @@ public class GyroIOCanAndGyro implements GyroIO {
 
     yawPositionQueue.clear();
   }
+
+  @Override
+  public void clearFaults() {
+    canandgyro.clearStickyFaults();
+  }
 }

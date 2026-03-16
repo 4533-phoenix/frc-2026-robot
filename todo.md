@@ -11,3 +11,4 @@
 * Build out the api of sparktap more
 * Move over all subsystems to sparktap (Verify climb works and odometry then move)
 * Update PP config
+* Support canandgyro faults/sticky faults. (IDK how)

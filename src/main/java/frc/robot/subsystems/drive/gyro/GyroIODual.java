@@ -110,4 +110,10 @@ public class GyroIODual implements GyroIO {
     // Log the current drift offset
     Logger.recordOutput("Drive/Gyro/DriftOffset", driftOffset);
   }
+
+  @Override
+  public void clearFaults() {
+    navx.clearFaults();
+    canandgyro.clearFaults();
+  }
 }

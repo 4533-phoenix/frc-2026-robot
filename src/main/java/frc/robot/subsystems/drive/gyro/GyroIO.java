@@ -55,4 +55,7 @@ public interface GyroIO {
    * @param inputs The inputs object to update.
    */
   public default void updateInputs(GyroIOInputs inputs) {}
+
+  /** Clears all faults and warnings. */
+  public default void clearFaults() {}
 }

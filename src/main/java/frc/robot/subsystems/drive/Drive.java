@@ -513,6 +513,7 @@ public class Drive extends SubsystemBase {
 
   /** Clears all faults and warnings. */
   public void clearFaults() {
+    gyroIO.clearFaults();
     for (var module : modules) {
       module.clearFaults();
     }
