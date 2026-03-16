@@ -19,7 +19,8 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Voltage;
-import java.util.function.DoubleSupplier;
+import frc.robot.util.SparkTap;
+import frc.robot.util.SparkTap.MotorView;
 
 /**
  * Real IO implementation for the indexer subsystem using a Spark Max motor controller.
@@ -29,9 +30,10 @@ import java.util.function.DoubleSupplier;
  */
 public class IndexerIOSpark implements IndexerIO {
   private final SparkMax spark = new SparkMax(CAN_ID, MotorType.kBrushless);
+  private final MotorView motorView = SparkTap.getInstance().getMotor(CAN_ID);
 
   // Debouncer to prevent rapidly toggling connection status
-  private final Debouncer sparkDebouncer = new Debouncer(0.5, Debouncer.DebounceType.kFalling);
+  private final Debouncer connectedDebounce = new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
   /** Creates a new IndexerIOSpark and configures the Spark Max. */
   public IndexerIOSpark() {
@@ -40,7 +42,13 @@ public class IndexerIOSpark implements IndexerIO {
         .idleMode(IdleMode.kBrake)
         .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
         .voltageCompensation(12.0);
-    config.signals.appliedOutputPeriodMs(50).busVoltagePeriodMs(50).outputCurrentPeriodMs(50);
+    config
+        .signals
+        .appliedOutputPeriodMs(50)
+        .busVoltagePeriodMs(50)
+        .outputCurrentPeriodMs(50)
+        .faultsAlwaysOn(true)
+        .warningsAlwaysOn(true);
     tryUntilOk(
         5,
         () ->
@@ -51,26 +59,18 @@ public class IndexerIOSpark implements IndexerIO {
   /** Updates hardware inputs and monitors connectivity. */
   @Override
   public void updateInputs(IndexerIOInputs inputs) {
-    boolean sparkOk = true;
+    inputs.connected = connectedDebounce.calculate(motorView.isConnected());
 
     // Safely retrieve telemetry from the motor controller
-    sparkOk &=
-        ifOk(
-            spark,
-            new DoubleSupplier[] {spark::getAppliedOutput, spark::getBusVoltage},
-            (values) -> inputs.appliedVoltage = Volts.of(values[0] * values[1]));
-    sparkOk &=
-        ifOk(spark, spark::getOutputCurrent, (value) -> inputs.appliedCurrent = Amps.of(value));
-
-    // Debounce the connection status to ensure stability
-    inputs.connected = sparkDebouncer.calculate(sparkOk);
+    inputs.appliedVoltage = Volts.of(motorView.getAppliedOutput() * motorView.getBusVoltage());
+    inputs.appliedCurrent = Amps.of(motorView.getOutputCurrent());
 
     // Health
-    inputs.status[0] = spark.getFaults().rawBits;
+    inputs.status[0] = motorView.getActiveFaults();
+    inputs.status[1] = motorView.getStickyFaults();
+    inputs.status[2] = motorView.getActiveWarnings();
+    inputs.status[3] = motorView.getStickyWarnings();
     inputs.healthy = inputs.status[0] == 0;
-    inputs.status[1] = spark.getStickyFaults().rawBits;
-    inputs.status[2] = spark.getWarnings().rawBits;
-    inputs.status[3] = spark.getStickyWarnings().rawBits;
   }
 
   /**

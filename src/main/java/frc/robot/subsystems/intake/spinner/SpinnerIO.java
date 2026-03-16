@@ -9,7 +9,6 @@ package frc.robot.subsystems.intake.spinner;
 
 import static edu.wpi.first.units.Units.*;
 
-import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import org.littletonrobotics.junction.AutoLog;
@@ -28,9 +27,6 @@ public interface SpinnerIO {
     // ---------- Spinner Motor Inputs ----------
     /** Whether the spinner motor controller is connected. */
     public boolean connected = false;
-
-    /** The current angular velocity of the intake spinner rollers. */
-    public AngularVelocity velocity = RadiansPerSecond.zero();
 
     /** The voltage currently being applied to the spinner motor. */
     public Voltage appliedVoltage = Volts.zero();

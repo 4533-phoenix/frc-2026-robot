@@ -11,7 +11,6 @@ import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.intake.spinner.SpinnerConstants.*;
 
 import com.revrobotics.PersistMode;
-import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.sim.SparkMaxSim;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -28,14 +27,12 @@ public class SpinnerIOSim implements SpinnerIO {
   // Spinner motor and sim
   private final SparkMax spinnerSpark;
   private final SparkMaxSim spinnerSparkSim;
-  private final RelativeEncoder spinnerEncoder;
   private final DCMotorSim spinnerPhysicsSim;
 
   /** Creates a new SpinnerIOSim and initializes the simulated Spark MAX motor controllers. */
   public SpinnerIOSim() {
     // Create Spark MAX objects
     spinnerSpark = new SparkMax(CAN_ID, MotorType.kBrushless);
-    spinnerEncoder = spinnerSpark.getEncoder();
 
     // Create SparkMaxSim wrappers
     spinnerSparkSim = new SparkMaxSim(spinnerSpark, GEARBOX);
@@ -76,7 +73,6 @@ public class SpinnerIOSim implements SpinnerIO {
 
     // Populate logged inputs from Spark encoders
     inputs.connected = true;
-    inputs.velocity = RadiansPerSecond.of(spinnerEncoder.getVelocity());
     inputs.appliedVoltage =
         Volts.of(spinnerSpark.getAppliedOutput() * spinnerSpark.getBusVoltage());
     inputs.appliedCurrent = Amps.of(spinnerSpark.getOutputCurrent());

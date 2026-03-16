@@ -44,9 +44,7 @@ public class ClimbIOSpark implements ClimbIO {
         .busVoltagePeriodMs(50)
         .outputCurrentPeriodMs(50)
         .limitsPeriodMs(20)
-        .faultsPeriodMs(250)
         .faultsAlwaysOn(true)
-        .warningsPeriodMs(250)
         .warningsAlwaysOn(true);
 
     tryUntilOk(
