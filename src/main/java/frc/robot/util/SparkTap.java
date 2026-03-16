@@ -12,6 +12,8 @@ import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -28,6 +30,11 @@ public class SparkTap {
   private static final int METADATA_SIZE = 24;
   private static final int MOTOR_BLOCK_SIZE = (SLOT_SIZE * STATUS_FRAMES) + METADATA_SIZE;
   private static final int METADATA_OFFSET = STATUS_FRAMES * SLOT_SIZE;
+
+  private static final VarHandle INT_VH =
+      MethodHandles.byteBufferViewVarHandle(int[].class, ByteOrder.nativeOrder());
+  private static final VarHandle LONG_VH =
+      MethodHandles.byteBufferViewVarHandle(long[].class, ByteOrder.nativeOrder());
 
   private final ByteBuffer buffer;
   private final MotorView[] motors = new MotorView[MAX_MOTORS];
@@ -120,60 +127,68 @@ public class SparkTap {
   /** Dedicated view into the shared CAN telemetry table for a specific motor. */
   public class MotorView {
     private final int motorOffset;
+    private final long[] cacheData = new long[8];
+    private final long[] cacheTs = new long[8];
+    private double lastLatCompPos = 0.0;
 
     private MotorView(int deviceId) {
       this.motorOffset = deviceId * MOTOR_BLOCK_SIZE;
     }
 
+    private int getIntAcquire(int offset) {
+      return (int) INT_VH.getAcquire(buffer, offset);
+    }
+
+    private long getLongAcquire(int offset) {
+      return (long) LONG_VH.getAcquire(buffer, offset);
+    }
+
     private long readDataAtomic(Frame frame) {
       int offset = motorOffset + (frame.idx * SLOT_SIZE);
-      int seq1, seq2 = -1;
-      long data = 0;
-      do {
-        seq1 = buffer.getInt(offset);
-        if ((seq1 & 1) != 0) continue;
-        data = buffer.getLong(offset + 8);
-        seq2 = buffer.getInt(offset);
-      } while (seq1 != seq2);
-      return data;
+      int seq1 = getIntAcquire(offset);
+      if ((seq1 & 1) == 0) {
+        long data = getLongAcquire(offset + 8);
+        if (seq1 == getIntAcquire(offset)) {
+          cacheData[frame.idx] = data;
+        }
+      }
+      return cacheData[frame.idx];
     }
 
     /**
-     * Gets the exact FPGA microsecond timestamp of the most recent CAN frame.
+     * 1 Gets the exact FPGA microsecond timestamp of the most recent CAN frame.
      *
      * @param frame The status frame to get the timestamp for.
      * @return The FPGA timestamp in microseconds.
      */
     public long getTimestampUs(Frame frame) {
       int offset = motorOffset + (frame.idx * SLOT_SIZE);
-      int seq1, seq2 = -1;
-      long ts = 0;
-      do {
-        seq1 = buffer.getInt(offset);
-        if ((seq1 & 1) != 0) continue;
-        ts = buffer.getLong(offset + 16);
-        seq2 = buffer.getInt(offset);
-      } while (seq1 != seq2);
-      return ts;
+      int seq1 = getIntAcquire(offset);
+      if ((seq1 & 1) == 0) {
+        long ts = getLongAcquire(offset + 16);
+        if (seq1 == getIntAcquire(offset)) {
+          cacheTs[frame.idx] = ts;
+        }
+      }
+      return cacheTs[frame.idx];
     }
 
     /**
-     * Gets the timestamp of the most recent CAN frame in microseconds, or 0 if no frame has been
+     * Gets the timestamp of the most recent CAN frame 0 in microseconds, or 0 if no frame has been
      * received.
      *
      * @return The FPGA timestamp of the most recently seen frame in microseconds.
      */
     public long getLastSeenTimestampUs() {
       int offset = motorOffset + METADATA_OFFSET;
-      int seq1, seq2 = -1;
-      long ts = 0;
-      do {
-        seq1 = buffer.getInt(offset);
-        if ((seq1 & 1) != 0) continue;
-        ts = buffer.getLong(offset + 16);
-        seq2 = buffer.getInt(offset);
-      } while (seq1 != seq2);
-      return ts;
+      int seq1 = getIntAcquire(offset);
+      if ((seq1 & 1) == 0) {
+        long ts = getLongAcquire(offset + 16);
+        if (seq1 == getIntAcquire(offset)) {
+          cacheTs[7] = ts;
+        }
+      }
+      return cacheTs[7];
     }
 
     /**
@@ -183,7 +198,7 @@ public class SparkTap {
      * @return The sequence number.
      */
     public int getSequenceNumber(Frame frame) {
-      return buffer.getInt(motorOffset + (frame.idx * SLOT_SIZE));
+      return getIntAcquire(motorOffset + (frame.idx * SLOT_SIZE));
     }
 
     /**
@@ -401,20 +416,18 @@ public class SparkTap {
      */
     public double getLatencyCompensatedPosition() {
       int offset = motorOffset + (Frame.S2.idx * SLOT_SIZE);
-      int seq1, seq2 = -1;
-      long data = 0, ts = 0;
-      do {
-        seq1 = buffer.getInt(offset);
-        if ((seq1 & 1) != 0) continue;
-        data = buffer.getLong(offset + 8);
-        ts = buffer.getLong(offset + 16);
-        seq2 = buffer.getInt(offset);
-      } while (seq1 != seq2);
-
-      double pos = Float.intBitsToFloat((int) (data >> 32));
-      double vel = Float.intBitsToFloat((int) data);
-      double dt = Math.min(Math.max(0, (RobotController.getFPGATime() - ts) / 1.0e6), 0.1);
-      return pos + ((vel / 60.0) * dt);
+      int seq1 = getIntAcquire(offset);
+      if ((seq1 & 1) == 0) {
+        long data = getLongAcquire(offset + 8);
+        long ts = getLongAcquire(offset + 16);
+        if (seq1 == getIntAcquire(offset)) {
+          double pos = Float.intBitsToFloat((int) (data >> 32));
+          double vel = Float.intBitsToFloat((int) data);
+          double dt = Math.min(Math.max(0, (RobotController.getFPGATime() - ts) / 1.0e6), 0.1);
+          lastLatCompPos = pos + ((vel / 60.0) * dt);
+        }
+      }
+      return lastLatCompPos;
     }
 
     // Status 5 (Duty Cycle Absolute Encoder)

@@ -28,7 +28,6 @@
 #define MOTOR_BLOCK_SIZE ((SLOT_SIZE * STATUS_FRAMES) + METADATA_SIZE)
 #define TOTAL_BUFFER_SIZE (MOTOR_BLOCK_SIZE * MAX_MOTORS)
 
-#define WORKER_CPU 1
 #define CACHE_LINE 64
 
 static uint8_t *shared_buffer = NULL;
@@ -58,14 +57,6 @@ uint32_t messageCount = 0;
 int32_t status = 0;
 
 pthread_setname_np(pthread_self(), "SparkTapWorker");
-
-cpu_set_t cpuset;
-CPU_ZERO(&cpuset);
-CPU_SET(WORKER_CPU, &cpuset);
-if (unlikely(
-    pthread_setaffinity_np(pthread_self(), sizeof(cpuset), &cpuset) != 0)) {
-  perror("[SparkTap-C] Warning: CPU affinity failed");
-}
 
 while (likely(atomic_load_explicit(&running, memory_order_relaxed))) {
   status = 0;
@@ -98,8 +89,10 @@ while (likely(atomic_load_explicit(&running, memory_order_relaxed))) {
 
         update_slot(motor_base + (frameIdx * SLOT_SIZE),
             messages[i].data, current_ts);
-        update_slot(motor_base + (STATUS_FRAMES * SLOT_SIZE), NULL,
-            current_ts);
+        if (frameIdx == 0) {
+          update_slot(motor_base + (STATUS_FRAMES * SLOT_SIZE), NULL,
+              current_ts);
+        }
       }
     }
   }

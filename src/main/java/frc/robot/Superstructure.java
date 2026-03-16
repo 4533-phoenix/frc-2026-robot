@@ -53,7 +53,7 @@ public class Superstructure extends SubsystemBase {
   private final PDH pdh;
 
   // Dashboard helpers
-  private final String CLEAR_FAULTS_KEY = "Clear Faults";
+  private final String CLEAR_FAULTS_KEY = "ClearFaults";
 
   // Aiming Suppliers
   private final Supplier<AimingResult> hubAiming;

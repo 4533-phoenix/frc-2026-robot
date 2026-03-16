@@ -57,7 +57,7 @@ public class SparkOdometryThread {
   private boolean isStarted = false;
 
   private final List<Runnable> signals = new ArrayList<>();
-  private final PrimitiveQueue timestampQueue = new PrimitiveQueue();
+  private final List<PrimitiveQueue> timestampQueues = new ArrayList<>();
 
   private SparkOdometryThread() {
     notifier = new Notifier(this::updateLoop);
@@ -81,21 +81,28 @@ public class SparkOdometryThread {
    * @return The PrimitiveQueue used for timestamps in the odometry thread.
    */
   public PrimitiveQueue makeTimestampQueue() {
-    return timestampQueue;
+    if (isStarted) throw new IllegalStateException("Cannot register after start.");
+    PrimitiveQueue newQueue = new PrimitiveQueue();
+    timestampQueues.add(newQueue);
+    return newQueue;
   }
 
   /** Starts the odometry update thread. */
   public void startThread() {
     if (isStarted) return;
     isStarted = true;
-    notifier.startPeriodic((1000.0) / ODOMETRY_FREQUENCY.in(Hertz));
+    notifier.startPeriodic((1.0) / ODOMETRY_FREQUENCY.in(Hertz));
   }
 
   private void updateLoop() {
     Drive.odometryLock.lock();
     try {
       double currentTimestampSec = RobotController.getFPGATime() / 1.0e6;
-      timestampQueue.offer(currentTimestampSec);
+
+      // Offer the current timestamp to all registered timestamp queues for synchronization
+      for (PrimitiveQueue queue : timestampQueues) {
+        queue.offer(currentTimestampSec);
+      }
 
       // Snapshot all modules exactly now
       for (Runnable signal : signals) {

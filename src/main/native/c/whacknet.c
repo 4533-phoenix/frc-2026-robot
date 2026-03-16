@@ -28,7 +28,6 @@
 #define MASK (MAX_QUEUE_SIZE - 1)
 #define RECIEVE_BUF_SIZE 4194304
 #define RECV_BATCH 16
-#define WORKER_CPU 1
 #define CACHE_LINE 64
 
 // Branch prediction hints
@@ -113,13 +112,6 @@ static void* vision_worker_thread(void *arg) {
   free(arg);
 
   pthread_setname_np(pthread_self(), "VisionUDPRecv");
-
-  // Pin to WORKER_CPU
-  cpu_set_t cpuset;
-  CPU_ZERO(&cpuset);
-  CPU_SET(WORKER_CPU, &cpuset);
-  if (pthread_setaffinity_np(pthread_self(), sizeof(cpuset), &cpuset) != 0)
-    perror("[Whacknet-C] Warning: CPU affinity failed");
 
   // Elevate to SCHED_FIFO real-time priority
   struct sched_param sp = { .sched_priority = 50 };
