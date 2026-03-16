@@ -20,8 +20,8 @@ import java.util.ArrayList;
  * IO implementation for the Redux Robotics Canandgyro.
  *
  * <p>This implementation configures the gyro to send data frames at the frequency defined in {@link
- * frc.robot.subsystems.drive.DriveConstants#ODOMETRY_LOW_FREQUENCY} and registers these signals
- * with the {@link SparkOdometryThread} for accurate, high-frequency odometry.
+ * frc.robot.subsystems.drive.DriveConstants#ODOMETRY_FREQUENCY} and registers these signals with
+ * the {@link SparkOdometryThread} for accurate, high-frequency odometry.
  */
 public class GyroIOCanAndGyro implements GyroIO {
   private final Canandgyro canandgyro = new Canandgyro(IMU_CAN_ID);

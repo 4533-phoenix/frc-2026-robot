@@ -15,12 +15,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import org.littletonrobotics.junction.AutoLog;
 
-/**
- * IO interface for the arm hardware abstraction.
- *
- * <p>This interface allows for interchangeable arm hardware (e.g., NEO, TalonFX) and comprehensive
- * simulation support by standardizing how the arm position is set and monitored.
- */
+/** IO interface for the arm hardware abstraction. */
 public interface ArmIO {
   /** Contains all of the inputs received from the arm hardware. */
   @AutoLog

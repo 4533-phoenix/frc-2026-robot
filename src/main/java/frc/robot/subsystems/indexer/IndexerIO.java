@@ -14,12 +14,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import org.littletonrobotics.junction.AutoLog;
 
-/**
- * Interface for the indexer mechanism input/output abstraction.
- *
- * <p>This interface allows for interchangeable indexer hardware (e.g., different motor controllers)
- * and comprehensive simulation support.
- */
+/** Interface for the indexer mechanism input/output abstraction. */
 public interface IndexerIO {
   /** Contains all of the inputs received from the indexer hardware. */
   @AutoLog

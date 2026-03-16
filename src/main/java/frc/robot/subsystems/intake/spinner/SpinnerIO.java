@@ -13,13 +13,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import org.littletonrobotics.junction.AutoLog;
 
-/**
- * IO interface for the intake hardware abstraction.
- *
- * <p>This interface allows for interchangeable intake hardware (e.g., NEO, TalonFX) and
- * comprehensive simulation support by standardizing how the intake arm position and spinner
- * velocity are set and monitored.
- */
+/** IO interface for the intake hardware abstraction. */
 public interface SpinnerIO {
   /** Contains all of the inputs received from the intake hardware. */
   @AutoLog

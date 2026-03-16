@@ -13,12 +13,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import org.littletonrobotics.junction.AutoLog;
 
-/**
- * Interface for the climb mechanism input/output abstraction.
- *
- * <p>This interface allows for interchangeable climb hardware (e.g., different motor controllers)
- * and comprehensive simulation support.
- */
+/** Interface for the climb mechanism input/output abstraction. */
 public interface ClimbIO {
   /** Contains all of the inputs received from the climb hardware. */
   @AutoLog

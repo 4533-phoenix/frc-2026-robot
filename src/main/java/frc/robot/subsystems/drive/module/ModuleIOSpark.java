@@ -75,6 +75,13 @@ public class ModuleIOSpark implements ModuleIO {
   private final Debouncer turnEncoderConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
+  /**
+   * Creates a new ModuleIOSpark for the specified module index and configures the Spark Max motor
+   * controllers and CANcoder.
+   *
+   * @param module The index of the module (0-3) to determine which configuration to use from the
+   *     configs.
+   */
   public ModuleIOSpark(int module) {
     var config = MODULE_CONFIGS[module];
 

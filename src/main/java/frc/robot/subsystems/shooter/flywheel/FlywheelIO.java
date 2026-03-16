@@ -12,13 +12,7 @@ import static edu.wpi.first.units.Units.*;
 import edu.wpi.first.units.measure.*;
 import org.littletonrobotics.junction.AutoLog;
 
-/**
- * Interface for the shooter flywheel subsystem input/output abstraction.
- *
- * <p>This interface allows for interchangeable flywheel hardware (e.g., Falcon 500, SparkMax) and
- * comprehensive simulation support by standardizing how motor velocity is set and how electrical
- * data is retrieved.
- */
+/** Interface for the shooter flywheel subsystem input/output abstraction. */
 public interface FlywheelIO {
   /** Contains all of the inputs received from the flywheel hardware. */
   @AutoLog

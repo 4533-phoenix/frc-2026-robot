@@ -14,12 +14,7 @@ import static edu.wpi.first.units.Units.*;
 import edu.wpi.first.units.measure.*;
 import org.littletonrobotics.junction.AutoLog;
 
-/**
- * Interface for the swerve module input/output abstraction.
- *
- * <p>This interface allows for interchangeable module hardware (e.g., different motor controllers
- * or gear ratios) and comprehensive simulation support.
- */
+/** Interface for the swerve module input/output abstraction. */
 public interface ModuleIO {
   /** Contains all of the inputs received from the module hardware. */
   @AutoLog

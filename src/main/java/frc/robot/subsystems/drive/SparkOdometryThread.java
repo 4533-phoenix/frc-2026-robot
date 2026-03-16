@@ -15,16 +15,26 @@ import edu.wpi.first.wpilibj.RobotController;
 import java.util.ArrayList;
 import java.util.List;
 
+/** A thread for handling Spark odometry updates. */
 public class SparkOdometryThread {
   /** A GC-Free queue for holding primitive doubles. */
   public static class PrimitiveQueue {
+    /** The array to hold the primitive doubles. */
     public final double[] data = new double[50];
+
+    /** The number of elements in the queue. */
     public int size = 0;
 
+    /**
+     * Offers a new value to the queue if there is capacity.
+     *
+     * @param val The value to offer to the queue.
+     */
     public void offer(double val) {
       if (size < 50) data[size++] = val;
     }
 
+    /** Clears the queue by resetting the size to 0. */
     public void clear() {
       size = 0;
     }
@@ -32,6 +42,12 @@ public class SparkOdometryThread {
 
   private static SparkOdometryThread instance;
 
+  /**
+   * Returns the singleton instance of the SparkOdometryThread, creating it if it does not already
+   * exist.
+   *
+   * @return The SparkOdometryThread instance.
+   */
   public static SparkOdometryThread getInstance() {
     if (instance == null) instance = new SparkOdometryThread();
     return instance;
@@ -47,15 +63,28 @@ public class SparkOdometryThread {
     notifier = new Notifier(this::updateLoop);
   }
 
+  /**
+   * Registers a signal to be captured in the odometry update loop.
+   *
+   * @param signal A Runnable that captures the desired signal and stores it in a high-frequency
+   *     queue.
+   */
   public void registerSignal(Runnable signal) {
     if (isStarted) throw new IllegalStateException("Cannot register after start.");
     signals.add(signal);
   }
 
+  /**
+   * Provides access to the timestamp queue for modules to synchronize their data with the odometry
+   * updates.
+   *
+   * @return The PrimitiveQueue used for timestamps in the odometry thread.
+   */
   public PrimitiveQueue makeTimestampQueue() {
     return timestampQueue;
   }
 
+  /** Starts the odometry update thread. */
   public void startThread() {
     if (isStarted) return;
     isStarted = true;

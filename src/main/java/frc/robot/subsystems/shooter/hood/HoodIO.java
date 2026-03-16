@@ -13,12 +13,7 @@ import static frc.robot.subsystems.shooter.ShooterConstants.*;
 import edu.wpi.first.units.measure.Distance;
 import org.littletonrobotics.junction.AutoLog;
 
-/**
- * Interface for the shooter hood subsystem input/output abstraction.
- *
- * <p>This interface allows for interchangeable hood hardware (e.g., servo-driven linkage) and
- * comprehensive simulation support by standardizing how hood position is retrieved and set.
- */
+/** Interface for the shooter hood subsystem input/output abstraction. */
 public interface HoodIO {
   /** Contains all of the inputs received from the hood hardware. */
   @AutoLog

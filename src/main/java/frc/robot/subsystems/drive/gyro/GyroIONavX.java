@@ -30,7 +30,11 @@ public class GyroIONavX implements GyroIO {
   private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
   private final PrimitiveQueue yawTimestampQueue;
 
-  /** Creates a new GyroIONavX. */
+  /**
+   * Creates a new GyroIONavX.
+   *
+   * @param comType The communication type to use for the NavX (e.g., USB, SPI, I2C).
+   */
   public GyroIONavX(NavXComType comType) {
     navX = new AHRS(comType, NavXUpdateRate.k200Hz);
     yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();

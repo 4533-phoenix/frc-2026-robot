@@ -301,7 +301,12 @@ public class Shooter extends SubsystemBase {
     setGoal(Goal.STOP);
   }
 
-  /** Returns a command to run a quasistatic SysId test. */
+  /**
+   * Returns a command to run a quasistatic SysId test.
+   *
+   * @param direction The direction to run the SysId test (forward or reverse).
+   * @return A command to run a quasistatic SysId test.
+   */
   public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
     return runOnce(() -> setGoal(Goal.CHARACTERIZATION))
         .andThen(
@@ -311,7 +316,12 @@ public class Shooter extends SubsystemBase {
         .finallyDo(() -> setGoal(Goal.STOP));
   }
 
-  /** Returns a command to run a dynamic SysId test. */
+  /**
+   * Returns a command to run a dynamic SysId test.
+   *
+   * @param direction The direction to run the SysId test (forward or reverse).
+   * @return A command to run a dynamic SysId test.
+   */
   public Command sysIdDynamic(SysIdRoutine.Direction direction) {
     return runOnce(() -> setGoal(Goal.CHARACTERIZATION))
         .andThen(
