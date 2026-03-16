@@ -16,9 +16,6 @@ import org.littletonrobotics.junction.AutoLog;
 
 /**
  * Interface for the gyroscope input/output abstraction.
- *
- * <p>This interface allows for interchangeable gyroscope hardware (e.g., Pigeon 2, NavX) and
- * simulation support.
  */
 public interface GyroIO {
   /** Contains all of the inputs received from the gyro hardware. */
