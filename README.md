@@ -62,7 +62,7 @@ Pull requests that do not meet the documentation or workflow requirements will n
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the BSD License. See the [LICENSE](LICENSE) file for details.
 
 ## Contact
 
