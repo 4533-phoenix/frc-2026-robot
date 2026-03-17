@@ -7,25 +7,20 @@ Welcome to the official repository for **FRC Team 4533 Phoenix's 2026 Robot Code
 
 ## Documentation
 
-Comprehensive documentation for this project is available at [FRC 2026 Robot Docs](https://4533-phoenix.github.io/frc-2026-robot/).
+We maintain two primary sources of documentation:
 
-## Vision System Overview
+- **[The Wiki](https://github.com/4533-Phoenix/frc-2026-robot/wiki):** Comprehensive guides on our architecture, custom native JNI libraries (Whacknet & SparkTap), high-frequency odometry, superstructure coordination, and core coding philosophies. **Start here if you are new to the codebase!**
+- **[Javadocs](https://4533-phoenix.github.io/frc-2026-robot/):** Auto-generated API documentation for all classes and methods.
 
-Our robot uses a robust vision system to localize on the field with AprilTags and other camera-based methods.
+## Advanced Features & Optimizations
 
-**How vision works:**
+Our codebase goes far beyond a standard WPILib implementation. To maximize performance, minimize Garbage Collector (GC) lag spikes, and ensure absolute safety, we've built several custom integrations:
 
-- The robot code connects to a coprocessor running [chalkydri](https://github.com/chalkydri/chalkydri), a Rust-based vision solution developed by our team. Chalkydri processes camera feeds on the coprocessor (e.g., Raspberry Pi, Jetson) and sends vision measurements (poses, uncertainties, timestamps, tag detections) to the robot over the network.
-- On the robot, native C code (see `src/main/native/c/whacknet.c`) implements a fast, lock-free ring buffer and JNI interface for receiving vision data from the coprocessor. This C code packs observations and exposes them efficiently to the Java code.
-- The Java-side subsystem (`Vision.java`) reads these measurements, filters/tag-counts, and integrates them into the robot's pose estimator. If cameras or coprocessor communication is lost, the system issues alerts to the drivers.
-- All vision measurements are temporally aligned and uncertainty-weighted so robot pose is updated only with quality data.
+- **[Whacknet: Zero-Allocation Vision](https://github.com/4533-Phoenix/frc-2026-robot/wiki/Whacknet:-UDP-Vision-Protocol):** A custom C/JNI UDP server that parses vision data from our Rust coprocessor ([Chalkydri](https://github.com/chalkydri/chalkydri)). It uses a lock-free ring buffer, kernel-level timestamps, and the Java Flyweight pattern to achieve ultra-low latency with zero memory allocation.
+- **[SparkTap: CAN Interception](https://github.com/4533-Phoenix/frc-2026-robot/wiki/SparkTap:-CAN-Interception):** A C++ native library that reads CAN frames directly via WPILib HAL stream sessions into a shared memory map. This allows Java to read motor telemetry in sub-milliseconds using atomics, completely eliminating JNI overhead.
+- **[High-Frequency Odometry & Dual Gyros](https://github.com/4533-Phoenix/frc-2026-robot/wiki/Drivetrain-&-Odometry):** A dedicated 200Hz background thread strictly for polling drive kinematics. We also use a dual-gyro setup (NavX + Canandgyro) that automatically compensates for drift when the robot is stationary.
+- **[Superstructure Orchestration](https://github.com/4533-Phoenix/frc-2026-robot/wiki/Superstructure-Coordination):** Instead of messy subsystem-to-subsystem communication, a centralized state machine acts as a gatekeeper. It safely manages physical interlocks, aiming algorithms (like two-pass lead compensation), and translates driver intent into hardware actions.
 
-**Integration benefits:**
-- High reliability and speed via Rust and C for vision data ingestion
-- Modular: you can swap coprocessors or vision algorithms with minimal changes to robot code
-- All vision logs/status are recorded for debugging and performance analysis
-
-_For details on Chalkydri, visit the [project repository](https://github.com/chalkydri/chalkydri)._
 
 ## Team Website
 
