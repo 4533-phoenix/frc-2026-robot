@@ -7,3 +7,4 @@
 * Make one gyro a warn instead of a unhealthy?
 * Update PP config
 * Support canandgyro faults/sticky faults. (IDK how)
+* Make warnings/faults stop generating new arraylists when active (only update the dash when the status flag changes?)
