@@ -18,6 +18,7 @@
 #include <hal/CAN.h>
 #include <hal/HALBase.h>
 
+// Constants
 #define MAX_MOTORS 64
 #define STATUS_FRAMES 7
 #define SLOT_SIZE 24
