@@ -23,7 +23,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-// Increased queue size to handle jitter
+// Constants
 #define MAX_QUEUE_SIZE 64
 #define MASK (MAX_QUEUE_SIZE - 1)
 #define RECIEVE_BUF_SIZE 4194304

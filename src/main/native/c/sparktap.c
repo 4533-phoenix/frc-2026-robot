@@ -18,17 +18,17 @@
 #include <hal/CAN.h>
 #include <hal/HALBase.h>
 
-#define likely(x)   __builtin_expect(!!(x), 1)
-#define unlikely(x) __builtin_expect(!!(x), 0)
-
 #define MAX_MOTORS 64
 #define STATUS_FRAMES 7
 #define SLOT_SIZE 24
 #define METADATA_SIZE 24
 #define MOTOR_BLOCK_SIZE ((SLOT_SIZE * STATUS_FRAMES) + METADATA_SIZE)
 #define TOTAL_BUFFER_SIZE (MOTOR_BLOCK_SIZE * MAX_MOTORS)
-
 #define CACHE_LINE 64
+
+// Branch prediction hints
+#define likely(x)   __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
 
 static uint8_t *shared_buffer = NULL;
 static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
