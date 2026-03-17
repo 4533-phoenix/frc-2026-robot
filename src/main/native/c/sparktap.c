@@ -22,8 +22,7 @@
 #define MAX_MOTORS 64
 #define STATUS_FRAMES 7
 #define SLOT_SIZE 24
-#define METADATA_SIZE 24
-#define MOTOR_BLOCK_SIZE ((SLOT_SIZE * STATUS_FRAMES) + METADATA_SIZE)
+#define MOTOR_BLOCK_SIZE (SLOT_SIZE * STATUS_FRAMES)
 #define TOTAL_BUFFER_SIZE (MOTOR_BLOCK_SIZE * MAX_MOTORS)
 #define CACHE_LINE 64
 
@@ -90,10 +89,6 @@ while (likely(atomic_load_explicit(&running, memory_order_relaxed))) {
 
         update_slot(motor_base + (frameIdx * SLOT_SIZE),
             messages[i].data, current_ts);
-        if (frameIdx == 0) {
-          update_slot(motor_base + (STATUS_FRAMES * SLOT_SIZE), NULL,
-              current_ts);
-        }
       }
     }
   }

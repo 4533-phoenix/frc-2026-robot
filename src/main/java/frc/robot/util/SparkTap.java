@@ -27,8 +27,7 @@ public class SparkTap {
   private static final int MAX_MOTORS = 64;
   private static final int STATUS_FRAMES = 7;
   private static final int SLOT_SIZE = 24;
-  private static final int METADATA_SIZE = 24;
-  private static final int MOTOR_BLOCK_SIZE = (SLOT_SIZE * STATUS_FRAMES) + METADATA_SIZE;
+  private static final int MOTOR_BLOCK_SIZE = (SLOT_SIZE * STATUS_FRAMES);
   private static final int METADATA_OFFSET = STATUS_FRAMES * SLOT_SIZE;
 
   private static final VarHandle INT_VH =
@@ -127,8 +126,8 @@ public class SparkTap {
   /** Dedicated view into the shared CAN telemetry table for a specific motor. */
   public class MotorView {
     private final int motorOffset;
-    private final long[] cacheData = new long[8];
-    private final long[] cacheTs = new long[8];
+    private final long[] cacheData = new long[7];
+    private final long[] cacheTs = new long[7];
     private double lastLatCompPos = 0.0;
 
     private MotorView(int deviceId) {
@@ -156,7 +155,7 @@ public class SparkTap {
     }
 
     /**
-     * 1 Gets the exact FPGA microsecond timestamp of the most recent CAN frame.
+     * Gets the exact FPGA microsecond timestamp of the most recent CAN frame.
      *
      * @param frame The status frame to get the timestamp for.
      * @return The FPGA timestamp in microseconds.
@@ -180,15 +179,7 @@ public class SparkTap {
      * @return The FPGA timestamp of the most recently seen frame in microseconds.
      */
     public long getLastSeenTimestampUs() {
-      int offset = motorOffset + METADATA_OFFSET;
-      int seq1 = getIntAcquire(offset);
-      if ((seq1 & 1) == 0) {
-        long ts = getLongAcquire(offset + 16);
-        if (seq1 == getIntAcquire(offset)) {
-          cacheTs[7] = ts;
-        }
-      }
-      return cacheTs[7];
+      return getTimestampUs(Frame.S0);
     }
 
     /**
