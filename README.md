@@ -68,5 +68,9 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 For questions or support, please contact us via our [team website](https://phoenix4533.org/).
 
+## Disclaimer
+
+This code was designed to push the boundaries for what the RoboRIO can *really* do to the best of my abilities. Feel free to take inspiration and/or copy from this codebase. Think of it as a send-off of the RoboRIO hardware and the end of my FRC career. Here be dragons.
+
 ---
 *Built with ❤️ by FRC Team 4533 Phoenix.*
