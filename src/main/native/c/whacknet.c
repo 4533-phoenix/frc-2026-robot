@@ -334,8 +334,6 @@ while (likely(t != h)) {
   m.ts = (uint64_t)((int64_t) m.ts + offset);
 
   // Write to Java buffer
-  // Note: out_buffer (Java DirectByteBuffer) might be unaligned.
-  // memcpy is safer here too if strict alignment is required.
   memcpy(&out_buffer[count], &m, sizeof(VisionMeasurement));
 
   t = (t + 1) & MASK;

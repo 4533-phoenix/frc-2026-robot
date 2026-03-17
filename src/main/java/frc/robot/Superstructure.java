@@ -11,7 +11,9 @@ import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.networktables.BooleanPublisher;
+import edu.wpi.first.networktables.BooleanSubscriber;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -31,6 +33,7 @@ import frc.robot.subsystems.vision.Vision;
 import frc.robot.util.Aiming;
 import frc.robot.util.Aiming.AimingResult;
 import frc.robot.util.Util;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -54,6 +57,16 @@ public class Superstructure extends SubsystemBase {
 
   // Dashboard helpers
   private final String CLEAR_FAULTS_KEY = "ClearFaults";
+  private final BooleanSubscriber clearFaultsSubscriber =
+      NetworkTableInstance.getDefault()
+          .getTable("SmartDashboard")
+          .getBooleanTopic(CLEAR_FAULTS_KEY)
+          .subscribe(false);
+  private final BooleanPublisher clearFaultsPublisher =
+      NetworkTableInstance.getDefault()
+          .getTable("SmartDashboard")
+          .getBooleanTopic(CLEAR_FAULTS_KEY)
+          .publish();
 
   // Aiming Suppliers
   private final Supplier<AimingResult> hubAiming;
@@ -102,9 +115,6 @@ public class Superstructure extends SubsystemBase {
 
     this.lobAiming =
         Aiming.lobAimingSupplier(drive::getPose, ShooterConstants.SHOOTER_ROBOT_OFFSET);
-
-    // Initialize dashboard values
-    SmartDashboard.putBoolean(CLEAR_FAULTS_KEY, false);
   }
 
   /**
@@ -149,9 +159,15 @@ public class Superstructure extends SubsystemBase {
     }
 
     // Check for sticky fault clear command from dashboard
-    if (SmartDashboard.getBoolean(CLEAR_FAULTS_KEY, false)) {
-      clearFaults();
-      SmartDashboard.putBoolean(CLEAR_FAULTS_KEY, false);
+    if (clearFaultsSubscriber.get()) {
+      CompletableFuture.runAsync(
+              () -> {
+                clearFaults();
+              })
+          .thenRun(
+              () -> {
+                clearFaultsPublisher.set(false);
+              });
     }
 
     // Logging state to AdvantageKit

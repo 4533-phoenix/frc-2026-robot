@@ -7,9 +7,10 @@
 
 package frc.robot.util;
 
+import edu.wpi.first.networktables.BooleanSubscriber;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  * Utility class for evaluating game-specific conditions and performing other geometry-related
@@ -18,7 +19,12 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class Util {
   private Util() {} // Prevent instantiation
 
-  private static final String MATCH_MODE_KEY = "Match Mode";
+  private static final String MATCH_MODE_KEY = "MatchModeOverride";
+  private static final BooleanSubscriber matchModeSubscriber =
+      NetworkTableInstance.getDefault()
+          .getTable("SmartDashboard")
+          .getBooleanTopic(MATCH_MODE_KEY)
+          .subscribe(false);
 
   /**
    * Evaluates the game specific message to determine if the hub is enabled at a given match time.
@@ -81,20 +87,19 @@ public class Util {
    * @return True when match mode is active.
    */
   public static boolean isMatchMode() {
-    if (SmartDashboard.getBoolean(MATCH_MODE_KEY, false)) return true;
+    if (matchModeSubscriber.get()) return true;
     double time = DriverStation.getMatchTime();
     return DriverStation.isFMSAttached() || time > 0;
   }
 
   /**
    * Checks if match mode is active only because of the SmartDashboard override toggle, not because
-   * a real FMS/timed match is running. Used to allow actions (e.g. climbing) that are normally
-   * gated behind endgame when testing without a real match.
+   * a real FMS/timed match is running.
    *
    * @return True when match mode is active only because of the dashboard override.
    */
   public static boolean isMatchModeOverridden() {
-    boolean dashboardOverride = SmartDashboard.getBoolean(MATCH_MODE_KEY, false);
+    boolean dashboardOverride = matchModeSubscriber.get();
     double time = DriverStation.getMatchTime();
     boolean realMatch = DriverStation.isFMSAttached() || time > 0;
     return dashboardOverride && !realMatch;
@@ -110,10 +115,5 @@ public class Util {
     double time = DriverStation.getMatchTime();
     boolean isTimedMatch = DriverStation.isFMSAttached() || time > 0;
     return isTimedMatch && time <= 30.0 && time > 0;
-  }
-
-  /** Publish the match mode state to the SmartDashboard for testing purposes. */
-  public static void publishMatchMode() {
-    SmartDashboard.putBoolean(MATCH_MODE_KEY, isMatchMode());
   }
 }
