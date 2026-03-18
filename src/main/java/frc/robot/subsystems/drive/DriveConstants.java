@@ -32,10 +32,10 @@ public class DriveConstants {
   public static final Frequency ODOMETRY_FREQUENCY = Hertz.of(200);
 
   /** The distance between the left and right wheels. */
-  public static final Distance TRACK_WIDTH = Inches.of(20.5);
+  public static final Distance TRACK_WIDTH = Inches.of(19.5);
 
   /** The distance between the front and back wheels. */
-  public static final Distance WHEEL_BASE = Inches.of(20.5);
+  public static final Distance WHEEL_BASE = Inches.of(19.5);
 
   /** The radius of the circle defined by the module locations. */
   public static final Distance DRIVE_BASE_RADIUS =
@@ -74,7 +74,7 @@ public class DriveConstants {
         2,
         3,
         4,
-        Degrees.of(35.51),
+        Degrees.of(263.0),
         new Translation2d(TRACK_WIDTH.in(Meters) / 2.0, WHEEL_BASE.in(Meters) / 2.0)),
     // Front Right (Module 1)
     new SwerveModuleConfig(
@@ -82,7 +82,7 @@ public class DriveConstants {
         5,
         6,
         7,
-        Degrees.of(293.03),
+        Degrees.of(144.0),
         new Translation2d(TRACK_WIDTH.in(Meters) / 2.0, -WHEEL_BASE.in(Meters) / 2.0)),
     // Back Left (Module 2)
     new SwerveModuleConfig(
@@ -90,7 +90,7 @@ public class DriveConstants {
         8,
         9,
         10,
-        Degrees.of(123.49),
+        Degrees.of(16.0),
         new Translation2d(-TRACK_WIDTH.in(Meters) / 2.0, WHEEL_BASE.in(Meters) / 2.0)),
     // Back Right (Module 3)
     new SwerveModuleConfig(
@@ -98,7 +98,7 @@ public class DriveConstants {
         11,
         12,
         13,
-        Degrees.of(7.73),
+        Degrees.of(191.0),
         new Translation2d(-TRACK_WIDTH.in(Meters) / 2.0, -WHEEL_BASE.in(Meters) / 2.0))
   };
 
@@ -140,7 +140,7 @@ public class DriveConstants {
   public static final Current DRIVE_MOTOR_SECONDARY_CURRENT_LIMIT = Amps.of(80);
 
   /** The radius of the drive wheels. */
-  public static final Distance WHEEL_RADIUS = Inches.of(2.654);
+  public static final Distance WHEEL_RADIUS = Inches.of(1.992);
 
   /** The gear reduction between the drive motor and the wheel. */
   public static final double DRIVE_MOTOR_REDUCTION = 6.75;
