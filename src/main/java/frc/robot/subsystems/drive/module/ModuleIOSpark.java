@@ -104,10 +104,8 @@ public class ModuleIOSpark implements ModuleIO {
     odometry.registerSignal(
         () -> {
           // Snapshot mathematically time-aligned positions
-          drivePositionQueue.offer(
-              driveTap.getLatencyCompensatedPosition());
-          turnPositionQueue.offer(
-              turnTap.getLatencyCompensatedPosition());
+          drivePositionQueue.offer(driveTap.getLatencyCompensatedPosition());
+          turnPositionQueue.offer(turnTap.getLatencyCompensatedPosition());
           driveVelocityQueue.offer(driveTap.getVelocity());
           turnVelocityQueue.offer(turnTap.getVelocity());
         });
