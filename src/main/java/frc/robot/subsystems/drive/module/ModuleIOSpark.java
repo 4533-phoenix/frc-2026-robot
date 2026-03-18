@@ -105,9 +105,9 @@ public class ModuleIOSpark implements ModuleIO {
         () -> {
           // Snapshot mathematically time-aligned positions
           drivePositionQueue.offer(
-              driveTap.getLatencyCompensatedPosition() * DRIVE_ENCODER_POSITION_FACTOR);
+              driveTap.getLatencyCompensatedPosition());
           turnPositionQueue.offer(
-              turnTap.getLatencyCompensatedPosition() * TURN_ENCODER_POSITION_FACTOR);
+              turnTap.getLatencyCompensatedPosition());
           driveVelocityQueue.offer(driveTap.getVelocity());
           turnVelocityQueue.offer(turnTap.getVelocity());
         });
