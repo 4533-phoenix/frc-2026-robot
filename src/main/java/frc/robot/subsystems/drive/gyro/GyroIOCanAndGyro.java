@@ -85,6 +85,7 @@ public class GyroIOCanAndGyro implements GyroIO {
     }
 
     yawPositionQueue.clear();
+    yawTimestampQueue.clear();
   }
 
   @Override
