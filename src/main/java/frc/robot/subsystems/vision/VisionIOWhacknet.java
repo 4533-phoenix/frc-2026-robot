@@ -21,12 +21,12 @@ import frc.robot.util.Whacknet;
  * AprilTag pose estimations. It maps raw data from a shared direct byte buffer into WPILib geometry
  * objects, utilizing zero-allocation patterns to maintain high performance.
  */
-public class VisionIOChalkydri implements VisionIO {
+public class VisionIOWhacknet implements VisionIO {
   /** The Whacknet instance for communication with the Chalkydri coprocessors. */
   private final Whacknet whacknet;
 
   /** Creates a new VisionIOChalkydri and starts the native vision server. */
-  public VisionIOChalkydri() {
+  public VisionIOWhacknet() {
     whacknet = Whacknet.getInstance();
     whacknet.start(SERVER_PORT);
   }
