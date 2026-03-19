@@ -11,8 +11,6 @@ import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
@@ -69,7 +67,6 @@ public class Shooter extends SubsystemBase {
 
   @AutoLogOutput private Goal goal = Goal.STOP;
   private ShooterState state = DEFAULT_STATE;
-  @AutoLogOutput private Pose2d hubCenter = new Pose2d(4.6255178, 4.0346376, Rotation2d.kZero);
 
   private final Trigger flywheelReadyTrigger;
   private final Trigger hoodReadyTrigger;

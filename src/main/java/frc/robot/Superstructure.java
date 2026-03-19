@@ -9,6 +9,7 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.BooleanPublisher;
@@ -54,6 +55,9 @@ public class Superstructure extends SubsystemBase {
   private final Indexer indexer;
   private final Vision vision;
   private final PDH pdh;
+
+  @AutoLogOutput private Pose2d tag18 = new Pose2d(4.6256194, 3.4312352, Rotation2d.kZero);
+  @AutoLogOutput private Pose2d hubCenter = new Pose2d(4.6255178, 4.0346376, Rotation2d.kZero);
 
   // Dashboard helpers
   private final String CLEAR_FAULTS_KEY = "ClearFaults";
@@ -174,6 +178,12 @@ public class Superstructure extends SubsystemBase {
     Logger.recordOutput("Superstructure/ClimbMode", climbMode.get());
     Logger.recordOutput("Superstructure/CurrentAimingResult", currentAimingResult);
     Logger.recordOutput("Superstructure/IsHubEnabled", isHubEnabled);
+
+    // Set a text log on the dashboard the current x y offset from tag 18
+    double xOffset = drive.getPose().getX() - tag18.getX();
+    double yOffset = drive.getPose().getY() - tag18.getY();
+    Logger.recordOutput("Superstructure/Tag18XOffset", xOffset);
+    Logger.recordOutput("Superstructure/Tag18YOffset", yOffset);
   }
 
   /**
