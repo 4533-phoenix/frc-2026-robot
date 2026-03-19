@@ -380,7 +380,9 @@ public class SparkTap {
     // Status 2 (Primary Encoder)
 
     /**
-     * Gets the raw position in Rotations from the most recent CAN frame.
+     * Gets the raw position from the most recent CAN frame.
+     *
+     * <p>This value is affected by positionConversionFactor
      *
      * @return The position in Rotations.
      */
@@ -390,9 +392,11 @@ public class SparkTap {
     }
 
     /**
-     * Gets the raw velocity in RPM from the most recent CAN frame.
+     * Gets the raw velocity from the most recent CAN frame.
      *
-     * @return The velocity in RPM.
+     * <p>This value is affected by velocityConversionFactor
+     *
+     * @return The velocity.
      */
     public double getVelocity() {
       long data = readDataAtomic(Frame.S2);
@@ -402,6 +406,10 @@ public class SparkTap {
     /**
      * Latency Compensation. Atomically reads position, velocity, and timestamp from the same CAN
      * frame and extrapolates the position to the current FPGA microsecond.
+     *
+     * <p>This code is affected by both positionConversionFactor and velocityConversionFactor which
+     * both have to be the same units for the latency compensation to be accurate. If they are
+     * different, the extrapolation will be incorrect.
      *
      * @return The mathematically time-aligned position in Rotations.
      */
