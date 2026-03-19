@@ -9,3 +9,5 @@
 * Support canandgyro faults/sticky faults. (IDK how)
 * Make warnings/faults stop generating new arraylists when active (only update the dash when the status flag changes?)
 * Make a more seperate lib folder for future use
+* Redocument support for PV now with out fork
+* Add port setting to pv
