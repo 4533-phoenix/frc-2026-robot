@@ -48,7 +48,7 @@ public final class Constants {
   // Field Objects
   /** The location of the center of the field hub mechanism. */
   public static final Translation2d HUB_POSITION =
-      new Translation2d(Meters.of(4.65), FieldUtil.FIELD_WIDTH.div(2.0));
+      new Translation2d(Meters.of(4.6255178), Meters.of(4.0346376));
 
   /** Center of the left lobbing target line (blue alliance coordinates). */
   public static final Translation2d LOBBING_TARGET_LEFT_CENTER =
