@@ -279,7 +279,15 @@ public class RobotContainer {
                 () -> driverController.getHID().setRumble(RumbleType.kBothRumble, 0)));
 
     // Zero the gyro when the Y button is pressed
-    driverController.y().onTrue(Commands.runOnce(drive::zeroGyro));
+    driverController
+        .b()
+        .onTrue(
+            Commands.runOnce(
+                    () ->
+                        drive.setPose(
+                            new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
+                    drive)
+                .ignoringDisable(true));
   }
 
   private void configureOperatorButtonBindings() {

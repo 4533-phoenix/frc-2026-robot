@@ -494,11 +494,6 @@ public class Drive extends SubsystemBase {
     return Math.abs(getRotation().minus(targetAngle).getRadians()) < tolerance.getRadians();
   }
 
-  /** Zeros the pose estimator's gyro angle to the current heading. */
-  public void zeroGyro() {
-    poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), getPose());
-  }
-
   /**
    * Returns whether or not the subsystem is healthy
    *
