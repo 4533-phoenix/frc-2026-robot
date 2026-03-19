@@ -74,7 +74,7 @@ public class DriveConstants {
         2,
         3,
         4,
-        Degrees.of(263.0),
+        Degrees.of(-98.79),
         new Translation2d(TRACK_WIDTH.in(Meters) / 2.0, WHEEL_BASE.in(Meters) / 2.0)),
     // Front Right (Module 1)
     new SwerveModuleConfig(
@@ -82,7 +82,7 @@ public class DriveConstants {
         5,
         6,
         7,
-        Degrees.of(144.0),
+        Degrees.of(143.44),
         new Translation2d(TRACK_WIDTH.in(Meters) / 2.0, -WHEEL_BASE.in(Meters) / 2.0)),
     // Back Left (Module 2)
     new SwerveModuleConfig(
@@ -90,7 +90,7 @@ public class DriveConstants {
         8,
         9,
         10,
-        Degrees.of(16.0),
+        Degrees.of(15.64),
         new Translation2d(-TRACK_WIDTH.in(Meters) / 2.0, WHEEL_BASE.in(Meters) / 2.0)),
     // Back Right (Module 3)
     new SwerveModuleConfig(
@@ -98,7 +98,7 @@ public class DriveConstants {
         11,
         12,
         13,
-        Degrees.of(191.0),
+        Degrees.of(-167.26),
         new Translation2d(-TRACK_WIDTH.in(Meters) / 2.0, -WHEEL_BASE.in(Meters) / 2.0))
   };
 

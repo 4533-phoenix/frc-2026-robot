@@ -294,9 +294,7 @@ public class ModuleIOSpark implements ModuleIO {
   @Override
   public void setDriveVelocity(AngularVelocity velocity) {
     driveController.setSetpoint(
-        velocity.in(RadiansPerSecond),
-        ControlType.kMAXMotionVelocityControl,
-        ClosedLoopSlot.kSlot0);
+        velocity.in(RadiansPerSecond), ControlType.kVelocity, ClosedLoopSlot.kSlot0);
   }
 
   @Override
