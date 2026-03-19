@@ -11,3 +11,4 @@
 * Make a more seperate lib folder for future use
 * Redocument support for PV now with out fork
 * Add port setting to pv
+* Make 2 modes/io layers for real: SparkTap & Rev
