@@ -63,7 +63,7 @@ public class VisionIOWhacknet implements VisionIO {
    * Broadcasts the current robot heading back to the native vision pipeline to assist with pose
    * estimation.
    *
-   * @param heading The current robot heading in radians, normalized.
+   * @param heading The current robot heading.
    */
   @Override
   public void broadcastRobotHeading(Rotation2d heading) {
