@@ -9,8 +9,6 @@
 
 package frc.robot;
 
-import com.ctre.phoenix6.SignalLogger;
-import com.revrobotics.util.StatusLogger;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -20,7 +18,6 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
-import org.littletonrobotics.urcl.URCL;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -72,9 +69,6 @@ public class Robot extends LoggedRobot {
     }
 
     // Initialize URCL
-    Logger.registerURCL(URCL.startExternal());
-    StatusLogger.disableAutoLogging(); // Disable REVLib's built-in logging
-    SignalLogger.stop(); // Disable CTRE's built-in logging
     DriverStation.silenceJoystickConnectionWarning(true);
 
     // Start AdvantageKit logger
