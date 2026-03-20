@@ -11,12 +11,14 @@ import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.Collections;
@@ -25,9 +27,9 @@ import org.littletonrobotics.junction.Logger;
 /**
  * Subsystem for processing vision data, specifically from AprilTag cameras.
  *
- * <p>Receives raw camera detections, filters them based on quality (tag count), and feeds valid
- * measurements into the Drive subsystem's pose estimator to refine the robot's field position. Also
- * monitors camera health and status using highly optimized zero-allocation data structures.
+ * <p>Benchmarking Edition: Runs both NetworkTables (Photon) and direct UDP memory mapping
+ * (Whacknet) simultaneously to compare transport layer latency, JNI GC overhead, and data delivery
+ * jitter.
  */
 public class Vision extends SubsystemBase {
   /** A record representing a single vision observation. */
@@ -40,8 +42,24 @@ public class Vision extends SubsystemBase {
       double stdDevY,
       double stdDevRot) {}
 
-  private final VisionIO io;
-  private final VisionIOInputsAutoLogged inputs = new VisionIOInputsAutoLogged();
+  // Dual IOs for benchmarking
+  private final VisionIO photonIO;
+  private final VisionIO whacknetIO;
+
+  private final VisionIOInputsAutoLogged photonInputs = new VisionIOInputsAutoLogged();
+  private final VisionIOInputsAutoLogged whacknetInputs = new VisionIOInputsAutoLogged();
+
+  // Moving average filters for CPU overhead (50 taps = 1 second at 50Hz)
+  private final LinearFilter photonCpuFilter = LinearFilter.movingAverage(50);
+  private final LinearFilter whacknetCpuFilter = LinearFilter.movingAverage(50);
+
+  // Moving average filters for Data Age Jitter
+  private final LinearFilter photonJitterFilter = LinearFilter.movingAverage(50);
+  private final LinearFilter whacknetJitterFilter = LinearFilter.movingAverage(50);
+
+  // State variables for calculating frame-to-frame jitter
+  private double lastAvgPhotonAge = 0.0;
+  private double lastAvgWhacknetAge = 0.0;
 
   // We size the arrays based on the highest camera ID in the map to ensure direct index mapping.
   private final int maxCameraId;
@@ -55,13 +73,14 @@ public class Vision extends SubsystemBase {
   private final Matrix<N3, N1> stdVector = VecBuilder.fill(0, 0, 0);
 
   /**
-   * Creates a new Vision subsystem.
+   * Creates a new Vision subsystem for benchmarking dual transports.
    *
-   * @param io The abstraction layer for the vision hardware (e.g., Limelight, PhotonVision).
-   * @param drive The Drive subsystem instance for updating pose estimates.
+   * @param photonIO The PhotonVision NetworkTables implementation.
+   * @param whacknetIO The Whacknet custom UDP C++ implementation.
    */
-  public Vision(VisionIO io) {
-    this.io = io;
+  public Vision(VisionIO photonIO, VisionIO whacknetIO) {
+    this.photonIO = photonIO;
+    this.whacknetIO = whacknetIO;
 
     // Determine the max array size needed to sequentially store camera data
     maxCameraId = CAMERA_MAP.isEmpty() ? 0 : Collections.max(CAMERA_MAP.keySet());
@@ -77,51 +96,112 @@ public class Vision extends SubsystemBase {
       int id = entry.getKey();
       cameraActiveFlags[id] = true;
       lastTimestamps[id] = Timer.getTimestamp();
-      alerts[id] = new Alert(entry.getValue() + " camera offline", AlertType.kWarning);
-      logPaths[id] = "Vision/CameraStatus/" + entry.getValue();
+      alerts[id] = new Alert(entry.getValue().name() + " camera offline", AlertType.kWarning);
+      logPaths[id] = "Vision/CameraStatus/" + entry.getValue().name();
       seenPaths[id] = "Vision/CameraSeen/" + entry.getValue().name();
     }
   }
 
   /**
-   * Processes vision measurements, filters invalid data, updates the drive pose estimator, and
-   * checks camera status.
+   * Processes vision measurements, records benchmarking data for the transport layers, updates the
+   * drive pose estimator, and checks camera status.
    */
   @Override
   public void periodic() {
-    io.updateInputs(inputs);
-    Logger.processInputs("Vision", inputs);
+    photonIO.broadcastRobotHeading(Rotation2d.kZero);
+    whacknetIO.broadcastRobotHeading(Rotation2d.kZero);
 
-    // Broadcast current robot heading to native vision pipeline for improved pose estimation
-    io.broadcastRobotHeading(Rotation2d.kZero);
+    long startPhotonUs = RobotController.getFPGATime();
+    photonIO.updateInputs(photonInputs);
+    long photonOverheadUs = RobotController.getFPGATime() - startPhotonUs;
+
+    long startWhacknetUs = RobotController.getFPGATime();
+    whacknetIO.updateInputs(whacknetInputs);
+    long whacknetOverheadUs = RobotController.getFPGATime() - startWhacknetUs;
+
+    double avgPhotonCpuUs = photonCpuFilter.calculate(photonOverheadUs);
+    double avgWhacknetCpuUs = whacknetCpuFilter.calculate(whacknetOverheadUs);
+
+    Logger.processInputs("VisionPhoton", photonInputs);
+    Logger.processInputs("VisionWhacknet", whacknetInputs);
+
+    Logger.recordOutput("VisionBenchmark/Transport/PhotonCpuOverheadUs", photonOverheadUs);
+    Logger.recordOutput("VisionBenchmark/Transport/WhacknetCpuOverheadUs", whacknetOverheadUs);
+    Logger.recordOutput("VisionBenchmark/Transport/PhotonCpuOverheadAvgUs", avgPhotonCpuUs);
+    Logger.recordOutput("VisionBenchmark/Transport/WhacknetCpuOverheadAvgUs", avgWhacknetCpuUs);
+
+    Logger.recordOutput(
+        "VisionBenchmark/Transport/PhotonFramesThisLoop", photonInputs.observations.length);
+    Logger.recordOutput(
+        "VisionBenchmark/Transport/WhacknetFramesThisLoop", whacknetInputs.observations.length);
 
     double currentTime = Timer.getTimestamp();
 
-    // Process all detections received this frame
-    for (int i = 0; i < inputs.observations.length; i++) {
-      int id = inputs.observations[i].cameraId();
+    if (photonInputs.observations.length > 0) {
+      double totalPhotonAge = 0;
+      for (VisionObservation obs : photonInputs.observations) {
+        totalPhotonAge += (currentTime - obs.timestamp());
+      }
+
+      double avgPhotonAge = totalPhotonAge / photonInputs.observations.length;
+
+      double currentPhotonJitter = Math.abs(avgPhotonAge - lastAvgPhotonAge);
+      double avgPhotonJitter = photonJitterFilter.calculate(currentPhotonJitter);
+      lastAvgPhotonAge = avgPhotonAge; // Save for next loop
+
+      Logger.recordOutput("VisionBenchmark/Transport/PhotonAvgDataAgeSecs", avgPhotonAge);
+      Logger.recordOutput("VisionBenchmark/Transport/PhotonCurrentJitterSecs", currentPhotonJitter);
+      Logger.recordOutput("VisionBenchmark/Transport/PhotonAvgJitterSecs", avgPhotonJitter);
+    }
+
+    if (whacknetInputs.observations.length > 0) {
+      double totalWhacknetAge = 0;
+      for (VisionObservation obs : whacknetInputs.observations) {
+        totalWhacknetAge += (currentTime - obs.timestamp());
+      }
+
+      double avgWhacknetAge = totalWhacknetAge / whacknetInputs.observations.length;
+
+      // Calculate Jitter (Absolute change in latency since the last received frame batch)
+      double currentWhacknetJitter = Math.abs(avgWhacknetAge - lastAvgWhacknetAge);
+      double avgWhacknetJitter = whacknetJitterFilter.calculate(currentWhacknetJitter);
+      lastAvgWhacknetAge = avgWhacknetAge; // Save for next loop
+
+      Logger.recordOutput("VisionBenchmark/Transport/WhacknetAvgDataAgeSecs", avgWhacknetAge);
+      Logger.recordOutput(
+          "VisionBenchmark/Transport/WhacknetCurrentJitterSecs", currentWhacknetJitter);
+      Logger.recordOutput("VisionBenchmark/Transport/WhacknetAvgJitterSecs", avgWhacknetJitter);
+    }
+
+    // Process all detections received this frame from the Whacknet transport
+    for (int i = 0; i < whacknetInputs.observations.length; i++) {
+      int id = whacknetInputs.observations[i].cameraId();
       if (id >= 0 && id <= maxCameraId && cameraActiveFlags[id]) {
         lastTimestamps[id] = currentTime;
       }
 
       // Single-tag detections are often unreliable for field position
-      if (inputs.observations[i].tagCount() <= 1) {
+      if (whacknetInputs.observations[i].tagCount() <= 1) {
         continue;
       }
 
       // Update Drive Subsystem with refined pose
-      stdVector.set(0, 0, inputs.observations[i].stdDevX());
-      stdVector.set(1, 0, inputs.observations[i].stdDevY());
-      stdVector.set(2, 0, inputs.observations[i].stdDevRot());
+      stdVector.set(0, 0, whacknetInputs.observations[i].stdDevX());
+      stdVector.set(1, 0, whacknetInputs.observations[i].stdDevY());
+      stdVector.set(2, 0, whacknetInputs.observations[i].stdDevRot());
 
       // drive.addVisionMeasurement(
-      //     inputs.observations[i].visionPose(), inputs.observations[i].timestamp(), stdVector);
+      //     whacknetInputs.observations[i].visionPose(),
+      //     whacknetInputs.observations[i].timestamp(),
+      //     stdVector);
     }
 
     // Check for offline cameras
     for (int id = 0; id <= maxCameraId; id++) {
       if (!cameraActiveFlags[id]) continue;
 
+      // Because we removed empty heartbeats, an "offline" camera might just be
+      // one that hasn't seen an AprilTag recently. We use 'seenPaths' for that.
       boolean isOffline = (currentTime - lastTimestamps[id]) > OFFLINE_TIMEOUT_SECONDS;
 
       // Update Alerts for drivers and log status
@@ -133,7 +213,7 @@ public class Vision extends SubsystemBase {
   }
 
   /**
-   * Returns whether or not the subsystem is healthy
+   * Returns whether or not the subsystem is healthy.
    *
    * @return True if the subsystem is healthy, false otherwise.
    */

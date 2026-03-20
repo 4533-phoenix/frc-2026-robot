@@ -10,6 +10,7 @@ package frc.robot;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOPhoton;
+import frc.robot.subsystems.vision.VisionIOWhacknet;
 
 /** Declares the robot's subsystems, operator interface devices, and command bindings. */
 public class RobotContainer {
@@ -26,17 +27,17 @@ public class RobotContainer {
     switch (Constants.CURRENT_MODE) {
       case REAL:
         // Real robot, instantiate hardware IO implementations
-        vision = new Vision(new VisionIOPhoton());
+        vision = new Vision(new VisionIOPhoton(), new VisionIOWhacknet());
         break;
 
       case SIM:
         // Sim robot, instantiate physics sim IO implementations
-        vision = new Vision(new VisionIO() {});
+        vision = new Vision(new VisionIO() {}, new VisionIO() {});
         break;
 
       default:
         // Replayed robot, disable IO implementations
-        vision = new Vision(new VisionIO() {});
+        vision = new Vision(new VisionIO() {}, new VisionIO() {});
         break;
     }
   }

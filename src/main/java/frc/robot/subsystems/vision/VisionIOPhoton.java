@@ -15,7 +15,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.wpilibj.Timer;
 import frc.robot.subsystems.vision.Vision.VisionObservation;
 import frc.robot.subsystems.vision.VisionConstants.CameraConfig;
 import java.util.ArrayList;
@@ -34,7 +33,6 @@ import org.photonvision.targeting.PhotonTrackedTarget;
  */
 public class VisionIOPhoton implements VisionIO {
   private final List<CameraContext> cameras = new ArrayList<>();
-  private static final Pose2d EMPTY_POSE = new Pose2d();
 
   private static final int MAX_OBSERVATIONS = 64;
   private final VisionObservation[] observationBuffer = new VisionObservation[MAX_OBSERVATIONS];
@@ -62,7 +60,6 @@ public class VisionIOPhoton implements VisionIO {
   public void updateInputs(VisionIOInputs inputs) {
     int count = 0;
     boolean allConnected = true;
-    double now = Timer.getFPGATimestamp();
 
     for (CameraContext ctx : cameras) {
       if (!ctx.camera.isConnected()) {
@@ -72,52 +69,36 @@ public class VisionIOPhoton implements VisionIO {
 
       List<PhotonPipelineResult> results = ctx.camera.getAllUnreadResults();
 
-      // If no new frames arrived this loop, send a heartbeat observation at current time
-      if (results.isEmpty() && count < MAX_OBSERVATIONS) {
-        observationBuffer[count++] = new VisionObservation(EMPTY_POSE, now, ctx.id, 0, 0, 0, 0);
-      } else {
-        for (PhotonPipelineResult result : results) {
-          if (count >= MAX_OBSERVATIONS) break;
+      // Process all frames, only keeping valid pose estimations
+      for (PhotonPipelineResult result : results) {
+        if (count >= MAX_OBSERVATIONS) break;
 
-          if (result.hasTargets()) {
-            Optional<EstimatedRobotPose> estimation =
-                ctx.estimator
-                    .estimateCoprocMultiTagPose(result)
-                    .or(() -> ctx.estimator.estimateLowestAmbiguityPose(result));
+        if (result.hasTargets()) {
+          Optional<EstimatedRobotPose> estimation =
+              ctx.estimator
+                  .estimateCoprocMultiTagPose(result)
+                  .or(() -> ctx.estimator.estimateLowestAmbiguityPose(result));
 
-            if (estimation.isPresent()) {
-              EstimatedRobotPose estimatedPose = estimation.get();
-              Pose2d pose2d = estimatedPose.estimatedPose.toPose2d();
-              List<PhotonTrackedTarget> targets = result.getTargets();
+          if (estimation.isPresent()) {
+            EstimatedRobotPose estimatedPose = estimation.get();
+            Pose2d pose2d = estimatedPose.estimatedPose.toPose2d();
+            List<PhotonTrackedTarget> targets = result.getTargets();
 
-              if (targets.size() == 1 && !isUsableSingleTag(targets.get(0))) {
-                // Log frame metadata but discard pose for single tag ambiguity
-                observationBuffer[count++] =
-                    new VisionObservation(
-                        EMPTY_POSE, result.getTimestampSeconds(), ctx.id, 0, 0, 0, 0);
-                continue;
-              }
-
-              Matrix<N3, N1> stdDevs = getEstimationStdDevs(pose2d, targets);
-              observationBuffer[count++] =
-                  new VisionObservation(
-                      pose2d,
-                      estimatedPose.timestampSeconds,
-                      ctx.id,
-                      targets.size(),
-                      stdDevs.get(0, 0),
-                      stdDevs.get(1, 0),
-                      stdDevs.get(2, 0));
-            } else {
-              // Camera saw targets but couldn't solve pose; log as 0-tag heartbeat
-              observationBuffer[count++] =
-                  new VisionObservation(
-                      EMPTY_POSE, result.getTimestampSeconds(), ctx.id, 0, 0, 0, 0);
+            // Discard pose if it's a single tag that is too ambiguous or far
+            if (targets.size() == 1 && !isUsableSingleTag(targets.get(0))) {
+              continue;
             }
-          } else {
-            // Camera is connected and frame received, but no targets visible
+
+            Matrix<N3, N1> stdDevs = getEstimationStdDevs(pose2d, targets);
             observationBuffer[count++] =
-                new VisionObservation(EMPTY_POSE, result.getTimestampSeconds(), ctx.id, 0, 0, 0, 0);
+                new VisionObservation(
+                    pose2d,
+                    estimatedPose.timestampSeconds,
+                    ctx.id,
+                    targets.size(),
+                    stdDevs.get(0, 0),
+                    stdDevs.get(1, 0),
+                    stdDevs.get(2, 0));
           }
         }
       }
