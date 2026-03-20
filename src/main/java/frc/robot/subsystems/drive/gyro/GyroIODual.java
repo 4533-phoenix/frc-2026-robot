@@ -33,7 +33,7 @@ public class GyroIODual implements GyroIO {
   private final GyroIOInputs navxIn = new GyroIOInputs();
   private final GyroIOInputs canIn = new GyroIOInputs();
 
-  private Angle driftOffset = Radians.zero();
+  private volatile Angle driftOffset = Radians.zero();
 
   public GyroIODual() {
     navx.setWhacknetEnabled(false);
