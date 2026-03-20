@@ -58,4 +58,10 @@ public interface GyroIO {
 
   /** Clears all faults and warnings. */
   public default void clearFaults() {}
+
+  /**
+   * Sets whether this gyro should broadcast telemetry to Whacknet. Useful for preventing duplicate
+   * broadcasts in Dual Gyro setups.
+   */
+  public default void setWhacknetEnabled(boolean enabled) {}
 }

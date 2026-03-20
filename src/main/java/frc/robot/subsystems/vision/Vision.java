@@ -94,9 +94,6 @@ public class Vision extends SubsystemBase {
     io.updateInputs(inputs);
     Logger.processInputs("Vision", inputs);
 
-    // Broadcast current robot heading to native vision pipeline for improved pose estimation
-    io.broadcastRobotHeading(drive.getRotation());
-
     double currentTime = Timer.getTimestamp();
 
     // Process all detections received this frame

@@ -87,9 +87,12 @@ public class Whacknet {
   /**
    * Broadcasts the current robot heading to the vision pipeline for pose estimation.
    *
-   * @param angle Robot angle in radians.
+   * @param timestamp Robot timestamp in microseconds.
+   * @param heading Robot angle in radians.
+   * @param velocity Robot angular velocity in radians per second.
    */
-  private static native void broadcastRobotHeading(double angle);
+  private static native void broadcastRobotTelemetry(
+      long timestamp, double heading, double velocity);
 
   /**
    * Transfers packets from the native queue into the shared ByteBuffer.
@@ -126,11 +129,13 @@ public class Whacknet {
   /**
    * Broadcasts the robot heading to the native library.
    *
-   * @param angle Robot angle in radians.
+   * @param timestamp Robot timestamp in microseconds.
+   * @param heading Robot angle in radians.
+   * @param velocity Robot angular velocity in radians per second.
    */
-  public void broadcast(double angle) {
+  public void broadcast(long timestamp, double heading, double velocity) {
     if (!loaded) return;
-    broadcastRobotHeading(angle);
+    broadcastRobotTelemetry(timestamp, heading, velocity);
   }
 
   /**

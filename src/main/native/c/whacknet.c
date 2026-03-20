@@ -52,6 +52,12 @@ typedef struct __attribute__((packed)) {
   uint8_t padding[6];
 } VisionMeasurement;
 
+typedef struct __attribute__((packed)) {
+  uint64_t fpga_timestamp;
+  double heading;
+  double angular_velocity;
+} GyroPacket;
+
 // Cache-line-padded ring buffer
 typedef struct {
   // We use atomic indices + memcpy to ensure ordering
@@ -287,12 +293,13 @@ JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_startServer(JNIEnv *env, jcl
   broadcast_fd = b_fd; // Only set global once fully ready
 }
 
-JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_broadcastRobotHeading(JNIEnv *env, jclass cls, jdouble angle)
+JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_broadcastRobotTelemetry(JNIEnv *env, jclass cls, jlong timestamp, jdouble heading, jdouble velocity)
 {
   if (likely(broadcast_fd != -1)
 )
 {
-  sendto(broadcast_fd, &angle, sizeof(double), 0, (struct sockaddr *)&broadcast_addr, sizeof(broadcast_addr));
+  GyroPacket pkt = {(uint64_t)timestamp, heading, velocity};
+  sendto(broadcast_fd, &pkt, sizeof(GyroPacket), 0, (struct sockaddr *)&broadcast_addr, sizeof(broadcast_addr));
 }
 }
 

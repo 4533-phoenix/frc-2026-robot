@@ -14,8 +14,11 @@ import static frc.robot.subsystems.drive.DriveConstants.ODOMETRY_FREQUENCY;
 
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.subsystems.drive.SparkOdometryThread;
 import frc.robot.subsystems.drive.SparkOdometryThread.PrimitiveQueue;
+import frc.robot.util.Whacknet;
 import java.util.ArrayList;
 
 /**
@@ -29,6 +32,7 @@ public class GyroIONavX implements GyroIO {
   private final AHRS navX;
   private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
   private final PrimitiveQueue yawTimestampQueue;
+  private boolean whacknetEnabled = true;
 
   /**
    * Creates a new GyroIONavX.
@@ -41,18 +45,18 @@ public class GyroIONavX implements GyroIO {
     SparkOdometryThread.getInstance()
         .registerSignal(
             () -> {
-              double rawAngle = navX.getAngle();
-              double rate = navX.getRate();
-              yawPositionQueue.offer(rawAngle + (rate * 0.001));
+              double yawPosition = getRawYawRad();
+              double yawVelocity = getRawVelocityRadPerSec();
+              yawPositionQueue.offer(yawPosition + (yawVelocity * 0.001));
+
+              if (whacknetEnabled && Whacknet.getInstance().isLoaded()) {
+                Whacknet.getInstance()
+                    .broadcast(RobotController.getFPGATime(), yawPosition, yawVelocity);
+              }
             });
     navX.zeroYaw();
   }
 
-  /**
-   * Updates the set of loggable inputs, reading from the high-frequency queues.
-   *
-   * @param inputs The inputs object to update.
-   */
   @Override
   public void updateInputs(GyroIOInputs inputs) {
     inputs.connected = navX.isConnected();
@@ -82,10 +86,23 @@ public class GyroIONavX implements GyroIO {
 
     for (int i = 0; i < count; i++) {
       inputs.odometryYawTimestamps[i] = yawTimestampQueue.data[i];
-      inputs.odometryYawPositions[i] = Math.toRadians(-yawPositionQueue.data[i]);
+      inputs.odometryYawPositions[i] = yawPositionQueue.data[i];
     }
 
     yawPositionQueue.clear();
     yawTimestampQueue.clear();
+  }
+
+  @Override
+  public void setWhacknetEnabled(boolean enabled) {
+    this.whacknetEnabled = enabled;
+  }
+
+  public double getRawYawRad() {
+    return Units.degreesToRadians(-navX.getAngle());
+  }
+
+  public double getRawVelocityRadPerSec() {
+    return Units.degreesToRadians(-navX.getRate());
   }
 }

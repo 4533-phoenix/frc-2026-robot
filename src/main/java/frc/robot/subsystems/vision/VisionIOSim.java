@@ -101,9 +101,4 @@ public class VisionIOSim implements VisionIO {
               thetaStd);
     }
   }
-
-  @Override
-  public void broadcastRobotHeading(Rotation2d heading) {
-    // No-op in simulation
-  }
 }

@@ -13,6 +13,9 @@ import static frc.robot.subsystems.drive.DriveConstants.*;
 import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.RobotController;
+import frc.robot.subsystems.drive.SparkOdometryThread;
+import frc.robot.util.Whacknet;
 import java.util.ArrayList;
 import java.util.List;
 import org.littletonrobotics.junction.Logger;
@@ -32,7 +35,24 @@ public class GyroIODual implements GyroIO {
 
   private Angle driftOffset = Radians.zero();
 
-  /** Updates the combined gyro inputs and manages drift compensation. */
+  public GyroIODual() {
+    navx.setWhacknetEnabled(false);
+    canandgyro.setWhacknetEnabled(false);
+
+    SparkOdometryThread.getInstance()
+        .registerSignal(
+            () -> {
+              if (Whacknet.getInstance().isLoaded()) {
+                double rawYawRad = navx.getRawYawRad();
+                double velocityRadPerSec = navx.getRawVelocityRadPerSec();
+                double correctedYaw = rawYawRad + driftOffset.in(Radians);
+
+                Whacknet.getInstance()
+                    .broadcast(RobotController.getFPGATime(), correctedYaw, velocityRadPerSec);
+              }
+            });
+  }
+
   @Override
   public void updateInputs(GyroIOInputs inputs) {
     // Update inputs from both physical sensors

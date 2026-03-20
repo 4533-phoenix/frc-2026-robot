@@ -12,7 +12,6 @@ import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Timer;
@@ -151,7 +150,4 @@ public class VisionIOPhoton implements VisionIO {
         && target.getBestCameraToTarget().getTranslation().getNorm()
             < SINGLE_TAG_POSE_CUTOFF.in(Meters);
   }
-
-  @Override
-  public void broadcastRobotHeading(Rotation2d heading) {}
 }

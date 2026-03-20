@@ -7,7 +7,6 @@
 
 package frc.robot.subsystems.vision;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.subsystems.vision.Vision.VisionObservation;
 import org.littletonrobotics.junction.AutoLog;
 
@@ -35,11 +34,4 @@ public interface VisionIO {
    * @param inputs The inputs object to update.
    */
   public default void updateInputs(VisionIOInputs inputs) {}
-
-  /**
-   * Broadcasts the current robot heading to the vision system to assist in 3D pose estimation.
-   *
-   * @param heading The current robot heading.
-   */
-  public default void broadcastRobotHeading(Rotation2d heading) {}
 }

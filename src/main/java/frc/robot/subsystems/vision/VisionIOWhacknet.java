@@ -9,8 +9,6 @@ package frc.robot.subsystems.vision;
 
 import static frc.robot.subsystems.vision.VisionConstants.*;
 
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.subsystems.vision.Vision.VisionObservation;
 import frc.robot.util.Whacknet;
 
@@ -57,16 +55,5 @@ public class VisionIOWhacknet implements VisionIO {
                   packet.getStdY(),
                   packet.getStdRot());
         });
-  }
-
-  /**
-   * Broadcasts the current robot heading back to the native vision pipeline to assist with pose
-   * estimation.
-   *
-   * @param heading The current robot heading.
-   */
-  @Override
-  public void broadcastRobotHeading(Rotation2d heading) {
-    whacknet.broadcast(MathUtil.angleModulus(heading.getRadians()));
   }
 }

@@ -12,8 +12,11 @@ import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import com.reduxrobotics.sensors.canandgyro.Canandgyro;
 import com.reduxrobotics.sensors.canandgyro.CanandgyroSettings;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.subsystems.drive.SparkOdometryThread;
 import frc.robot.subsystems.drive.SparkOdometryThread.PrimitiveQueue;
+import frc.robot.util.Whacknet;
 import java.util.ArrayList;
 
 /**
@@ -27,6 +30,7 @@ public class GyroIOCanAndGyro implements GyroIO {
   private final Canandgyro canandgyro = new Canandgyro(IMU_CAN_ID);
   private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
   private final PrimitiveQueue yawTimestampQueue;
+  private boolean whacknetEnabled = true;
 
   /** Creates a new GyroIOCanAndGyro. */
   public GyroIOCanAndGyro() {
@@ -41,17 +45,17 @@ public class GyroIOCanAndGyro implements GyroIO {
     SparkOdometryThread.getInstance()
         .registerSignal(
             () -> {
-              double rawYaw = canandgyro.getYaw();
-              double velocity = canandgyro.getAngularVelocityYaw();
-              yawPositionQueue.offer(rawYaw + (velocity * 0.0025));
+              double yawPosition = getRawYawRad();
+              double yawVelocity = getRawVelocityRadPerSec();
+              yawPositionQueue.offer(yawPosition + (yawVelocity * 0.0025));
+
+              if (whacknetEnabled && Whacknet.getInstance().isLoaded()) {
+                Whacknet.getInstance()
+                    .broadcast(RobotController.getFPGATime(), yawPosition, yawVelocity);
+              }
             });
   }
 
-  /**
-   * Updates the set of loggable inputs, reading from the high-frequency queues.
-   *
-   * @param inputs The inputs object to update.
-   */
   @Override
   public void updateInputs(GyroIOInputs inputs) {
     inputs.connected = canandgyro.isConnected();
@@ -81,7 +85,7 @@ public class GyroIOCanAndGyro implements GyroIO {
 
     for (int i = 0; i < count; i++) {
       inputs.odometryYawTimestamps[i] = yawTimestampQueue.data[i];
-      inputs.odometryYawPositions[i] = yawPositionQueue.data[i] * 2 * Math.PI;
+      inputs.odometryYawPositions[i] = yawPositionQueue.data[i];
     }
 
     yawPositionQueue.clear();
@@ -91,5 +95,18 @@ public class GyroIOCanAndGyro implements GyroIO {
   @Override
   public void clearFaults() {
     canandgyro.clearStickyFaults();
+  }
+
+  @Override
+  public void setWhacknetEnabled(boolean enabled) {
+    this.whacknetEnabled = enabled;
+  }
+
+  public double getRawYawRad() {
+    return Units.rotationsToRadians(canandgyro.getYaw());
+  }
+
+  public double getRawVelocityRadPerSec() {
+    return Units.rotationsToRadians(canandgyro.getAngularVelocityYaw());
   }
 }
