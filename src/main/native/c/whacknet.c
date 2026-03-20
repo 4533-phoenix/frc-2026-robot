@@ -206,7 +206,7 @@ static void* vision_worker_thread(void *arg) {
 
 // --- JNI EXPORTS ---
 
-JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_startServer(JNIEnv *env, jclass cls, jint port)
+JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_startServer(JNIEnv *env, jclass cls, jint rport, jint bport)
 {
   int listenfd;
   struct sockaddr_in servaddr;
@@ -232,7 +232,7 @@ JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_startServer(JNIEnv *env, jcl
     perror("[Whacknet-C] Warning: SO_TIMESTAMPNS failed");
 
   servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-  servaddr.sin_port = htons(port);
+  servaddr.sin_port = htons(rport);
   servaddr.sin_family = AF_INET;
 
   // Bind server address to socket descriptor
@@ -242,7 +242,7 @@ JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_startServer(JNIEnv *env, jcl
     close(listenfd);
     return;
   }
-  printf("[Whacknet-C] Ready to receive on port %d\n", port);
+  printf("[Whacknet-C] Ready to receive on port %d\n", rport);
 
   // Use malloc so the FD pointer persists for the thread
   int *arg = malloc(sizeof(int));
@@ -288,7 +288,7 @@ JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_startServer(JNIEnv *env, jcl
 
   memset(&broadcast_addr, 0, sizeof(broadcast_addr));
   broadcast_addr.sin_family = AF_INET;
-  broadcast_addr.sin_port = htons(7002);
+  broadcast_addr.sin_port = htons(bport);
   broadcast_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
   broadcast_fd = b_fd; // Only set global once fully ready
 }

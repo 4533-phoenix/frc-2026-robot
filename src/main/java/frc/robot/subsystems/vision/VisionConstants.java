@@ -89,7 +89,9 @@ public class VisionConstants {
   public static final double OFFLINE_TIMEOUT_SECONDS = 1.0;
 
   /** Port for communication between Java and the native vision server. */
-  public static final int SERVER_PORT = 7001;
+  public static final int SERVER_RPORT = 7001;
+
+  public static final int SERVER_BPORT = 7002;
 
   /**
    * Standard deviations for vision measurements when the data is not valid or should be ignored.

@@ -82,7 +82,7 @@ public class Whacknet {
    *
    * @param port The port to bind the server to.
    */
-  private static native void startServer(int port);
+  private static native void startServer(int rport, int bport);
 
   /**
    * Broadcasts the current robot heading to the vision pipeline for pose estimation.
@@ -108,14 +108,15 @@ public class Whacknet {
   /**
    * Starts the native vision server.
    *
-   * @param port The port to start the server on.
+   * @param rport The port to start the receive server on.
+   * @param bport The port to start the broadcast server on.
    */
-  public void start(int port) {
+  public void start(int rport, int bport) {
     if (!loaded) {
       System.err.println("[Whacknet-java] Cannot start server: native library not loaded.");
       return;
     }
-    startServer(port);
+    startServer(rport, bport);
 
     // Tell the HAL we have a custom vision system
     HAL.report(tResourceType.kResourceType_Framework, 4533);
@@ -123,7 +124,8 @@ public class Whacknet {
     HAL.report(tResourceType.kResourceType_Language, tInstances.kLanguage_CPlusPlus);
     HAL.report(tResourceType.kResourceType_Language, tInstances.kLanguage_Rust);
 
-    System.out.println("[Whacknet-java] Vision server started on port " + port);
+    System.out.println("[Whacknet-java] Vision server started on port " + rport);
+    System.out.println("[Whacknet-java] Broadcast server started on port " + bport);
   }
 
   /**

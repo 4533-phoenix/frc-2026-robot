@@ -26,7 +26,7 @@ public class VisionIOWhacknet implements VisionIO {
   /** Creates a new VisionIOChalkydri and starts the native vision server. */
   public VisionIOWhacknet() {
     whacknet = Whacknet.getInstance();
-    whacknet.start(SERVER_PORT);
+    whacknet.start(SERVER_RPORT, SERVER_BPORT);
   }
 
   /**

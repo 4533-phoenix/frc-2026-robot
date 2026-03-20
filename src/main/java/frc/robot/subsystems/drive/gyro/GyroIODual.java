@@ -43,9 +43,17 @@ public class GyroIODual implements GyroIO {
         .registerSignal(
             () -> {
               if (Whacknet.getInstance().isLoaded()) {
-                double rawYawRad = navx.getRawYawRad();
-                double velocityRadPerSec = navx.getRawVelocityRadPerSec();
-                double correctedYaw = rawYawRad + driftOffset.in(Radians);
+                double correctedYaw;
+                double velocityRadPerSec;
+
+                if (navxIn.connected) {
+                  double rawYawRad = navx.getRawYawRad();
+                  velocityRadPerSec = navx.getRawVelocityRadPerSec();
+                  correctedYaw = rawYawRad + driftOffset.in(Radians);
+                } else {
+                  correctedYaw = canandgyro.getRawYawRad();
+                  velocityRadPerSec = canandgyro.getRawVelocityRadPerSec();
+                }
 
                 Whacknet.getInstance()
                     .broadcast(RobotController.getFPGATime(), correctedYaw, velocityRadPerSec);
