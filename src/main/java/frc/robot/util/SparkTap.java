@@ -409,7 +409,7 @@ public class SparkTap {
      *
      * <p>This code is affected by both positionConversionFactor and velocityConversionFactor which
      * both have to be the same units for the latency compensation to be accurate. If they are
-     * different, the extrapolation will be incorrect.
+     * different, the extrapolation will be incorrect. Also make sure the velocity is unit/second.
      *
      * @return The mathematically time-aligned position in Rotations.
      */
@@ -423,7 +423,7 @@ public class SparkTap {
           double pos = Float.intBitsToFloat((int) (data >> 32));
           double vel = Float.intBitsToFloat((int) data);
           double dt = Math.min(Math.max(0, (RobotController.getFPGATime() - ts) / 1.0e6), 0.1);
-          lastLatCompPos = pos + ((vel / 60.0) * dt);
+          lastLatCompPos = pos + (vel * dt);
         }
       }
       return lastLatCompPos;
