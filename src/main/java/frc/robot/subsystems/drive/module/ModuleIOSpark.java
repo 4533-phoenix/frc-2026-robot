@@ -10,7 +10,7 @@
 package frc.robot.subsystems.drive.module;
 
 import static edu.wpi.first.units.Units.*;
-import static frc.lib.SparkUtil.*;
+import static frc.lib.util.SparkUtil.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import com.ctre.phoenix6.BaseStatusSignal;
@@ -34,10 +34,10 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
+import frc.lib.lowlevel.SparkTap;
+import frc.lib.lowlevel.SparkTap.MotorView;
 import frc.robot.subsystems.drive.SparkOdometryThread;
 import frc.robot.subsystems.drive.SparkOdometryThread.PrimitiveQueue;
-import frc.robot.util.SparkTap;
-import frc.robot.util.SparkTap.MotorView;
 
 /**
  * Real IO implementation for a swerve drive module using Spark Max motor controllers and a CANcoder

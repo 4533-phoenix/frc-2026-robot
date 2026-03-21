@@ -36,16 +36,12 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.wpilibj.Alert;
-import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.lib.FaultUtil;
-import frc.robot.Constants;
-import frc.robot.Constants.Mode;
+import frc.lib.monitors.GyroHealthMonitor;
 import frc.robot.subsystems.drive.gyro.GyroIO;
 import frc.robot.subsystems.drive.gyro.GyroIOInputsAutoLogged;
 import frc.robot.subsystems.drive.module.Module;
@@ -68,11 +64,10 @@ public class Drive extends SubsystemBase {
 
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
+  private final GyroHealthMonitor gyroHealthMonitor = new GyroHealthMonitor();
+
   private final Module[] modules = new Module[4]; // FL, FR, BL, BR
   private final SysIdRoutine sysId;
-  private final Alert gyroDisconnectedAlert =
-      new Alert("Disconnected gyro, using kinematics as fallback.", AlertType.kError);
-  private final Alert gyroFaultAlert = new Alert("Gyro fault detected.", AlertType.kError);
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(MODULE_TRANSLATIONS);
   private Rotation2d rawGyroRotation = Rotation2d.kZero;
@@ -234,20 +229,8 @@ public class Drive extends SubsystemBase {
       poseEstimator.updateWithTime(timestamp, rawGyroRotation, odometryPositionsBuffer);
     }
 
-    // Update gyro alert
-    boolean gyroConnected = gyroInputs.connected && Constants.CURRENT_MODE != Mode.SIM;
-    gyroDisconnectedAlert.set(!gyroConnected);
-
     // Update gyro fault alert
-    if (gyroConnected) {
-      gyroFaultAlert.set(!gyroInputs.healthy);
-      if (!gyroInputs.healthy) {
-        gyroFaultAlert.setText(
-            FaultUtil.getArrayString("Gyro Faults: ", gyroInputs.unhealthyReasons));
-      }
-    } else {
-      gyroFaultAlert.set(false);
-    }
+    gyroHealthMonitor.update(gyroInputs);
   }
 
   /**

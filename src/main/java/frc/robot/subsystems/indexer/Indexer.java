@@ -10,11 +10,10 @@ package frc.robot.subsystems.indexer;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.subsystems.indexer.IndexerConstants.*;
 
-import edu.wpi.first.wpilibj.Alert;
-import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.lib.FaultUtil;
+import frc.lib.monitors.SparkHealthMonitor;
+
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -27,6 +26,7 @@ import org.littletonrobotics.junction.Logger;
 public class Indexer extends SubsystemBase {
   private final IndexerIO io;
   private final IndexerIOInputsAutoLogged inputs = new IndexerIOInputsAutoLogged();
+  private final SparkHealthMonitor healthMonitor = new SparkHealthMonitor("Indexer");
 
   /** High-level goals for the indexer. */
   public enum Goal {
@@ -37,15 +37,6 @@ public class Indexer extends SubsystemBase {
   }
 
   @AutoLogOutput private Goal goal = Goal.STOP;
-
-  private final Alert disconnectedAlert = new Alert("Indexer motor disconnected", AlertType.kError);
-  private final Alert faultAlert = new Alert("Indexer motor fault detected", AlertType.kError);
-  private final Alert warningAlert =
-      new Alert("Indexer motor warning detected", AlertType.kWarning);
-  private final Alert stickyFaultAlert =
-      new Alert("Indexer motor sticky fault detected", AlertType.kInfo);
-  private final Alert stickyWarningAlert =
-      new Alert("Indexer motor sticky warning detected", AlertType.kInfo);
 
   /**
    * Creates a new Indexer subsystem.
@@ -70,41 +61,7 @@ public class Indexer extends SubsystemBase {
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Indexer", inputs);
-    disconnectedAlert.set(!inputs.connected);
-
-    // Check for faults
-    if (inputs.connected) {
-      faultAlert.set(!inputs.healthy);
-      if (!inputs.healthy) {
-        faultAlert.setText(
-            FaultUtil.getArrayString(
-                "Indexer Motor Faults: ", FaultUtil.getSparkFaults(inputs.status[0])));
-      }
-      warningAlert.set(inputs.status[2] != 0);
-      if (inputs.status[2] != 0) {
-        warningAlert.setText(
-            FaultUtil.getArrayString(
-                "Indexer Motor Warnings: ", FaultUtil.getSparkWarnings(inputs.status[2])));
-      }
-
-      stickyFaultAlert.set(inputs.status[1] != 0);
-      if (inputs.status[1] != 0) {
-        stickyFaultAlert.setText(
-            FaultUtil.getArrayString(
-                "Indexer Motor Sticky Faults: ", FaultUtil.getSparkFaults(inputs.status[1])));
-      }
-      stickyWarningAlert.set(inputs.status[3] != 0);
-      if (inputs.status[3] != 0) {
-        stickyWarningAlert.setText(
-            FaultUtil.getArrayString(
-                "Indexer Motor Sticky Warnings: ", FaultUtil.getSparkWarnings(inputs.status[3])));
-      }
-    } else {
-      faultAlert.set(false);
-      warningAlert.set(false);
-      stickyFaultAlert.set(false);
-      stickyWarningAlert.set(false);
-    }
+    healthMonitor.update(inputs.connected, inputs.status);
 
     switch (goal) {
       case RUNNING -> io.setVoltage(DEFAULT_VOLTAGE);

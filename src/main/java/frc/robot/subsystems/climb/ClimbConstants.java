@@ -15,7 +15,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Force;
 import edu.wpi.first.units.measure.Mass;
 import edu.wpi.first.units.measure.Voltage;
-import frc.lib.ExtraMotors;
+import frc.lib.hardware.ExtraMotors;
 
 /**
  * Hardware and tuning constants for the climb subsystem.

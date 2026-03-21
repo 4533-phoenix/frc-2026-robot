@@ -100,7 +100,7 @@ while (likely(atomic_load_explicit(&running, memory_order_relaxed))) {
 return NULL;
 }
 
-JNIEXPORT jobject JNICALL Java_frc_robot_util_SparkTap_initNative(JNIEnv *env,
+JNIEXPORT jobject JNICALL Java_frc_lib_lowlevel_SparkTap_initNative(JNIEnv *env,
   jclass clazz) {
 pthread_mutex_lock(&init_mutex);
 if (shared_buffer == NULL) {

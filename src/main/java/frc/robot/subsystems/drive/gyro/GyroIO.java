@@ -12,6 +12,8 @@ package frc.robot.subsystems.drive.gyro;
 import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.units.measure.*;
+import frc.lib.hardware.GyroType;
+
 import org.littletonrobotics.junction.AutoLog;
 
 /** Interface for the gyroscope input/output abstraction. */
@@ -31,8 +33,14 @@ public interface GyroIO {
     /** Whether the gyro is healthy. */
     public boolean healthy = false;
 
-    /** Why the gyro is not healthy as an array of strings. */
-    public String[] unhealthyReasons = new String[] {};
+    /** The types of gyros in use. */
+    public GyroType[] types = new GyroType[] {};
+
+    /** The active faults associated with the gyro. */
+    public int[] activeFaults = new int[] {};
+
+    /** The sticky faults associated with the gyro. */
+    public int[] stickyFaults = new int[] {};
 
     /**
      * Timestamps for high-frequency yaw measurements used for odometry.

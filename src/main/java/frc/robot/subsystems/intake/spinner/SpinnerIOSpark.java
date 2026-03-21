@@ -8,7 +8,7 @@
 package frc.robot.subsystems.intake.spinner;
 
 import static edu.wpi.first.units.Units.*;
-import static frc.lib.SparkUtil.*;
+import static frc.lib.util.SparkUtil.*;
 import static frc.robot.subsystems.intake.spinner.SpinnerConstants.*;
 
 import com.revrobotics.PersistMode;
@@ -19,8 +19,8 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Voltage;
-import frc.robot.util.SparkTap;
-import frc.robot.util.SparkTap.MotorView;
+import frc.lib.lowlevel.SparkTap;
+import frc.lib.lowlevel.SparkTap.MotorView;
 
 /**
  * Real IO implementation for the intake using REV SparkMax controllers.

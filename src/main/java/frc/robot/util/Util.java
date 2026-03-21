@@ -32,6 +32,11 @@ public class Util {
           .getBooleanTopic(MATCH_MODE_KEY)
           .publish();
 
+  // Initialize the match mode publisher
+  static {
+    matchModePublisher.set(false);
+  }
+
   /**
    * Evaluates the game specific message to determine if the hub is enabled at a given match time.
    *

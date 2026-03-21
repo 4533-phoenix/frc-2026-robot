@@ -206,7 +206,7 @@ static void* vision_worker_thread(void *arg) {
 
 // --- JNI EXPORTS ---
 
-JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_startServer(JNIEnv *env, jclass cls, jint rport, jint bport)
+JNIEXPORT void JNICALL Java_frc_lib_lowlevel_Whacknet_startServer(JNIEnv *env, jclass cls, jint rport, jint bport)
 {
   int listenfd;
   struct sockaddr_in servaddr;
@@ -293,7 +293,7 @@ JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_startServer(JNIEnv *env, jcl
   broadcast_fd = b_fd; // Only set global once fully ready
 }
 
-JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_broadcastRobotTelemetry(JNIEnv *env, jclass cls, jlong timestamp, jdouble heading, jdouble velocity)
+JNIEXPORT void JNICALL Java_frc_lib_lowlevel_Whacknet_broadcastRobotTelemetry(JNIEnv *env, jclass cls, jlong timestamp, jdouble heading, jdouble velocity)
 {
   if (likely(broadcast_fd != -1)
 )
@@ -304,7 +304,7 @@ JNIEXPORT void JNICALL Java_frc_robot_util_Whacknet_broadcastRobotTelemetry(JNIE
 }
 
 // Gets all packets received and waiting in queue
-JNIEXPORT jint JNICALL Java_frc_robot_util_Whacknet_drainPackets(JNIEnv *env,
+JNIEXPORT jint JNICALL Java_frc_lib_lowlevel_Whacknet_drainPackets(JNIEnv *env,
   jclass cls, jobject byte_buffer, jlong current_hal_time) {
 VisionMeasurement *out_buffer =
     (VisionMeasurement*) (*env)->GetDirectBufferAddress(env, byte_buffer);

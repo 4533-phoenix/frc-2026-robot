@@ -14,10 +14,10 @@ import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.RobotController;
+import frc.lib.hardware.GyroType;
+import frc.lib.lowlevel.Whacknet;
 import frc.robot.subsystems.drive.SparkOdometryThread;
-import frc.robot.util.Whacknet;
-import java.util.ArrayList;
-import java.util.List;
+
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -34,6 +34,10 @@ public class GyroIODual implements GyroIO {
   private final GyroIOInputs canIn = new GyroIOInputs();
 
   private volatile Angle driftOffset = Radians.zero();
+
+  private final GyroType[] combinedTypes = new GyroType[] {GyroType.NAVX, GyroType.CANANDGYRO};
+  private final int[] combinedActiveFaults = new int[2];
+  private final int[] combinedStickyFaults = new int[2];
 
   public GyroIODual() {
     navx.setWhacknetEnabled(false);
@@ -117,23 +121,13 @@ public class GyroIODual implements GyroIO {
 
     // Health
     inputs.healthy = navxIn.healthy && canIn.healthy;
-    if (!inputs.healthy) {
-      List<String> reasons = new ArrayList<>();
-      if (!navxIn.healthy) {
-        for (String r : navxIn.unhealthyReasons) {
-          reasons.add("NavX: " + r);
-        }
-      }
-
-      if (!canIn.healthy) {
-        for (String r : canIn.unhealthyReasons) {
-          reasons.add("CanAndGyro: " + r);
-        }
-      }
-      inputs.unhealthyReasons = reasons.toArray(new String[0]);
-    } else if (inputs.unhealthyReasons.length > 0) {
-      inputs.unhealthyReasons = new String[0];
-    }
+    combinedActiveFaults[0] = navxIn.activeFaults[0];
+    combinedStickyFaults[0] = navxIn.stickyFaults[0];
+    combinedActiveFaults[1] = canIn.activeFaults[0];
+    combinedStickyFaults[1] = canIn.stickyFaults[0];
+    inputs.activeFaults = combinedActiveFaults;
+    inputs.stickyFaults = combinedStickyFaults;
+    inputs.types = combinedTypes;
 
     // Log the current drift offset
     Logger.recordOutput("Drive/Gyro/DriftOffset", driftOffset);

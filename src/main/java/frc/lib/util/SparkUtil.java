@@ -7,7 +7,7 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-package frc.lib;
+package frc.lib.util;
 
 import com.revrobotics.REVLibError;
 import com.revrobotics.spark.SparkBase;

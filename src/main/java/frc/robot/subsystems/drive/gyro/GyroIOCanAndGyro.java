@@ -14,10 +14,10 @@ import com.reduxrobotics.sensors.canandgyro.Canandgyro;
 import com.reduxrobotics.sensors.canandgyro.CanandgyroSettings;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.RobotController;
+import frc.lib.hardware.GyroType;
+import frc.lib.lowlevel.Whacknet;
 import frc.robot.subsystems.drive.SparkOdometryThread;
 import frc.robot.subsystems.drive.SparkOdometryThread.PrimitiveQueue;
-import frc.robot.util.Whacknet;
-import java.util.ArrayList;
 
 /**
  * IO implementation for the Redux Robotics Canandgyro.
@@ -27,18 +27,20 @@ import java.util.ArrayList;
  * the {@link SparkOdometryThread} for accurate, high-frequency odometry.
  */
 public class GyroIOCanAndGyro implements GyroIO {
-  private final Canandgyro canandgyro = new Canandgyro(IMU_CAN_ID);
+  private final Canandgyro canAndGyro = new Canandgyro(IMU_CAN_ID);
   private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
   private final PrimitiveQueue yawTimestampQueue;
   private boolean whacknetEnabled = true;
+
+  private final GyroType[] types = new GyroType[] {GyroType.CANANDGYRO};
 
   /** Creates a new GyroIOCanAndGyro. */
   public GyroIOCanAndGyro() {
     final CanandgyroSettings settings = new CanandgyroSettings();
     settings.setYawFramePeriod(1 / ODOMETRY_FREQUENCY.in(Hertz));
     settings.setAngularVelocityFramePeriod(1 / ODOMETRY_FREQUENCY.in(Hertz));
-    canandgyro.setSettings(settings);
-    canandgyro.setYaw(0.0);
+    canAndGyro.setSettings(settings);
+    canAndGyro.setYaw(0.0);
 
     // Register signals with the asynchronous odometry thread
     yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
@@ -58,23 +60,14 @@ public class GyroIOCanAndGyro implements GyroIO {
 
   @Override
   public void updateInputs(GyroIOInputs inputs) {
-    inputs.connected = canandgyro.isConnected();
-    inputs.yawPosition = Rotations.of(canandgyro.getYaw());
-    inputs.yawVelocity = RotationsPerSecond.of(canandgyro.getAngularVelocityYaw());
-    inputs.healthy = inputs.connected && !canandgyro.isCalibrating();
+    inputs.connected = canAndGyro.isConnected();
+    inputs.yawPosition = Rotations.of(canAndGyro.getYaw());
+    inputs.yawVelocity = RotationsPerSecond.of(canAndGyro.getAngularVelocityYaw());
+    inputs.healthy = inputs.connected && !canAndGyro.isCalibrating() && canAndGyro.getStickyFaults().faultBitField() == 0;
 
-    if (!inputs.healthy) {
-      ArrayList<String> reasons = new ArrayList<>();
-      if (canandgyro.isCalibrating()) {
-        reasons.add("Calibrating");
-      }
-      if (!canandgyro.isConnected()) {
-        reasons.add("Disconnected");
-      }
-      inputs.unhealthyReasons = reasons.toArray(new String[0]);
-    } else if (inputs.unhealthyReasons.length > 0) {
-      inputs.unhealthyReasons = new String[0];
-    }
+    inputs.activeFaults[0] = canAndGyro.getActiveFaults().faultBitField();
+    inputs.stickyFaults[0] = canAndGyro.getStickyFaults().faultBitField();
+    inputs.types = types;
 
     // Empty the queues into the inputs object for logging and odometry processing
     int count = yawTimestampQueue.size;
@@ -94,7 +87,7 @@ public class GyroIOCanAndGyro implements GyroIO {
 
   @Override
   public void clearFaults() {
-    canandgyro.clearStickyFaults();
+    canAndGyro.clearStickyFaults();
   }
 
   @Override
@@ -103,10 +96,10 @@ public class GyroIOCanAndGyro implements GyroIO {
   }
 
   public double getRawYawRad() {
-    return Units.rotationsToRadians(canandgyro.getYaw());
+    return Units.rotationsToRadians(canAndGyro.getYaw());
   }
 
   public double getRawVelocityRadPerSec() {
-    return Units.rotationsToRadians(canandgyro.getAngularVelocityYaw());
+    return Units.rotationsToRadians(canAndGyro.getAngularVelocityYaw());
   }
 }

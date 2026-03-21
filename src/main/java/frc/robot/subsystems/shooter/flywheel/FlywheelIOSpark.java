@@ -8,7 +8,7 @@
 package frc.robot.subsystems.shooter.flywheel;
 
 import static edu.wpi.first.units.Units.*;
-import static frc.lib.SparkUtil.*;
+import static frc.lib.util.SparkUtil.*;
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
 import com.revrobotics.PersistMode;
@@ -24,8 +24,8 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
-import frc.robot.util.SparkTap;
-import frc.robot.util.SparkTap.MotorView;
+import frc.lib.lowlevel.SparkTap;
+import frc.lib.lowlevel.SparkTap.MotorView;
 
 /**
  * Real IO implementation for the shooter flywheel using a SparkFlex motor controller (Neo Vortex).

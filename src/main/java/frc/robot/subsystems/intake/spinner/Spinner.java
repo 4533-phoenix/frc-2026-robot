@@ -10,11 +10,10 @@ package frc.robot.subsystems.intake.spinner;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.intake.spinner.SpinnerConstants.*;
 
-import edu.wpi.first.wpilibj.Alert;
-import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.lib.FaultUtil;
+import frc.lib.monitors.SparkHealthMonitor;
+
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -22,6 +21,7 @@ import org.littletonrobotics.junction.Logger;
 public class Spinner extends SubsystemBase {
   private final SpinnerIO io;
   private final SpinnerIOInputsAutoLogged inputs = new SpinnerIOInputsAutoLogged();
+  private final SparkHealthMonitor healthMonitor = new SparkHealthMonitor("Intake Spinner");
 
   /** Possible goals for the spinner. */
   public enum Goal {
@@ -35,17 +35,6 @@ public class Spinner extends SubsystemBase {
 
   @AutoLogOutput(key = "Intake/Spinner/Goal")
   private Goal goal = Goal.STOP;
-
-  private final Alert disconnectedAlert =
-      new Alert("Intake spinner motor disconnected", AlertType.kError);
-  private final Alert faultAlert =
-      new Alert("Intake spinner motor fault detected", AlertType.kError);
-  private final Alert warningAlert =
-      new Alert("Intake spinner motor warning detected", AlertType.kWarning);
-  private final Alert stickyFaultAlert =
-      new Alert("Intake spinner motor sticky fault detected", AlertType.kInfo);
-  private final Alert stickyWarningAlert =
-      new Alert("Intake spinner motor sticky warning detected", AlertType.kInfo);
 
   /**
    * Creates a new Spinner subsystem.
@@ -69,43 +58,7 @@ public class Spinner extends SubsystemBase {
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Intake/Spinner", inputs);
-    disconnectedAlert.set(!inputs.connected);
-
-    // Check for faults
-    if (inputs.connected) {
-      faultAlert.set(!inputs.healthy);
-      if (!inputs.healthy) {
-        faultAlert.setText(
-            FaultUtil.getArrayString(
-                "Intake Spinner Motor Faults: ", FaultUtil.getSparkFaults(inputs.status[0])));
-      }
-      warningAlert.set(inputs.status[2] != 0);
-      if (inputs.status[2] != 0) {
-        warningAlert.setText(
-            FaultUtil.getArrayString(
-                "Intake Spinner Motor Warnings: ", FaultUtil.getSparkWarnings(inputs.status[2])));
-      }
-
-      stickyFaultAlert.set(inputs.status[1] != 0);
-      if (inputs.status[1] != 0) {
-        stickyFaultAlert.setText(
-            FaultUtil.getArrayString(
-                "Intake Spinner Motor Sticky Faults: ",
-                FaultUtil.getSparkFaults(inputs.status[1])));
-      }
-      stickyWarningAlert.set(inputs.status[3] != 0);
-      if (inputs.status[3] != 0) {
-        stickyWarningAlert.setText(
-            FaultUtil.getArrayString(
-                "Intake Spinner Motor Sticky Warnings: ",
-                FaultUtil.getSparkWarnings(inputs.status[3])));
-      }
-    } else {
-      faultAlert.set(false);
-      warningAlert.set(false);
-      stickyFaultAlert.set(false);
-      stickyWarningAlert.set(false);
-    }
+    healthMonitor.update(inputs.connected, inputs.status);
 
     // Apply the voltage based on the current goal
     switch (goal) {

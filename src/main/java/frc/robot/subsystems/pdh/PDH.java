@@ -7,20 +7,16 @@
 
 package frc.robot.subsystems.pdh;
 
-import edu.wpi.first.wpilibj.Alert;
-import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.lib.FaultUtil;
+import frc.lib.monitors.PDHHealthMonitor;
+
 import org.littletonrobotics.junction.Logger;
 
 /** Subsystem for monitoring the Power Distribution Hub (PDH) health and status. */
 public class PDH extends SubsystemBase {
   private final PDHIO io;
   private final PDHIOInputsAutoLogged inputs = new PDHIOInputsAutoLogged();
-
-  private final Alert disconnectedAlert = new Alert("PDH disconnected", AlertType.kError);
-  private final Alert faultAlert = new Alert("PDH fault detected", AlertType.kError);
-  private final Alert stickyFaultAlert = new Alert("PDH sticky fault detected", AlertType.kInfo);
+  private final PDHHealthMonitor healthMonitor = new PDHHealthMonitor();
 
   /**
    * Creates a new PDH subsystem.
@@ -36,26 +32,7 @@ public class PDH extends SubsystemBase {
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("PDH", inputs);
-    disconnectedAlert.set(!inputs.connected);
-
-    // Check for faults if connected
-    if (inputs.connected) {
-      if (!inputs.healthy) {
-        faultAlert.setText(
-            FaultUtil.getArrayString(
-                "PDH Faults: ", FaultUtil.getPdhActiveFaults(inputs.status[0])));
-      }
-
-      stickyFaultAlert.set(inputs.status[1] != 0);
-      if (inputs.status[1] != 0) {
-        stickyFaultAlert.setText(
-            FaultUtil.getArrayString(
-                "PDH Sticky Faults: ", FaultUtil.getPdhStickyFaults(inputs.status[1])));
-      }
-    } else {
-      faultAlert.set(false);
-      stickyFaultAlert.set(false);
-    }
+    healthMonitor.update(inputs.connected, inputs.status[0], inputs.status[1]);
   }
 
   /**

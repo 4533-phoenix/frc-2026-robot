@@ -17,7 +17,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.RobotBase;
-import frc.lib.FieldUtil;
+import frc.lib.util.FieldUtil;
 
 /**
  * Defines constants for the robot's physical dimensions, game field layout, and AdvantageKit

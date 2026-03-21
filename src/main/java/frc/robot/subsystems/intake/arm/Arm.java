@@ -10,13 +10,12 @@ package frc.robot.subsystems.intake.arm;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.intake.arm.ArmConstants.*;
 
-import edu.wpi.first.wpilibj.Alert;
-import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.lib.FaultUtil;
+import frc.lib.monitors.SparkHealthMonitor;
+
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -29,6 +28,7 @@ import org.littletonrobotics.junction.Logger;
 public class Arm extends SubsystemBase {
   private final ArmIO io;
   private final ArmIOInputsAutoLogged inputs = new ArmIOInputsAutoLogged();
+  private final SparkHealthMonitor healthMonitor = new SparkHealthMonitor("Intake Arm");
 
   /** High-level goals for the intake arm. */
   public enum Goal {
@@ -42,17 +42,6 @@ public class Arm extends SubsystemBase {
 
   @AutoLogOutput(key = "Intake/Arm/Goal")
   private Goal goal = Goal.UNKNOWN;
-
-  // Alerts for hardware monitoring
-  private final Alert disconnectedAlert =
-      new Alert("Intake arm motor disconnected", AlertType.kError);
-  private final Alert faultAlert = new Alert("Intake arm motor fault detected", AlertType.kError);
-  private final Alert warningAlert =
-      new Alert("Intake arm motor warning detected", AlertType.kWarning);
-  private final Alert stickyFaultAlert =
-      new Alert("Intake arm motor sticky fault detected", AlertType.kInfo);
-  private final Alert stickyWarningAlert =
-      new Alert("Intake arm motor sticky warning detected", AlertType.kInfo);
 
   private final Trigger deployedTrigger;
   private final Trigger retractedTrigger;
@@ -91,42 +80,7 @@ public class Arm extends SubsystemBase {
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Intake/Arm", inputs);
-    disconnectedAlert.set(!inputs.connected);
-
-    // Check for faults
-    if (inputs.connected) {
-      faultAlert.set(!inputs.healthy);
-      if (!inputs.healthy) {
-        faultAlert.setText(
-            FaultUtil.getArrayString(
-                "Intake Arm Motor Faults: ", FaultUtil.getSparkFaults(inputs.status[0])));
-      }
-      warningAlert.set(inputs.status[2] != 0);
-      if (inputs.status[2] != 0) {
-        warningAlert.setText(
-            FaultUtil.getArrayString(
-                "Intake Arm Motor Warnings: ", FaultUtil.getSparkWarnings(inputs.status[2])));
-      }
-
-      stickyFaultAlert.set(inputs.status[1] != 0);
-      if (inputs.status[1] != 0) {
-        stickyFaultAlert.setText(
-            FaultUtil.getArrayString(
-                "Intake Arm Motor Sticky Faults: ", FaultUtil.getSparkFaults(inputs.status[1])));
-      }
-      stickyWarningAlert.set(inputs.status[3] != 0);
-      if (inputs.status[3] != 0) {
-        stickyWarningAlert.setText(
-            FaultUtil.getArrayString(
-                "Intake Arm Motor Sticky Warnings: ",
-                FaultUtil.getSparkWarnings(inputs.status[3])));
-      }
-    } else {
-      faultAlert.set(false);
-      warningAlert.set(false);
-      stickyFaultAlert.set(false);
-      stickyWarningAlert.set(false);
-    }
+    healthMonitor.update(inputs.connected, inputs.status);
 
     // If the robot is disabled we lose control over the arm
     if (DriverStation.isDisabled()) {

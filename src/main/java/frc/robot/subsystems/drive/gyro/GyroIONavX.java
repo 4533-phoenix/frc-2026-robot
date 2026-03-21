@@ -16,10 +16,10 @@ import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.RobotController;
+import frc.lib.hardware.GyroType;
+import frc.lib.lowlevel.Whacknet;
 import frc.robot.subsystems.drive.SparkOdometryThread;
 import frc.robot.subsystems.drive.SparkOdometryThread.PrimitiveQueue;
-import frc.robot.util.Whacknet;
-import java.util.ArrayList;
 
 /**
  * IO implementation for the Studica NavX gyro.
@@ -33,6 +33,10 @@ public class GyroIONavX implements GyroIO {
   private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
   private final PrimitiveQueue yawTimestampQueue;
   private boolean whacknetEnabled = true;
+
+  private final GyroType[] types = new GyroType[] {GyroType.NAVX};
+  private final int[] activeFaults = new int[1];
+  private final int[] stickyFaults = new int[1];
 
   /**
    * Creates a new GyroIONavX.
@@ -64,18 +68,14 @@ public class GyroIONavX implements GyroIO {
     inputs.yawVelocity = DegreesPerSecond.of(-navX.getRawGyroZ());
     inputs.healthy = inputs.connected && !navX.isCalibrating();
 
-    if (!inputs.healthy) {
-      ArrayList<String> reasons = new ArrayList<>();
-      if (navX.isCalibrating()) {
-        reasons.add("Calibrating");
-      }
-      if (!navX.isConnected()) {
-        reasons.add("Disconnected");
-      }
-      inputs.unhealthyReasons = reasons.toArray(new String[0]);
-    } else if (inputs.unhealthyReasons.length > 0) {
-      inputs.unhealthyReasons = new String[0];
-    }
+    int currentActive = 0;
+    if (!navX.isConnected()) currentActive |= 0x1;
+    if (navX.isCalibrating()) currentActive |= 0x2;
+    stickyFaults[0] |= currentActive;
+    activeFaults[0] = currentActive;
+    inputs.activeFaults = activeFaults;
+    inputs.stickyFaults = stickyFaults;
+    inputs.types = types;
 
     // Empty the queues into the inputs object for logging and odometry processing
     int count = yawTimestampQueue.size;
@@ -91,6 +91,11 @@ public class GyroIONavX implements GyroIO {
 
     yawPositionQueue.clear();
     yawTimestampQueue.clear();
+  }
+
+  @Override
+  public void clearFaults() {
+    stickyFaults[0] = 0;
   }
 
   @Override

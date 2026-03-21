@@ -9,8 +9,8 @@ package frc.robot.subsystems.vision;
 
 import static frc.robot.subsystems.vision.VisionConstants.*;
 
+import frc.lib.lowlevel.Whacknet;
 import frc.robot.subsystems.vision.Vision.VisionObservation;
-import frc.robot.util.Whacknet;
 
 /**
  * Real IO implementation for the vision subsystem using the 'Whacknet' JNI wrapper.

@@ -10,12 +10,11 @@ package frc.robot.subsystems.climb;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.subsystems.climb.ClimbConstants.*;
 
-import edu.wpi.first.wpilibj.Alert;
-import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.lib.FaultUtil;
+import frc.lib.monitors.SparkHealthMonitor;
+
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -28,6 +27,7 @@ import org.littletonrobotics.junction.Logger;
 public class Climb extends SubsystemBase {
   private final ClimbIO io;
   private final ClimbIOInputsAutoLogged inputs = new ClimbIOInputsAutoLogged();
+  private final SparkHealthMonitor monitor = new SparkHealthMonitor("Climb");
 
   /** High-level goals for the climb subsystem. */
   public enum Goal {
@@ -40,14 +40,6 @@ public class Climb extends SubsystemBase {
   }
 
   @AutoLogOutput private Goal goal = Goal.STOP;
-
-  private final Alert disconnectedAlert = new Alert("Climb motor disconnected", AlertType.kError);
-  private final Alert faultAlert = new Alert("Climb motor fault detected", AlertType.kError);
-  private final Alert warningAlert = new Alert("Climb motor warning detected", AlertType.kWarning);
-  private final Alert stickyFaultAlert =
-      new Alert("Climb motor sticky fault detected", AlertType.kInfo);
-  private final Alert stickyWarningAlert =
-      new Alert("Climb motor sticky warning detected", AlertType.kInfo);
 
   private final Trigger upTrigger;
   private final Trigger downTrigger;
@@ -78,41 +70,7 @@ public class Climb extends SubsystemBase {
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Climb", inputs);
-    disconnectedAlert.set(!inputs.connected);
-
-    // Check for faults if connected
-    if (inputs.connected) {
-      faultAlert.set(!inputs.healthy);
-      if (!inputs.healthy) {
-        faultAlert.setText(
-            FaultUtil.getArrayString(
-                "Climb Motor Faults: ", FaultUtil.getSparkFaults(inputs.status[0])));
-      }
-      warningAlert.set(inputs.status[2] != 0);
-      if (inputs.status[2] != 0) {
-        warningAlert.setText(
-            FaultUtil.getArrayString(
-                "Climb Motor Warnings: ", FaultUtil.getSparkWarnings(inputs.status[2])));
-      }
-
-      stickyFaultAlert.set(inputs.status[1] != 0);
-      if (inputs.status[1] != 0) {
-        stickyFaultAlert.setText(
-            FaultUtil.getArrayString(
-                "Climb Motor Sticky Faults: ", FaultUtil.getSparkFaults(inputs.status[1])));
-      }
-      stickyWarningAlert.set(inputs.status[3] != 0);
-      if (inputs.status[3] != 0) {
-        stickyWarningAlert.setText(
-            FaultUtil.getArrayString(
-                "Climb Motor Sticky Warnings: ", FaultUtil.getSparkWarnings(inputs.status[3])));
-      }
-    } else {
-      faultAlert.set(false);
-      warningAlert.set(false);
-      stickyFaultAlert.set(false);
-      stickyWarningAlert.set(false);
-    }
+    monitor.update(inputs.connected, inputs.status);
 
     switch (goal) {
       case UP -> {

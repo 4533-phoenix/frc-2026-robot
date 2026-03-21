@@ -14,14 +14,12 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.wpilibj.Alert;
-import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.lib.FaultUtil;
+import frc.lib.monitors.SparkHealthMonitor;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOInputsAutoLogged;
 import frc.robot.subsystems.shooter.hood.HoodIO;
@@ -49,6 +47,8 @@ public class Shooter extends SubsystemBase {
 
   private final FlywheelIO flywheelIO;
   private final FlywheelIOInputsAutoLogged flywheelInputs = new FlywheelIOInputsAutoLogged();
+  private final SparkHealthMonitor flywheelHealthMonitor =
+      new SparkHealthMonitor("Shooter Flywheel");
 
   private final HoodIO hoodIO;
   private final HoodIOInputsAutoLogged hoodInputs = new HoodIOInputsAutoLogged();
@@ -71,17 +71,6 @@ public class Shooter extends SubsystemBase {
   private final Trigger flywheelReadyTrigger;
   private final Trigger hoodReadyTrigger;
   private final Trigger readyToShootTrigger;
-
-  private final Alert flywheelDisconnectedAlert =
-      new Alert("Flywheel motor disconnected", AlertType.kError);
-  private final Alert flywheelFaultAlert =
-      new Alert("Flywheel motor fault detected", AlertType.kError);
-  private final Alert flywheelWarningAlert =
-      new Alert("Flywheel motor warning detected", AlertType.kWarning);
-  private final Alert stickyFaultAlert =
-      new Alert("Flywheel motor sticky fault detected", AlertType.kInfo);
-  private final Alert stickyWarningAlert =
-      new Alert("Flywheel motor sticky warning detected", AlertType.kInfo);
 
   /**
    * Creates a new Shooter subsystem.
@@ -132,46 +121,10 @@ public class Shooter extends SubsystemBase {
   public void periodic() {
     flywheelIO.updateInputs(flywheelInputs);
     Logger.processInputs("Shooter/Flywheel", flywheelInputs);
-    flywheelDisconnectedAlert.set(!flywheelInputs.connected);
+    flywheelHealthMonitor.update(flywheelInputs.connected, flywheelInputs.status);
 
     hoodIO.updateInputs(hoodInputs);
     Logger.processInputs("Shooter/Hood", hoodInputs);
-
-    // Check for flywheel faults
-    if (flywheelInputs.connected) {
-      flywheelFaultAlert.set(!flywheelInputs.healthy);
-      if (!flywheelInputs.healthy) {
-        flywheelFaultAlert.setText(
-            FaultUtil.getArrayString(
-                "Flywheel Motor Faults: ", FaultUtil.getSparkFaults(flywheelInputs.status[0])));
-      }
-      flywheelWarningAlert.set(flywheelInputs.status[2] != 0);
-      if (flywheelInputs.status[2] != 0) {
-        flywheelWarningAlert.setText(
-            FaultUtil.getArrayString(
-                "Flywheel Motor Warnings: ", FaultUtil.getSparkWarnings(flywheelInputs.status[2])));
-      }
-
-      stickyFaultAlert.set(flywheelInputs.status[1] != 0);
-      if (flywheelInputs.status[1] != 0) {
-        stickyFaultAlert.setText(
-            FaultUtil.getArrayString(
-                "Flywheel Motor Sticky Faults: ",
-                FaultUtil.getSparkFaults(flywheelInputs.status[1])));
-      }
-      stickyWarningAlert.set(flywheelInputs.status[3] != 0);
-      if (flywheelInputs.status[3] != 0) {
-        stickyWarningAlert.setText(
-            FaultUtil.getArrayString(
-                "Flywheel Motor Sticky Warnings: ",
-                FaultUtil.getSparkWarnings(flywheelInputs.status[3])));
-      }
-    } else {
-      flywheelFaultAlert.set(false);
-      flywheelWarningAlert.set(false);
-      stickyFaultAlert.set(false);
-      stickyWarningAlert.set(false);
-    }
 
     switch (goal) {
       case STOP -> {
