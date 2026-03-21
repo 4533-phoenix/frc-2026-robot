@@ -10,14 +10,13 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Monitors the health of one or more gyroscopes using agnostic parallel arrays.
- * Employs integer gatekeeping to achieve zero memory allocation during standard operation.
+ * Monitors the health of one or more gyroscopes using agnostic parallel arrays. Employs integer
+ * gatekeeping to achieve zero memory allocation during standard operation.
  */
 public class GyroHealthMonitor {
   private final List<Alert> activeAlerts = new ArrayList<>();
   private final List<Alert> stickyAlerts = new ArrayList<>();
-  private final Alert totalFailureAlert =
-      new Alert("Total Drive Gyro Failure", AlertType.kError);
+  private final Alert totalFailureAlert = new Alert("Total Drive Gyro Failure", AlertType.kError);
 
   private int[] lastActive = new int[0];
   private int[] lastSticky = new int[0];
@@ -73,8 +72,8 @@ public class GyroHealthMonitor {
   }
 
   /**
-   * Resizes the internal alert pool and bitfield caches. 
-   * Only runs when the number of gyros reported by the IO layer changes.
+   * Resizes the internal alert pool and bitfield caches. Only runs when the number of gyros
+   * reported by the IO layer changes.
    */
   private void syncPool(int size) {
     activeAlerts.clear();

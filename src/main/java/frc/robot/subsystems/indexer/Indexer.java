@@ -13,7 +13,6 @@ import static frc.robot.subsystems.indexer.IndexerConstants.*;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.monitors.SparkHealthMonitor;
-
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 

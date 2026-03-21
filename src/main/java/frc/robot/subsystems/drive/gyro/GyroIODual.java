@@ -17,7 +17,6 @@ import edu.wpi.first.wpilibj.RobotController;
 import frc.lib.hardware.GyroType;
 import frc.lib.lowlevel.Whacknet;
 import frc.robot.subsystems.drive.SparkOdometryThread;
-
 import org.littletonrobotics.junction.Logger;
 
 /**

@@ -20,7 +20,7 @@ public class FaultUtil {
 
   /**
    * Appends Spark Max faults to a StringBuilder based on bitfields.
-   * 
+   *
    * @param sb The StringBuilder to append faults to.
    * @param faults The integer representing the fault flags.
    */
@@ -36,9 +36,9 @@ public class FaultUtil {
     if (sb.length() > 2) sb.setLength(sb.length() - 2);
   }
 
-  /** 
+  /**
    * Appends Spark Max warnings to a StringBuilder based on bitfields.
-   * 
+   *
    * @param sb The StringBuilder to append warnings to.
    * @param warnings The integer representing the warning flags.
    */
@@ -56,7 +56,7 @@ public class FaultUtil {
 
   /**
    * Appends PDH faults to a StringBuilder based on bitfields.
-   * 
+   *
    * @param sb The StringBuilder to append faults to.
    * @param faults The integer representing the fault flags.
    * @param isSticky Whether to append sticky faults.
@@ -85,7 +85,7 @@ public class FaultUtil {
 
   /**
    * Appends Canandgyro faults to a StringBuilder based on bitfields.
-   * 
+   *
    * @param sb The StringBuilder to append faults to.
    * @param faults The 8-bit integer representing the fault flags.
    */
@@ -98,13 +98,13 @@ public class FaultUtil {
     if ((faults & 0x20) != 0) sb.append("Calibrating, ");
     if ((faults & 0x40) != 0) sb.append("AngularVelocitySaturation, ");
     if ((faults & 0x80) != 0) sb.append("AccelerationSaturation, ");
-    
+
     if (sb.length() > 2) sb.setLength(sb.length() - 2);
   }
 
   /**
    * Appends NavX faults to a StringBuilder based on bitfields.
-   * 
+   *
    * @param sb The StringBuilder to append faults to.
    * @param faults The integer representing the fault flags.
    */
@@ -116,7 +116,7 @@ public class FaultUtil {
 
   /**
    * Appends gyro faults to a StringBuilder based on the gyro type and fault flags.
-   * 
+   *
    * @param sb The StringBuilder to append faults to.
    * @param type The type of the gyro.
    * @param faults The integer representing the fault flags.

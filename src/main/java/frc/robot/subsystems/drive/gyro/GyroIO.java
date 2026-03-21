@@ -13,7 +13,6 @@ import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.units.measure.*;
 import frc.lib.hardware.GyroType;
-
 import org.littletonrobotics.junction.AutoLog;
 
 /** Interface for the gyroscope input/output abstraction. */

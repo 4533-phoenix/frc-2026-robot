@@ -63,7 +63,10 @@ public class GyroIOCanAndGyro implements GyroIO {
     inputs.connected = canAndGyro.isConnected();
     inputs.yawPosition = Rotations.of(canAndGyro.getYaw());
     inputs.yawVelocity = RotationsPerSecond.of(canAndGyro.getAngularVelocityYaw());
-    inputs.healthy = inputs.connected && !canAndGyro.isCalibrating() && canAndGyro.getStickyFaults().faultBitField() == 0;
+    inputs.healthy =
+        inputs.connected
+            && !canAndGyro.isCalibrating()
+            && canAndGyro.getStickyFaults().faultBitField() == 0;
 
     inputs.activeFaults[0] = canAndGyro.getActiveFaults().faultBitField();
     inputs.stickyFaults[0] = canAndGyro.getStickyFaults().faultBitField();

@@ -19,7 +19,6 @@ import edu.wpi.first.units.measure.*;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import frc.lib.monitors.SparkHealthMonitor;
-
 import org.littletonrobotics.junction.Logger;
 
 /**
