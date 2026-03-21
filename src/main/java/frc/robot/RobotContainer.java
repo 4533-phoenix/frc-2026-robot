@@ -284,6 +284,18 @@ public class RobotContainer {
             Commands.runEnd(
                 () -> driverController.getHID().setRumble(RumbleType.kBothRumble, 0.5),
                 () -> driverController.getHID().setRumble(RumbleType.kBothRumble, 0)));
+
+    // When B is pressed, reset the current pose to the alliance origin facing away
+    driverController
+        .b()
+        .and(() -> !Util.isMatchMode() || Util.isMatchModeOverridden())
+        .onTrue(
+            Commands.runOnce(
+                () ->
+                    drive.setPose(
+                        FieldUtil.flipAllianceIfNeeded(
+                            new Pose2d(
+                                0, FieldUtil.FIELD_WIDTH.in(Meters) / 2.0, Rotation2d.kZero)))));
   }
 
   private void configureOperatorButtonBindings() {

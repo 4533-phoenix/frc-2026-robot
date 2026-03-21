@@ -13,6 +13,7 @@ import static frc.robot.subsystems.drive.DriveConstants.*;
 import com.reduxrobotics.sensors.canandgyro.Canandgyro;
 import com.reduxrobotics.sensors.canandgyro.CanandgyroSettings;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.lib.hardware.GyroType;
 import frc.lib.lowlevel.Whacknet;
@@ -104,5 +105,15 @@ public class GyroIOCanAndGyro implements GyroIO {
 
   public double getRawVelocityRadPerSec() {
     return Units.rotationsToRadians(canAndGyro.getAngularVelocityYaw());
+  }
+
+  @Override
+  public void setYaw(Angle yaw) {
+    canAndGyro.setYaw(yaw.in(Rotations));
+
+    synchronized (yawPositionQueue) {
+      yawPositionQueue.clear();
+      yawTimestampQueue.clear();
+    }
   }
 }

@@ -420,7 +420,16 @@ public class Drive extends SubsystemBase {
    * @param pose The new pose to set the robot to.
    */
   public void setPose(Pose2d pose) {
-    poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
+    odometryLock.lock();
+    try {
+      gyroIO.setYaw(pose.getRotation().getMeasure());
+      gyroIO.updateInputs(gyroInputs);
+      rawGyroRotation = new Rotation2d(gyroInputs.yawPosition);
+      poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
+      gyroHistory.clear();
+    } finally {
+      odometryLock.unlock();
+    }
   }
 
   /**

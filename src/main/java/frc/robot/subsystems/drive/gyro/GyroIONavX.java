@@ -15,6 +15,7 @@ import static frc.robot.subsystems.drive.DriveConstants.ODOMETRY_FREQUENCY;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.lib.hardware.GyroType;
 import frc.lib.lowlevel.Whacknet;
@@ -109,5 +110,16 @@ public class GyroIONavX implements GyroIO {
 
   public double getRawVelocityRadPerSec() {
     return Units.degreesToRadians(-navX.getRate());
+  }
+
+  @Override
+  public void setYaw(Angle yaw) {
+    navX.zeroYaw();
+    navX.setAngleAdjustment(-yaw.in(Degrees));
+
+    synchronized (yawPositionQueue) {
+      yawPositionQueue.clear();
+      yawTimestampQueue.clear();
+    }
   }
 }

@@ -137,4 +137,11 @@ public class GyroIODual implements GyroIO {
     navx.clearFaults();
     canandgyro.clearFaults();
   }
+
+  @Override
+  public void setYaw(Angle yaw) {
+    navx.setYaw(yaw);
+    canandgyro.setYaw(yaw);
+    driftOffset = Radians.zero();
+  }
 }
