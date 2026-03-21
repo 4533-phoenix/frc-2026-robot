@@ -44,44 +44,24 @@ public class VisionConstants {
    */
   public static final Map<Integer, CameraConfig> CAMERA_MAP =
       Map.of(
-          0,
-          new CameraConfig(
-              "Front Left",
-              new Transform3d(
-                  Centimeters.of(32.8892),
-                  Centimeters.of(30.5885),
-                  Centimeters.of(19.0588),
-                  new Rotation3d(Degrees.of(-105.0), Degrees.of(-11.435630), Degrees.of(50.0))),
-              92.0,
-              10.0),
-          1,
-          new CameraConfig(
-              "Front Right",
-              new Transform3d(
-                  Centimeters.of(32.8892),
-                  Centimeters.of(-30.5885),
-                  Centimeters.of(19.0588),
-                  new Rotation3d(Degrees.of(105.0), Degrees.of(-11.435630), Degrees.of(-50.0))),
-              92.0,
-              10.0),
           2,
           new CameraConfig(
               "Back Left",
               new Transform3d(
-                  Centimeters.of(-21.3),
-                  Centimeters.of(32.68),
-                  Centimeters.of(30.0017),
-                  new Rotation3d(Degrees.of(90.0), Degrees.of(0.0), Degrees.of(135.0))),
+                  Centimeters.of(-31.8),
+                  Centimeters.of(18.4),
+                  Centimeters.of(25.1),
+                  new Rotation3d(Degrees.of(90.0), Degrees.of(-1.0), Degrees.of(138.0))),
               92.0,
               10.0),
           3,
           new CameraConfig(
               "Back Right",
               new Transform3d(
-                  Centimeters.of(-30.6647),
-                  Centimeters.of(-29.5090),
+                  Centimeters.of(-29.5),
+                  Centimeters.of(-28.0),
                   Centimeters.of(26.2679),
-                  new Rotation3d(Degrees.of(0.0), Degrees.of(-20.0), Degrees.of(-135.0))),
+                  new Rotation3d(Degrees.of(0.0), Degrees.of(-21.0), Degrees.of(-137.0))),
               92.0,
               10.0));
 
