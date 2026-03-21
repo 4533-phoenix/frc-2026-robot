@@ -13,3 +13,5 @@
 * Remove units in hot loops?
 * JAVADOC!!!!
 * Reorganize code bit
+* Use whacknet for vision
+* make gyro the ultimate and total source of truth for heading?
