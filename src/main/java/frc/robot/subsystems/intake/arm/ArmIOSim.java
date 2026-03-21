@@ -57,15 +57,15 @@ public class ArmIOSim implements ArmIO {
     armPhysicsSim =
         new SingleJointedArmSim(
             GEARBOX,
-            REDUCTION,
-            0.5,
-            0.5,
+            TOTAL_REDUCTION,
+            ARM_MOMENT_OF_INERTIA.in(KilogramSquareMeters),
+            ARM_LENGTH.in(Meters),
             DEPLOYED_POSITION.in(Radians),
             RETRACTED_POSITION.in(Radians),
             true,
             RETRACTED_POSITION.in(Radians));
 
-    // Configure arm Spark MAX (mirrors IntakeIOReal)
+    // Configure arm Spark MAX
     var armConfig = new SparkMaxConfig();
     armConfig
         .idleMode(IdleMode.kBrake)
@@ -78,8 +78,9 @@ public class ArmIOSim implements ArmIO {
         .velocityConversionFactor(INTERNAL_ENCODER_VELOCITY_FACTOR);
     armConfig
         .absoluteEncoder
-        .positionConversionFactor(2.0 * Math.PI)
-        .zeroOffset(GLOBAL_ENCODER_OFFSET.in(Rotations))
+        .positionConversionFactor(GLOBAL_ENCODER_POSITION_FACTOR)
+        .velocityConversionFactor(GLOBAL_ENCODER_VELOCITY_FACTOR)
+        .zeroOffset(GLOBAL_ENCODER_OFFSET)
         .inverted(true);
     armConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(KP, 0.0, KD);
     armConfig.closedLoop.feedForward.kV(KV).kA(KA).kS(KS).kCos(KG).kCosRatio(1.0 / (2.0 * Math.PI));

@@ -46,8 +46,7 @@ public class SpinnerIOSim implements SpinnerIO {
     spinnerConfig
         .idleMode(IdleMode.kBrake)
         .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
-        .voltageCompensation(12.0)
-        .inverted(true);
+        .voltageCompensation(12.0);
     spinnerConfig
         .encoder
         .positionConversionFactor(INTERNAL_ENCODER_POSITION_FACTOR)

@@ -33,7 +33,8 @@ public class Spinner extends SubsystemBase {
     EXTAKE
   }
 
-  @AutoLogOutput private Goal goal = Goal.STOP;
+  @AutoLogOutput(key = "Intake/Spinner/Goal")
+  private Goal goal = Goal.STOP;
 
   private final Alert disconnectedAlert =
       new Alert("Intake spinner motor disconnected", AlertType.kError);
@@ -67,7 +68,7 @@ public class Spinner extends SubsystemBase {
   @Override
   public void periodic() {
     io.updateInputs(inputs);
-    Logger.processInputs("Spinner", inputs);
+    Logger.processInputs("Intake/Spinner", inputs);
     disconnectedAlert.set(!inputs.connected);
 
     // Check for faults

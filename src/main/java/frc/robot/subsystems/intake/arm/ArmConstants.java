@@ -19,20 +19,34 @@ public final class ArmConstants {
   public static final int CAN_ID = 15;
 
   // ---------- Gear Ratios ----------
-  /** Gear ratio: 112 motor rotations = 1 output shaft rotation for the arm. */
-  public static final double REDUCTION = 112.0;
+  /** Gear ratio from internal encoder to global encoder. */
+  public static final double GLOBAL_ENCODER_REDUCTION = 112.0;
+
+  /** Gear ratio from global encoder to output shaft. */
+  public static final double OUTPUT_SHAFT_REDUCTION = 22.0 / 12.0;
+
+  /** Gear ratio from internal encoder to output shaft. */
+  public static final double TOTAL_REDUCTION = GLOBAL_ENCODER_REDUCTION * OUTPUT_SHAFT_REDUCTION;
 
   // ---------- Encoder Conversion Factors ----------
   /** Converts internal motor rotations to radians for the arm. */
-  public static final double INTERNAL_ENCODER_POSITION_FACTOR = (2.0 * Math.PI) / REDUCTION;
+  public static final double INTERNAL_ENCODER_POSITION_FACTOR = (2.0 * Math.PI) / TOTAL_REDUCTION;
 
   /** Converts internal motor velocity (RPM) to radians per second for the arm. */
   public static final double INTERNAL_ENCODER_VELOCITY_FACTOR =
-      ((2.0 * Math.PI) / 60.0) / REDUCTION;
+      ((2.0 * Math.PI) / 60.0) / TOTAL_REDUCTION;
+
+  /** Converts absolute encoder position to radians for the arm. */
+  public static final double GLOBAL_ENCODER_POSITION_FACTOR =
+      (2.0 * Math.PI) / OUTPUT_SHAFT_REDUCTION;
+
+  /** Converts absolute encoder velocity (RPM) to radians per second for the arm. */
+  public static final double GLOBAL_ENCODER_VELOCITY_FACTOR =
+      ((2.0 * Math.PI) / 60.0) / OUTPUT_SHAFT_REDUCTION;
 
   // ---------- Encoder Offsets ----------
-  /** Absolute encoder offset to align 0 degrees with the fully retracted position. */
-  public static final Angle GLOBAL_ENCODER_OFFSET = Degrees.of(83.45);
+  /** Absolute encoder offset. */
+  public static final double GLOBAL_ENCODER_OFFSET = 0.25;
 
   // ---------- Motor Current Limits ----------
   /** Max current draw for the arm motor. */
@@ -67,10 +81,10 @@ public final class ArmConstants {
 
   // ---------- Arm Positions ----------
   /** Angle of the arm when fully deployed for intaking. */
-  public static final Angle DEPLOYED_POSITION = Degrees.of(37.0);
+  public static final Angle DEPLOYED_POSITION = Radians.of(0.2);
 
   /** Angle of the arm when fully retracted inside the robot perimeter. */
-  public static final Angle RETRACTED_POSITION = Degrees.of(131.0);
+  public static final Angle RETRACTED_POSITION = Radians.of(2.05);
 
   /** Tolerance for considering the arm at a specific PID setpoint. */
   public static final Angle PID_TOLERANCE = Degrees.of(1.0);
@@ -89,4 +103,11 @@ public final class ArmConstants {
 
   /** Maximum allowable error between internal and absolute encoder positions. */
   public static final Angle ERROR_THRESHOLD = Radians.of(0.05);
+
+  // ---------- Simulation Constants ----------
+  /** Length of the arm. */
+  public static final Distance ARM_LENGTH = Foot.of(1.0);
+
+  /** Moment of inertia for the arm. */
+  public static final MomentOfInertia ARM_MOMENT_OF_INERTIA = KilogramSquareMeters.of(0.5);
 }

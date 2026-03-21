@@ -7,6 +7,7 @@
 
 package frc.robot.util;
 
+import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.BooleanSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -25,6 +26,11 @@ public class Util {
           .getTable("SmartDashboard")
           .getBooleanTopic(MATCH_MODE_KEY)
           .subscribe(false);
+  private static final BooleanPublisher matchModePublisher =
+      NetworkTableInstance.getDefault()
+          .getTable("SmartDashboard")
+          .getBooleanTopic(MATCH_MODE_KEY)
+          .publish();
 
   /**
    * Evaluates the game specific message to determine if the hub is enabled at a given match time.

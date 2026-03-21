@@ -140,7 +140,7 @@ public class DriveConstants {
   public static final Current DRIVE_MOTOR_SECONDARY_CURRENT_LIMIT = Amps.of(80);
 
   /** The radius of the drive wheels. */
-  public static final Distance WHEEL_RADIUS = Inches.of(2.654);
+  public static final Distance WHEEL_RADIUS = Inches.of(1.907);
 
   /** The gear reduction between the drive motor and the wheel. */
   public static final double DRIVE_MOTOR_REDUCTION = 6.75;
@@ -168,6 +168,9 @@ public class DriveConstants {
 
   /** Velocity feedforward gain for the drive motor. */
   public static final double DRIVE_KV = 0.1;
+
+  /** Acceleration feedforward gain for the drive motor. */
+  public static final double DRIVE_KA = 0.0;
 
   // Turn motor configuration
   /** Whether the turn motor is inverted. */

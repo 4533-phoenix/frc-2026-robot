@@ -126,7 +126,7 @@ public class ModuleIOSpark implements ModuleIO {
         .closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(DRIVE_KP, 0.0, DRIVE_KD);
-    driveConfig.closedLoop.feedForward.kS(DRIVE_KS).kV(DRIVE_KV);
+    driveConfig.closedLoop.feedForward.kS(DRIVE_KS).kV(DRIVE_KV).kA(DRIVE_KA);
     driveConfig.closedLoop.maxMotion.maxAcceleration(200.0).allowedProfileError(0.0);
     driveConfig
         .signals
@@ -230,10 +230,8 @@ public class ModuleIOSpark implements ModuleIO {
     if (count > 0) {
       inputs.drivePosition = Radians.of(drivePositionQueue.data[count - 1]);
       inputs.turnPosition = Radians.of(turnPositionQueue.data[count - 1]);
-      inputs.driveVelocity =
-          RadiansPerSecond.of(driveVelocityQueue.data[count - 1] * DRIVE_ENCODER_VELOCITY_FACTOR);
-      inputs.turnVelocity =
-          RadiansPerSecond.of(turnVelocityQueue.data[count - 1] * TURN_ENCODER_VELOCITY_FACTOR);
+      inputs.driveVelocity = RadiansPerSecond.of(driveVelocityQueue.data[count - 1]);
+      inputs.turnVelocity = RadiansPerSecond.of(turnVelocityQueue.data[count - 1]);
     }
 
     timestampQueue.clear();

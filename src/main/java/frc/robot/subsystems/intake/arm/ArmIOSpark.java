@@ -65,8 +65,9 @@ public class ArmIOSpark implements ArmIO {
         .velocityConversionFactor(INTERNAL_ENCODER_VELOCITY_FACTOR);
     armConfig
         .absoluteEncoder
-        .positionConversionFactor(2.0 * Math.PI)
-        .zeroOffset(GLOBAL_ENCODER_OFFSET.in(Rotations))
+        .positionConversionFactor(GLOBAL_ENCODER_POSITION_FACTOR)
+        .velocityConversionFactor(GLOBAL_ENCODER_VELOCITY_FACTOR)
+        .zeroOffset(GLOBAL_ENCODER_OFFSET)
         .inverted(true);
     armConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(KP, 0.0, KD);
     armConfig.closedLoop.feedForward.kV(KV).kA(KA).kS(KS).kCos(KG).kCosRatio(1.0 / (2.0 * Math.PI));

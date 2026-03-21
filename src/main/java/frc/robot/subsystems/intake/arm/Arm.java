@@ -40,7 +40,8 @@ public class Arm extends SubsystemBase {
     DEPLOY
   }
 
-  @AutoLogOutput private Goal goal = Goal.UNKNOWN;
+  @AutoLogOutput(key = "Intake/Arm/Goal")
+  private Goal goal = Goal.UNKNOWN;
 
   // Alerts for hardware monitoring
   private final Alert disconnectedAlert =
@@ -89,7 +90,7 @@ public class Arm extends SubsystemBase {
   @Override
   public void periodic() {
     io.updateInputs(inputs);
-    Logger.processInputs("Arm", inputs);
+    Logger.processInputs("Intake/Arm", inputs);
     disconnectedAlert.set(!inputs.connected);
 
     // Check for faults
@@ -128,21 +129,19 @@ public class Arm extends SubsystemBase {
     }
 
     // If the robot is disabled we lose control over the arm
-    if (goal != Goal.UNKNOWN && DriverStation.isDisabled()) {
-      setGoal(Goal.UNKNOWN);
+    if (DriverStation.isDisabled()) {
+      if (deployedTrigger.getAsBoolean()) goal = Goal.DEPLOY;
+      else if (retractedTrigger.getAsBoolean()) goal = Goal.RETRACT;
+      else goal = Goal.UNKNOWN;
+    } else if (goal == Goal.UNKNOWN) {
+      if (deployedTrigger.getAsBoolean()) goal = Goal.DEPLOY;
+      else if (retractedTrigger.getAsBoolean()) goal = Goal.RETRACT;
     }
 
     switch (goal) {
       case RETRACT -> io.setPosition(RETRACTED_POSITION);
       case DEPLOY -> io.setPosition(DEPLOYED_POSITION);
-      case UNKNOWN -> {
-        io.stop();
-        if (deployedTrigger.getAsBoolean()) {
-          setGoal(Goal.DEPLOY);
-        } else if (retractedTrigger.getAsBoolean()) {
-          setGoal(Goal.RETRACT);
-        }
-      }
+      case UNKNOWN -> io.stop();
     }
   }
 

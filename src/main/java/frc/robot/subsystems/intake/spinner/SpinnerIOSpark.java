@@ -42,8 +42,7 @@ public class SpinnerIOSpark implements SpinnerIO {
     config
         .idleMode(IdleMode.kBrake)
         .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
-        .voltageCompensation(12.0)
-        .inverted(true);
+        .voltageCompensation(12.0);
     config
         .signals
         .appliedOutputPeriodMs(50)

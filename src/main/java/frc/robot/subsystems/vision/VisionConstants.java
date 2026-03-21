@@ -61,7 +61,7 @@ public class VisionConstants {
                   Centimeters.of(32.8892),
                   Centimeters.of(-30.5885),
                   Centimeters.of(19.0588),
-                  new Rotation3d(Degrees.of(285.0), Degrees.of(-11.435630), Degrees.of(-50.0))),
+                  new Rotation3d(Degrees.of(105.0), Degrees.of(-11.435630), Degrees.of(-50.0))),
               92.0,
               10.0),
           2,
