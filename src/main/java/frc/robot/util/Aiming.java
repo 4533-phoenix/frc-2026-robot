@@ -20,8 +20,6 @@ import frc.robot.Constants;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
-// TODO reimplement DRY here after I optimized the hell out of this code
-
 /** Utility class for calculating aiming solutions for the shooter. */
 public class Aiming {
   private Aiming() {} // Prevent instantiation
@@ -34,6 +32,30 @@ public class Aiming {
 
   /** A default empty result to prevent NullPointerExceptions */
   public static final AimingResult noTarget = new AimingResult(new Rotation2d(), 0.0, false);
+
+  /**
+   * Gets the amount of angle to compensate for curve of the ball in the air.
+   *
+   * @param distanceMeters The distance in meters to the target.
+   * @return The compensation angle in radians.
+   */
+  private static Rotation2d getCurveCompensation(double distanceMeters) {
+    // Define our data points
+    double minDist = 1.307;
+    double maxDist = 3.155;
+    double minCurveDeg = 0.0;
+    double maxCurveDeg = 5.0;
+
+    // Clamp the distance to our known range
+    double clampedDist = Math.max(minDist, Math.min(maxDist, distanceMeters));
+
+    // Linear Interpolation
+    double curveDegrees =
+        minCurveDeg + (clampedDist - minDist) * ((maxCurveDeg - minCurveDeg) / (maxDist - minDist));
+
+    // The result is added to the target angle
+    return Rotation2d.fromDegrees(curveDegrees);
+  }
 
   /**
    * Computes all aiming outputs for a direct hub shot with lead compensation.
@@ -109,6 +131,9 @@ public class Aiming {
     double finalAngle = Math.atan2(finalDy, finalDx);
     double finalDist = Math.sqrt(finalDx * finalDx + finalDy * finalDy);
 
+    Rotation2d baseRotation = Rotation2d.fromRadians(finalAngle);
+    Rotation2d finalRotation = baseRotation.plus(getCurveCompensation(finalDist));
+
     if (log) {
       Logger.recordOutput(
           "Aiming/VirtualTarget", new Pose2d(virtualTargetX, virtualTargetY, Rotation2d.kZero));
@@ -117,11 +142,12 @@ public class Aiming {
       Logger.recordOutput(
           "Aiming/PredictedShooterPosition",
           new Pose2d(predShooterX, predShooterY, Rotation2d.fromRadians(estimatedAngle)));
-      Logger.recordOutput("Aiming/TargetRotation", Math.toDegrees(finalAngle));
+      Logger.recordOutput("Aiming/TargetRotation", finalRotation.getDegrees());
+      Logger.recordOutput("Aiming/CurveCompDegrees", getCurveCompensation(finalDist).getDegrees());
       Logger.recordOutput("Aiming/DistanceToTarget", finalDist);
     }
 
-    return new AimingResult(Rotation2d.fromRadians(finalAngle), finalDist, true);
+    return new AimingResult(finalRotation, finalDist, true);
   }
 
   /**
@@ -194,14 +220,18 @@ public class Aiming {
     double finalAngle = Math.atan2(finalDy, finalDx);
     double finalDist = Math.sqrt(finalDx * finalDx + finalDy * finalDy);
 
+    Rotation2d baseRotation = Rotation2d.fromRadians(finalAngle);
+    Rotation2d finalRotation = baseRotation.plus(getCurveCompensation(finalDist));
+
     if (log) {
       Logger.recordOutput(
           "Aiming/VirtualTarget", new Pose2d(targetX, finalClampedY, Rotation2d.kZero));
-      Logger.recordOutput("Aiming/TargetRotation", Math.toDegrees(finalAngle));
+      Logger.recordOutput("Aiming/TargetRotation", finalRotation.getDegrees());
+      Logger.recordOutput("Aiming/CurveCompDegrees", getCurveCompensation(finalDist).getDegrees());
       Logger.recordOutput("Aiming/DistanceToTarget", finalDist);
     }
 
-    return new AimingResult(Rotation2d.fromRadians(finalAngle), finalDist, true);
+    return new AimingResult(finalRotation, finalDist, true);
   }
 
   /**

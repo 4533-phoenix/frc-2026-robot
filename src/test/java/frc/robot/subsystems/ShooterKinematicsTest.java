@@ -23,12 +23,12 @@ public class ShooterKinematicsTest {
     // If the robot is closer than the closest map point,
     // it should flatten out and return the 2.159m values, NOT extrapolate linearly to 0.
     ShooterState tooClose = ShooterKinematics.calculateShooterState(Meters.of(1.0));
-    assertEquals(50.0, tooClose.flywheelSpeed().in(RotationsPerSecond), 1e-6);
+    assertEquals(45.0, tooClose.flywheelSpeed().in(RotationsPerSecond), 1e-6);
 
     // If the robot is further than the furthest map point,
     // it should return the max distance values.
     ShooterState tooFar = ShooterKinematics.calculateShooterState(Meters.of(10.0));
-    assertEquals(100.0, tooFar.flywheelSpeed().in(RotationsPerSecond), 1e-6);
-    assertEquals(55.0, tooFar.hoodAngle().in(Degrees), 1e-6);
+    assertEquals(67.0, tooFar.flywheelSpeed().in(RotationsPerSecond), 1e-6);
+    assertEquals(62.0, tooFar.hoodAngle().in(Degrees), 1e-6);
   }
 }
