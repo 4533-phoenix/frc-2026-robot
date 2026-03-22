@@ -7,7 +7,6 @@
 * Redocument support for PV now with out fork
 * Make 2 modes/io layers for real: SparkTap & Rev
 * Rework how moduleio sim works to new standard
-* Debounce ready to shoot to avoid bouncing the feeder?
 * Calculate better cam offsets
 * Remove units in hot loops?
 * JAVADOC!!!!

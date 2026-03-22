@@ -11,6 +11,8 @@ import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
@@ -19,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.lib.WritableTrigger;
 import frc.lib.monitors.SparkHealthMonitor;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOInputsAutoLogged;
@@ -55,6 +58,8 @@ public class Shooter extends SubsystemBase {
 
   private final SysIdRoutine sysId;
 
+  private final Debouncer flywheelReadyDebouncer = new Debouncer(0.15, DebounceType.kFalling);
+
   /** High-level goals for the shooter subsystem. */
   public enum Goal {
     /** Stop all movement and motors. */
@@ -68,7 +73,7 @@ public class Shooter extends SubsystemBase {
   @AutoLogOutput private Goal goal = Goal.STOP;
   private ShooterState state = DEFAULT_STATE;
 
-  private final Trigger flywheelReadyTrigger;
+  private final WritableTrigger flywheelReadyTrigger;
   private final Trigger hoodReadyTrigger;
   private final Trigger readyToShootTrigger;
 
@@ -83,13 +88,7 @@ public class Shooter extends SubsystemBase {
     this.hoodIO = hoodIO;
 
     // Build triggers once
-    flywheelReadyTrigger =
-        new Trigger(
-            () ->
-                Math.abs(
-                        flywheelInputs.velocity.in(RadiansPerSecond)
-                            - state.flywheelSpeed().in(RadiansPerSecond))
-                    < ShooterConstants.ANGULAR_TOLERANCE.in(RadiansPerSecond));
+    flywheelReadyTrigger = new WritableTrigger();
     hoodReadyTrigger = new Trigger(() -> hoodInputs.atSetpoint);
     readyToShootTrigger =
         flywheelReadyTrigger.and(hoodReadyTrigger).and(() -> goal == Goal.RUNNING);
@@ -125,6 +124,14 @@ public class Shooter extends SubsystemBase {
 
     hoodIO.updateInputs(hoodInputs);
     Logger.processInputs("Shooter/Hood", hoodInputs);
+
+    // Calculate if flywheel is ready
+    boolean isFlywheelReady =
+        Math.abs(
+                flywheelInputs.velocity.in(RadiansPerSecond)
+                    - state.flywheelSpeed().in(RadiansPerSecond))
+            < ShooterConstants.ANGULAR_TOLERANCE.in(RadiansPerSecond);
+    flywheelReadyTrigger.set(flywheelReadyDebouncer.calculate(isFlywheelReady));
 
     switch (goal) {
       case STOP -> {
