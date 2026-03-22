@@ -5,7 +5,6 @@
 * Add elastic integration
 * Update PP config
 * Redocument support for PV now with out fork
-* Make 2 modes/io layers for real: SparkTap & Rev
 * Rework how moduleio sim works to new standard
 * Calculate better cam offsets
 * Remove units in hot loops?
@@ -13,3 +12,4 @@
 * Reorganize code bit
 * Use whacknet for vision
 * make gyro the ultimate and total source of truth for heading?
+* Review fault handling
