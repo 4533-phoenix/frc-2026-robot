@@ -67,24 +67,24 @@ public final class ArmConstants {
   public static final double KG = 0.0;
 
   /** Velocity feedforward gain for the arm. */
-  public static final double KV = 1.9; // 1.9
+  public static final double KV = 3.483;
 
   /** Acceleration feedforward gain for the arm. */
   public static final double KA = 0.0;
 
   // ---------- Arm Motion Profile Constraints ----------
   /** Maximum angular velocity for the arm during movement. */
-  public static final AngularVelocity CRUISE_VELOCITY = RadiansPerSecond.of(7.0);
+  public static final AngularVelocity CRUISE_VELOCITY = RadiansPerSecond.of(10.0);
 
   /** Maximum angular acceleration for the arm during movement. */
-  public static final AngularAcceleration MAX_ACCELERATION = RadiansPerSecondPerSecond.of(6.0);
+  public static final AngularAcceleration MAX_ACCELERATION = RadiansPerSecondPerSecond.of(15.0);
 
   // ---------- Arm Positions ----------
   /** Angle of the arm when fully deployed for intaking. */
   public static final Angle DEPLOYED_POSITION = Radians.of(0.2);
 
   /** Angle of the arm when fully retracted inside the robot perimeter. */
-  public static final Angle RETRACTED_POSITION = Radians.of(2.05);
+  public static final Angle RETRACTED_POSITION = Radians.of(2.7);
 
   /** Tolerance for considering the arm at a specific PID setpoint. */
   public static final Angle PID_TOLERANCE = Degrees.of(1.0);

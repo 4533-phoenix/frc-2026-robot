@@ -34,6 +34,8 @@ public class GyroIOCanAndGyro implements GyroIO {
   private boolean whacknetEnabled = true;
 
   private final GyroType[] types = new GyroType[] {GyroType.CANANDGYRO};
+  private final int[] activeFaults = new int[1];
+  private final int[] stickyFaults = new int[1];
 
   /** Creates a new GyroIOCanAndGyro. */
   public GyroIOCanAndGyro() {
@@ -69,8 +71,10 @@ public class GyroIOCanAndGyro implements GyroIO {
             && !canAndGyro.isCalibrating()
             && canAndGyro.getStickyFaults().faultBitField() == 0;
 
-    inputs.activeFaults[0] = canAndGyro.getActiveFaults().faultBitField();
-    inputs.stickyFaults[0] = canAndGyro.getStickyFaults().faultBitField();
+    activeFaults[0] = canAndGyro.getActiveFaults().faultBitField();
+    stickyFaults[0] = canAndGyro.getStickyFaults().faultBitField();
+    inputs.activeFaults = activeFaults;
+    inputs.stickyFaults = stickyFaults;
     inputs.types = types;
 
     // Empty the queues into the inputs object for logging and odometry processing
