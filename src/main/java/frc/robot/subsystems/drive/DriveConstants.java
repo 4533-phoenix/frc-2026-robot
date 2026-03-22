@@ -132,6 +132,12 @@ public class DriveConstants {
   /** The velocity threshold below which the robot is considered stationary. */
   public static final AngularVelocity VELOCITY_GATE = DegreesPerSecond.of(1.0);
 
+  /** Latency compensation for NavX over USB (seconds). */
+  public static final Time NAVX_LATENCY_SEC = Seconds.of(0.010);
+
+  /** Latency compensation for Canandgyro over CAN (seconds). */
+  public static final Time CANANDGYRO_LATENCY_SEC = Seconds.of(0.0025);
+
   // Drive motor configuration
   /** Maximum current limit for the drive motors. */
   public static final Current DRIVE_MOTOR_CURRENT_LIMIT = Amps.of(40);

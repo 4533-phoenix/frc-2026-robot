@@ -10,6 +10,7 @@
 package frc.robot.subsystems.drive.gyro;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.robot.subsystems.drive.DriveConstants.NAVX_LATENCY_SEC;
 import static frc.robot.subsystems.drive.DriveConstants.ODOMETRY_FREQUENCY;
 
 import com.studica.frc.AHRS;
@@ -33,7 +34,6 @@ public class GyroIONavX implements GyroIO {
   private final AHRS navX;
   private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
   private final PrimitiveQueue yawTimestampQueue;
-  private boolean whacknetEnabled = true;
 
   private final GyroType[] types = new GyroType[] {GyroType.NAVX};
   private final int[] activeFaults = new int[1];
@@ -41,20 +41,20 @@ public class GyroIONavX implements GyroIO {
 
   /**
    * Creates a new GyroIONavX.
-   *
-   * @param comType The communication type to use for the NavX (e.g., USB, SPI, I2C).
    */
-  public GyroIONavX(NavXComType comType) {
-    navX = new AHRS(comType, (int) ODOMETRY_FREQUENCY.in(Hertz));
+  public GyroIONavX() {
+    navX = new AHRS(NavXComType.kMXP_SPI, (int) ODOMETRY_FREQUENCY.in(Hertz));
     yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
     SparkOdometryThread.getInstance()
         .registerSignal(
             () -> {
-              double yawPosition = getRawYawRad();
-              double yawVelocity = getRawVelocityRadPerSec();
-              yawPositionQueue.offer(yawPosition + (yawVelocity * 0.001));
+              if (!navX.isConnected()) return;
 
-              if (whacknetEnabled && Whacknet.getInstance().isLoaded()) {
+              double yawPosition = Units.degreesToRadians(-navX.getAngle());
+              double yawVelocity = Units.degreesToRadians(-navX.getRate());
+              yawPositionQueue.offer(yawPosition + (yawVelocity * NAVX_LATENCY_SEC.in(Seconds)));
+
+              if (Whacknet.getInstance().isLoaded()) {
                 Whacknet.getInstance()
                     .broadcast(RobotController.getFPGATime(), yawPosition, yawVelocity);
               }
@@ -97,19 +97,6 @@ public class GyroIONavX implements GyroIO {
   @Override
   public void clearFaults() {
     stickyFaults[0] = 0;
-  }
-
-  @Override
-  public void setWhacknetEnabled(boolean enabled) {
-    this.whacknetEnabled = enabled;
-  }
-
-  public double getRawYawRad() {
-    return Units.degreesToRadians(-navX.getAngle());
-  }
-
-  public double getRawVelocityRadPerSec() {
-    return Units.degreesToRadians(-navX.getRate());
   }
 
   @Override

@@ -31,7 +31,6 @@ public class GyroIOCanAndGyro implements GyroIO {
   private final Canandgyro canAndGyro = new Canandgyro(IMU_CAN_ID);
   private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
   private final PrimitiveQueue yawTimestampQueue;
-  private boolean whacknetEnabled = true;
 
   private final GyroType[] types = new GyroType[] {GyroType.CANANDGYRO};
   private final int[] activeFaults = new int[1];
@@ -50,11 +49,13 @@ public class GyroIOCanAndGyro implements GyroIO {
     SparkOdometryThread.getInstance()
         .registerSignal(
             () -> {
-              double yawPosition = getRawYawRad();
-              double yawVelocity = getRawVelocityRadPerSec();
-              yawPositionQueue.offer(yawPosition + (yawVelocity * 0.0025));
+              if (!canAndGyro.isConnected()) return;
 
-              if (whacknetEnabled && Whacknet.getInstance().isLoaded()) {
+              double yawPosition = Units.rotationsToRadians(canAndGyro.getYaw());
+              double yawVelocity = Units.rotationsToRadians(canAndGyro.getAngularVelocityYaw());
+              yawPositionQueue.offer(yawPosition + (yawVelocity * CANANDGYRO_LATENCY_SEC.in(Seconds)));
+
+              if (Whacknet.getInstance().isLoaded()) {
                 Whacknet.getInstance()
                     .broadcast(RobotController.getFPGATime(), yawPosition, yawVelocity);
               }
@@ -96,19 +97,6 @@ public class GyroIOCanAndGyro implements GyroIO {
   @Override
   public void clearFaults() {
     canAndGyro.clearStickyFaults();
-  }
-
-  @Override
-  public void setWhacknetEnabled(boolean enabled) {
-    this.whacknetEnabled = enabled;
-  }
-
-  public double getRawYawRad() {
-    return Units.rotationsToRadians(canAndGyro.getYaw());
-  }
-
-  public double getRawVelocityRadPerSec() {
-    return Units.rotationsToRadians(canAndGyro.getAngularVelocityYaw());
   }
 
   @Override

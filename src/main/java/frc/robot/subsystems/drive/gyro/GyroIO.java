@@ -67,12 +67,6 @@ public interface GyroIO {
   public default void clearFaults() {}
 
   /**
-   * Sets whether this gyro should broadcast telemetry to Whacknet. Useful for preventing duplicate
-   * broadcasts in Dual Gyro setups.
-   */
-  public default void setWhacknetEnabled(boolean enabled) {}
-
-  /**
    * Sets the gyro's yaw position to the specified angle.
    *
    * @param yaw The angle to set the gyro's yaw position to.
