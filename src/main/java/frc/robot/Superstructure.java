@@ -184,6 +184,13 @@ public class Superstructure extends SubsystemBase {
   }
 
   /**
+   * @return A command to retract the intake arm.
+   */
+  public Command retractArm() {
+    return arm.retract();
+  }
+
+  /**
    * @return A command to run the intake spinner.
    */
   public Command intake() {

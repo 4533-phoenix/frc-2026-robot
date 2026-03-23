@@ -144,7 +144,7 @@ public class GyroIODual implements GyroIO {
         inputs.connected
             && !navxCalibrating
             && !canCalibrating
-            && (canandgyro.getStickyFaults().faultBitField() == 0);
+            && ((canandgyro.getStickyFaults().faultBitField() & ~0x1) == 0);
 
     int navxActive = 0;
     if (!navxConn) navxActive |= 0x1;

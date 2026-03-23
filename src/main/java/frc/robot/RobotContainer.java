@@ -314,6 +314,9 @@ public class RobotContainer {
         .and(superstructure.canRunIntake())
         .whileTrue(superstructure.extake());
 
+    // If right dpad is pressed, retract intake.
+    operatorController.povRight().onTrue(superstructure.retractArm());
+
     // If left dpad is pressed, toggle climb mode. If climb mode is on, also retract the arm
     operatorController.povLeft().onTrue(Commands.runOnce(superstructure::toggleClimbMode));
 
