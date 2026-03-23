@@ -56,6 +56,7 @@ public class Superstructure extends SubsystemBase {
   private final PDH pdh;
 
   // Dashboard helpers
+  private boolean lastClearFaults = false;
   private final String CLEAR_FAULTS_KEY = "ClearFaults";
   private final BooleanSubscriber clearFaultsSubscriber =
       NetworkTableInstance.getDefault()
@@ -159,7 +160,8 @@ public class Superstructure extends SubsystemBase {
     }
 
     // Check for sticky fault clear command from dashboard
-    if (clearFaultsSubscriber.get()) {
+    boolean currentClearFaults = clearFaultsSubscriber.get();
+    if (currentClearFaults && !lastClearFaults) {
       CompletableFuture.runAsync(
               () -> {
                 clearFaults();
@@ -169,6 +171,7 @@ public class Superstructure extends SubsystemBase {
                 clearFaultsPublisher.set(false);
               });
     }
+    lastClearFaults = currentClearFaults;
 
     // Logging state to AdvantageKit
     Logger.recordOutput("Superstructure/ClimbMode", climbMode.get());
