@@ -53,7 +53,8 @@ public class GyroIOCanAndGyro implements GyroIO {
 
               double yawPosition = Units.rotationsToRadians(canAndGyro.getYaw());
               double yawVelocity = Units.rotationsToRadians(canAndGyro.getAngularVelocityYaw());
-              yawPositionQueue.offer(yawPosition + (yawVelocity * CANANDGYRO_LATENCY_SEC.in(Seconds)));
+              yawPositionQueue.offer(
+                  yawPosition + (yawVelocity * CANANDGYRO_LATENCY_SEC.in(Seconds)));
 
               if (Whacknet.getInstance().isLoaded()) {
                 Whacknet.getInstance()
@@ -72,8 +73,8 @@ public class GyroIOCanAndGyro implements GyroIO {
             && !canAndGyro.isCalibrating()
             && canAndGyro.getStickyFaults().faultBitField() == 0;
 
-    activeFaults[0] = canAndGyro.getActiveFaults().faultBitField();
-    stickyFaults[0] = canAndGyro.getStickyFaults().faultBitField();
+    activeFaults[0] = canAndGyro.getActiveFaults().faultBitField() & ~0x1;
+    stickyFaults[0] = canAndGyro.getStickyFaults().faultBitField() & ~0x1;
     inputs.activeFaults = activeFaults;
     inputs.stickyFaults = stickyFaults;
     inputs.types = types;

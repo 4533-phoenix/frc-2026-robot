@@ -39,9 +39,7 @@ public class GyroIONavX implements GyroIO {
   private final int[] activeFaults = new int[1];
   private final int[] stickyFaults = new int[1];
 
-  /**
-   * Creates a new GyroIONavX.
-   */
+  /** Creates a new GyroIONavX. */
   public GyroIONavX() {
     navX = new AHRS(NavXComType.kMXP_SPI, (int) ODOMETRY_FREQUENCY.in(Hertz));
     yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
