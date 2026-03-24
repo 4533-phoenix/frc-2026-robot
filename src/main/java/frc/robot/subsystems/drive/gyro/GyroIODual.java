@@ -40,6 +40,12 @@ public class GyroIODual implements GyroIO {
   private final PrimitiveQueue yawTimestampQueue;
 
   private volatile Angle driftOffset = Radians.zero();
+  private volatile boolean isReady = false;
+
+  private boolean navxLastConnected = false;
+  private boolean canLastConnected = false;
+  private boolean isFirstUpdate = true;
+  private boolean hasBeenSet = false;
 
   private final GyroType[] combinedTypes = new GyroType[] {GyroType.NAVX, GyroType.CANANDGYRO};
   private final int[] combinedActiveFaults = new int[2];
@@ -84,8 +90,8 @@ public class GyroIODual implements GyroIO {
               // Push to odometry queue
               yawPositionQueue.offer(yaw);
 
-              // Broadcast to native vision server if loaded
-              if (Whacknet.getInstance().isLoaded()) {
+              // Broadcast to native vision server if loaded if we are sure of our heading
+              if (Whacknet.getInstance().isLoaded() && isReady) {
                 Whacknet.getInstance().broadcast(RobotController.getFPGATime(), yaw, vel);
               }
             });
@@ -95,10 +101,37 @@ public class GyroIODual implements GyroIO {
   public void updateInputs(GyroIOInputs inputs) {
     boolean navxConn = navX.isConnected();
     boolean canConn = canAndGyro.isConnected();
+    boolean navxCalibrating = navX.isCalibrating();
+    boolean canCalibrating = canAndGyro.isCalibrating();
+    
     inputs.connected = navxConn || canConn;
+    inputs.ready = isReady = inputs.connected && hasBeenSet;
+
+    // Handle NavX Reconnection (or First Boot Sync)
+    if (navxConn && (!navxLastConnected || isFirstUpdate) && !navxCalibrating) {
+      if (canConn && !canCalibrating) {
+        navX.zeroYaw();
+        navX.setAngleAdjustment(-Rotations.of(canAndGyro.getYaw()).in(Degrees));
+        driftOffset = Radians.zero();
+        isFirstUpdate = false;
+      }
+    }
+
+    // Handle Canandgyro Reconnection (or First Boot Sync)
+    if (canConn && (!canLastConnected || isFirstUpdate) && !canCalibrating) {
+      if (navxConn && !navxCalibrating) {
+        canAndGyro.setYaw(
+            Radians.of(Units.degreesToRadians(-navX.getAngle()) + driftOffset.in(Radians))
+                .in(Rotations));
+        isFirstUpdate = false;
+      }
+    }
+
+    navxLastConnected = navxConn;
+    canLastConnected = canConn;
 
     // Drift Compensation Math
-    if (navxConn && canConn) {
+    if (navxConn && canConn && !navxCalibrating && !canCalibrating) {
       Angle navxCorrected =
           Radians.of(Units.degreesToRadians(-navX.getAngle()) + driftOffset.in(Radians));
       Angle canPos = Rotations.of(canAndGyro.getYaw());
@@ -138,9 +171,6 @@ public class GyroIODual implements GyroIO {
     }
 
     // Health and Faults
-    boolean navxCalibrating = navX.isCalibrating();
-    boolean canCalibrating = canAndGyro.isCalibrating();
-
     inputs.healthy =
         inputs.connected
             && !navxCalibrating
@@ -192,6 +222,7 @@ public class GyroIODual implements GyroIO {
     canAndGyro.setYaw(yaw.in(Rotations));
 
     driftOffset = Radians.zero();
+    hasBeenSet = true;
 
     yawPositionQueue.clear();
     yawTimestampQueue.clear();

@@ -23,6 +23,9 @@ public interface GyroIO {
     /** Whether the gyro is currently connected and communicating. */
     public boolean connected = false;
 
+    /** Whether the gyro is ready for use. */
+    public boolean ready = false;
+
     /** The current yaw position from the gyro. */
     public Angle yawPosition = Radians.zero();
 

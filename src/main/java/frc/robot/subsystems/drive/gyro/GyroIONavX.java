@@ -35,6 +35,9 @@ public class GyroIONavX implements GyroIO {
   private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
   private final PrimitiveQueue yawTimestampQueue;
 
+  private volatile boolean isReady = false;
+  private boolean hasBeenSet = false;
+
   private final GyroType[] types = new GyroType[] {GyroType.NAVX};
   private final int[] activeFaults = new int[1];
   private final int[] stickyFaults = new int[1];
@@ -52,7 +55,7 @@ public class GyroIONavX implements GyroIO {
               double yawVelocity = Units.degreesToRadians(-navX.getRate());
               yawPositionQueue.offer(yawPosition + (yawVelocity * NAVX_LATENCY_SEC.in(Seconds)));
 
-              if (Whacknet.getInstance().isLoaded()) {
+              if (Whacknet.getInstance().isLoaded() && isReady) {
                 Whacknet.getInstance()
                     .broadcast(RobotController.getFPGATime(), yawPosition, yawVelocity);
               }
@@ -63,6 +66,7 @@ public class GyroIONavX implements GyroIO {
   @Override
   public void updateInputs(GyroIOInputs inputs) {
     inputs.connected = navX.isConnected();
+    inputs.ready = isReady = inputs.connected && hasBeenSet;
     inputs.yawPosition = Degrees.of(-navX.getAngle());
     inputs.yawVelocity = DegreesPerSecond.of(-navX.getRawGyroZ());
     inputs.healthy = inputs.connected && !navX.isCalibrating();
@@ -101,6 +105,7 @@ public class GyroIONavX implements GyroIO {
   public void setYaw(Angle yaw) {
     navX.zeroYaw();
     navX.setAngleAdjustment(-yaw.in(Degrees));
+    hasBeenSet = true;
 
     synchronized (yawPositionQueue) {
       yawPositionQueue.clear();
