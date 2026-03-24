@@ -51,7 +51,7 @@ public class ClimbIOSpark implements ClimbIO {
         5,
         () ->
             spark.configure(
-                liftCfg, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+                liftCfg, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters));
   }
 
   @Override

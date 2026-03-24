@@ -50,7 +50,7 @@ public class IndexerIOSim implements IndexerIO {
         .idleMode(IdleMode.kBrake)
         .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
         .voltageCompensation(12.0);
-    spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
   /**

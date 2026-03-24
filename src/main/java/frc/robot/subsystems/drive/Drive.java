@@ -248,15 +248,24 @@ public class Drive extends SubsystemBase {
    * @param speeds Speeds in meters/sec, relative to the robot's field-centric perspective.
    */
   public void runVelocity(ChassisSpeeds speeds) {
-    // Calculate module setpoints
+    // Discretize speeds to 20ms intervals to prevent oscillations from small setpoint changes
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
-    SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
+    runVelocityRaw(discreteSpeeds);
+  }
+
+  /**
+   * Internal method to run velocity without re-discretizing
+   *
+   * @param speeds Speeds in meters/sec, relative to the robot's field-centric perspective.
+   */
+  public void runVelocityRaw(ChassisSpeeds speeds) {
+    SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(speeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(
         setpointStates, MAX_LINEAR_VELOCITY.in(MetersPerSecond));
 
     // Log unoptimized setpoints
     Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
-    Logger.recordOutput("SwerveChassisSpeeds/Setpoints", discreteSpeeds);
+    Logger.recordOutput("SwerveChassisSpeeds/Setpoints", speeds);
 
     // Send setpoints to modules
     for (int i = 0; i < 4; i++) {

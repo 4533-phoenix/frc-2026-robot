@@ -96,7 +96,7 @@ public class ArmIOSim implements ArmIO {
         .forwardSoftLimit(RETRACTED_POSITION.plus(SOFT_LIMIT_TOLERANCE).in(Radians))
         .reverseSoftLimitEnabled(true)
         .reverseSoftLimit(DEPLOYED_POSITION.minus(SOFT_LIMIT_TOLERANCE).in(Radians));
-    armSpark.configure(armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    armSpark.configure(armConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
     armEncoder.setPosition(RETRACTED_POSITION.in(Radians));
   }
 

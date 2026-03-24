@@ -141,7 +141,7 @@ public class ModuleIOSpark implements ModuleIO {
         5,
         () ->
             driveSpark.configure(
-                driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+                driveConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters));
     tryUntilOk(5, () -> driveEncoder.setPosition(0.0));
 
     // Configure CANcoder
@@ -186,7 +186,7 @@ public class ModuleIOSpark implements ModuleIO {
         5,
         () ->
             turnSpark.configure(
-                turnConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+                turnConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters));
 
     // Sync internal turn encoder with CANcoder absolute position on startup
     tryUntilOk(

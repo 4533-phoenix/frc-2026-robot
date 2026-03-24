@@ -54,7 +54,7 @@ public class SpinnerIOSpark implements SpinnerIO {
         5,
         () ->
             spark.configure(
-                config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+                config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters));
   }
 
   @Override

@@ -78,7 +78,7 @@ public class FlywheelIOSim implements FlywheelIO {
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(FLYWHEEL_KP, FLYWHEEL_KI, FLYWHEEL_KD);
     config.closedLoop.feedForward.kS(FLYWHEEL_KS).kV(FLYWHEEL_KV).kA(FLYWHEEL_KA);
-    spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
   /**

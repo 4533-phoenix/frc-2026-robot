@@ -53,7 +53,7 @@ public class IndexerIOSpark implements IndexerIO {
         5,
         () ->
             spark.configure(
-                config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+                config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters));
   }
 
   /** Updates hardware inputs and monitors connectivity. */

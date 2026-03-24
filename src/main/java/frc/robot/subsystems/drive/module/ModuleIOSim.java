@@ -97,7 +97,7 @@ public class ModuleIOSim implements ModuleIO {
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(DRIVE_KP, 0.0, DRIVE_KD);
     driveSpark.configure(
-        driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        driveConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
 
     // Configure turn Spark MAX
     var turnConfig = new SparkMaxConfig();
@@ -116,7 +116,8 @@ public class ModuleIOSim implements ModuleIO {
         .pid(TURN_KP, 0.0, TURN_KD)
         .positionWrappingEnabled(true)
         .positionWrappingInputRange(TURN_PID_MIN_INPUT, TURN_PID_MAX_INPUT);
-    turnSpark.configure(turnConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    turnSpark.configure(
+        turnConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
   @Override
@@ -130,9 +131,6 @@ public class ModuleIOSim implements ModuleIO {
     turnMotorSim.update(0.02);
 
     // Update SparkMaxSim with physics model results
-    // iterate() expects velocity in units AFTER the encoder conversion factor.
-    // Our conversion factors convert motor RPM to mechanism-side rad/s,
-    // so we pass mechanism-side rad/s from the DCMotorSim.
     driveSparkSim.iterate(
         driveMotorSim.getAngularVelocityRadPerSec(), RoboRioSim.getVInVoltage(), 0.02);
     turnSparkSim.iterate(

@@ -71,7 +71,7 @@ public class ClimbIOSim implements ClimbIO {
         .voltageCompensation(12.0);
     liftCfg.limitSwitch.forwardLimitSwitchType(LimitSwitchConfig.Type.kNormallyOpen);
     liftCfg.limitSwitch.reverseLimitSwitchType(LimitSwitchConfig.Type.kNormallyOpen);
-    spark.configure(liftCfg, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    spark.configure(liftCfg, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
   /**

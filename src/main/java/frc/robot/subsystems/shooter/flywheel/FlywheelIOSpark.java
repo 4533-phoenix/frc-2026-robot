@@ -79,7 +79,7 @@ public class FlywheelIOSpark implements FlywheelIO {
         5,
         () ->
             spark.configure(
-                config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+                config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters));
   }
 
   @Override

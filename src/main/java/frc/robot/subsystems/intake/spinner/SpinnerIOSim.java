@@ -52,7 +52,7 @@ public class SpinnerIOSim implements SpinnerIO {
         .positionConversionFactor(INTERNAL_ENCODER_POSITION_FACTOR)
         .velocityConversionFactor(INTERNAL_ENCODER_VELOCITY_FACTOR);
     spinnerSpark.configure(
-        spinnerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        spinnerConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
   /**

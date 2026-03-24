@@ -261,7 +261,7 @@ public class DriveCommands {
                       discretized.vyMetersPerSecond * translationScale,
                       discretized.omegaRadiansPerSecond);
 
-              drive.runVelocity(finalSpeeds);
+              drive.runVelocityRaw(finalSpeeds);
             },
             drive)
         // Reset with both position and current velocity so the profiled controller doesn't

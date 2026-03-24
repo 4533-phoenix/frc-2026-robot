@@ -101,7 +101,7 @@ public class ArmIOSpark implements ArmIO {
         5,
         () ->
             spark.configure(
-                armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+                armConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters));
     tryUntilOk(5, () -> spark.getEncoder().setPosition(absoluteEncoder.getPosition()));
   }
 
