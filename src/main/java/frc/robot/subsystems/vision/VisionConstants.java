@@ -81,6 +81,7 @@ public class VisionConstants {
   /** Port for communication between Java and the native vision server. */
   public static final int SERVER_RPORT = 7001;
 
+  /** Port for the native vision server to broadcast heading information. */
   public static final int SERVER_BPORT = 7002;
 
   /**

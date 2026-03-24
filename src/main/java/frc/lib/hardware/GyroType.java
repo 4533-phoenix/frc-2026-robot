@@ -7,7 +7,10 @@
 
 package frc.lib.hardware;
 
+/** Represents the type of gyro hardware. */
 public enum GyroType {
+  /** Studica NavX. */
   NAVX,
+  /** Redux Robotics Canandgyro. */
   CANANDGYRO,
 }

@@ -380,7 +380,7 @@ public class SparkTap {
     // Status 2 (Primary Encoder)
 
     /**
-     * Gets the raw position from the most recent CAN frame.
+     * Gets the position from the internal encoder. Found in Status 2.
      *
      * <p>This value is affected by positionConversionFactor
      *
@@ -392,7 +392,7 @@ public class SparkTap {
     }
 
     /**
-     * Gets the raw velocity from the most recent CAN frame.
+     * Gets the velocity from the internal encoder. Found in Status 2.
      *
      * <p>This value is affected by velocityConversionFactor
      *
@@ -405,7 +405,7 @@ public class SparkTap {
 
     /**
      * Latency Compensation. Atomically reads position, velocity, and timestamp from the same CAN
-     * frame and extrapolates the position to the current FPGA microsecond.
+     * frame and extrapolates the position to the current FPGA microsecond. Found in Status 2.
      *
      * <p>This code is affected by both positionConversionFactor and velocityConversionFactor which
      * both have to be the same units for the latency compensation to be accurate. If they are
@@ -431,13 +431,25 @@ public class SparkTap {
 
     // Status 5 (Duty Cycle Absolute Encoder)
 
-    /** Gets the absolute encoder velocity. Found in Status 5. */
+    /**
+     * Gets the absolute encoder velocity. Found in Status 5.
+     *
+     * <p>This value is affected by velocityConversionFactor.
+     *
+     * @return The absolute encoder velocity.
+     */
     public double getAbsoluteEncoderVelocity() {
       long data = readDataAtomic(Frame.S5);
       return Float.intBitsToFloat((int) data);
     }
 
-    /** Gets the absolute encoder position. Found in Status 5. */
+    /**
+     * Gets the absolute encoder position. Found in Status 5.
+     *
+     * <p>This value is affected by positionConversionFactor.
+     *
+     * @return The absolute encoder position
+     */
     public double getAbsoluteEncoderPosition() {
       long data = readDataAtomic(Frame.S5);
       return Float.intBitsToFloat((int) (data >> 32));

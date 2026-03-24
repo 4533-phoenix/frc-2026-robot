@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import frc.lib.util.FaultUtil;
 
+/** Monitors the health of the Power Distribution Hub (PDH). */
 public class PDHHealthMonitor {
   private final Alert activeAlert = new Alert("PDH active fault", AlertType.kError);
   private final Alert stickyAlert = new Alert("PDH sticky fault", AlertType.kInfo);
@@ -18,6 +19,13 @@ public class PDHHealthMonitor {
   private int lastActive, lastSticky = 0;
   private final StringBuilder sb = new StringBuilder();
 
+  /**
+   * Updates the health monitor with the latest PDH status.
+   *
+   * @param connected Whether the PDH is connected.
+   * @param active The active faults bitfield.
+   * @param sticky The sticky faults bitfield.
+   */
   public void update(boolean connected, int active, int sticky) {
     if (!connected) {
       activeAlert.set(false);

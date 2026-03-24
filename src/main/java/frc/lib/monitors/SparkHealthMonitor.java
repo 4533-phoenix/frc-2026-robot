@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import frc.lib.util.FaultUtil;
 
+/** Monitors the health of a Spark Max or Spark Flex motor controller. */
 public class SparkHealthMonitor {
   private final String name;
   private final Alert disconnected;
@@ -22,6 +23,11 @@ public class SparkHealthMonitor {
   private int lastFaults, lastStickyFaults, lastWarns, lastStickyWarns = 0;
   private final StringBuilder sb = new StringBuilder();
 
+  /**
+   * Creates a new SparkHealthMonitor.
+   *
+   * @param name The name of the motor for alert messages.
+   */
   public SparkHealthMonitor(String name) {
     this.name = name;
     this.disconnected = new Alert(name + " motor disconnected", AlertType.kError);
@@ -31,6 +37,12 @@ public class SparkHealthMonitor {
     this.stickyWarn = new Alert(name + " motor sticky warning", AlertType.kInfo);
   }
 
+  /**
+   * Updates the health monitor with the latest motor status.
+   *
+   * @param isConnected Whether the motor is connected.
+   * @param status An array containing[activeFaults, stickyFaults, activeWarnings, stickyWarnings].
+   */
   public void update(boolean isConnected, int[] status) {
     disconnected.set(!isConnected);
     if (!isConnected) {

@@ -45,6 +45,7 @@ public class GyroIODual implements GyroIO {
   private final int[] combinedActiveFaults = new int[2];
   private final int[] combinedStickyFaults = new int[2];
 
+  /** Creates a new GyroIODual. */
   public GyroIODual() {
     // Initialize Hardware
     navx = new AHRS(NavXComType.kUSB1, (int) ODOMETRY_FREQUENCY.in(Hertz));
@@ -57,7 +58,7 @@ public class GyroIODual implements GyroIO {
     canandgyro.setSettings(settings);
     canandgyro.setYaw(0.0);
 
-    // Register single 200Hz signal for Odometry and Whacknet
+    // Register single signal for Odometry and Whacknet
     yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
     SparkOdometryThread.getInstance()
         .registerSignal(
