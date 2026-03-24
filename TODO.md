@@ -10,3 +10,4 @@
 * Use whacknet for vision
 * Review fault handling
 * Move logic of gyro sending to module logic to enforce seperation?
+* If gyro drops in dual gyro, reseed it and then retrust it
