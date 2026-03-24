@@ -39,8 +39,10 @@ public class GyroIODual implements GyroIO {
   private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
   private final PrimitiveQueue yawTimestampQueue;
 
-  private volatile Angle driftOffset = Radians.zero();
-  private volatile boolean isReady = false;
+  // Software offsets to avoid blocking hardware calls
+  private volatile Angle navxOffset = Radians.zero();
+  private volatile Angle canOffset = Radians.zero();
+  private volatile boolean isLocked = false;
 
   private boolean navxLastConnected = false;
   private boolean canLastConnected = false;
@@ -53,16 +55,14 @@ public class GyroIODual implements GyroIO {
 
   /** Creates a new GyroIODual. */
   public GyroIODual() {
-    // Initialize Hardware
+    // Initialize Hardware without zeroing
     navX = new AHRS(NavXComType.kUSB1, (int) ODOMETRY_FREQUENCY.in(Hertz));
-    navX.zeroYaw();
 
     canAndGyro = new Canandgyro(IMU_CAN_ID);
     CanandgyroSettings settings = new CanandgyroSettings();
     settings.setYawFramePeriod(1 / ODOMETRY_FREQUENCY.in(Hertz));
     settings.setAngularVelocityFramePeriod(1 / ODOMETRY_FREQUENCY.in(Hertz));
     canAndGyro.setSettings(settings);
-    canAndGyro.setYaw(0.0);
 
     // Register single signal for Odometry and Whacknet
     yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
@@ -80,18 +80,18 @@ public class GyroIODual implements GyroIO {
               if (navxConnected) {
                 double rawYawRad = Units.degreesToRadians(-navX.getAngle());
                 vel = Units.degreesToRadians(-navX.getRate());
-                yaw = rawYawRad + (vel * NAVX_LATENCY_SEC.in(Seconds)) + driftOffset.in(Radians);
+                yaw = rawYawRad + navxOffset.in(Radians) + (vel * NAVX_LATENCY_SEC.in(Seconds));
               } else {
                 double rawYawRad = Units.rotationsToRadians(canAndGyro.getYaw());
                 vel = Units.rotationsToRadians(canAndGyro.getAngularVelocityYaw());
-                yaw = rawYawRad + (vel * CANANDGYRO_LATENCY_SEC.in(Seconds));
+                yaw = rawYawRad + canOffset.in(Radians) + (vel * CANANDGYRO_LATENCY_SEC.in(Seconds));
               }
 
               // Push to odometry queue
               yawPositionQueue.offer(yaw);
 
-              // Broadcast to native vision server if loaded if we are sure of our heading
-              if (Whacknet.getInstance().isLoaded() && isReady) {
+              // Broadcast to native vision server if loaded and we have an established heading
+              if (Whacknet.getInstance().isLoaded() && isLocked) {
                 Whacknet.getInstance().broadcast(RobotController.getFPGATime(), yaw, vel);
               }
             });
@@ -105,25 +105,26 @@ public class GyroIODual implements GyroIO {
     boolean canCalibrating = canAndGyro.isCalibrating();
     
     inputs.connected = navxConn || canConn;
-    inputs.ready = isReady = inputs.connected && hasBeenSet;
+    inputs.locked = isLocked = inputs.connected && hasBeenSet;
+
+    double rawNavx = Units.degreesToRadians(-navX.getAngle());
+    double rawCan = Units.rotationsToRadians(canAndGyro.getYaw());
 
     // Handle NavX Reconnection (or First Boot Sync)
     if (navxConn && (!navxLastConnected || isFirstUpdate) && !navxCalibrating) {
       if (canConn && !canCalibrating) {
-        navX.zeroYaw();
-        navX.setAngleAdjustment(-Rotations.of(canAndGyro.getYaw()).in(Degrees));
-        driftOffset = Radians.zero();
+        navxOffset = Radians.of((rawCan + canOffset.in(Radians)) - rawNavx);
         isFirstUpdate = false;
+        Logger.recordOutput("Drive/Gyro/Event", "NavX Reconnected - Synced to Canandgyro");
       }
     }
 
     // Handle Canandgyro Reconnection (or First Boot Sync)
     if (canConn && (!canLastConnected || isFirstUpdate) && !canCalibrating) {
       if (navxConn && !navxCalibrating) {
-        canAndGyro.setYaw(
-            Radians.of(Units.degreesToRadians(-navX.getAngle()) + driftOffset.in(Radians))
-                .in(Rotations));
+        canOffset = Radians.of((rawNavx + navxOffset.in(Radians)) - rawCan);
         isFirstUpdate = false;
+        Logger.recordOutput("Drive/Gyro/Event", "Canandgyro Reconnected - Synced to NavX");
       }
     }
 
@@ -132,38 +133,30 @@ public class GyroIODual implements GyroIO {
 
     // Drift Compensation Math
     if (navxConn && canConn && !navxCalibrating && !canCalibrating) {
-      Angle navxCorrected =
-          Radians.of(Units.degreesToRadians(-navX.getAngle()) + driftOffset.in(Radians));
-      Angle canPos = Rotations.of(canAndGyro.getYaw());
+      double navxEffective = rawNavx + navxOffset.in(Radians);
+      double canEffective = rawCan + canOffset.in(Radians);
       AngularVelocity navxVel = DegreesPerSecond.of(-navX.getRate());
 
-      // Calculate error between NavX (corrected) and CanAndGyro, continuously wrapped
-      double errorRad = MathUtil.angleModulus(canPos.minus(navxCorrected).in(Radians));
-      Angle error = Radians.of(errorRad);
+      // Calculate error between NavX and CanAndGyro, continuously wrapped
+      double errorRad = MathUtil.angleModulus(canEffective - navxEffective);
 
       // Determine if the robot is effectively stationary
       boolean isStill = navxVel.abs(RadiansPerSecond) < VELOCITY_GATE.in(RadiansPerSecond);
 
-      // If stationary and error is significant, adjust the drift offset
-      if (isStill && (error.abs(Radians) > ERROR_THRESHOLD.in(Radians))) {
-        Angle step = error.times(DRIFT_GAIN);
-        // Clamp the correction step to a maximum value to prevent sudden jumps
-        double clampedStep =
-            MathUtil.clamp(
-                step.in(Radians),
-                -MAX_CORRECTION_PER_FRAME.in(Radians),
-                MAX_CORRECTION_PER_FRAME.in(Radians));
-        driftOffset = driftOffset.plus(Radians.of(clampedStep));
+      // If stationary and error is significant, slowly pull the NavX offset to match Canandgyro
+      if (isStill && (Math.abs(errorRad) > ERROR_THRESHOLD.in(Radians))) {
+        double step = errorRad * DRIFT_GAIN;
+        double clampedStep = MathUtil.clamp(step, -MAX_CORRECTION_PER_FRAME.in(Radians), MAX_CORRECTION_PER_FRAME.in(Radians));
+        navxOffset = navxOffset.plus(Radians.of(clampedStep));
       }
     }
 
     // Standard 50Hz Telemetry
     if (navxConn) {
-      inputs.yawPosition =
-          Radians.of(Units.degreesToRadians(-navX.getAngle()) + driftOffset.in(Radians));
+      inputs.yawPosition = Radians.of(rawNavx + navxOffset.in(Radians));
       inputs.yawVelocity = DegreesPerSecond.of(-navX.getRate());
     } else if (canConn) {
-      inputs.yawPosition = Rotations.of(canAndGyro.getYaw());
+      inputs.yawPosition = Radians.of(rawCan + canOffset.in(Radians));
       inputs.yawVelocity = RotationsPerSecond.of(canAndGyro.getAngularVelocityYaw());
     } else {
       inputs.yawPosition = Radians.zero();
@@ -205,8 +198,9 @@ public class GyroIODual implements GyroIO {
     yawTimestampQueue.clear();
     yawPositionQueue.clear();
 
-    // Log the current drift offset
-    Logger.recordOutput("Drive/Gyro/DriftOffset", driftOffset);
+    // Log the current offsets to track drift
+    Logger.recordOutput("Drive/Gyro/NavXOffset", navxOffset);
+    Logger.recordOutput("Drive/Gyro/CanOffset", canOffset);
   }
 
   @Override
@@ -217,14 +211,22 @@ public class GyroIODual implements GyroIO {
 
   @Override
   public void setYaw(Angle yaw) {
-    navX.zeroYaw();
-    navX.setAngleAdjustment(-yaw.in(Degrees));
-    canAndGyro.setYaw(yaw.in(Rotations));
+    double target = yaw.in(Radians);
 
-    driftOffset = Radians.zero();
+    // Apply the offset mathematically to whichever hardware is currently online
+    if (navX.isConnected()) {
+      navxOffset = Radians.of(target - Units.degreesToRadians(-navX.getAngle()));
+    }
+    if (canAndGyro.isConnected()) {
+      canOffset = Radians.of(target - Units.rotationsToRadians(canAndGyro.getYaw()));
+    }
+
     hasBeenSet = true;
 
-    yawPositionQueue.clear();
-    yawTimestampQueue.clear();
+    // Clear queues to prevent applying old offsets to pending samples
+    synchronized (yawPositionQueue) {
+      yawPositionQueue.clear();
+      yawTimestampQueue.clear();
+    }
   }
 }
