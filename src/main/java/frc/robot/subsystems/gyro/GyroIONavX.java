@@ -7,21 +7,19 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-package frc.robot.subsystems.drive.gyro;
+package frc.robot.subsystems.gyro;
 
 import static edu.wpi.first.units.Units.*;
-import static frc.robot.subsystems.drive.DriveConstants.NAVX_LATENCY_SEC;
-import static frc.robot.subsystems.drive.DriveConstants.ODOMETRY_FREQUENCY;
 
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
+import com.studica.frc.AHRS.NavXUpdateRate;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.lib.hardware.GyroType;
 import frc.lib.lowlevel.Whacknet;
-import frc.robot.subsystems.drive.SparkOdometryThread;
-import frc.robot.subsystems.drive.SparkOdometryThread.PrimitiveQueue;
 
 /**
  * IO implementation for the Studica NavX gyro.
@@ -32,8 +30,7 @@ import frc.robot.subsystems.drive.SparkOdometryThread.PrimitiveQueue;
  */
 public class GyroIONavX implements GyroIO {
   private final AHRS navX;
-  private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
-  private final PrimitiveQueue yawTimestampQueue;
+  private final Notifier notifier;
 
   private final GyroType[] types = new GyroType[] {GyroType.NAVX};
   private final int[] activeFaults = new int[1];
@@ -41,22 +38,10 @@ public class GyroIONavX implements GyroIO {
 
   /** Creates a new GyroIONavX. */
   public GyroIONavX() {
-    navX = new AHRS(NavXComType.kMXP_SPI, (int) ODOMETRY_FREQUENCY.in(Hertz));
-    yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
-    SparkOdometryThread.getInstance()
-        .registerSignal(
-            () -> {
-              if (!navX.isConnected()) return;
+    navX = new AHRS(NavXComType.kMXP_SPI, NavXUpdateRate.k200Hz);
+    notifier = new Notifier(this::updateLoop);
+    notifier.startPeriodic((1.0) / 200.0);
 
-              double yawPosition = Units.degreesToRadians(-navX.getAngle());
-              double yawVelocity = Units.degreesToRadians(-navX.getRate());
-              yawPositionQueue.offer(yawPosition + (yawVelocity * NAVX_LATENCY_SEC.in(Seconds)));
-
-              if (Whacknet.getInstance().isLoaded()) {
-                Whacknet.getInstance()
-                    .broadcast(RobotController.getFPGATime(), yawPosition, yawVelocity);
-              }
-            });
     navX.zeroYaw();
   }
 
@@ -75,21 +60,6 @@ public class GyroIONavX implements GyroIO {
     inputs.activeFaults = activeFaults;
     inputs.stickyFaults = stickyFaults;
     inputs.types = types;
-
-    // Empty the queues into the inputs object for logging and odometry processing
-    int count = yawTimestampQueue.size;
-    if (inputs.odometryYawTimestamps == null || inputs.odometryYawTimestamps.length != count) {
-      inputs.odometryYawTimestamps = new double[count];
-      inputs.odometryYawPositions = new double[count];
-    }
-
-    for (int i = 0; i < count; i++) {
-      inputs.odometryYawTimestamps[i] = yawTimestampQueue.data[i];
-      inputs.odometryYawPositions[i] = yawPositionQueue.data[i];
-    }
-
-    yawPositionQueue.clear();
-    yawTimestampQueue.clear();
   }
 
   @Override
@@ -101,10 +71,16 @@ public class GyroIONavX implements GyroIO {
   public void setYaw(Angle yaw) {
     navX.zeroYaw();
     navX.setAngleAdjustment(-yaw.in(Degrees));
+  }
 
-    synchronized (yawPositionQueue) {
-      yawPositionQueue.clear();
-      yawTimestampQueue.clear();
+  private void updateLoop() {
+    if (!navX.isConnected()) return;
+
+    double yawPosition = Units.degreesToRadians(-navX.getAngle());
+    double yawVelocity = Units.degreesToRadians(-navX.getRawGyroZ());
+
+    if (Whacknet.getInstance().isLoaded()) {
+      Whacknet.getInstance().broadcast(RobotController.getFPGATime(), yawPosition, yawVelocity);
     }
   }
 }

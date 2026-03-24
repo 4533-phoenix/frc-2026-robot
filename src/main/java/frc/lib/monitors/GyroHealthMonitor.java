@@ -4,7 +4,7 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import frc.lib.hardware.GyroType;
 import frc.lib.util.FaultUtil;
-import frc.robot.subsystems.drive.gyro.GyroIO.GyroIOInputs;
+import frc.robot.subsystems.gyro.GyroIO.GyroIOInputs;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

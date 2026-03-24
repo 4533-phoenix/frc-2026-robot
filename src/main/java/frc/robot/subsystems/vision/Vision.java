@@ -18,7 +18,6 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.drive.Drive;
 import java.util.Collections;
 import org.littletonrobotics.junction.Logger;
 
@@ -42,7 +41,6 @@ public class Vision extends SubsystemBase {
 
   private final VisionIO io;
   private final VisionIOInputsAutoLogged inputs = new VisionIOInputsAutoLogged();
-  private final Drive drive;
 
   // We size the arrays based on the highest camera ID in the map to ensure direct index mapping.
   private final int maxCameraId;
@@ -61,9 +59,8 @@ public class Vision extends SubsystemBase {
    * @param io The abstraction layer for the vision hardware (e.g., Limelight, PhotonVision).
    * @param drive The Drive subsystem instance for updating pose estimates.
    */
-  public Vision(VisionIO io, Drive drive) {
+  public Vision(VisionIO io) {
     this.io = io;
-    this.drive = drive;
 
     // Determine the max array size needed to sequentially store camera data
     maxCameraId = CAMERA_MAP.isEmpty() ? 0 : Collections.max(CAMERA_MAP.keySet());
@@ -113,8 +110,8 @@ public class Vision extends SubsystemBase {
       stdVector.set(1, 0, inputs.observations[i].stdDevY());
       stdVector.set(2, 0, inputs.observations[i].stdDevRot());
 
-      drive.addVisionMeasurement(
-          inputs.observations[i].visionPose(), inputs.observations[i].timestamp(), stdVector);
+      // drive.addVisionMeasurement(
+      //     inputs.observations[i].visionPose(), inputs.observations[i].timestamp(), stdVector);
     }
 
     // Check for offline cameras
