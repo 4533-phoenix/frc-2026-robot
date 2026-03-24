@@ -7,13 +7,17 @@
 
 package frc.robot;
 
+import frc.robot.subsystems.gyro.Gyro;
+import frc.robot.subsystems.gyro.GyroIONavX;
 import frc.robot.subsystems.vision.Vision;
-import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOWhacknet;
 
 /** Declares the robot's subsystems, operator interface devices, and command bindings. */
 public class RobotContainer {
   // Subsystems
+  @SuppressWarnings("unused")
+  private final Gyro gyro;
+
   @SuppressWarnings("unused")
   private final Vision vision;
 
@@ -24,18 +28,7 @@ public class RobotContainer {
    */
   public RobotContainer() {
     // Instantiate subsystems based on the running mode
-    switch (Constants.CURRENT_MODE) {
-      case REAL:
-        vision = new Vision(new VisionIOWhacknet());
-        break;
-
-      case SIM:
-        vision = new Vision(new VisionIO() {});
-        break;
-
-      default:
-        vision = new Vision(new VisionIO() {});
-        break;
-    }
+    gyro = new Gyro(new GyroIONavX());
+    vision = new Vision(new VisionIOWhacknet());
   }
 }

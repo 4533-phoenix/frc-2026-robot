@@ -17,7 +17,6 @@ import com.studica.frc.AHRS.NavXUpdateRate;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.Notifier;
-import edu.wpi.first.wpilibj.RobotController;
 import frc.lib.hardware.GyroType;
 import frc.lib.lowlevel.Whacknet;
 
@@ -76,11 +75,23 @@ public class GyroIONavX implements GyroIO {
   private void updateLoop() {
     if (!navX.isConnected()) return;
 
+    double rollPosition = Units.degreesToRadians(navX.getRoll());
+    double rollVelocity = Units.degreesToRadians(navX.getRawGyroX());
+    double pitchPosition = Units.degreesToRadians(navX.getPitch());
+    double pitchVelocity = Units.degreesToRadians(navX.getRawGyroY());
     double yawPosition = Units.degreesToRadians(-navX.getAngle());
     double yawVelocity = Units.degreesToRadians(-navX.getRawGyroZ());
 
     if (Whacknet.getInstance().isLoaded()) {
-      Whacknet.getInstance().broadcast(RobotController.getFPGATime(), yawPosition, yawVelocity);
+      Whacknet.getInstance()
+          .broadcast(
+              navX.getLastSensorTimestamp(),
+              rollPosition,
+              pitchPosition,
+              yawPosition,
+              rollVelocity,
+              pitchVelocity,
+              yawVelocity);
     }
   }
 }

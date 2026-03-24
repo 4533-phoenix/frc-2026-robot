@@ -54,8 +54,12 @@ typedef struct __attribute__((packed)) {
 
 typedef struct __attribute__((packed)) {
   uint64_t fpga_timestamp;
-  double heading;
-  double angular_velocity;
+  double roll;
+  double pitch;
+  double yaw;
+  double roll_velocity;
+  double pitch_velocity;
+  double yaw_velocity;
 } GyroPacket;
 
 // Cache-line-padded ring buffer
@@ -293,12 +297,12 @@ JNIEXPORT void JNICALL Java_frc_lib_lowlevel_Whacknet_startServer(JNIEnv *env, j
   broadcast_fd = b_fd; // Only set global once fully ready
 }
 
-JNIEXPORT void JNICALL Java_frc_lib_lowlevel_Whacknet_broadcastRobotTelemetry(JNIEnv *env, jclass cls, jlong timestamp, jdouble heading, jdouble velocity)
+JNIEXPORT void JNICALL Java_frc_lib_lowlevel_Whacknet_broadcastRobotTelemetry(JNIEnv *env, jclass cls, jlong timestamp, jdouble roll, jdouble pitch, jdouble yaw, jdouble rollVelocity, jdouble pitchVelocity, jdouble yawVelocity)
 {
   if (likely(broadcast_fd != -1)
 )
 {
-  GyroPacket pkt = {(uint64_t)timestamp, heading, velocity};
+  GyroPacket pkt = {(uint64_t)timestamp, roll, pitch, yaw, rollVelocity, pitchVelocity, yawVelocity};
   sendto(broadcast_fd, &pkt, sizeof(GyroPacket), 0, (struct sockaddr *)&broadcast_addr, sizeof(broadcast_addr));
 }
 }

@@ -92,7 +92,13 @@ public class Whacknet {
    * @param velocity Robot angular velocity in radians per second.
    */
   private static native void broadcastRobotTelemetry(
-      long timestamp, double heading, double velocity);
+      long timestamp,
+      double roll,
+      double pitch,
+      double yaw,
+      double rollVelocity,
+      double pitchVelocity,
+      double yawVelocity);
 
   /**
    * Transfers packets from the native queue into the shared ByteBuffer.
@@ -132,12 +138,23 @@ public class Whacknet {
    * Broadcasts the robot heading to the native library.
    *
    * @param timestamp Robot timestamp in microseconds.
-   * @param heading Robot angle in radians.
-   * @param velocity Robot angular velocity in radians per second.
+   * @param roll Roll angle in radians.
+   * @param pitch Pitch angle in radians.
+   * @param yaw Yaw angle in radians.
+   * @param rollVelocity Roll angular velocity in radians per second.
+   * @param pitchVelocity Pitch angular velocity in radians per second.
+   * @param yawVelocity Yaw angular velocity in radians per second.
    */
-  public void broadcast(long timestamp, double heading, double velocity) {
+  public void broadcast(
+      long timestamp,
+      double roll,
+      double pitch,
+      double yaw,
+      double rollVelocity,
+      double pitchVelocity,
+      double yawVelocity) {
     if (!loaded) return;
-    broadcastRobotTelemetry(timestamp, heading, velocity);
+    broadcastRobotTelemetry(timestamp, roll, pitch, yaw, rollVelocity, pitchVelocity, yawVelocity);
   }
 
   /**
