@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.WritableTrigger;
+import frc.lib.util.FieldUtil;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveConstants;
@@ -26,8 +27,8 @@ import frc.robot.subsystems.intake.arm.Arm;
 import frc.robot.subsystems.intake.spinner.Spinner;
 import frc.robot.subsystems.pdh.PDH;
 import frc.robot.subsystems.shooter.Shooter;
-import frc.robot.subsystems.shooter.Shooter.ShooterState;
 import frc.robot.subsystems.shooter.ShooterConstants;
+import frc.robot.subsystems.shooter.ShooterKinematics;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.util.Aiming;
 import frc.robot.util.Aiming.AimingResult;
@@ -128,27 +129,23 @@ public class Superstructure extends SubsystemBase {
 
     // Evaluate aiming and automated shooting states
     if (!climbMode.get()) {
-      // // Determine if we are in the Hub Shooting zone
-      // if (FieldUtil.flipAllianceIfNeeded(Constants.SHOOTING_ZONE).contains(robotTranslation)
-      //     && (Util.isHubApproaching() || isHubEnabled)) {
-      //   currentAimingResult = hubAiming.get();
-      //   shooter.setShooterState(
-      //       ShooterKinematics.calculateShooterState(
-      //           Meters.of(currentAimingResult.distanceToTargetMeters())));
-      // }
-      // // Determine if we are in the Lobbing zone
-      // else if (FieldUtil.flipAllianceIfNeeded(Constants.LOBBING_ZONE).contains(robotTranslation))
-      // {
-      //   currentAimingResult = lobAiming.get();
-      //   shooter.setShooterState(ShooterConstants.LOB_STATE);
-      // }
-      // // Default state
-      // else {
-      //   currentAimingResult = Aiming.noTarget;
-      // }
-
-      currentAimingResult = new AimingResult(Rotation2d.kZero, 0.0, true);
-      shooter.setShooterState(new ShooterState(RotationsPerSecond.of(50), Degrees.of(85)));
+      // Determine if we are in the Hub Shooting zone
+      if (FieldUtil.flipAllianceIfNeeded(Constants.SHOOTING_ZONE).contains(robotTranslation)
+          && (Util.isHubApproaching() || isHubEnabled)) {
+        currentAimingResult = hubAiming.get();
+        shooter.setShooterState(
+            ShooterKinematics.calculateShooterState(
+                Meters.of(currentAimingResult.distanceToTargetMeters())));
+      }
+      // Determine if we are in the Lobbing zone
+      else if (FieldUtil.flipAllianceIfNeeded(Constants.LOBBING_ZONE).contains(robotTranslation)) {
+        currentAimingResult = lobAiming.get();
+        shooter.setShooterState(ShooterConstants.LOB_STATE);
+      }
+      // Default state
+      else {
+        currentAimingResult = Aiming.noTarget;
+      }
     } else {
       currentAimingResult = Aiming.noTarget;
     }
