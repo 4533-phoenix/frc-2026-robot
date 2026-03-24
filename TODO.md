@@ -9,3 +9,4 @@
 * Remove units in hot loops?
 * Use whacknet for vision
 * Review fault handling
+* Move logic of gyro sending to module logic to enforce seperation?
