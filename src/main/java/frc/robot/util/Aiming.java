@@ -31,7 +31,7 @@ public class Aiming {
       Rotation2d targetRotation, double distanceToTargetMeters, boolean hasTarget) {}
 
   /** A default empty result to prevent NullPointerExceptions */
-  public static final AimingResult noTarget = new AimingResult(new Rotation2d(), 0.0, false);
+  public static final AimingResult NO_TARGET = new AimingResult(new Rotation2d(), 0.0, false);
 
   /**
    * Gets the amount of angle to compensate for curve of the ball in the air.
@@ -250,7 +250,7 @@ public class Aiming {
       Translation2d shooterRobotOffset,
       Time estimatedTimeOfFlight) {
     return new Supplier<AimingResult>() {
-      private AimingResult lastResult = noTarget;
+      private AimingResult lastResult = NO_TARGET;
       private double lastTimestamp = -1.0;
 
       @Override
@@ -284,7 +284,7 @@ public class Aiming {
   public static Supplier<AimingResult> lobAimingSupplier(
       Supplier<Pose2d> robotPoseSupplier, Translation2d shooterRobotOffset) {
     return new Supplier<AimingResult>() {
-      private AimingResult lastResult = noTarget;
+      private AimingResult lastResult = NO_TARGET;
       private double lastTimestamp = -1.0;
 
       @Override

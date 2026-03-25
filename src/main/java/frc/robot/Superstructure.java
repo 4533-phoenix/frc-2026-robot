@@ -75,7 +75,7 @@ public class Superstructure extends SubsystemBase {
 
   // System State Variables
   private final WritableTrigger climbMode = new WritableTrigger(false);
-  private AimingResult currentAimingResult = Aiming.noTarget;
+  private AimingResult currentAimingResult = Aiming.NO_TARGET;
   private boolean targetCanReceive = false;
 
   /**
@@ -147,11 +147,11 @@ public class Superstructure extends SubsystemBase {
       }
       // Default state
       else {
-        currentAimingResult = Aiming.noTarget;
+        currentAimingResult = Aiming.NO_TARGET;
         targetCanReceive = false;
       }
     } else {
-      currentAimingResult = Aiming.noTarget;
+      currentAimingResult = Aiming.NO_TARGET;
       targetCanReceive = false;
     }
 
