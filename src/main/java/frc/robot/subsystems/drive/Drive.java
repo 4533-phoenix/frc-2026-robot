@@ -45,6 +45,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.lib.IMUState;
 import frc.lib.monitors.GyroHealthMonitor;
+import frc.lib.monitors.MonitoredSubsystem;
 import frc.robot.subsystems.drive.gyro.GyroIO;
 import frc.robot.subsystems.drive.gyro.GyroIOInputsAutoLogged;
 import frc.robot.subsystems.drive.module.Module;
@@ -62,7 +63,7 @@ import org.littletonrobotics.junction.Logger;
  * <p>Handles kinematics, odometry estimation (incorporating gyro, modules, and vision), and
  * interfacing with PathPlanner for autonomous paths.
  */
-public class Drive extends SubsystemBase {
+public class Drive extends SubsystemBase implements MonitoredSubsystem {
   /** Lock used to synchronize access to odometry data between the main loop and sampling thread. */
   private final Lock odometryLock = new ReentrantLock();
 

@@ -8,11 +8,12 @@
 package frc.robot.subsystems.pdh;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.monitors.MonitoredSubsystem;
 import frc.lib.monitors.PDHHealthMonitor;
 import org.littletonrobotics.junction.Logger;
 
 /** Subsystem for monitoring the Power Distribution Hub (PDH) health and status. */
-public class PDH extends SubsystemBase {
+public class PDH extends SubsystemBase implements MonitoredSubsystem {
   private final PDHIO io;
   private final PDHIOInputsAutoLogged inputs = new PDHIOInputsAutoLogged();
   private final PDHHealthMonitor healthMonitor = new PDHHealthMonitor();

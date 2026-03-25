@@ -19,6 +19,8 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.IMUState;
+import frc.lib.monitors.MonitoredSubsystem;
+
 import java.util.Collections;
 import org.littletonrobotics.junction.Logger;
 
@@ -29,7 +31,7 @@ import org.littletonrobotics.junction.Logger;
  * measurements into the Drive subsystem's pose estimator to refine the robot's field position. Also
  * monitors camera health and status using highly optimized zero-allocation data structures.
  */
-public class Vision extends SubsystemBase {
+public class Vision extends SubsystemBase implements MonitoredSubsystem {
   /** A record representing a single vision observation. */
   public record VisionObservation(
       Pose2d visionPose,
@@ -163,6 +165,9 @@ public class Vision extends SubsystemBase {
     }
     return false;
   }
+
+  /** Clear all faults and reset the subsystem. */
+  public void clearFaults() {}
 
   /**
    * Sets the consumer for vision measurements.

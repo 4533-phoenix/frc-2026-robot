@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.WritableTrigger;
+import frc.lib.monitors.MonitoredSubsystem;
 import frc.lib.util.FieldUtil;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.drive.Drive;
@@ -51,9 +52,6 @@ public class Superstructure extends SubsystemBase {
   private final Arm arm;
   private final Spinner spinner;
   private final Shooter shooter;
-  private final Indexer indexer;
-  private final Vision vision;
-  private final PDH pdh;
 
   // Dashboard helpers
   private boolean lastClearFaults = false;
@@ -77,6 +75,7 @@ public class Superstructure extends SubsystemBase {
   private final WritableTrigger climbMode = new WritableTrigger(false);
   private AimingResult currentAimingResult = Aiming.NO_TARGET;
   private boolean targetCanReceive = false;
+  private final MonitoredSubsystem[] subsystems;
 
   /**
    * Constructs a new Superstructure.
@@ -99,14 +98,16 @@ public class Superstructure extends SubsystemBase {
       Indexer indexer,
       Vision vision,
       PDH pdh) {
+
+    // If we need to interact with the subsystems we can store them
     this.drive = drive;
     this.climb = climb;
     this.arm = arm;
     this.spinner = spinner;
     this.shooter = shooter;
-    this.indexer = indexer;
-    this.vision = vision;
-    this.pdh = pdh;
+
+    // We keep an array of all subsystems for easy health monitoring and fault clearing
+    this.subsystems = new MonitoredSubsystem[] {climb, arm, spinner, shooter, indexer, vision, pdh};
 
     this.hubAiming =
         Aiming.hubAimingSupplier(
@@ -302,24 +303,18 @@ public class Superstructure extends SubsystemBase {
    */
   @AutoLogOutput(key = "Superstructure/IsHealthy")
   public boolean isHealthy() {
-    return drive.isHealthy()
-        && climb.isHealthy()
-        && arm.isHealthy()
-        && spinner.isHealthy()
-        && shooter.isHealthy()
-        && indexer.isHealthy()
-        && vision.isHealthy()
-        && pdh.isHealthy();
+    for (MonitoredSubsystem subsystem : subsystems) {
+      if (!subsystem.isHealthy()) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /** Clears all faults and warnings from all subsystems. */
   public void clearFaults() {
-    drive.clearFaults();
-    climb.clearFaults();
-    arm.clearFaults();
-    spinner.clearFaults();
-    shooter.clearFaults();
-    indexer.clearFaults();
-    pdh.clearFaults();
+    for (MonitoredSubsystem subsystem : subsystems) {
+      subsystem.clearFaults();
+    }
   }
 }

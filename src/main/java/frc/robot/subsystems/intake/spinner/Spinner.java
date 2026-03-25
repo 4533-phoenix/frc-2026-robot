@@ -12,12 +12,13 @@ import static frc.robot.subsystems.intake.spinner.SpinnerConstants.*;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.monitors.MonitoredSubsystem;
 import frc.lib.monitors.SparkHealthMonitor;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 /** Subsystem for controlling the intake spinner rollers. */
-public class Spinner extends SubsystemBase {
+public class Spinner extends SubsystemBase implements MonitoredSubsystem {
   private final SpinnerIO io;
   private final SpinnerIOInputsAutoLogged inputs = new SpinnerIOInputsAutoLogged();
   private final SparkHealthMonitor healthMonitor = new SparkHealthMonitor("Intake Spinner");
