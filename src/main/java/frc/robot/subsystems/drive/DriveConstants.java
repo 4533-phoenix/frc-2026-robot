@@ -139,6 +139,9 @@ public class DriveConstants {
   public static final Time CANANDGYRO_LATENCY_SEC = Seconds.of(0.0025);
 
   // Drive motor configuration
+  /** Whether the drive motor is inverted. */
+  public static final boolean DRIVE_INVERTED = false;
+
   /** Maximum current limit for the drive motors. */
   public static final Current DRIVE_MOTOR_CURRENT_LIMIT = Amps.of(40);
 

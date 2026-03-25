@@ -65,7 +65,7 @@ public class ArmIOSim implements ArmIO {
             RETRACTED_POSITION.in(Radians));
 
     // Configure arm Spark MAX
-    var armConfig = createBaseConfig(MOTOR_CURRENT_LIMIT, false);
+    var armConfig = createBaseConfig(MOTOR_CURRENT_LIMIT, MOTOR_INVERTED);
     armConfig
         .encoder
         .positionConversionFactor(INTERNAL_ENCODER_POSITION_FACTOR)

@@ -57,6 +57,7 @@ public class VisionIOWhacknet implements VisionIO {
         });
   }
 
+  @SuppressWarnings("unused")
   @Override
   public void broadcastImuState(IMUState imuState) {
     if (whacknet != null && imuState != null && BROADCAST_HEADING) {

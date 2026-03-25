@@ -63,7 +63,7 @@ public class ClimbIOSim implements ClimbIO {
             SPRING_CONSTANT.in(Newtons));
 
     // Disable hardware limit switch behavior so the Spark's internal firmware does not block output
-    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, true);
+    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, MOTOR_INVERTED);
     config.limitSwitch.forwardLimitSwitchType(LimitSwitchConfig.Type.kNormallyOpen);
     config.limitSwitch.reverseLimitSwitchType(LimitSwitchConfig.Type.kNormallyOpen);
     spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);

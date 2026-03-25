@@ -30,7 +30,7 @@ public class ClimbIOSpark implements ClimbIO {
 
   /** Creates a new ClimbIOSpark and configures the Spark Max. */
   public ClimbIOSpark() {
-    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, true);
+    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, MOTOR_INVERTED);
 
     tryUntilOk(
         5,

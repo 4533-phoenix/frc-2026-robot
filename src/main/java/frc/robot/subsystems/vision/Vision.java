@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems.vision;
 
+import static edu.wpi.first.units.Units.Seconds;
 import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import edu.wpi.first.math.Matrix;
@@ -146,12 +147,12 @@ public class Vision extends SubsystemBase implements MonitoredSubsystem {
     for (int id = 0; id <= maxCameraId; id++) {
       if (!cameraActiveFlags[id]) continue;
 
-      boolean isOffline = (currentTime - lastTimestamps[id]) > OFFLINE_TIMEOUT_SECONDS;
+      boolean isOffline = (currentTime - lastTimestamps[id]) > OFFLINE_TIMEOUT.in(Seconds);
 
       // Update Alerts for drivers and log status
       alerts[id].set(isOffline);
       Logger.recordOutput(logPaths[id], !isOffline);
-      boolean seen = (currentTime - lastTimestamps[id]) <= OFFLINE_TIMEOUT_SECONDS;
+      boolean seen = (currentTime - lastTimestamps[id]) <= OFFLINE_TIMEOUT.in(Seconds);
       Logger.recordOutput(seenPaths[id], seen);
     }
   }
@@ -164,7 +165,8 @@ public class Vision extends SubsystemBase implements MonitoredSubsystem {
   public boolean isHealthy() {
     double currentTime = Timer.getTimestamp();
     for (int id = 0; id <= maxCameraId; id++) {
-      if (cameraActiveFlags[id] && (currentTime - lastTimestamps[id]) <= OFFLINE_TIMEOUT_SECONDS) {
+      if (cameraActiveFlags[id]
+          && (currentTime - lastTimestamps[id]) <= OFFLINE_TIMEOUT.in(Seconds)) {
         return true;
       }
     }

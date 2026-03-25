@@ -47,7 +47,7 @@ public class FlywheelIOSpark implements FlywheelIO {
 
   /** Creates a new FlywheelIOSpark and configures the motor controller. */
   public FlywheelIOSpark() {
-    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, false);
+    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, FLYWHEEL_INVERTED);
     config.idleMode(IdleMode.kCoast);
     config
         .encoder

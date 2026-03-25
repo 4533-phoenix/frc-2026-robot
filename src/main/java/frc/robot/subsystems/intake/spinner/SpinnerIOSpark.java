@@ -36,7 +36,7 @@ public class SpinnerIOSpark implements SpinnerIO {
 
   /** Creates a new SpinnerIOSpark and configures the SparkMax controllers. */
   public SpinnerIOSpark() {
-    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, false);
+    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, MOTOR_INVERTED);
     tryUntilOk(
         5,
         () ->

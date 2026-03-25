@@ -8,5 +8,4 @@
 * Use whacknet for vision
 * Reseed gyro from vision if we are not locked
 * Clean up drive command factory
-* Move all inversions from inside io to constants
 * Move shooter kinematics map to constants

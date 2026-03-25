@@ -21,14 +21,17 @@ import frc.robot.subsystems.shooter.Shooter.ShooterState;
  * settings.
  */
 public final class ShooterConstants {
-  // ---------- Hardware IDs ----------
+  //  Hardware IDs
   /** CAN ID for the flywheel motor controller. */
   public static final int CAN_ID = 18;
 
   /** PWM channel for the hood servo motor. */
   public static final int SERVO_CHANNEL = 0;
 
-  // ---------- Hood geometry & motion ----------
+  /** Whether the flywheel motor is inverted. */
+  public static final boolean FLYWHEEL_INVERTED = false;
+
+  //  Hood geometry & motion
   /** Length of the cranking arm in the hood mechanism. */
   public static final Distance CRANK_ARM_LENGTH = Inches.of(6.403);
 
@@ -53,7 +56,7 @@ public final class ShooterConstants {
   /** Tolerance for the hood servo actuator length. */
   public static final Distance HOOD_LENGTH_TOLERANCE = Meters.of(0.005);
 
-  // ---------- Flywheel constants ----------
+  //  Flywheel constants
   /** Motor model for the flywheel (Neo Vortex driven by SparkFlex). */
   public static final DCMotor GEARBOX = DCMotor.getNeoVortex(1);
 
@@ -72,7 +75,7 @@ public final class ShooterConstants {
   /** Maximum current limit for the flywheel motor. */
   public static final Current MOTOR_CURRENT_LIMIT = Amps.of(60.0);
 
-  // ---------- Encoder conversion factors ----------
+  //  Encoder conversion factors
   /** Converts motor rotations to mechanism radians. */
   public static final double FLYWHEEL_ENCODER_POSITION_FACTOR = (2.0 * Math.PI) / REDUCTION;
 
@@ -80,7 +83,7 @@ public final class ShooterConstants {
   public static final double FLYWHEEL_ENCODER_VELOCITY_FACTOR =
       ((2.0 * Math.PI) / 60.0) / REDUCTION;
 
-  // ---------- PID constants for flywheel velocity control ----------
+  // PID constants for flywheel velocity control
   /** Proportional gain for flywheel velocity control. */
   public static final double FLYWHEEL_KP = 0.0085;
 
@@ -99,7 +102,7 @@ public final class ShooterConstants {
   /** Acceleration feedforward gain for the flywheel. */
   public static final double FLYWHEEL_KA = 0.0;
 
-  // ---------- Shooter state constants ----------
+  //  Shooter state constants
   /** Preset shooter state for lobbing game pieces into the coral station. */
   public static final ShooterState LOB_STATE =
       new ShooterState(RotationsPerSecond.of(60.0), Degrees.of(70.0));
@@ -108,7 +111,7 @@ public final class ShooterConstants {
   public static final ShooterState DEFAULT_STATE =
       new ShooterState(RadiansPerSecond.of(0), Degrees.of(85.0));
 
-  // ---------- Aiming / lead constants ----------
+  //  Aiming / lead constants
   /** Estimated time of flight for the game piece from shooter to target. */
   public static final Time ESTIMATED_TOF = Seconds.of(0.5);
 

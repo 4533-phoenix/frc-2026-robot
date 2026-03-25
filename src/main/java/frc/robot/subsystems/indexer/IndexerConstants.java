@@ -21,6 +21,9 @@ public final class IndexerConstants {
   /** CAN ID for the indexer motor controller. */
   public static final int CAN_ID = 17;
 
+  /** Whether the indexer motor is inverted. */
+  public static final boolean MOTOR_INVERTED = false;
+
   /** The gearbox model for the indexer motor. */
   public static final DCMotor GEARBOX = DCMotor.getNeo550(1);
 

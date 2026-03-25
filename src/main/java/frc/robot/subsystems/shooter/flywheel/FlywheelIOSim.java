@@ -64,7 +64,7 @@ public class FlywheelIOSim implements FlywheelIO {
             GEARBOX);
 
     // Configuration mirrors FlywheelIOSparkFlex exactly
-    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, false);
+    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, FLYWHEEL_INVERTED);
     config.idleMode(IdleMode.kCoast);
     config
         .encoder

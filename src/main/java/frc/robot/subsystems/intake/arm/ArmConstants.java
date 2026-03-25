@@ -14,11 +14,14 @@ import edu.wpi.first.units.measure.*;
 
 /** Hardware and tuning constants for the intake subsystem. */
 public final class ArmConstants {
-  // ---------- CAN IDs ----------
+  // CAN IDs
   /** CAN ID for the arm lifting motor. */
   public static final int CAN_ID = 15;
 
-  // ---------- Gear Ratios ----------
+  /** Whether the arm motor is inverted. */
+  public static final boolean MOTOR_INVERTED = true;
+
+  // Gear Ratios
   /** Gear ratio from internal encoder to global encoder. */
   public static final double GLOBAL_ENCODER_REDUCTION = 112.0;
 
@@ -28,7 +31,7 @@ public final class ArmConstants {
   /** Gear ratio from internal encoder to output shaft. */
   public static final double TOTAL_REDUCTION = GLOBAL_ENCODER_REDUCTION * OUTPUT_SHAFT_REDUCTION;
 
-  // ---------- Encoder Conversion Factors ----------
+  // Encoder Conversion Factors
   /** Converts internal motor rotations to radians for the arm. */
   public static final double INTERNAL_ENCODER_POSITION_FACTOR = (2.0 * Math.PI) / TOTAL_REDUCTION;
 
@@ -44,22 +47,22 @@ public final class ArmConstants {
   public static final double GLOBAL_ENCODER_VELOCITY_FACTOR =
       ((2.0 * Math.PI) / 60.0) / OUTPUT_SHAFT_REDUCTION;
 
-  // ---------- Encoder Offsets ----------
+  // Encoder Offsets
   /** Absolute encoder offset. */
   public static final double GLOBAL_ENCODER_OFFSET = 0.25;
 
-  // ---------- Motor Current Limits ----------
+  // Motor Current Limits
   /** Max current draw for the arm motor. */
   public static final Current MOTOR_CURRENT_LIMIT = Amps.of(30);
 
-  // ---------- Arm PID Configuration ----------
+  // Arm PID Configuration
   /** Proportional gain for arm position control. */
   public static final double KP = 0.1;
 
   /** Derivative gain for arm position control. */
   public static final double KD = 0.0;
 
-  // ---------- Arm Feedforward Configuration ----------
+  // Arm Feedforward Configuration
   /** Static friction feedforward gain for the arm. */
   public static final double KS = 0.1;
 
@@ -72,14 +75,14 @@ public final class ArmConstants {
   /** Acceleration feedforward gain for the arm. */
   public static final double KA = 0.0;
 
-  // ---------- Arm Motion Profile Constraints ----------
+  // Arm Motion Profile Constraints
   /** Maximum angular velocity for the arm during movement. */
   public static final AngularVelocity CRUISE_VELOCITY = RadiansPerSecond.of(10.0);
 
   /** Maximum angular acceleration for the arm during movement. */
   public static final AngularAcceleration MAX_ACCELERATION = RadiansPerSecondPerSecond.of(15.0);
 
-  // ---------- Arm Positions ----------
+  // Arm Positions
   /** Angle of the arm when fully deployed for intaking. */
   public static final Angle DEPLOYED_POSITION = Radians.of(0.2);
 
@@ -104,7 +107,7 @@ public final class ArmConstants {
   /** Maximum allowable error between internal and absolute encoder positions. */
   public static final Angle ERROR_THRESHOLD = Radians.of(0.05);
 
-  // ---------- Simulation Constants ----------
+  // Simulation Constants
   /** Length of the arm. */
   public static final Distance ARM_LENGTH = Foot.of(1.0);
 

@@ -18,6 +18,7 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.Time;
 import java.util.Map;
 
 /**
@@ -76,7 +77,7 @@ public class VisionConstants {
               10.0));
 
   /** Time in seconds before a camera is considered offline if no data is received. */
-  public static final double OFFLINE_TIMEOUT_SECONDS = 1.0;
+  public static final Time OFFLINE_TIMEOUT = Seconds.of(1.0);
 
   /** Port for communication between Java and the native vision server. */
   public static final int SERVER_RPORT = 7001;
@@ -116,5 +117,5 @@ public class VisionConstants {
       AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
 
   /** Whether or not to broadcast heading information. */
-  public static final boolean BROADCAST_HEADING = true;
+  public static final boolean BROADCAST_HEADING = false;
 }

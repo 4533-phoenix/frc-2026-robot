@@ -89,7 +89,7 @@ public class ModuleIOSim implements ModuleIO {
             TURN_GEARBOX);
 
     // Configure drive Spark MAX
-    var driveConfig = createBaseConfig(DRIVE_MOTOR_CURRENT_LIMIT, false);
+    var driveConfig = createBaseConfig(DRIVE_MOTOR_CURRENT_LIMIT, DRIVE_INVERTED);
     driveConfig
         .encoder
         .positionConversionFactor(DRIVE_ENCODER_POSITION_FACTOR)

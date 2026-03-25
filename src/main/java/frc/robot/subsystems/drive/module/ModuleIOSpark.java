@@ -100,7 +100,7 @@ public class ModuleIOSpark implements ModuleIO {
     turnTap = SparkTap.getInstance().getMotor(config.turnCanId());
 
     // Configure Drive Spark Max using centralized base config
-    var driveConfig = createBaseConfig(DRIVE_MOTOR_CURRENT_LIMIT, false);
+    var driveConfig = createBaseConfig(DRIVE_MOTOR_CURRENT_LIMIT, DRIVE_INVERTED);
     driveConfig.secondaryCurrentLimit((int) DRIVE_MOTOR_SECONDARY_CURRENT_LIMIT.in(Amps));
     driveConfig
         .encoder

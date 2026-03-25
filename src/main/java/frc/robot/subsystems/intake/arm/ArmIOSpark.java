@@ -51,7 +51,7 @@ public class ArmIOSpark implements ArmIO {
     internalEncoder = spark.getEncoder();
     controller = spark.getClosedLoopController();
 
-    var armConfig = createBaseConfig(MOTOR_CURRENT_LIMIT, false);
+    var armConfig = createBaseConfig(MOTOR_CURRENT_LIMIT, MOTOR_INVERTED);
     armConfig
         .encoder
         .positionConversionFactor(INTERNAL_ENCODER_POSITION_FACTOR)

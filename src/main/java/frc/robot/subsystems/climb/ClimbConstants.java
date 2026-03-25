@@ -31,6 +31,9 @@ public final class ClimbConstants {
   /** Maximum current limit for the lift motor to prevent thermal damage. */
   public static final Current MOTOR_CURRENT_LIMIT = Amps.of(30);
 
+  /** Inversion setting for the lift motor. */
+  public static final boolean MOTOR_INVERTED = true;
+
   /** The gearbox model for the lift motor. */
   public static final DCMotor GEARBOX = ExtraMotors.getSnowBlower(1);
 

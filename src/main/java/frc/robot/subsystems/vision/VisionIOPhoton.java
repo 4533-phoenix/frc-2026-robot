@@ -151,6 +151,7 @@ public class VisionIOPhoton implements VisionIO {
             < SINGLE_TAG_POSE_CUTOFF.in(Meters);
   }
 
+  @SuppressWarnings("unused")
   @Override
   public void broadcastImuState(IMUState imuState) {
     if (whacknet != null && imuState != null && BROADCAST_HEADING) {

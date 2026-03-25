@@ -44,7 +44,7 @@ public class IndexerIOSim implements IndexerIO {
             GEARBOX);
 
     // Configure Spark MAX
-    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, false);
+    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, MOTOR_INVERTED);
     spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 

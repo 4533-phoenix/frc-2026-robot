@@ -35,7 +35,7 @@ public class IndexerIOSpark implements IndexerIO {
 
   /** Creates a new IndexerIOSpark and configures the Spark Max. */
   public IndexerIOSpark() {
-    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, false);
+    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, MOTOR_INVERTED);
     tryUntilOk(
         5,
         () ->
