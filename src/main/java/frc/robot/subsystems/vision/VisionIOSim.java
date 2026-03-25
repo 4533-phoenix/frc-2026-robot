@@ -47,7 +47,6 @@ public class VisionIOSim implements VisionIO {
    */
   @Override
   public void updateInputs(VisionIOInputs inputs) {
-    inputs.serverLoaded = true;
     Pose2d robotPose = poseSupplier.get();
     double timestamp = Timer.getFPGATimestamp();
 

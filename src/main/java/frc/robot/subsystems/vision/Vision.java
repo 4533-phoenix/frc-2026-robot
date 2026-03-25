@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.drive.gyro.GyroIO.ImuState;
 import java.util.Collections;
 import org.littletonrobotics.junction.Logger;
 
@@ -83,6 +84,15 @@ public class Vision extends SubsystemBase {
       logPaths[id] = "Vision/CameraStatus/" + entry.getValue().name();
       seenPaths[id] = "Vision/CameraSeen/" + entry.getValue().name();
     }
+  }
+
+  /**
+   * Forwards a high frequency IMU packet to the vision pipeline.
+   *
+   * @param imuState The current 6-DOF IMU state.
+   */
+  public void broadcastImuState(ImuState imuState) {
+    io.broadcastImuState(imuState);
   }
 
   /**

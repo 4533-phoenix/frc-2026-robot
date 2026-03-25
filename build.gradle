@@ -16,29 +16,6 @@ def ROBOT_MAIN_CLASS = "frc.robot.Main"
 // Native build configuration for the vision server
 model {
   components {
-    // Whacknet (UDP Vision Server)
-    whacknet(NativeLibrarySpec) {
-      targetPlatform wpi.platforms.roborio
-      sources {
-        c {
-          source {
-            srcDir 'src/main/native/c'
-            include 'whacknet.c'
-          }
-          exportedHeaders { srcDir 'src/main/native/include' }
-        }
-      }
-      binaries.all {
-        def javaHome = org.gradle.internal.jvm.Jvm.current().javaHome
-        if (javaHome != null && (toolChain in Gcc || toolChain in Clang)) {
-          cCompiler.args "-I", "${javaHome}/include"
-          cCompiler.args "-I", "${projectDir}/src/main/native/include/linux"
-          cCompiler.args "-fPIC", "-pthread", "-O2", "-Wall", "-std=c11"
-          linker.args "-pthread"
-        }
-      }
-    }
-
     // SparkTap (CAN Interceptor)
     sparktap(NativeLibrarySpec) {
       targetPlatform wpi.platforms.roborio
@@ -69,13 +46,8 @@ model {
 
 // Custom task to flatten the native library for deployment
 task stageNativeLib(type: Copy) {
-  dependsOn 'whacknetReleaseSharedLibrary'
   dependsOn 'sparktapReleaseSharedLibrary'
 
-  from fileTree('build/libs/whacknet/shared') {
-    include '**/libwhacknet.so'
-    exclude '**/*.debug'
-  }
   from fileTree('build/libs/sparktap/shared') {
     include '**/libsparktap.so'
     exclude '**/*.debug'

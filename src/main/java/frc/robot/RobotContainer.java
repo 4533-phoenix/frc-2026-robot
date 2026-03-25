@@ -55,8 +55,8 @@ import frc.robot.subsystems.shooter.hood.HoodIOServo;
 import frc.robot.subsystems.shooter.hood.HoodIOSim;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
-import frc.robot.subsystems.vision.VisionIOPhoton;
 import frc.robot.subsystems.vision.VisionIOSim;
+import frc.robot.subsystems.vision.VisionIOWhacknet;
 import frc.robot.util.Util;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
@@ -106,7 +106,7 @@ public class RobotContainer {
         spinner = new Spinner(new SpinnerIOSpark());
         shooter = new Shooter(new FlywheelIOSpark(), new HoodIOServo());
         indexer = new Indexer(new IndexerIOSpark());
-        vision = new Vision(new VisionIOPhoton(), drive);
+        vision = new Vision(new VisionIOWhacknet(), drive); // Updated to Whacknet
         pdh = new PDH(new PDHIOReal());
         break;
 
@@ -149,6 +149,9 @@ public class RobotContainer {
 
     // Create the superstructure, which coordinates between subsystems
     superstructure = new Superstructure(drive, climb, arm, spinner, shooter, indexer, vision, pdh);
+
+    // Wire up the 200Hz IMU loop directly to the vision coprocessor
+    drive.setVisionHighFreqConsumer(vision::broadcastImuState);
 
     // Set up auto routines via PathPlanner
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
@@ -228,18 +231,6 @@ public class RobotContainer {
         "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
     autoChooser.addOption(
         "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-    // autoChooser.addOption(
-    //     "Flywheel SysId (Quasistatic Forward)",
-    //     shooter.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    // autoChooser.addOption(
-    //     "Flywheel SysId (Quasistatic Reverse)",
-    //     shooter.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    // autoChooser.addOption(
-    //     "Flywheel SysId (Dynamic Forward)",
-    // shooter.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    // autoChooser.addOption(
-    //     "Flywheel SysId (Dynamic Reverse)",
-    // shooter.sysIdDynamic(SysIdRoutine.Direction.kReverse));
 
     // Configure the commands
     configureDriverButtonBindings();

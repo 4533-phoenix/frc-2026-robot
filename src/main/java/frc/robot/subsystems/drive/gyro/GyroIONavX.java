@@ -17,23 +17,14 @@ import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.wpilibj.RobotController;
+import frc.lib.PrimitiveQueue;
 import frc.lib.hardware.GyroType;
-import frc.lib.lowlevel.Whacknet;
-import frc.robot.subsystems.drive.SparkOdometryThread;
-import frc.robot.subsystems.drive.SparkOdometryThread.PrimitiveQueue;
 
-/**
- * IO implementation for the Studica NavX gyro.
- *
- * <p>This implementation configures the NavX to update at 200Hz via USB and registers its signals
- * with the {@link SparkOdometryThread} for accurate, high-frequency odometry. Note that the NavX
- * returns angles in degrees, which are converted to radians for standard units usage.
- */
+/** IO implementation for the Studica NavX gyro. */
 public class GyroIONavX implements GyroIO {
   private final AHRS navX;
   private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
-  private final PrimitiveQueue yawTimestampQueue;
+  private final PrimitiveQueue yawTimestampQueue = new PrimitiveQueue();
 
   private volatile Angle yawOffset = Radians.zero();
   private volatile boolean isLocked = false;
@@ -46,29 +37,42 @@ public class GyroIONavX implements GyroIO {
   /** Creates a new GyroIONavX. */
   public GyroIONavX() {
     navX = new AHRS(NavXComType.kMXP_SPI, (int) ODOMETRY_FREQUENCY.in(Hertz));
-    yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
-    SparkOdometryThread.getInstance()
-        .registerSignal(
-            () -> {
-              if (!navX.isConnected()) return;
+  }
 
-              double yawPosition = Units.degreesToRadians(-navX.getAngle()) + yawOffset.in(Radians);
-              double yawVelocity = Units.degreesToRadians(-navX.getRate());
-              yawPositionQueue.offer(yawPosition + (yawVelocity * NAVX_LATENCY_SEC.in(Seconds)));
+  @Override
+  public ImuState updateHighFreq(double timestampSec) {
+    if (!navX.isConnected()) return null;
 
-              if (Whacknet.getInstance().isLoaded() && isLocked) {
-                Whacknet.getInstance()
-                    .broadcast(RobotController.getFPGATime(), yawPosition, yawVelocity);
-              }
-            });
+    double yawVelocity = Units.degreesToRadians(-navX.getRate());
+    double yawPosition = Units.degreesToRadians(-navX.getAngle()) + yawOffset.in(Radians);
+    double latencyCompensatedYaw = yawPosition + (yawVelocity * NAVX_LATENCY_SEC.in(Seconds));
+
+    double roll = Units.degreesToRadians(navX.getRoll());
+    double pitch = Units.degreesToRadians(navX.getPitch());
+    double rollVel = Units.degreesToRadians(navX.getRawGyroX());
+    double pitchVel = Units.degreesToRadians(navX.getRawGyroY());
+
+    yawPositionQueue.offer(latencyCompensatedYaw);
+    yawTimestampQueue.offer(timestampSec);
+
+    return isLocked
+        ? new ImuState(
+            timestampSec, roll, pitch, latencyCompensatedYaw, rollVel, pitchVel, yawVelocity)
+        : null;
   }
 
   @Override
   public void updateInputs(GyroIOInputs inputs) {
     inputs.connected = navX.isConnected();
     inputs.locked = isLocked = inputs.connected && hasBeenSet;
-    inputs.yawPosition = Radians.of(Units.degreesToRadians(-navX.getAngle()) + yawOffset.in(Radians));
+    inputs.yawPosition =
+        Radians.of(Units.degreesToRadians(-navX.getAngle()) + yawOffset.in(Radians));
     inputs.yawVelocity = DegreesPerSecond.of(-navX.getRate());
+    inputs.rollPosition = Degrees.of(navX.getRoll());
+    inputs.pitchPosition = Degrees.of(navX.getPitch());
+    inputs.rollVelocity = DegreesPerSecond.of(navX.getRawGyroX());
+    inputs.pitchVelocity = DegreesPerSecond.of(navX.getRawGyroY());
+
     inputs.healthy = inputs.connected && !navX.isCalibrating();
 
     int currentActive = 0;

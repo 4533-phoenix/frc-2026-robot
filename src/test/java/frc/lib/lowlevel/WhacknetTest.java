@@ -40,7 +40,7 @@ public class WhacknetTest {
     Whacknet whacknet = Whacknet.getInstance();
 
     // Inject our fake buffer using reflection for testing
-    Field bufferField = Whacknet.class.getDeclaredField("buffer");
+    Field bufferField = Whacknet.class.getDeclaredField("readBuffer");
     bufferField.setAccessible(true);
     bufferField.set(whacknet, buffer);
 

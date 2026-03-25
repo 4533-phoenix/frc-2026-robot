@@ -7,43 +7,61 @@
 
 package frc.lib.lowlevel;
 
-import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
-import edu.wpi.first.hal.HALUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.DriverStation;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.DatagramChannel;
 import java.util.function.ObjIntConsumer;
 
 /**
- * JNI wrapper for the custom 'whacknet' native library.
+ * Pure Java implementation of the Whacknet UDP Vision Protocol.
  *
- * <p>Handles communication with a high-performance C++ vision pipeline. Uses a direct {@link
- * ByteBuffer} to share memory efficiently between Java and native code, avoiding unnecessary data
- * copying.
+ * <p>Handles high-frequency vision data from coprocessors and broadcasts robot telemetry. Uses
+ * Direct ByteBuffers and the Flyweight pattern to achieve zero-allocation performance, avoiding
+ * Garbage Collector pressure during matches.
  */
 public class Whacknet {
   private static Whacknet instance;
 
-  /** Maximum number of vision packets queued in native memory. */
+  // Constants
   private static final int MAX_QUEUE_SIZE = 64;
-
-  /** The size in bytes of the C struct representing a vision observation. */
+  private static final int MASK = MAX_QUEUE_SIZE - 1;
   public static final int STRUCT_SIZE = 64;
+  private static final int TELEMETRY_SIZE = 64;
 
-  /** Shared memory buffer between Java and Native. */
-  private final ByteBuffer buffer;
+  // Struct Offsets (VisionMeasurement)
+  private static final int OFFSET_X = 0;
+  private static final int OFFSET_Y = 8;
+  private static final int OFFSET_ROT = 16;
+  private static final int OFFSET_STD_X = 24;
+  private static final int OFFSET_STD_Y = 32;
+  private static final int OFFSET_STD_ROT = 40;
+  private static final int OFFSET_TIMESTAMP = 48;
+  private static final int OFFSET_CAMERA_ID = 56;
+  private static final int OFFSET_NUM_TAGS = 57;
 
-  private static boolean loaded = false;
-
-  // Cache for current packet count to avoid recalculating offsets
-  private int currentPacketCount = 0;
-
-  // Single pre-allocated instance to avoid Garbage Collection
+  // Members
+  private final ByteBuffer queueBuffer;
+  private final ByteBuffer readBuffer;
   private final PacketView packetView = new PacketView();
+
+  // Thread-safe indices for the circular buffer
+  private volatile int head = 0;
+  private volatile int tail = 0;
+
+  private DatagramChannel receiverChannel;
+  private DatagramChannel senderChannel;
+  private InetSocketAddress broadcastAddress;
+  private Thread receiverThread;
+  private int currentPacketCount = 0;
+  private boolean isRunning = false;
 
   /**
    * Returns the singleton instance of Whacknet.
@@ -57,115 +75,160 @@ public class Whacknet {
     return instance;
   }
 
-  static {
-    // Only attempt to load the native library on a real robot
-    if (RobotBase.isReal()) {
+  private Whacknet() {
+    // Allocate off-heap memory to prevent GC overhead
+    queueBuffer = ByteBuffer.allocateDirect(MAX_QUEUE_SIZE * STRUCT_SIZE);
+    queueBuffer.order(ByteOrder.nativeOrder());
+
+    readBuffer = ByteBuffer.allocateDirect(MAX_QUEUE_SIZE * STRUCT_SIZE);
+    readBuffer.order(ByteOrder.nativeOrder());
+
+    // Report custom framework usage to HAL
+    HAL.report(tResourceType.kResourceType_Framework, 4533);
+  }
+
+  /**
+   * Starts the vision server to receive observations from coprocessors.
+   *
+   * @param port The UDP port to listen on.
+   */
+  public void startServer(int port) {
+    if (isRunning) return;
+
+    try {
+      receiverChannel = DatagramChannel.open();
+      receiverChannel.bind(new InetSocketAddress(port));
+      receiverChannel.setOption(StandardSocketOptions.SO_RCVBUF, 4 * 1024 * 1024); // 4MB buffer
+      receiverChannel.configureBlocking(true);
+
+      isRunning = true;
+      receiverThread = new Thread(this::receiverLoop, "WhacknetReceiver");
+      receiverThread.setDaemon(true);
+      receiverThread.setPriority(Thread.MAX_PRIORITY);
+      receiverThread.start();
+
+      System.out.println("[Whacknet-Java] Vision server started on port " + port);
+    } catch (IOException e) {
+      DriverStation.reportError("[Whacknet-Java] Failed to start server: " + e.getMessage(), true);
+    }
+  }
+
+  /** Background thread for pulling UDP packets into the lock-free ring buffer. */
+  private void receiverLoop() {
+    ByteBuffer socketBuffer = ByteBuffer.allocateDirect(STRUCT_SIZE);
+    socketBuffer.order(ByteOrder.nativeOrder());
+
+    while (isRunning) {
       try {
-        System.loadLibrary("whacknet");
-        loaded = true;
-      } catch (UnsatisfiedLinkError e) {
-        System.err.println("[Whacknet-java] Failed to load whacknet library: " + e.getMessage());
-        loaded = false;
+        socketBuffer.clear();
+        receiverChannel.receive(socketBuffer);
+        socketBuffer.flip();
+
+        if (socketBuffer.remaining() != STRUCT_SIZE) continue;
+
+        int h = head;
+        int t = tail;
+        int nextH = (h + 1) & MASK;
+
+        // If queue is not full, copy packet into shared memory
+        if (nextH != t) {
+          int offset = h * STRUCT_SIZE;
+          // Thread-safe copy to the direct buffer
+          queueBuffer.limit(offset + STRUCT_SIZE);
+          queueBuffer.position(offset);
+          queueBuffer.put(socketBuffer);
+          head = nextH; // Atomic update
+        }
+      } catch (IOException e) {
+        if (isRunning) {
+          DriverStation.reportError(
+              "[Whacknet-Java] Receiver loop error: " + e.getMessage(), false);
+        }
       }
     }
   }
 
-  /** Initializes the direct byte buffer for shared memory. */
-  private Whacknet() {
-    // Allocate direct buffer to be accessible by JNI
-    buffer = ByteBuffer.allocateDirect(MAX_QUEUE_SIZE * STRUCT_SIZE);
-    buffer.order(ByteOrder.nativeOrder());
-  }
-
   /**
-   * Starts the native vision server thread.
+   * Broadcasts robot telemetry to the vision coprocessor for constrained pose solving.
    *
-   * @param port The port to bind the server to.
+   * @param timestamp FPGA timestamp in microseconds.
+   * @param roll Robot roll in radians.
+   * @param pitch Robot pitch in radians.
+   * @param yaw Robot yaw in radians.
+   * @param rollVel Roll velocity in radians per second.
+   * @param pitchVel Pitch velocity in radians per second.
+   * @param yawVel Yaw velocity in radians per second.
    */
-  private static native void startServer(int rport, int bport);
+  public void broadcast(
+      long timestamp,
+      double roll,
+      double pitch,
+      double yaw,
+      double rollVel,
+      double pitchVel,
+      double yawVel,
+      int port) {
 
-  /**
-   * Broadcasts the current robot heading to the vision pipeline for pose estimation.
-   *
-   * @param timestamp Robot timestamp in microseconds.
-   * @param heading Robot angle in radians.
-   * @param velocity Robot angular velocity in radians per second.
-   */
-  private static native void broadcastRobotTelemetry(
-      long timestamp, double heading, double velocity);
+    try {
+      if (senderChannel == null) {
+        senderChannel = DatagramChannel.open();
+        senderChannel.setOption(StandardSocketOptions.SO_BROADCAST, true);
+        senderChannel.configureBlocking(false);
+        broadcastAddress = new InetSocketAddress("255.255.255.255", port);
+        System.out.println("[Whacknet-Java] Broadcast channel initialized on port " + port);
+      }
 
-  /**
-   * Transfers packets from the native queue into the shared ByteBuffer.
-   *
-   * @param buf The direct ByteBuffer to write data into.
-   * @param currentHalTime The current FPGA time for timestamping.
-   * @return The number of packets copied into the buffer.
-   */
-  private static native int drainPackets(ByteBuffer buf, long currentHalTime);
+      // Re-use a single direct buffer for broadcasting to remain 0-allocation
+      ByteBuffer telBuf = ByteBuffer.allocateDirect(TELEMETRY_SIZE);
+      telBuf.order(ByteOrder.nativeOrder());
+      telBuf.putLong(timestamp);
+      telBuf.putDouble(roll);
+      telBuf.putDouble(pitch);
+      telBuf.putDouble(yaw);
+      telBuf.putDouble(rollVel);
+      telBuf.putDouble(pitchVel);
+      telBuf.putDouble(yawVel);
+      telBuf.flip();
 
-  // Java Methods
+      senderChannel.send(telBuf, broadcastAddress);
 
-  /**
-   * Starts the native vision server.
-   *
-   * @param rport The port to start the receive server on.
-   * @param bport The port to start the broadcast server on.
-   */
-  public void start(int rport, int bport) {
-    if (!loaded) {
-      System.err.println("[Whacknet-java] Cannot start server: native library not loaded.");
-      return;
+    } catch (IOException e) {
+      DriverStation.reportError("[Whacknet-Java] Broadcast failed: " + e.getMessage(), false);
     }
-    startServer(rport, bport);
-
-    // Tell the HAL we have a custom vision system
-    HAL.report(tResourceType.kResourceType_Framework, 4533);
-    HAL.report(tResourceType.kResourceType_AxisCamera, 4533);
-    HAL.report(tResourceType.kResourceType_Language, tInstances.kLanguage_CPlusPlus);
-    HAL.report(tResourceType.kResourceType_Language, tInstances.kLanguage_Rust);
-
-    System.out.println("[Whacknet-java] Vision server started on port " + rport);
-    System.out.println("[Whacknet-java] Broadcast server started on port " + bport);
   }
 
   /**
-   * Broadcasts the robot heading to the native library.
+   * Drains the internal ring buffer into a snapshot buffer for the main loop to process.
    *
-   * @param timestamp Robot timestamp in microseconds.
-   * @param heading Robot angle in radians.
-   * @param velocity Robot angular velocity in radians per second.
-   */
-  public void broadcast(long timestamp, double heading, double velocity) {
-    if (!loaded) return;
-    broadcastRobotTelemetry(timestamp, heading, velocity);
-  }
-
-  /**
-   * Checks if the native library is loaded.
-   *
-   * @return True if library is loaded, false otherwise.
-   */
-  public boolean isLoaded() {
-    return loaded;
-  }
-
-  /**
-   * Drains the C queue and returns the count of observations. Must be called periodically to get
-   * the latest data.
-   *
-   * @return The number of packets available in the buffer.
+   * @return The number of packets available to process this frame.
    */
   public int readPackets() {
-    if (!loaded) return 0;
-    currentPacketCount = drainPackets(buffer, HALUtil.getFPGATime());
-    return currentPacketCount;
+    int h = head;
+    int t = tail;
+    int count = 0;
+
+    while (t != h && count < MAX_QUEUE_SIZE) {
+      // Copy from shared ring buffer to the main-thread-safe read buffer
+      int srcOffset = t * STRUCT_SIZE;
+      int dstOffset = count * STRUCT_SIZE;
+
+      for (int i = 0; i < STRUCT_SIZE; i++) {
+        readBuffer.put(dstOffset + i, queueBuffer.get(srcOffset + i));
+      }
+
+      t = (t + 1) & MASK;
+      count++;
+    }
+
+    tail = t; // Update tail so receiver thread knows we've freed up space
+    currentPacketCount = count;
+    return count;
   }
 
   /**
-   * Extremely lightweight way to iterate over packets. Uses the Flyweight pattern with a single
-   * reused object to prevent memory allocation (Zero GC overhead).
+   * Iterates over packets received since the last call to {@link #readPackets()}.
    *
-   * @param consumer A lambda to process each vision observation.
+   * @param consumer A lambda to process each packet view.
    */
   public void forEachPacket(ObjIntConsumer<PacketView> consumer) {
     for (int i = 0; i < currentPacketCount; i++) {
@@ -174,23 +237,7 @@ public class Whacknet {
     }
   }
 
-  // Struct Field Offset Mapping
-  // These offsets correspond directly to the layout of the C struct.
-
-  private static final int OFFSET_X = 0;
-  private static final int OFFSET_Y = 8;
-  private static final int OFFSET_ROT = 16;
-  private static final int OFFSET_STD_X = 24;
-  private static final int OFFSET_STD_Y = 32;
-  private static final int OFFSET_STD_ROT = 40;
-  private static final int OFFSET_TIMESTAMP = 48;
-  private static final int OFFSET_CAMERA_ID = 56;
-  private static final int OFFSET_NUM_TAGS = 57;
-
-  /**
-   * A zero-allocation view into the ByteBuffer representing a single Vision Observation.
-   * Pre-calculates array offsets to save CPU cycles.
-   */
+  /** Zero-allocation view into the ByteBuffer representing a single Vision Observation. */
   public class PacketView {
     private int baseOffset = 0;
 
@@ -203,72 +250,70 @@ public class Whacknet {
      * @return X position in meters.
      */
     public double getX() {
-      return buffer.getDouble(baseOffset + OFFSET_X);
+      return readBuffer.getDouble(baseOffset + OFFSET_X);
     }
 
     /**
      * @return Y position in meters.
      */
     public double getY() {
-      return buffer.getDouble(baseOffset + OFFSET_Y);
+      return readBuffer.getDouble(baseOffset + OFFSET_Y);
     }
 
     /**
      * @return Rotation in radians.
      */
     public double getRot() {
-      return buffer.getDouble(baseOffset + OFFSET_ROT);
+      return readBuffer.getDouble(baseOffset + OFFSET_ROT);
     }
 
     /**
-     * @return Standard deviation of X in meters.
+     * @return Standard deviation of X position in meters.
      */
     public double getStdX() {
-      return buffer.getDouble(baseOffset + OFFSET_STD_X);
+      return readBuffer.getDouble(baseOffset + OFFSET_STD_X);
     }
 
     /**
-     * @return Standard deviation of Y in meters.
+     * @return Standard deviation of Y position in meters.
      */
     public double getStdY() {
-      return buffer.getDouble(baseOffset + OFFSET_STD_Y);
+      return readBuffer.getDouble(baseOffset + OFFSET_STD_Y);
     }
 
     /**
      * @return Standard deviation of rotation in radians.
      */
     public double getStdRot() {
-      return buffer.getDouble(baseOffset + OFFSET_STD_ROT);
+      return readBuffer.getDouble(baseOffset + OFFSET_STD_ROT);
     }
 
     /**
-     * @return FPGA Timestamp in microseconds.
+     * @return Timestamp in microseconds.
      */
     public long getTimestamp() {
-      return buffer.getLong(baseOffset + OFFSET_TIMESTAMP);
+      return readBuffer.getLong(baseOffset + OFFSET_TIMESTAMP);
     }
 
     /**
-     * @return Camera ID that made the observation.
+     * @return Camera ID.
      */
     public int getCameraId() {
-      return Byte.toUnsignedInt(buffer.get(baseOffset + OFFSET_CAMERA_ID));
+      return Byte.toUnsignedInt(readBuffer.get(baseOffset + OFFSET_CAMERA_ID));
     }
 
     /**
-     * @return Number of AprilTags detected in this observation.
+     * @return Number of tags detected.
      */
     public int getNumTags() {
-      return Byte.toUnsignedInt(buffer.get(baseOffset + OFFSET_NUM_TAGS));
+      return Byte.toUnsignedInt(readBuffer.get(baseOffset + OFFSET_NUM_TAGS));
     }
 
     /**
-     * Easily converts the raw data into a WPILib Pose2d.
-     *
-     * @return The Pose2d object representing the robot's estimated field position.
+     * @return The pose as a Pose2d object.
      */
     public Pose2d getPose2d() {
-      return new Pose2d(getX(), getY(), new Rotation2d(getRot()));
+      return new Pose2d(getX(), getY(), Rotation2d.fromRadians(getRot()));
     }
   }
 }

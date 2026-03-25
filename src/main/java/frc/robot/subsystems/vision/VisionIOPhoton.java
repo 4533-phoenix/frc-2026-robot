@@ -60,12 +60,10 @@ public class VisionIOPhoton implements VisionIO {
   @Override
   public void updateInputs(VisionIOInputs inputs) {
     int count = 0;
-    boolean allConnected = true;
     double now = Timer.getFPGATimestamp();
 
     for (CameraContext ctx : cameras) {
       if (!ctx.camera.isConnected()) {
-        allConnected = false;
         continue;
       }
 
@@ -122,7 +120,6 @@ public class VisionIOPhoton implements VisionIO {
       }
     }
 
-    inputs.serverLoaded = allConnected;
     inputs.observations = Arrays.copyOf(observationBuffer, count);
   }
 

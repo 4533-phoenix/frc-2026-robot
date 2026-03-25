@@ -20,16 +20,15 @@ import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
-import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.*;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
+import frc.lib.PrimitiveQueue;
 
 /**
  * Physics simulation implementation of {@link ModuleIO}.
@@ -49,6 +48,13 @@ public class ModuleIOSim implements ModuleIO {
   private final SparkClosedLoopController turnController;
   private final DCMotorSim driveMotorSim;
   private final DCMotorSim turnMotorSim;
+
+  // Primitive Zero-GC Queues for high-frequency data
+  private final PrimitiveQueue timestampQueue = new PrimitiveQueue();
+  private final PrimitiveQueue drivePositionQueue = new PrimitiveQueue();
+  private final PrimitiveQueue turnPositionQueue = new PrimitiveQueue();
+  private final PrimitiveQueue driveVelocityQueue = new PrimitiveQueue();
+  private final PrimitiveQueue turnVelocityQueue = new PrimitiveQueue();
 
   /**
    * Creates a new ModuleIOSim and initializes the simulated Spark MAX motor controllers.
@@ -96,6 +102,8 @@ public class ModuleIOSim implements ModuleIO {
         .closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(DRIVE_KP, 0.0, DRIVE_KD);
+    driveConfig.closedLoop.feedForward.kS(DRIVE_KS).kV(DRIVE_KV).kA(DRIVE_KA);
+    driveConfig.closedLoop.maxMotion.maxAcceleration(200.0).allowedProfileError(0.0);
     driveSpark.configure(
         driveConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
 
@@ -121,46 +129,68 @@ public class ModuleIOSim implements ModuleIO {
   }
 
   @Override
-  public void updateInputs(ModuleIOInputs inputs) {
+  public void updateHighFreq(double timestampSec) {
     // Update physics models with the voltage applied by the Spark sim
     driveMotorSim.setInputVoltage(driveSparkSim.getAppliedOutput() * RoboRioSim.getVInVoltage());
     turnMotorSim.setInputVoltage(turnSparkSim.getAppliedOutput() * RoboRioSim.getVInVoltage());
 
-    // Advance physics simulation by 20ms (standard robot loop time)
-    driveMotorSim.update(0.02);
-    turnMotorSim.update(0.02);
+    // Advance physics simulation by 5ms (200Hz loop)
+    driveMotorSim.update(0.005);
+    turnMotorSim.update(0.005);
 
     // Update SparkMaxSim with physics model results
     driveSparkSim.iterate(
-        driveMotorSim.getAngularVelocityRadPerSec(), RoboRioSim.getVInVoltage(), 0.02);
+        driveMotorSim.getAngularVelocityRadPerSec(), RoboRioSim.getVInVoltage(), 0.005);
     turnSparkSim.iterate(
-        turnMotorSim.getAngularVelocityRadPerSec(), RoboRioSim.getVInVoltage(), 0.02);
+        turnMotorSim.getAngularVelocityRadPerSec(), RoboRioSim.getVInVoltage(), 0.005);
 
-    // Update drive inputs with simulated data
+    drivePositionQueue.offer(driveEncoder.getPosition());
+    turnPositionQueue.offer(turnEncoder.getPosition());
+    driveVelocityQueue.offer(driveEncoder.getVelocity());
+    turnVelocityQueue.offer(turnEncoder.getVelocity());
+    timestampQueue.offer(timestampSec);
+  }
+
+  @Override
+  public void updateInputs(ModuleIOInputs inputs) {
     inputs.driveConnected = true;
-    inputs.drivePosition = Radians.of(driveEncoder.getPosition());
-    inputs.driveVelocity = RadiansPerSecond.of(driveEncoder.getVelocity());
+    inputs.turnConnected = true;
+    inputs.turnEncoderConnected = true;
+
     inputs.driveAppliedVoltage =
         Volts.of(driveSpark.getAppliedOutput() * driveSpark.getBusVoltage());
     inputs.driveCurrent = Amps.of(driveSpark.getOutputCurrent());
 
-    // Update turn inputs with simulated data
-    inputs.turnConnected = true;
-    inputs.turnPosition = Radians.of(turnEncoder.getPosition());
-    inputs.turnVelocity = RadiansPerSecond.of(turnEncoder.getVelocity());
     inputs.turnAppliedVoltage = Volts.of(turnSpark.getAppliedOutput() * turnSpark.getBusVoltage());
     inputs.turnCurrent = Amps.of(turnSpark.getOutputCurrent());
 
-    // Update odometry inputs
-    if (inputs.odometryTimestamps.length != 1) {
-      inputs.odometryTimestamps = new double[1];
-      inputs.odometryDrivePositionsRad = new double[1];
-      inputs.odometryTurnPositionsRad = new double[1];
+    // Transfer primitive data to AdvantageKit inputs
+    int count = timestampQueue.size;
+    if (inputs.odometryTimestamps == null || inputs.odometryTimestamps.length != count) {
+      inputs.odometryTimestamps = new double[count];
+      inputs.odometryDrivePositionsRad = new double[count];
+      inputs.odometryTurnPositionsRad = new double[count];
     }
 
-    inputs.odometryTimestamps[0] = Timer.getFPGATimestamp();
-    inputs.odometryDrivePositionsRad[0] = driveEncoder.getPosition();
-    inputs.odometryTurnPositionsRad[0] = turnEncoder.getPosition();
+    System.arraycopy(timestampQueue.data, 0, inputs.odometryTimestamps, 0, count);
+    System.arraycopy(drivePositionQueue.data, 0, inputs.odometryDrivePositionsRad, 0, count);
+    System.arraycopy(turnPositionQueue.data, 0, inputs.odometryTurnPositionsRad, 0, count);
+
+    if (count > 0) {
+      inputs.drivePosition = Radians.of(drivePositionQueue.data[count - 1]);
+      inputs.turnPosition = Radians.of(turnPositionQueue.data[count - 1]);
+      inputs.driveVelocity = RadiansPerSecond.of(driveVelocityQueue.data[count - 1]);
+      inputs.turnVelocity = RadiansPerSecond.of(turnVelocityQueue.data[count - 1]);
+    }
+
+    timestampQueue.clear();
+    drivePositionQueue.clear();
+    turnPositionQueue.clear();
+    driveVelocityQueue.clear();
+    turnVelocityQueue.clear();
+
+    inputs.driveHealthy = true;
+    inputs.turnHealthy = true;
   }
 
   @Override
@@ -175,22 +205,12 @@ public class ModuleIOSim implements ModuleIO {
 
   @Override
   public void setDriveVelocity(AngularVelocity velocity) {
-    // Calculate Feedforward voltage based on velocity
-    double ffVolts =
-        DRIVE_KS * Math.signum(velocity.in(RadiansPerSecond))
-            + DRIVE_KV * velocity.in(RadiansPerSecond);
-    // Use closed-loop velocity control with feedforward
     driveController.setSetpoint(
-        velocity.in(RadiansPerSecond),
-        ControlType.kVelocity,
-        ClosedLoopSlot.kSlot0,
-        ffVolts,
-        ArbFFUnits.kVoltage);
+        velocity.in(RadiansPerSecond), ControlType.kVelocity, ClosedLoopSlot.kSlot0);
   }
 
   @Override
   public void setTurnPosition(Angle rotation) {
-    // Use closed-loop position control
     turnController.setSetpoint(rotation.in(Radians), ControlType.kPosition, ClosedLoopSlot.kSlot0);
   }
 }

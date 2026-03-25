@@ -86,6 +86,13 @@ public interface ModuleIO {
   public default void updateInputs(ModuleIOInputs inputs) {}
 
   /**
+   * Polls high-frequency data for the 200Hz odometry loop.
+   *
+   * @param timestampSec The exact timestamp of the current 200Hz tick.
+   */
+  public default void updateHighFreq(double timestampSec) {}
+
+  /**
    * Run the drive motor at the specified open loop voltage.
    *
    * @param output The voltage to apply.

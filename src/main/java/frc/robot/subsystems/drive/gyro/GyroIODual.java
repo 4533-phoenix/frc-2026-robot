@@ -17,31 +17,32 @@ import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.wpilibj.RobotController;
+import frc.lib.PrimitiveQueue;
 import frc.lib.hardware.GyroType;
-import frc.lib.lowlevel.Whacknet;
-import frc.robot.subsystems.drive.SparkOdometryThread;
-import frc.robot.subsystems.drive.SparkOdometryThread.PrimitiveQueue;
 import org.littletonrobotics.junction.Logger;
 
 /**
  * IO implementation that combines a Studica NavX and a Redux Canandgyro.
  *
  * <p>This implementation prioritizes the NavX (for low USB latency) for high-frequency odometry and
- * Whacknet broadcasts, but utilizes the Canandgyro to calculate and correct for NavX drift when the
- * robot is detected to be stationary.
+ * Whacknet broadcasts, but utilizes the Canandgyro to calculate and correct for NavX drift across
+ * all 3 axes (Yaw, Pitch, Roll) when the robot is detected to be stationary.
  */
 public class GyroIODual implements GyroIO {
   private final AHRS navX;
   private final Canandgyro canAndGyro;
 
   private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
-  private final PrimitiveQueue yawTimestampQueue;
+  private final PrimitiveQueue yawTimestampQueue = new PrimitiveQueue();
 
   // Software offsets to avoid blocking hardware calls
-  private volatile Angle navxOffset = Radians.zero();
-  private volatile Angle canOffset = Radians.zero();
+  private volatile Angle navxYawOffset = Radians.zero();
+  private volatile Angle canYawOffset = Radians.zero();
+  private volatile Angle navxRollOffset = Radians.zero();
+  private volatile Angle canRollOffset = Radians.zero();
+  private volatile Angle navxPitchOffset = Radians.zero();
+  private volatile Angle canPitchOffset = Radians.zero();
+
   private volatile boolean isLocked = false;
 
   private boolean navxLastConnected = false;
@@ -63,38 +64,41 @@ public class GyroIODual implements GyroIO {
     settings.setYawFramePeriod(1 / ODOMETRY_FREQUENCY.in(Hertz));
     settings.setAngularVelocityFramePeriod(1 / ODOMETRY_FREQUENCY.in(Hertz));
     canAndGyro.setSettings(settings);
+  }
 
-    // Register single signal for Odometry and Whacknet
-    yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
-    SparkOdometryThread.getInstance()
-        .registerSignal(
-            () -> {
-              boolean navxConnected = navX.isConnected();
-              boolean canConnected = canAndGyro.isConnected();
+  @Override
+  public ImuState updateHighFreq(double timestampSec) {
+    boolean navxConnected = navX.isConnected();
+    boolean canConnected = canAndGyro.isConnected();
 
-              if (!navxConnected && !canConnected) return;
+    if (!navxConnected && !canConnected) return null;
 
-              double yaw, vel;
+    double yaw, vel, pitch, roll, pitchVel, rollVel;
 
-              // Prioritize NavX, fallback to Canandgyro
-              if (navxConnected) {
-                double rawYawRad = Units.degreesToRadians(-navX.getAngle());
-                vel = Units.degreesToRadians(-navX.getRate());
-                yaw = rawYawRad + navxOffset.in(Radians) + (vel * NAVX_LATENCY_SEC.in(Seconds));
-              } else {
-                double rawYawRad = Units.rotationsToRadians(canAndGyro.getYaw());
-                vel = Units.rotationsToRadians(canAndGyro.getAngularVelocityYaw());
-                yaw = rawYawRad + canOffset.in(Radians) + (vel * CANANDGYRO_LATENCY_SEC.in(Seconds));
-              }
+    if (navxConnected) {
+      double rawYawRad = Units.degreesToRadians(-navX.getAngle());
+      vel = Units.degreesToRadians(-navX.getRate());
+      yaw = rawYawRad + navxYawOffset.in(Radians) + (vel * NAVX_LATENCY_SEC.in(Seconds));
 
-              // Push to odometry queue
-              yawPositionQueue.offer(yaw);
+      pitch = Units.degreesToRadians(navX.getPitch()) + navxPitchOffset.in(Radians);
+      roll = Units.degreesToRadians(navX.getRoll()) + navxRollOffset.in(Radians);
+      pitchVel = Units.degreesToRadians(navX.getRawGyroY());
+      rollVel = Units.degreesToRadians(navX.getRawGyroX());
+    } else {
+      double rawYawRad = Units.rotationsToRadians(canAndGyro.getYaw());
+      vel = Units.rotationsToRadians(canAndGyro.getAngularVelocityYaw());
+      yaw = rawYawRad + canYawOffset.in(Radians) + (vel * CANANDGYRO_LATENCY_SEC.in(Seconds));
 
-              // Broadcast to native vision server if loaded and we have an established heading
-              if (Whacknet.getInstance().isLoaded() && isLocked) {
-                Whacknet.getInstance().broadcast(RobotController.getFPGATime(), yaw, vel);
-              }
-            });
+      pitch = Units.rotationsToRadians(canAndGyro.getPitch()) + canPitchOffset.in(Radians);
+      roll = Units.rotationsToRadians(canAndGyro.getRoll()) + canRollOffset.in(Radians);
+      pitchVel = Units.rotationsToRadians(canAndGyro.getAngularVelocityPitch());
+      rollVel = Units.rotationsToRadians(canAndGyro.getAngularVelocityRoll());
+    }
+
+    yawPositionQueue.offer(yaw);
+    yawTimestampQueue.offer(timestampSec);
+
+    return isLocked ? new ImuState(timestampSec, roll, pitch, yaw, rollVel, pitchVel, vel) : null;
   }
 
   @Override
@@ -103,64 +107,121 @@ public class GyroIODual implements GyroIO {
     boolean canConn = canAndGyro.isConnected();
     boolean navxCalibrating = navX.isCalibrating();
     boolean canCalibrating = canAndGyro.isCalibrating();
-    
+
     inputs.connected = navxConn || canConn;
     inputs.locked = isLocked = inputs.connected && hasBeenSet;
 
-    double rawNavx = Units.degreesToRadians(-navX.getAngle());
-    double rawCan = Units.rotationsToRadians(canAndGyro.getYaw());
+    double rawNavxYaw = Units.degreesToRadians(-navX.getAngle());
+    double rawCanYaw = Units.rotationsToRadians(canAndGyro.getYaw());
+    double rawNavxRoll = Units.degreesToRadians(navX.getRoll());
+    double rawCanRoll = Units.rotationsToRadians(canAndGyro.getRoll());
+    double rawNavxPitch = Units.degreesToRadians(navX.getPitch());
+    double rawCanPitch = Units.rotationsToRadians(canAndGyro.getPitch());
 
     // Handle NavX Reconnection (or First Boot Sync)
     if (navxConn && (!navxLastConnected || isFirstUpdate) && !navxCalibrating) {
       if (canConn && !canCalibrating) {
-        navxOffset = Radians.of((rawCan + canOffset.in(Radians)) - rawNavx);
+        navxYawOffset = Radians.of((rawCanYaw + canYawOffset.in(Radians)) - rawNavxYaw);
+        navxRollOffset = Radians.of((rawCanRoll + canRollOffset.in(Radians)) - rawNavxRoll);
+        navxPitchOffset = Radians.of((rawCanPitch + canPitchOffset.in(Radians)) - rawNavxPitch);
         isFirstUpdate = false;
-        Logger.recordOutput("Drive/Gyro/Event", "NavX Reconnected - Synced to Canandgyro");
+        Logger.recordOutput("Drive/Gyro/Event", "NavX Reconnected - Synced to Canandgyro (3D)");
       }
     }
 
     // Handle Canandgyro Reconnection (or First Boot Sync)
     if (canConn && (!canLastConnected || isFirstUpdate) && !canCalibrating) {
       if (navxConn && !navxCalibrating) {
-        canOffset = Radians.of((rawNavx + navxOffset.in(Radians)) - rawCan);
+        canYawOffset = Radians.of((rawNavxYaw + navxYawOffset.in(Radians)) - rawCanYaw);
+        canRollOffset = Radians.of((rawNavxRoll + navxRollOffset.in(Radians)) - rawCanRoll);
+        canPitchOffset = Radians.of((rawNavxPitch + navxPitchOffset.in(Radians)) - rawCanPitch);
         isFirstUpdate = false;
-        Logger.recordOutput("Drive/Gyro/Event", "Canandgyro Reconnected - Synced to NavX");
+        Logger.recordOutput("Drive/Gyro/Event", "Canandgyro Reconnected - Synced to NavX (3D)");
       }
     }
 
     navxLastConnected = navxConn;
     canLastConnected = canConn;
 
-    // Drift Compensation Math
+    // Drift Compensation Math (3-DOF)
     if (navxConn && canConn && !navxCalibrating && !canCalibrating) {
-      double navxEffective = rawNavx + navxOffset.in(Radians);
-      double canEffective = rawCan + canOffset.in(Radians);
-      AngularVelocity navxVel = DegreesPerSecond.of(-navX.getRate());
+      double navxYawVel = Units.degreesToRadians(-navX.getRate());
+      double navxRollVel = Units.degreesToRadians(navX.getRawGyroX());
+      double navxPitchVel = Units.degreesToRadians(navX.getRawGyroY());
 
-      // Calculate error between NavX and CanAndGyro, continuously wrapped
-      double errorRad = MathUtil.angleModulus(canEffective - navxEffective);
+      // Determine if the robot is effectively stationary on all axes
+      double gate = VELOCITY_GATE.in(RadiansPerSecond);
+      boolean isStill =
+          Math.abs(navxYawVel) < gate
+              && Math.abs(navxRollVel) < gate
+              && Math.abs(navxPitchVel) < gate;
 
-      // Determine if the robot is effectively stationary
-      boolean isStill = navxVel.abs(RadiansPerSecond) < VELOCITY_GATE.in(RadiansPerSecond);
+      if (isStill) {
+        // Yaw
+        double yawErrorRad =
+            MathUtil.angleModulus(
+                (rawCanYaw + canYawOffset.in(Radians)) - (rawNavxYaw + navxYawOffset.in(Radians)));
+        if (Math.abs(yawErrorRad) > ERROR_THRESHOLD.in(Radians)) {
+          double clampedStep =
+              MathUtil.clamp(
+                  yawErrorRad * DRIFT_GAIN,
+                  -MAX_CORRECTION_PER_FRAME.in(Radians),
+                  MAX_CORRECTION_PER_FRAME.in(Radians));
+          navxYawOffset = navxYawOffset.plus(Radians.of(clampedStep));
+        }
 
-      // If stationary and error is significant, slowly pull the NavX offset to match Canandgyro
-      if (isStill && (Math.abs(errorRad) > ERROR_THRESHOLD.in(Radians))) {
-        double step = errorRad * DRIFT_GAIN;
-        double clampedStep = MathUtil.clamp(step, -MAX_CORRECTION_PER_FRAME.in(Radians), MAX_CORRECTION_PER_FRAME.in(Radians));
-        navxOffset = navxOffset.plus(Radians.of(clampedStep));
+        // Roll
+        double rollErrorRad =
+            MathUtil.angleModulus(
+                (rawCanRoll + canRollOffset.in(Radians))
+                    - (rawNavxRoll + navxRollOffset.in(Radians)));
+        if (Math.abs(rollErrorRad) > ERROR_THRESHOLD.in(Radians)) {
+          double clampedStep =
+              MathUtil.clamp(
+                  rollErrorRad * DRIFT_GAIN,
+                  -MAX_CORRECTION_PER_FRAME.in(Radians),
+                  MAX_CORRECTION_PER_FRAME.in(Radians));
+          navxRollOffset = navxRollOffset.plus(Radians.of(clampedStep));
+        }
+
+        // Pitch
+        double pitchErrorRad =
+            MathUtil.angleModulus(
+                (rawCanPitch + canPitchOffset.in(Radians))
+                    - (rawNavxPitch + navxPitchOffset.in(Radians)));
+        if (Math.abs(pitchErrorRad) > ERROR_THRESHOLD.in(Radians)) {
+          double clampedStep =
+              MathUtil.clamp(
+                  pitchErrorRad * DRIFT_GAIN,
+                  -MAX_CORRECTION_PER_FRAME.in(Radians),
+                  MAX_CORRECTION_PER_FRAME.in(Radians));
+          navxPitchOffset = navxPitchOffset.plus(Radians.of(clampedStep));
+        }
       }
     }
 
     // Standard 50Hz Telemetry
     if (navxConn) {
-      inputs.yawPosition = Radians.of(rawNavx + navxOffset.in(Radians));
+      inputs.yawPosition = Radians.of(rawNavxYaw + navxYawOffset.in(Radians));
       inputs.yawVelocity = DegreesPerSecond.of(-navX.getRate());
+      inputs.rollPosition = Radians.of(rawNavxRoll + navxRollOffset.in(Radians));
+      inputs.pitchPosition = Radians.of(rawNavxPitch + navxPitchOffset.in(Radians));
+      inputs.rollVelocity = DegreesPerSecond.of(navX.getRawGyroX());
+      inputs.pitchVelocity = DegreesPerSecond.of(navX.getRawGyroY());
     } else if (canConn) {
-      inputs.yawPosition = Radians.of(rawCan + canOffset.in(Radians));
+      inputs.yawPosition = Radians.of(rawCanYaw + canYawOffset.in(Radians));
       inputs.yawVelocity = RotationsPerSecond.of(canAndGyro.getAngularVelocityYaw());
+      inputs.rollPosition = Radians.of(rawCanRoll + canRollOffset.in(Radians));
+      inputs.pitchPosition = Radians.of(rawCanPitch + canPitchOffset.in(Radians));
+      inputs.rollVelocity = RotationsPerSecond.of(canAndGyro.getAngularVelocityRoll());
+      inputs.pitchVelocity = RotationsPerSecond.of(canAndGyro.getAngularVelocityPitch());
     } else {
       inputs.yawPosition = Radians.zero();
       inputs.yawVelocity = RadiansPerSecond.zero();
+      inputs.rollPosition = Radians.zero();
+      inputs.pitchPosition = Radians.zero();
+      inputs.rollVelocity = RadiansPerSecond.zero();
+      inputs.pitchVelocity = RadiansPerSecond.zero();
     }
 
     // Health and Faults
@@ -198,9 +259,13 @@ public class GyroIODual implements GyroIO {
     yawTimestampQueue.clear();
     yawPositionQueue.clear();
 
-    // Log the current offsets to track drift
-    Logger.recordOutput("Drive/Gyro/NavXOffset", navxOffset);
-    Logger.recordOutput("Drive/Gyro/CanOffset", canOffset);
+    // Log the current offsets to track drift across all axes
+    Logger.recordOutput("Drive/Gyro/CanOffset/Yaw", canYawOffset);
+    Logger.recordOutput("Drive/Gyro/CanOffset/Roll", canRollOffset);
+    Logger.recordOutput("Drive/Gyro/CanOffset/Pitch", canPitchOffset);
+    Logger.recordOutput("Drive/Gyro/NavXOffset/Yaw", navxYawOffset);
+    Logger.recordOutput("Drive/Gyro/NavXOffset/Roll", navxRollOffset);
+    Logger.recordOutput("Drive/Gyro/NavXOffset/Pitch", navxPitchOffset);
   }
 
   @Override
@@ -215,10 +280,10 @@ public class GyroIODual implements GyroIO {
 
     // Apply the offset mathematically to whichever hardware is currently online
     if (navX.isConnected()) {
-      navxOffset = Radians.of(target - Units.degreesToRadians(-navX.getAngle()));
+      navxYawOffset = Radians.of(target - Units.degreesToRadians(-navX.getAngle()));
     }
     if (canAndGyro.isConnected()) {
-      canOffset = Radians.of(target - Units.rotationsToRadians(canAndGyro.getYaw()));
+      canYawOffset = Radians.of(target - Units.rotationsToRadians(canAndGyro.getYaw()));
     }
 
     hasBeenSet = true;

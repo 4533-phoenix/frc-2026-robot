@@ -34,10 +34,9 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
+import frc.lib.PrimitiveQueue;
 import frc.lib.lowlevel.SparkTap;
 import frc.lib.lowlevel.SparkTap.MotorView;
-import frc.robot.subsystems.drive.SparkOdometryThread;
-import frc.robot.subsystems.drive.SparkOdometryThread.PrimitiveQueue;
 
 /**
  * Real IO implementation for a swerve drive module using Spark Max motor controllers and a CANcoder
@@ -61,7 +60,7 @@ public class ModuleIOSpark implements ModuleIO {
   private final MotorView turnTap;
 
   // Primitive Zero-GC Queues for high-frequency data
-  private final PrimitiveQueue timestampQueue;
+  private final PrimitiveQueue timestampQueue = new PrimitiveQueue();
   private final PrimitiveQueue drivePositionQueue = new PrimitiveQueue();
   private final PrimitiveQueue turnPositionQueue = new PrimitiveQueue();
   private final PrimitiveQueue driveVelocityQueue = new PrimitiveQueue();
@@ -98,17 +97,6 @@ public class ModuleIOSpark implements ModuleIO {
 
     driveTap = SparkTap.getInstance().getMotor(config.driveCanId());
     turnTap = SparkTap.getInstance().getMotor(config.turnCanId());
-
-    SparkOdometryThread odometry = SparkOdometryThread.getInstance();
-    timestampQueue = odometry.makeTimestampQueue();
-    odometry.registerSignal(
-        () -> {
-          // Snapshot mathematically time-aligned positions
-          drivePositionQueue.offer(driveTap.getLatencyCompensatedPosition());
-          turnPositionQueue.offer(turnTap.getLatencyCompensatedPosition());
-          driveVelocityQueue.offer(driveTap.getVelocity());
-          turnVelocityQueue.offer(turnTap.getVelocity());
-        });
 
     var driveConfig = new SparkMaxConfig();
     driveConfig
@@ -204,6 +192,15 @@ public class ModuleIOSpark implements ModuleIO {
   }
 
   @Override
+  public void updateHighFreq(double timestampSec) {
+    drivePositionQueue.offer(driveTap.getLatencyCompensatedPosition());
+    turnPositionQueue.offer(turnTap.getLatencyCompensatedPosition());
+    driveVelocityQueue.offer(driveTap.getVelocity());
+    turnVelocityQueue.offer(turnTap.getVelocity());
+    timestampQueue.offer(timestampSec);
+  }
+
+  @Override
   public void updateInputs(ModuleIOInputs inputs) {
     // Drive Motor Inputs
     boolean driveOk = driveTap.isConnected();
@@ -292,9 +289,7 @@ public class ModuleIOSpark implements ModuleIO {
   @Override
   public void setDriveVelocity(AngularVelocity velocity) {
     driveController.setSetpoint(
-        velocity.in(RadiansPerSecond),
-        ControlType.kMAXMotionVelocityControl,
-        ClosedLoopSlot.kSlot0);
+        velocity.in(RadiansPerSecond), ControlType.kVelocity, ClosedLoopSlot.kSlot0);
   }
 
   @Override

@@ -10,6 +10,7 @@ package frc.robot.subsystems.vision;
 import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import frc.lib.lowlevel.Whacknet;
+import frc.robot.subsystems.drive.gyro.GyroIO.ImuState;
 import frc.robot.subsystems.vision.Vision.VisionObservation;
 
 /**
@@ -26,7 +27,7 @@ public class VisionIOWhacknet implements VisionIO {
   /** Creates a new VisionIOChalkydri and starts the native vision server. */
   public VisionIOWhacknet() {
     whacknet = Whacknet.getInstance();
-    whacknet.start(SERVER_RPORT, SERVER_BPORT);
+    whacknet.startServer(SERVER_RPORT);
   }
 
   /**
@@ -37,7 +38,6 @@ public class VisionIOWhacknet implements VisionIO {
    */
   @Override
   public void updateInputs(VisionIOInputs inputs) {
-    inputs.serverLoaded = whacknet.isLoaded();
     int count = whacknet.readPackets();
 
     // Create a single array of our struct
@@ -55,5 +55,20 @@ public class VisionIOWhacknet implements VisionIO {
                   packet.getStdY(),
                   packet.getStdRot());
         });
+  }
+
+  @Override
+  public void broadcastImuState(ImuState imuState) {
+    if (whacknet != null && imuState != null) {
+      whacknet.broadcast(
+          (long) (imuState.timestampSec() * 1.0e6),
+          imuState.rollRad(),
+          imuState.pitchRad(),
+          imuState.yawRad(),
+          imuState.rollVelRadPerSec(),
+          imuState.pitchVelRadPerSec(),
+          imuState.yawVelRadPerSec(),
+          VisionConstants.SERVER_BPORT);
+    }
   }
 }

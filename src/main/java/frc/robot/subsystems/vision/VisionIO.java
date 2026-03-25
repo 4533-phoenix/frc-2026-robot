@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems.vision;
 
+import frc.robot.subsystems.drive.gyro.GyroIO.ImuState;
 import frc.robot.subsystems.vision.Vision.VisionObservation;
 import org.littletonrobotics.junction.AutoLog;
 
@@ -21,9 +22,6 @@ public interface VisionIO {
   /** Contains all of the inputs received from the vision hardware. */
   @AutoLog
   public static class VisionIOInputs {
-    /** Whether the native vision processing server is loaded and running. */
-    public boolean serverLoaded = false;
-
     /** The latest set of vision observations, including timestamps. */
     public VisionObservation[] observations = new VisionObservation[0];
   }
@@ -34,4 +32,11 @@ public interface VisionIO {
    * @param inputs The inputs object to update.
    */
   public default void updateInputs(VisionIOInputs inputs) {}
+
+  /**
+   * Broadcasts the high frequency 6-DOF IMU state to the vision coprocessor.
+   *
+   * @param imuState The latest snapshot of the robot's IMU.
+   */
+  public default void broadcastImuState(ImuState imuState) {}
 }

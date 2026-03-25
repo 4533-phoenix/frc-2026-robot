@@ -75,6 +75,10 @@ public class Module {
     turnEncoderDisconnectedAlert.set(!inputs.turnEncoderConnected);
   }
 
+  public void updateHighFreq(double timestampSec) {
+    io.updateHighFreq(timestampSec);
+  }
+
   /**
    * Runs the module with the specified setpoint state.
    *

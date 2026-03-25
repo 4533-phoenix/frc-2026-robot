@@ -14,23 +14,14 @@ import com.reduxrobotics.sensors.canandgyro.Canandgyro;
 import com.reduxrobotics.sensors.canandgyro.CanandgyroSettings;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.wpilibj.RobotController;
+import frc.lib.PrimitiveQueue;
 import frc.lib.hardware.GyroType;
-import frc.lib.lowlevel.Whacknet;
-import frc.robot.subsystems.drive.SparkOdometryThread;
-import frc.robot.subsystems.drive.SparkOdometryThread.PrimitiveQueue;
 
-/**
- * IO implementation for the Redux Robotics Canandgyro.
- *
- * <p>This implementation configures the gyro to send data frames at the frequency defined in {@link
- * frc.robot.subsystems.drive.DriveConstants#ODOMETRY_FREQUENCY} and registers these signals with
- * the {@link SparkOdometryThread} for accurate, high-frequency odometry.
- */
+/** IO implementation for the Redux Robotics Canandgyro. */
 public class GyroIOCanAndGyro implements GyroIO {
   private final Canandgyro canAndGyro = new Canandgyro(IMU_CAN_ID);
   private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
-  private final PrimitiveQueue yawTimestampQueue;
+  private final PrimitiveQueue yawTimestampQueue = new PrimitiveQueue();
 
   private volatile Angle yawOffset = Radians.zero();
   private volatile boolean isLocked = false;
@@ -46,32 +37,42 @@ public class GyroIOCanAndGyro implements GyroIO {
     settings.setYawFramePeriod(1 / ODOMETRY_FREQUENCY.in(Hertz));
     settings.setAngularVelocityFramePeriod(1 / ODOMETRY_FREQUENCY.in(Hertz));
     canAndGyro.setSettings(settings);
+  }
 
-    // Register signals with the asynchronous odometry thread
-    yawTimestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
-    SparkOdometryThread.getInstance()
-        .registerSignal(
-            () -> {
-              if (!canAndGyro.isConnected()) return;
+  @Override
+  public ImuState updateHighFreq(double timestampSec) {
+    if (!canAndGyro.isConnected()) return null;
 
-              double yawPosition = Units.rotationsToRadians(canAndGyro.getYaw()) + yawOffset.in(Radians);
-              double yawVelocity = Units.rotationsToRadians(canAndGyro.getAngularVelocityYaw());
-              yawPositionQueue.offer(
-                  yawPosition + (yawVelocity * CANANDGYRO_LATENCY_SEC.in(Seconds)));
+    double yawVelocity = Units.rotationsToRadians(canAndGyro.getAngularVelocityYaw());
+    double yawPosition = Units.rotationsToRadians(canAndGyro.getYaw()) + yawOffset.in(Radians);
+    double latencyCompensatedYaw = yawPosition + (yawVelocity * CANANDGYRO_LATENCY_SEC.in(Seconds));
 
-              if (Whacknet.getInstance().isLoaded() && isLocked) {
-                Whacknet.getInstance()
-                    .broadcast(RobotController.getFPGATime(), yawPosition, yawVelocity);
-              }
-            });
+    double roll = Units.rotationsToRadians(canAndGyro.getRoll());
+    double pitch = Units.rotationsToRadians(canAndGyro.getPitch());
+    double rollVel = Units.rotationsToRadians(canAndGyro.getAngularVelocityRoll());
+    double pitchVel = Units.rotationsToRadians(canAndGyro.getAngularVelocityPitch());
+
+    yawPositionQueue.offer(latencyCompensatedYaw);
+    yawTimestampQueue.offer(timestampSec);
+
+    return isLocked
+        ? new ImuState(
+            timestampSec, roll, pitch, latencyCompensatedYaw, rollVel, pitchVel, yawVelocity)
+        : null;
   }
 
   @Override
   public void updateInputs(GyroIOInputs inputs) {
     inputs.connected = canAndGyro.isConnected();
     inputs.locked = isLocked = inputs.connected && hasBeenSet;
-    inputs.yawPosition = Radians.of(Units.rotationsToRadians(canAndGyro.getYaw()) + yawOffset.in(Radians));
+    inputs.yawPosition =
+        Radians.of(Units.rotationsToRadians(canAndGyro.getYaw()) + yawOffset.in(Radians));
     inputs.yawVelocity = RotationsPerSecond.of(canAndGyro.getAngularVelocityYaw());
+    inputs.rollPosition = Rotations.of(canAndGyro.getRoll());
+    inputs.pitchPosition = Rotations.of(canAndGyro.getPitch());
+    inputs.rollVelocity = RotationsPerSecond.of(canAndGyro.getAngularVelocityRoll());
+    inputs.pitchVelocity = RotationsPerSecond.of(canAndGyro.getAngularVelocityPitch());
+
     inputs.healthy =
         inputs.connected
             && !canAndGyro.isCalibrating()

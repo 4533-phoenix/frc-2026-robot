@@ -38,17 +38,21 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Notifier;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.lib.monitors.GyroHealthMonitor;
 import frc.robot.subsystems.drive.gyro.GyroIO;
+import frc.robot.subsystems.drive.gyro.GyroIO.ImuState;
 import frc.robot.subsystems.drive.gyro.GyroIOInputsAutoLogged;
 import frc.robot.subsystems.drive.module.Module;
 import frc.robot.subsystems.drive.module.ModuleIO;
 import frc.robot.util.LocalADStarAK;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -107,6 +111,9 @@ public class Drive extends SubsystemBase {
         new SwerveModuleState()
       };
 
+  private final Notifier odometryThread;
+  private Consumer<ImuState> visionHighFreqConsumer;
+
   /**
    * Creates a new Drive subsystem.
    *
@@ -132,7 +139,8 @@ public class Drive extends SubsystemBase {
     HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_AdvantageKit);
 
     // Start odometry thread
-    SparkOdometryThread.getInstance().startThread();
+    odometryThread = new Notifier(this::odometryLoop);
+    odometryThread.startPeriodic(1.0 / ODOMETRY_FREQUENCY.in(Hertz));
 
     // Configure AutoBuilder for PathPlanner
     AutoBuilder.configure(
@@ -164,6 +172,28 @@ public class Drive extends SubsystemBase {
                 null,
                 (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())),
             new SysIdRoutine.Mechanism((voltage) -> runCharacterization(voltage), null, this));
+  }
+
+  public void setVisionHighFreqConsumer(Consumer<ImuState> callback) {
+    this.visionHighFreqConsumer = callback;
+  }
+
+  private void odometryLoop() {
+    odometryLock.lock();
+    try {
+      double timestampSec = RobotController.getFPGATime() / 1.0e6;
+
+      ImuState imuState = gyroIO.updateHighFreq(timestampSec);
+      for (var module : modules) {
+        module.updateHighFreq(timestampSec);
+      }
+
+      if (visionHighFreqConsumer != null && imuState != null) {
+        visionHighFreqConsumer.accept(imuState);
+      }
+    } finally {
+      odometryLock.unlock();
+    }
   }
 
   @Override
