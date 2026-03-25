@@ -15,6 +15,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Timer;
+import frc.lib.IMUState;
+import frc.lib.lowlevel.Whacknet;
 import frc.robot.subsystems.vision.Vision.VisionObservation;
 import frc.robot.subsystems.vision.VisionConstants.CameraConfig;
 import java.util.ArrayList;
@@ -34,6 +36,7 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 public class VisionIOPhoton implements VisionIO {
   private final List<CameraContext> cameras = new ArrayList<>();
   private static final Pose2d EMPTY_POSE = new Pose2d();
+  private final Whacknet whacknet = BROADCAST_HEADING ? Whacknet.getInstance() : null;
 
   private static final int MAX_OBSERVATIONS = 64;
   private final VisionObservation[] observationBuffer = new VisionObservation[MAX_OBSERVATIONS];
@@ -146,5 +149,20 @@ public class VisionIOPhoton implements VisionIO {
     return target.getPoseAmbiguity() < AMBIGUITY_CUTOFF
         && target.getBestCameraToTarget().getTranslation().getNorm()
             < SINGLE_TAG_POSE_CUTOFF.in(Meters);
+  }
+
+  @Override
+  public void broadcastImuState(IMUState imuState) {
+    if (whacknet != null && imuState != null && BROADCAST_HEADING) {
+      whacknet.broadcast(
+          (long) (imuState.timestampSec() * 1.0e6),
+          imuState.rollRad(),
+          imuState.pitchRad(),
+          imuState.yawRad(),
+          imuState.rollVelRadPerSec(),
+          imuState.pitchVelRadPerSec(),
+          imuState.yawVelRadPerSec(),
+          VisionConstants.SERVER_BPORT);
+    }
   }
 }

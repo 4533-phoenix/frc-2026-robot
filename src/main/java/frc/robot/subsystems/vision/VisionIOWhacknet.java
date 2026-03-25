@@ -9,8 +9,8 @@ package frc.robot.subsystems.vision;
 
 import static frc.robot.subsystems.vision.VisionConstants.*;
 
+import frc.lib.IMUState;
 import frc.lib.lowlevel.Whacknet;
-import frc.robot.subsystems.drive.gyro.GyroIO.ImuState;
 import frc.robot.subsystems.vision.Vision.VisionObservation;
 
 /**
@@ -58,8 +58,8 @@ public class VisionIOWhacknet implements VisionIO {
   }
 
   @Override
-  public void broadcastImuState(ImuState imuState) {
-    if (whacknet != null && imuState != null) {
+  public void broadcastImuState(IMUState imuState) {
+    if (whacknet != null && imuState != null && BROADCAST_HEADING) {
       whacknet.broadcast(
           (long) (imuState.timestampSec() * 1.0e6),
           imuState.rollRad(),

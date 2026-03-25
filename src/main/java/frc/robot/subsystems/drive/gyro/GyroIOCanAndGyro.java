@@ -14,6 +14,7 @@ import com.reduxrobotics.sensors.canandgyro.Canandgyro;
 import com.reduxrobotics.sensors.canandgyro.CanandgyroSettings;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
+import frc.lib.IMUState;
 import frc.lib.PrimitiveQueue;
 import frc.lib.hardware.GyroType;
 
@@ -40,7 +41,7 @@ public class GyroIOCanAndGyro implements GyroIO {
   }
 
   @Override
-  public ImuState updateHighFreq(double timestampSec) {
+  public IMUState updateHighFreq(double timestampSec) {
     if (!canAndGyro.isConnected()) return null;
 
     double yawVelocity = Units.rotationsToRadians(canAndGyro.getAngularVelocityYaw());
@@ -56,7 +57,7 @@ public class GyroIOCanAndGyro implements GyroIO {
     yawTimestampQueue.offer(timestampSec);
 
     return isLocked
-        ? new ImuState(
+        ? new IMUState(
             timestampSec, roll, pitch, latencyCompensatedYaw, rollVel, pitchVel, yawVelocity)
         : null;
   }

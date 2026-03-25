@@ -17,6 +17,7 @@ import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
+import frc.lib.IMUState;
 import frc.lib.PrimitiveQueue;
 import frc.lib.hardware.GyroType;
 
@@ -40,7 +41,7 @@ public class GyroIONavX implements GyroIO {
   }
 
   @Override
-  public ImuState updateHighFreq(double timestampSec) {
+  public IMUState updateHighFreq(double timestampSec) {
     if (!navX.isConnected()) return null;
 
     double yawVelocity = Units.degreesToRadians(-navX.getRate());
@@ -56,7 +57,7 @@ public class GyroIONavX implements GyroIO {
     yawTimestampQueue.offer(timestampSec);
 
     return isLocked
-        ? new ImuState(
+        ? new IMUState(
             timestampSec, roll, pitch, latencyCompensatedYaw, rollVel, pitchVel, yawVelocity)
         : null;
   }

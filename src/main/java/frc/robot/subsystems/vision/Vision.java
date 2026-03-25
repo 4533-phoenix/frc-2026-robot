@@ -18,8 +18,8 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.IMUState;
 import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.drive.gyro.GyroIO.ImuState;
 import java.util.Collections;
 import org.littletonrobotics.junction.Logger;
 
@@ -91,7 +91,7 @@ public class Vision extends SubsystemBase {
    *
    * @param imuState The current 6-DOF IMU state.
    */
-  public void broadcastImuState(ImuState imuState) {
+  public void broadcastImuState(IMUState imuState) {
     io.broadcastImuState(imuState);
   }
 

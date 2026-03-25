@@ -114,4 +114,7 @@ public class VisionConstants {
   /** The AprilTag field layout representing the positions of tags on the current year's field. */
   public static final AprilTagFieldLayout FIELD_LAYOUT =
       AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
+
+  /** Whether or not to broadcast heading information. */
+  public static final boolean BROADCAST_HEADING = true;
 }

@@ -12,22 +12,12 @@ package frc.robot.subsystems.drive.gyro;
 import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.units.measure.*;
+import frc.lib.IMUState;
 import frc.lib.hardware.GyroType;
 import org.littletonrobotics.junction.AutoLog;
 
 /** Interface for the gyroscope input/output abstraction. */
 public interface GyroIO {
-
-  /** Represents a 6-DOF high-frequency snapshot for vision correction. */
-  public record ImuState(
-      double timestampSec,
-      double rollRad,
-      double pitchRad,
-      double yawRad,
-      double rollVelRadPerSec,
-      double pitchVelRadPerSec,
-      double yawVelRadPerSec) {}
-
   /** Contains all of the inputs received from the gyro hardware. */
   @AutoLog
   public static class GyroIOInputs {
@@ -93,9 +83,9 @@ public interface GyroIO {
    * Polls high-frequency data for the 200Hz odometry loop.
    *
    * @param timestampSec The exact timestamp of the current 200Hz tick.
-   * @return The latest 6-DOF IMU state.
+   * @return The latest 6-DOF IMU state or null if the data is not available.
    */
-  public default ImuState updateHighFreq(double timestampSec) {
+  public default IMUState updateHighFreq(double timestampSec) {
     return null;
   }
 

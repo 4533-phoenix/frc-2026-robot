@@ -7,7 +7,7 @@
 
 package frc.robot.subsystems.vision;
 
-import frc.robot.subsystems.drive.gyro.GyroIO.ImuState;
+import frc.lib.IMUState;
 import frc.robot.subsystems.vision.Vision.VisionObservation;
 import org.littletonrobotics.junction.AutoLog;
 
@@ -38,5 +38,5 @@ public interface VisionIO {
    *
    * @param imuState The latest snapshot of the robot's IMU.
    */
-  public default void broadcastImuState(ImuState imuState) {}
+  public default void broadcastImuState(IMUState imuState) {}
 }

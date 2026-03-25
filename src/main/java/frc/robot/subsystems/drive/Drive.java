@@ -43,9 +43,9 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.lib.IMUState;
 import frc.lib.monitors.GyroHealthMonitor;
 import frc.robot.subsystems.drive.gyro.GyroIO;
-import frc.robot.subsystems.drive.gyro.GyroIO.ImuState;
 import frc.robot.subsystems.drive.gyro.GyroIOInputsAutoLogged;
 import frc.robot.subsystems.drive.module.Module;
 import frc.robot.subsystems.drive.module.ModuleIO;
@@ -112,7 +112,7 @@ public class Drive extends SubsystemBase {
       };
 
   private final Notifier odometryThread;
-  private Consumer<ImuState> visionHighFreqConsumer;
+  private Consumer<IMUState> visionHighFreqConsumer;
 
   /**
    * Creates a new Drive subsystem.
@@ -174,7 +174,7 @@ public class Drive extends SubsystemBase {
             new SysIdRoutine.Mechanism((voltage) -> runCharacterization(voltage), null, this));
   }
 
-  public void setVisionHighFreqConsumer(Consumer<ImuState> callback) {
+  public void setVisionHighFreqConsumer(Consumer<IMUState> callback) {
     this.visionHighFreqConsumer = callback;
   }
 
@@ -183,7 +183,7 @@ public class Drive extends SubsystemBase {
     try {
       double timestampSec = RobotController.getFPGATime() / 1.0e6;
 
-      ImuState imuState = gyroIO.updateHighFreq(timestampSec);
+      IMUState imuState = gyroIO.updateHighFreq(timestampSec);
       for (var module : modules) {
         module.updateHighFreq(timestampSec);
       }

@@ -17,6 +17,7 @@ import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
+import frc.lib.IMUState;
 import frc.lib.PrimitiveQueue;
 import frc.lib.hardware.GyroType;
 import org.littletonrobotics.junction.Logger;
@@ -67,7 +68,7 @@ public class GyroIODual implements GyroIO {
   }
 
   @Override
-  public ImuState updateHighFreq(double timestampSec) {
+  public IMUState updateHighFreq(double timestampSec) {
     boolean navxConnected = navX.isConnected();
     boolean canConnected = canAndGyro.isConnected();
 
@@ -98,7 +99,7 @@ public class GyroIODual implements GyroIO {
     yawPositionQueue.offer(yaw);
     yawTimestampQueue.offer(timestampSec);
 
-    return isLocked ? new ImuState(timestampSec, roll, pitch, yaw, rollVel, pitchVel, vel) : null;
+    return isLocked ? new IMUState(timestampSec, roll, pitch, yaw, rollVel, pitchVel, vel) : null;
   }
 
   @Override
@@ -125,7 +126,6 @@ public class GyroIODual implements GyroIO {
         navxRollOffset = Radians.of((rawCanRoll + canRollOffset.in(Radians)) - rawNavxRoll);
         navxPitchOffset = Radians.of((rawCanPitch + canPitchOffset.in(Radians)) - rawNavxPitch);
         isFirstUpdate = false;
-        Logger.recordOutput("Drive/Gyro/Event", "NavX Reconnected - Synced to Canandgyro (3D)");
       }
     }
 
@@ -136,14 +136,13 @@ public class GyroIODual implements GyroIO {
         canRollOffset = Radians.of((rawNavxRoll + navxRollOffset.in(Radians)) - rawCanRoll);
         canPitchOffset = Radians.of((rawNavxPitch + navxPitchOffset.in(Radians)) - rawCanPitch);
         isFirstUpdate = false;
-        Logger.recordOutput("Drive/Gyro/Event", "Canandgyro Reconnected - Synced to NavX (3D)");
       }
     }
 
     navxLastConnected = navxConn;
     canLastConnected = canConn;
 
-    // Drift Compensation Math (3-DOF)
+    // Drift Compensation Math
     if (navxConn && canConn && !navxCalibrating && !canCalibrating) {
       double navxYawVel = Units.degreesToRadians(-navX.getRate());
       double navxRollVel = Units.degreesToRadians(navX.getRawGyroX());
