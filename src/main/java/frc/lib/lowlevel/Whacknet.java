@@ -34,7 +34,7 @@ public class Whacknet implements AutoCloseable {
   // Constants
   private static final int MAX_QUEUE_SIZE = 64;
   private static final int MASK = MAX_QUEUE_SIZE - 1;
-  public static final int STRUCT_SIZE = 64;
+  private static final int STRUCT_SIZE = 64;
   private static final int TELEMETRY_SIZE = 64;
 
   // Struct Offsets (VisionMeasurement)
@@ -165,6 +165,7 @@ public class Whacknet implements AutoCloseable {
    * @param rollVel Roll velocity in radians per second.
    * @param pitchVel Pitch velocity in radians per second.
    * @param yawVel Yaw velocity in radians per second.
+   * @param port The UDP port to broadcast on.
    */
   public void broadcast(
       long timestamp,

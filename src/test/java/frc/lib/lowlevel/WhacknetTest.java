@@ -21,7 +21,10 @@ public class WhacknetTest {
   @Test
   public void testPacketViewOffsets() throws Exception {
     // Create a dummy buffer simulating the C++ shared memory
-    ByteBuffer buffer = ByteBuffer.allocateDirect(Whacknet.STRUCT_SIZE);
+    Field field = Whacknet.class.getDeclaredField("STRUCT_SIZE");
+    field.setAccessible(true);
+    int structSize = (Integer) field.get(null);
+    ByteBuffer buffer = ByteBuffer.allocateDirect(structSize);
     buffer.order(ByteOrder.nativeOrder());
 
     // Write specific values at the expected offsets

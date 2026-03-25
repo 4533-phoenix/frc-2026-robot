@@ -75,6 +75,12 @@ public class Module {
     turnEncoderDisconnectedAlert.set(!inputs.turnEncoderConnected);
   }
 
+  /**
+   * Updates high-frequency data for the module, which can be used for real-time pose estimation or
+   * control loops.
+   *
+   * @param timestampSec The timestamp for the data point.
+   */
   public void updateHighFreq(double timestampSec) {
     io.updateHighFreq(timestampSec);
   }

@@ -131,6 +131,7 @@ public class SparkUtil {
    * motors.
    *
    * @param currentLimit The current limit for the Spark Max motor.
+   * @param inverted Whether the motor output should be inverted.
    * @return A configured SparkMaxConfig instance.
    */
   public static SparkMaxConfig createBaseConfig(Current currentLimit, boolean inverted) {

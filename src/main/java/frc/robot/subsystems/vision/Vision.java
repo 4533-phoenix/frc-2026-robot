@@ -20,7 +20,6 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.IMUState;
 import frc.lib.monitors.MonitoredSubsystem;
-
 import java.util.Collections;
 import org.littletonrobotics.junction.Logger;
 
@@ -45,6 +44,13 @@ public class Vision extends SubsystemBase implements MonitoredSubsystem {
   /** A functional interface for consuming vision measurements. */
   @FunctionalInterface
   public interface VisionMeasurementConsumer {
+    /**
+     * Accepts a new vision measurement for processing.
+     *
+     * @param visionPose The estimated pose from the vision system.
+     * @param timestamp The timestamp of the measurement.
+     * @param stdDevs A 3x1 matrix containing the standard deviations for x, y, and rotation.
+     */
     void accept(Pose2d visionPose, double timestamp, Matrix<N3, N1> stdDevs);
   }
 
@@ -68,8 +74,7 @@ public class Vision extends SubsystemBase implements MonitoredSubsystem {
   /**
    * Creates a new Vision subsystem.
    *
-   * @param io The abstraction layer for the vision hardware (e.g., Limelight, PhotonVision).
-   * @param drive The Drive subsystem instance for updating pose estimates.
+   * @param io The abstraction layer for the vision hardware.
    */
   public Vision(VisionIO io) {
     this.io = io;

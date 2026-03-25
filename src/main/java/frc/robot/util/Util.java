@@ -79,6 +79,7 @@ public class Util {
    * Evaluate whether the hub will be enabled in N seconds.
    *
    * @param seconds The number of seconds in the future to check.
+   * @return True if the hub will be enabled in N seconds, false otherwise.
    */
   public static boolean isHubApproaching(double seconds) {
     double time = DriverStation.getMatchTime();

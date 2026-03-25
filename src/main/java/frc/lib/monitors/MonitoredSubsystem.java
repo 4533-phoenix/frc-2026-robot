@@ -8,8 +8,8 @@
 package frc.lib.monitors;
 
 /**
- * An interface to enforce standard health monitoring and fault management
- * across all robot subsystems.
+ * An interface to enforce standard health monitoring and fault management across all robot
+ * subsystems.
  */
 public interface MonitoredSubsystem {
   /**

@@ -175,6 +175,11 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
             new SysIdRoutine.Mechanism((voltage) -> runCharacterization(voltage), null, this));
   }
 
+  /**
+   * Returns the current pose of the robot on the field.
+   *
+   * @param callback A Consumer that accepts the current IMU state.
+   */
   public void setIMUHighFreqConsumer(Consumer<IMUState> callback) {
     this.visionHighFreqConsumer = callback;
   }

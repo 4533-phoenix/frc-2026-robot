@@ -32,21 +32,33 @@ public class HighFreqBuffer {
    *
    * @param timestamp The timestamp for the data point.
    * @param v0 The value for the first signal.
-   * @param v1 The value for the second signal.
    */
   public void offer(double timestamp, double v0) {
     timestamps.offer(timestamp);
     valueQueues[0].offer(v0);
   }
 
-  /** Offers a new data point for two signals. Overloaded to avoid varargs array allocation. */
+  /**
+   * Offers a new data point for two signals. Overloaded to avoid varargs array allocation.
+   *
+   * @param timestamp The timestamp for the data point.
+   * @param v0 The value for the first signal.
+   * @param v1 The value for the second signal.
+   */
   public void offer(double timestamp, double v0, double v1) {
     timestamps.offer(timestamp);
     valueQueues[0].offer(v0);
     valueQueues[1].offer(v1);
   }
 
-  /** Offers a new data point for three signals. Overloaded to avoid varargs array allocation. */
+  /**
+   * Offers a new data point for three signals. Overloaded to avoid varargs array allocation.
+   *
+   * @param timestamp The timestamp for the data point.
+   * @param v0 The value for the first signal.
+   * @param v1 The value for the second signal.
+   * @param v2 The value for the third signal.
+   */
   public void offer(double timestamp, double v0, double v1, double v2) {
     timestamps.offer(timestamp);
     valueQueues[0].offer(v0);
