@@ -76,6 +76,7 @@ public class Superstructure extends SubsystemBase {
   // System State Variables
   private final WritableTrigger climbMode = new WritableTrigger(false);
   private AimingResult currentAimingResult = Aiming.noTarget;
+  private boolean targetCanReceive = false;
 
   /**
    * Constructs a new Superstructure.
@@ -124,30 +125,34 @@ public class Superstructure extends SubsystemBase {
    */
   @Override
   public void periodic() {
-    boolean isHubEnabled = Util.isHubEnabled();
     Translation2d robotTranslation = drive.getPose().getTranslation();
 
     // Evaluate aiming and automated shooting states
     if (!climbMode.get()) {
       // Determine if we are in the Hub Shooting zone
       if (FieldUtil.flipAllianceIfNeeded(Constants.SHOOTING_ZONE).contains(robotTranslation)
-          && (Util.isHubApproaching() || isHubEnabled)) {
+          && (Util.isHubApproaching(5)
+              || Util.isHubApproaching(ShooterConstants.ESTIMATED_TOF.in(Seconds)))) {
         currentAimingResult = hubAiming.get();
         shooter.setShooterState(
             ShooterKinematics.calculateShooterState(
                 Meters.of(currentAimingResult.distanceToTargetMeters())));
+        targetCanReceive = Util.isHubApproaching(ShooterConstants.ESTIMATED_TOF.in(Seconds));
       }
       // Determine if we are in the Lobbing zone
       else if (FieldUtil.flipAllianceIfNeeded(Constants.LOBBING_ZONE).contains(robotTranslation)) {
         currentAimingResult = lobAiming.get();
         shooter.setShooterState(ShooterConstants.LOB_STATE);
+        targetCanReceive = true;
       }
       // Default state
       else {
         currentAimingResult = Aiming.noTarget;
+        targetCanReceive = false;
       }
     } else {
       currentAimingResult = Aiming.noTarget;
+      targetCanReceive = false;
     }
 
     // Determine when the shooter flywheel should actively run during a match
@@ -176,7 +181,7 @@ public class Superstructure extends SubsystemBase {
     // Logging state to AdvantageKit
     Logger.recordOutput("Superstructure/ClimbMode", climbMode.get());
     Logger.recordOutput("Superstructure/CurrentAimingResult", currentAimingResult);
-    Logger.recordOutput("Superstructure/IsHubEnabled", isHubEnabled);
+    Logger.recordOutput("Superstructure/IsHubEnabled", Util.isHubEnabled());
   }
 
   /**
@@ -265,7 +270,8 @@ public class Superstructure extends SubsystemBase {
                             .minus(drive.getPose().getRotation())
                             .getDegrees())
                     < DriveConstants.HEADING_ALIGNMENT_TOLERANCE.in(Degrees)
-                && shooter.isShooterReady().getAsBoolean());
+                && shooter.isShooterReady().getAsBoolean()
+                && targetCanReceive);
   }
 
   /**

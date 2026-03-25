@@ -76,13 +76,13 @@ public class Util {
   }
 
   /**
-   * Evaluates if the hub will enable within the next 5 seconds.
+   * Evaluate whether the hub will be enabled in N seconds.
    *
-   * @return True if the hub will enable within the next 5 seconds.
+   * @param seconds The number of seconds in the future to check.
    */
-  public static boolean isHubApproaching() {
+  public static boolean isHubApproaching(double seconds) {
     double time = DriverStation.getMatchTime();
-    double futureTime = time - 5.0;
+    double futureTime = time - seconds;
 
     if (futureTime <= 0) return false;
 

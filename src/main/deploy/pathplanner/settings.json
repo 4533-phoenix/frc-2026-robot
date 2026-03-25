@@ -1,6 +1,6 @@
 {
-  "robotWidth": 0.9,
-  "robotLength": 0.9,
+  "robotWidth": 0.75,
+  "robotLength": 0.75,
   "holonomicMode": true,
   "pathFolders": [],
   "autoFolders": [],
@@ -8,14 +8,14 @@
   "defaultMaxAccel": 3.0,
   "defaultMaxAngVel": 540.0,
   "defaultMaxAngAccel": 720.0,
-  "robotMass": 74.088,
+  "robotMass": 58.97,
   "robotMOI": 6.883,
-  "robotWheelbase": 0.546,
-  "robotTrackwidth": 0.546,
-  "driveWheelRadius": 0.048,
-  "driveGearing": 5.143,
-  "maxDriveSpeed": 5.45,
-  "driveMotorType": "vortex",
-  "driveCurrentLimit": 60.0,
-  "wheelCOF": 1.2
+  "robotWheelbase": 0.521,
+  "robotTrackwidth": 0.521,
+  "driveWheelRadius": 0.0484,
+  "driveGearing": 6.75,
+  "maxDriveSpeed": 4.0,
+  "driveMotorType": "neo",
+  "driveCurrentLimit": 40.0,
+  "wheelCOF": 1.1
 }
