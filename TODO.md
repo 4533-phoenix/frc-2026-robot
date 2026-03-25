@@ -7,3 +7,4 @@
 * Remove units in hot loops?
 * Use whacknet for vision
 * Reseed gyro from vision if we are not locked
+* Make a standardized IMU state so vision isnt pulling in drive.gyro?
