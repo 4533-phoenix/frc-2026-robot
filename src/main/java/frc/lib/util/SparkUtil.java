@@ -9,8 +9,13 @@
 
 package frc.lib.util;
 
+import static edu.wpi.first.units.Units.Amps;
+
 import com.revrobotics.REVLibError;
 import com.revrobotics.spark.SparkBase;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkMaxConfig;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.util.function.BooleanConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -118,5 +123,32 @@ public class SparkUtil {
       }
     }
     return false;
+  }
+
+  /**
+   * Creates a base SparkMaxConfig with common settings for our robot, including brake mode, current
+   * limit, and voltage compensation. This serves as a starting point for configuring Spark Max
+   * motors.
+   *
+   * @param currentLimit The current limit for the Spark Max motor.
+   * @return A configured SparkMaxConfig instance.
+   */
+  public static SparkMaxConfig createBaseConfig(Current currentLimit, boolean inverted) {
+    var config = new SparkMaxConfig();
+    config
+        .idleMode(IdleMode.kBrake)
+        .smartCurrentLimit((int) currentLimit.in(Amps))
+        .voltageCompensation(12.0)
+        .inverted(inverted);
+
+    config
+        .signals
+        .appliedOutputPeriodMs(50)
+        .busVoltagePeriodMs(50)
+        .outputCurrentPeriodMs(50)
+        .faultsAlwaysOn(true)
+        .warningsAlwaysOn(true);
+
+    return config;
   }
 }

@@ -14,15 +14,17 @@ import com.reduxrobotics.sensors.canandgyro.Canandgyro;
 import com.reduxrobotics.sensors.canandgyro.CanandgyroSettings;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
+import frc.lib.HighFreqBuffer;
 import frc.lib.IMUState;
-import frc.lib.PrimitiveQueue;
 import frc.lib.hardware.GyroType;
 
 /** IO implementation for the Redux Robotics Canandgyro. */
 public class GyroIOCanAndGyro implements GyroIO {
   private final Canandgyro canAndGyro = new Canandgyro(IMU_CAN_ID);
-  private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
-  private final PrimitiveQueue yawTimestampQueue = new PrimitiveQueue();
+
+  // High-frequency data tracking (1 signal: Yaw)
+  private final HighFreqBuffer yawBuffer = new HighFreqBuffer(1);
+  private double latestYawRad = 0.0;
 
   private volatile Angle yawOffset = Radians.zero();
   private volatile boolean isLocked = false;
@@ -53,8 +55,8 @@ public class GyroIOCanAndGyro implements GyroIO {
     double rollVel = Units.rotationsToRadians(canAndGyro.getAngularVelocityRoll());
     double pitchVel = Units.rotationsToRadians(canAndGyro.getAngularVelocityPitch());
 
-    yawPositionQueue.offer(latencyCompensatedYaw);
-    yawTimestampQueue.offer(timestampSec);
+    yawBuffer.offer(timestampSec, latencyCompensatedYaw);
+    latestYawRad = latencyCompensatedYaw;
 
     return isLocked
         ? new IMUState(
@@ -66,8 +68,22 @@ public class GyroIOCanAndGyro implements GyroIO {
   public void updateInputs(GyroIOInputs inputs) {
     inputs.connected = canAndGyro.isConnected();
     inputs.locked = isLocked = inputs.connected && hasBeenSet;
-    inputs.yawPosition =
-        Radians.of(Units.rotationsToRadians(canAndGyro.getYaw()) + yawOffset.in(Radians));
+
+    // Drain high-frequency yaw measurements
+    double[][] tsRef = {inputs.odometryYawTimestamps};
+    double[][] yawRef = {inputs.odometryYawPositions};
+    yawBuffer.drain(tsRef, yawRef);
+    inputs.odometryYawTimestamps = tsRef[0];
+    inputs.odometryYawPositions = yawRef[0];
+
+    // Standard 50Hz Telemetry
+    if (inputs.odometryYawTimestamps.length > 0) {
+      inputs.yawPosition = Radians.of(latestYawRad);
+    } else {
+      inputs.yawPosition =
+          Radians.of(Units.rotationsToRadians(canAndGyro.getYaw()) + yawOffset.in(Radians));
+    }
+
     inputs.yawVelocity = RotationsPerSecond.of(canAndGyro.getAngularVelocityYaw());
     inputs.rollPosition = Rotations.of(canAndGyro.getRoll());
     inputs.pitchPosition = Rotations.of(canAndGyro.getPitch());
@@ -84,21 +100,6 @@ public class GyroIOCanAndGyro implements GyroIO {
     inputs.activeFaults = activeFaults;
     inputs.stickyFaults = stickyFaults;
     inputs.types = types;
-
-    // Empty the queues into the inputs object for logging and odometry processing
-    int count = yawTimestampQueue.size;
-    if (inputs.odometryYawTimestamps == null || inputs.odometryYawTimestamps.length != count) {
-      inputs.odometryYawTimestamps = new double[count];
-      inputs.odometryYawPositions = new double[count];
-    }
-
-    for (int i = 0; i < count; i++) {
-      inputs.odometryYawTimestamps[i] = yawTimestampQueue.data[i];
-      inputs.odometryYawPositions[i] = yawPositionQueue.data[i];
-    }
-
-    yawPositionQueue.clear();
-    yawTimestampQueue.clear();
   }
 
   @Override
@@ -110,10 +111,5 @@ public class GyroIOCanAndGyro implements GyroIO {
   public void setYaw(Angle yaw) {
     yawOffset = Radians.of(yaw.in(Radians) - Units.rotationsToRadians(canAndGyro.getYaw()));
     hasBeenSet = true;
-
-    synchronized (yawPositionQueue) {
-      yawPositionQueue.clear();
-      yawTimestampQueue.clear();
-    }
   }
 }

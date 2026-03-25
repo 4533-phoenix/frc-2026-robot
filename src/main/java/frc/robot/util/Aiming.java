@@ -7,14 +7,13 @@
 
 package frc.robot.util;
 
-import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Time;
-import edu.wpi.first.wpilibj.Timer;
 import frc.lib.util.FieldUtil;
 import frc.robot.Constants;
 import java.util.function.Supplier;
@@ -250,26 +249,18 @@ public class Aiming {
       Translation2d shooterRobotOffset,
       Time estimatedTimeOfFlight) {
     return new Supplier<AimingResult>() {
-      private AimingResult lastResult = NO_TARGET;
-      private double lastTimestamp = -1.0;
 
       @Override
       public AimingResult get() {
-        double currentTime = Math.round(Timer.getFPGATimestamp() * 50.0) / 50.0;
-        if (currentTime != lastTimestamp) {
-          Pose2d robotPose = robotPoseSupplier.get();
-          lastResult =
-              computeHubAiming(
-                  robotPose.getTranslation(),
-                  robotPose.getRotation(),
-                  fieldVelocitySupplier.get(),
-                  Constants.HUB_POSITION,
-                  shooterRobotOffset,
-                  estimatedTimeOfFlight,
-                  true);
-          lastTimestamp = currentTime;
-        }
-        return lastResult;
+        Pose2d robotPose = robotPoseSupplier.get();
+        return computeHubAiming(
+            robotPose.getTranslation(),
+            robotPose.getRotation(),
+            fieldVelocitySupplier.get(),
+            Constants.HUB_POSITION,
+            shooterRobotOffset,
+            estimatedTimeOfFlight,
+            true);
       }
     };
   }
@@ -284,26 +275,17 @@ public class Aiming {
   public static Supplier<AimingResult> lobAimingSupplier(
       Supplier<Pose2d> robotPoseSupplier, Translation2d shooterRobotOffset) {
     return new Supplier<AimingResult>() {
-      private AimingResult lastResult = NO_TARGET;
-      private double lastTimestamp = -1.0;
-
       @Override
       public AimingResult get() {
-        double currentTime = Math.round(Timer.getFPGATimestamp() * 50.0) / 50.0;
-        if (currentTime != lastTimestamp) {
-          Pose2d robotPose = robotPoseSupplier.get();
-          lastResult =
-              computeLobAiming(
-                  robotPose.getTranslation(),
-                  robotPose.getRotation(),
-                  shooterRobotOffset,
-                  Constants.LOBBING_TARGET_LEFT_CENTER,
-                  Constants.LOBBING_TARGET_RIGHT_CENTER,
-                  Constants.LOBBING_TARGET_HALF_LENGTH,
-                  true);
-          lastTimestamp = currentTime;
-        }
-        return lastResult;
+        Pose2d robotPose = robotPoseSupplier.get();
+        return computeLobAiming(
+            robotPose.getTranslation(),
+            robotPose.getRotation(),
+            shooterRobotOffset,
+            Constants.LOBBING_TARGET_LEFT_CENTER,
+            Constants.LOBBING_TARGET_RIGHT_CENTER,
+            Constants.LOBBING_TARGET_HALF_LENGTH,
+            true);
       }
     };
   }

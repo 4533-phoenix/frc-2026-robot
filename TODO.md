@@ -8,3 +8,7 @@
 * Use whacknet for vision
 * Reseed gyro from vision if we are not locked
 * Make a standardized IMU state so vision isnt pulling in drive.gyro?
+* Clean up drive command factory
+* Move all inversions from inside io to constants
+* Move shooter kinematics map to constants
+* Make all subsystems implement a interface to allow for ease of clearing and getting health statuses?

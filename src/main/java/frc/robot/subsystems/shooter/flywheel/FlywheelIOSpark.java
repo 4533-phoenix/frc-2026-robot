@@ -20,7 +20,6 @@ import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import com.revrobotics.spark.config.SparkFlexConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
@@ -48,11 +47,8 @@ public class FlywheelIOSpark implements FlywheelIO {
 
   /** Creates a new FlywheelIOSpark and configures the motor controller. */
   public FlywheelIOSpark() {
-    var config = new SparkFlexConfig();
-    config
-        .idleMode(IdleMode.kCoast)
-        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
-        .voltageCompensation(12.0);
+    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, false);
+    config.idleMode(IdleMode.kCoast);
     config
         .encoder
         .positionConversionFactor(FLYWHEEL_ENCODER_POSITION_FACTOR)
@@ -69,12 +65,7 @@ public class FlywheelIOSpark implements FlywheelIO {
         .primaryEncoderPositionAlwaysOn(true)
         .primaryEncoderPositionPeriodMs(20)
         .primaryEncoderVelocityAlwaysOn(true)
-        .primaryEncoderVelocityPeriodMs(20)
-        .appliedOutputPeriodMs(50)
-        .busVoltagePeriodMs(50)
-        .outputCurrentPeriodMs(50)
-        .faultsAlwaysOn(true)
-        .warningsAlwaysOn(true);
+        .primaryEncoderVelocityPeriodMs(20);
     tryUntilOk(
         5,
         () ->

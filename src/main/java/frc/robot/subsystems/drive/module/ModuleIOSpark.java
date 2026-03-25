@@ -27,14 +27,12 @@ import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
-import frc.lib.PrimitiveQueue;
+import frc.lib.HighFreqBuffer;
 import frc.lib.lowlevel.SparkTap;
 import frc.lib.lowlevel.SparkTap.MotorView;
 
@@ -59,12 +57,15 @@ public class ModuleIOSpark implements ModuleIO {
   private final MotorView driveTap;
   private final MotorView turnTap;
 
-  // Primitive Zero-GC Queues for high-frequency data
-  private final PrimitiveQueue timestampQueue = new PrimitiveQueue();
-  private final PrimitiveQueue drivePositionQueue = new PrimitiveQueue();
-  private final PrimitiveQueue turnPositionQueue = new PrimitiveQueue();
-  private final PrimitiveQueue driveVelocityQueue = new PrimitiveQueue();
-  private final PrimitiveQueue turnVelocityQueue = new PrimitiveQueue();
+  // High-frequency data tracking
+  private final HighFreqBuffer moduleBuffer = new HighFreqBuffer(2);
+
+  // Single variables instead of queues (we only need the latest velocity/position for standard
+  // telemetry)
+  private double latestDrivePosition = 0.0;
+  private double latestTurnPosition = 0.0;
+  private double latestDriveVelocity = 0.0;
+  private double latestTurnVelocity = 0.0;
 
   private final Debouncer driveConnectedDebounce =
       new Debouncer(0.5, Debouncer.DebounceType.kFalling);
@@ -98,12 +99,9 @@ public class ModuleIOSpark implements ModuleIO {
     driveTap = SparkTap.getInstance().getMotor(config.driveCanId());
     turnTap = SparkTap.getInstance().getMotor(config.turnCanId());
 
-    var driveConfig = new SparkMaxConfig();
-    driveConfig
-        .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) DRIVE_MOTOR_CURRENT_LIMIT.in(Amps))
-        .secondaryCurrentLimit((int) DRIVE_MOTOR_SECONDARY_CURRENT_LIMIT.in(Amps))
-        .voltageCompensation(12.0);
+    // Configure Drive Spark Max using centralized base config
+    var driveConfig = createBaseConfig(DRIVE_MOTOR_CURRENT_LIMIT, false);
+    driveConfig.secondaryCurrentLimit((int) DRIVE_MOTOR_SECONDARY_CURRENT_LIMIT.in(Amps));
     driveConfig
         .encoder
         .positionConversionFactor(DRIVE_ENCODER_POSITION_FACTOR)
@@ -121,10 +119,8 @@ public class ModuleIOSpark implements ModuleIO {
         .primaryEncoderPositionAlwaysOn(true)
         .primaryEncoderPositionPeriodMs((int) (1000.0 / ODOMETRY_FREQUENCY.in(Hertz)))
         .primaryEncoderVelocityAlwaysOn(true)
-        .primaryEncoderVelocityPeriodMs((int) (1000.0 / ODOMETRY_FREQUENCY.in(Hertz)))
-        .appliedOutputPeriodMs(50)
-        .busVoltagePeriodMs(50)
-        .outputCurrentPeriodMs(50);
+        .primaryEncoderVelocityPeriodMs((int) (1000.0 / ODOMETRY_FREQUENCY.in(Hertz)));
+
     tryUntilOk(
         5,
         () ->
@@ -143,14 +139,9 @@ public class ModuleIOSpark implements ModuleIO {
     turnAbsolutePositionSignal.setUpdateFrequency(ODOMETRY_FREQUENCY);
     turnVelocitySignal.setUpdateFrequency(ODOMETRY_FREQUENCY);
 
-    // Configure Turn Spark Max
-    var turnConfig = new SparkMaxConfig();
-    turnConfig
-        .inverted(TURN_INVERTED)
-        .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) TURN_MOTOR_CURRENT_LIMIT.in(Amps))
-        .secondaryCurrentLimit((int) TURN_MOTOR_SECONDARY_CURRENT_LIMIT.in(Amps))
-        .voltageCompensation(12.0);
+    // Configure Turn Spark Max using centralized base config
+    var turnConfig = createBaseConfig(TURN_MOTOR_CURRENT_LIMIT, TURN_INVERTED);
+    turnConfig.secondaryCurrentLimit((int) TURN_MOTOR_SECONDARY_CURRENT_LIMIT.in(Amps));
     turnConfig
         .encoder
         .positionConversionFactor((2.0 * Math.PI) / TURN_MOTOR_REDUCTION)
@@ -166,10 +157,8 @@ public class ModuleIOSpark implements ModuleIO {
         .primaryEncoderPositionAlwaysOn(true)
         .primaryEncoderPositionPeriodMs((int) (1000.0 / ODOMETRY_FREQUENCY.in(Hertz)))
         .primaryEncoderVelocityAlwaysOn(false)
-        .primaryEncoderVelocityPeriodMs((int) (1000.0 / ODOMETRY_FREQUENCY.in(Hertz)))
-        .appliedOutputPeriodMs(50)
-        .busVoltagePeriodMs(50)
-        .outputCurrentPeriodMs(50);
+        .primaryEncoderVelocityPeriodMs((int) (1000.0 / ODOMETRY_FREQUENCY.in(Hertz)));
+
     tryUntilOk(
         5,
         () ->
@@ -193,11 +182,15 @@ public class ModuleIOSpark implements ModuleIO {
 
   @Override
   public void updateHighFreq(double timestampSec) {
-    drivePositionQueue.offer(driveTap.getLatencyCompensatedPosition());
-    turnPositionQueue.offer(turnTap.getLatencyCompensatedPosition());
-    driveVelocityQueue.offer(driveTap.getVelocity());
-    turnVelocityQueue.offer(turnTap.getVelocity());
-    timestampQueue.offer(timestampSec);
+    double drivePos = driveTap.getLatencyCompensatedPosition();
+    double turnPos = turnTap.getLatencyCompensatedPosition();
+
+    moduleBuffer.offer(timestampSec, drivePos, turnPos);
+
+    latestDrivePosition = drivePos;
+    latestTurnPosition = turnPos;
+    latestDriveVelocity = driveTap.getVelocity();
+    latestTurnVelocity = turnTap.getVelocity();
   }
 
   @Override
@@ -212,30 +205,22 @@ public class ModuleIOSpark implements ModuleIO {
     inputs.turnAppliedVoltage = Volts.of(turnTap.getAppliedOutput() * turnTap.getBusVoltage());
     inputs.turnCurrent = Amps.of(turnTap.getOutputCurrent());
 
-    // Transfer primitive data to AdvantageKit inputs
-    int count = timestampQueue.size;
-    if (inputs.odometryTimestamps == null || inputs.odometryTimestamps.length != count) {
-      inputs.odometryTimestamps = new double[count];
-      inputs.odometryDrivePositionsRad = new double[count];
-      inputs.odometryTurnPositionsRad = new double[count];
+    // Transfer high-frequency data to AdvantageKit inputs
+    double[][] tsRef = {inputs.odometryTimestamps};
+    double[][] driveRef = {inputs.odometryDrivePositionsRad};
+    double[][] turnRef = {inputs.odometryTurnPositionsRad};
+    moduleBuffer.drain(tsRef, driveRef, turnRef);
+    inputs.odometryTimestamps = tsRef[0];
+    inputs.odometryDrivePositionsRad = driveRef[0];
+    inputs.odometryTurnPositionsRad = turnRef[0];
+
+    // Assign standard telemetry from the last read in the high-frequency thread
+    if (inputs.odometryTimestamps.length > 0) {
+      inputs.drivePosition = Radians.of(latestDrivePosition);
+      inputs.turnPosition = Radians.of(latestTurnPosition);
+      inputs.driveVelocity = RadiansPerSecond.of(latestDriveVelocity);
+      inputs.turnVelocity = RadiansPerSecond.of(latestTurnVelocity);
     }
-
-    System.arraycopy(timestampQueue.data, 0, inputs.odometryTimestamps, 0, count);
-    System.arraycopy(drivePositionQueue.data, 0, inputs.odometryDrivePositionsRad, 0, count);
-    System.arraycopy(turnPositionQueue.data, 0, inputs.odometryTurnPositionsRad, 0, count);
-
-    if (count > 0) {
-      inputs.drivePosition = Radians.of(drivePositionQueue.data[count - 1]);
-      inputs.turnPosition = Radians.of(turnPositionQueue.data[count - 1]);
-      inputs.driveVelocity = RadiansPerSecond.of(driveVelocityQueue.data[count - 1]);
-      inputs.turnVelocity = RadiansPerSecond.of(turnVelocityQueue.data[count - 1]);
-    }
-
-    timestampQueue.clear();
-    drivePositionQueue.clear();
-    turnPositionQueue.clear();
-    driveVelocityQueue.clear();
-    turnVelocityQueue.clear();
 
     inputs.driveConnected = driveConnectedDebounce.calculate(driveOk);
 

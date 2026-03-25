@@ -15,8 +15,6 @@ import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Voltage;
 import frc.lib.lowlevel.SparkTap;
@@ -38,18 +36,7 @@ public class SpinnerIOSpark implements SpinnerIO {
 
   /** Creates a new SpinnerIOSpark and configures the SparkMax controllers. */
   public SpinnerIOSpark() {
-    var config = new SparkMaxConfig();
-    config
-        .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
-        .voltageCompensation(12.0);
-    config
-        .signals
-        .appliedOutputPeriodMs(50)
-        .busVoltagePeriodMs(50)
-        .outputCurrentPeriodMs(50)
-        .faultsAlwaysOn(true)
-        .warningsAlwaysOn(true);
+    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, false);
     tryUntilOk(
         5,
         () ->

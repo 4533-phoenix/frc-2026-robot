@@ -55,8 +55,8 @@ import frc.robot.subsystems.shooter.hood.HoodIOServo;
 import frc.robot.subsystems.shooter.hood.HoodIOSim;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
+import frc.robot.subsystems.vision.VisionIOPhoton;
 import frc.robot.subsystems.vision.VisionIOSim;
-import frc.robot.subsystems.vision.VisionIOWhacknet;
 import frc.robot.util.Util;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
@@ -106,7 +106,7 @@ public class RobotContainer {
         spinner = new Spinner(new SpinnerIOSpark());
         shooter = new Shooter(new FlywheelIOSpark(), new HoodIOServo());
         indexer = new Indexer(new IndexerIOSpark());
-        vision = new Vision(new VisionIOWhacknet(), drive); // Updated to Whacknet
+        vision = new Vision(new VisionIOPhoton());
         pdh = new PDH(new PDHIOReal());
         break;
 
@@ -124,7 +124,7 @@ public class RobotContainer {
         spinner = new Spinner(new SpinnerIOSim());
         shooter = new Shooter(new FlywheelIOSim(), new HoodIOSim());
         indexer = new Indexer(new IndexerIOSim());
-        vision = new Vision(new VisionIOSim(drive::getPose), drive);
+        vision = new Vision(new VisionIOSim(drive::getPose));
         pdh = new PDH(new PDHIOSim());
         break;
 
@@ -142,7 +142,7 @@ public class RobotContainer {
         spinner = new Spinner(new SpinnerIO() {});
         shooter = new Shooter(new FlywheelIO() {}, new HoodIO() {});
         indexer = new Indexer(new IndexerIO() {});
-        vision = new Vision(new VisionIO() {}, drive);
+        vision = new Vision(new VisionIO() {});
         pdh = new PDH(new PDHIO() {});
         break;
     }
@@ -150,8 +150,9 @@ public class RobotContainer {
     // Create the superstructure, which coordinates between subsystems
     superstructure = new Superstructure(drive, climb, arm, spinner, shooter, indexer, vision, pdh);
 
-    // Wire up the 200Hz IMU loop directly to the vision coprocessor
-    drive.setVisionHighFreqConsumer(vision::broadcastImuState);
+    // Wire up the data flow from vision to drive and drive to vision
+    drive.setIMUHighFreqConsumer(vision::broadcastIMUState);
+    vision.setVisionMeasurementConsumer(drive::addVisionMeasurement);
 
     // Set up auto routines via PathPlanner
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
@@ -160,7 +161,6 @@ public class RobotContainer {
     autoChooser.addOption(
         "Left Shoot Preload",
         Commands.sequence(
-            arm.deploy(),
             Commands.runOnce(
                 () ->
                     drive.setPose(
@@ -169,6 +169,7 @@ public class RobotContainer {
                                 3.536,
                                 FieldUtil.FIELD_WIDTH.in(Meters) - 2.437,
                                 new Rotation2d(0))))),
+            arm.deploy(),
             shooter.run(),
             Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
                 .withTimeout(1.0)
@@ -181,7 +182,6 @@ public class RobotContainer {
     autoChooser.addOption(
         "Middle Shoot Preload",
         Commands.sequence(
-            arm.deploy(),
             Commands.runOnce(
                 () ->
                     drive.setPose(
@@ -190,6 +190,7 @@ public class RobotContainer {
                                 3.536,
                                 FieldUtil.FIELD_WIDTH.in(Meters) / 2.0,
                                 new Rotation2d(0))))),
+            arm.deploy(),
             shooter.run(),
             Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
                 .withTimeout(1.0)
@@ -202,12 +203,12 @@ public class RobotContainer {
     autoChooser.addOption(
         "Right Shoot Preload",
         Commands.sequence(
-            arm.deploy(),
             Commands.runOnce(
                 () ->
                     drive.setPose(
                         FieldUtil.flipAllianceIfNeeded(
                             new Pose2d(3.536, 2.437, new Rotation2d(0))))),
+            arm.deploy(),
             shooter.run(),
             Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
                 .withTimeout(1.0)

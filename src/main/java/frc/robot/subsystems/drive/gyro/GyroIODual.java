@@ -17,8 +17,8 @@ import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
+import frc.lib.HighFreqBuffer;
 import frc.lib.IMUState;
-import frc.lib.PrimitiveQueue;
 import frc.lib.hardware.GyroType;
 import org.littletonrobotics.junction.Logger;
 
@@ -33,8 +33,9 @@ public class GyroIODual implements GyroIO {
   private final AHRS navX;
   private final Canandgyro canAndGyro;
 
-  private final PrimitiveQueue yawPositionQueue = new PrimitiveQueue();
-  private final PrimitiveQueue yawTimestampQueue = new PrimitiveQueue();
+  // High-frequency data tracking (1 signal: Yaw)
+  private final HighFreqBuffer yawBuffer = new HighFreqBuffer(1);
+  private double latestYawRad = 0.0;
 
   // Software offsets to avoid blocking hardware calls
   private volatile Angle navxYawOffset = Radians.zero();
@@ -96,8 +97,8 @@ public class GyroIODual implements GyroIO {
       rollVel = Units.rotationsToRadians(canAndGyro.getAngularVelocityRoll());
     }
 
-    yawPositionQueue.offer(yaw);
-    yawTimestampQueue.offer(timestampSec);
+    yawBuffer.offer(timestampSec, yaw);
+    latestYawRad = yaw;
 
     return isLocked ? new IMUState(timestampSec, roll, pitch, yaw, rollVel, pitchVel, vel) : null;
   }
@@ -199,28 +200,34 @@ public class GyroIODual implements GyroIO {
       }
     }
 
+    // Drain 200Hz Buffer
+    double[][] tsRef = {inputs.odometryYawTimestamps};
+    double[][] yawRef = {inputs.odometryYawPositions};
+    yawBuffer.drain(tsRef, yawRef);
+    inputs.odometryYawTimestamps = tsRef[0];
+    inputs.odometryYawPositions = yawRef[0];
+
     // Standard 50Hz Telemetry
-    if (navxConn) {
+    if (inputs.odometryYawTimestamps.length > 0) {
+      inputs.yawPosition = Radians.of(latestYawRad);
+    } else if (navxConn) {
       inputs.yawPosition = Radians.of(rawNavxYaw + navxYawOffset.in(Radians));
+    } else {
+      inputs.yawPosition = Radians.of(rawCanYaw + canYawOffset.in(Radians));
+    }
+
+    if (navxConn) {
       inputs.yawVelocity = DegreesPerSecond.of(-navX.getRate());
       inputs.rollPosition = Radians.of(rawNavxRoll + navxRollOffset.in(Radians));
       inputs.pitchPosition = Radians.of(rawNavxPitch + navxPitchOffset.in(Radians));
       inputs.rollVelocity = DegreesPerSecond.of(navX.getRawGyroX());
       inputs.pitchVelocity = DegreesPerSecond.of(navX.getRawGyroY());
     } else if (canConn) {
-      inputs.yawPosition = Radians.of(rawCanYaw + canYawOffset.in(Radians));
       inputs.yawVelocity = RotationsPerSecond.of(canAndGyro.getAngularVelocityYaw());
       inputs.rollPosition = Radians.of(rawCanRoll + canRollOffset.in(Radians));
       inputs.pitchPosition = Radians.of(rawCanPitch + canPitchOffset.in(Radians));
       inputs.rollVelocity = RotationsPerSecond.of(canAndGyro.getAngularVelocityRoll());
       inputs.pitchVelocity = RotationsPerSecond.of(canAndGyro.getAngularVelocityPitch());
-    } else {
-      inputs.yawPosition = Radians.zero();
-      inputs.yawVelocity = RadiansPerSecond.zero();
-      inputs.rollPosition = Radians.zero();
-      inputs.pitchPosition = Radians.zero();
-      inputs.rollVelocity = RadiansPerSecond.zero();
-      inputs.pitchVelocity = RadiansPerSecond.zero();
     }
 
     // Health and Faults
@@ -243,21 +250,6 @@ public class GyroIODual implements GyroIO {
     inputs.stickyFaults = combinedStickyFaults;
     inputs.types = combinedTypes;
 
-    // Drain 200Hz Queues
-    int count = yawTimestampQueue.size;
-    if (inputs.odometryYawTimestamps == null || inputs.odometryYawTimestamps.length != count) {
-      inputs.odometryYawTimestamps = new double[count];
-      inputs.odometryYawPositions = new double[count];
-    }
-
-    for (int i = 0; i < count; i++) {
-      inputs.odometryYawTimestamps[i] = yawTimestampQueue.data[i];
-      inputs.odometryYawPositions[i] = yawPositionQueue.data[i];
-    }
-
-    yawTimestampQueue.clear();
-    yawPositionQueue.clear();
-
     // Log the current offsets to track drift across all axes
     Logger.recordOutput("Drive/Gyro/CanOffset/Yaw", canYawOffset);
     Logger.recordOutput("Drive/Gyro/CanOffset/Roll", canRollOffset);
@@ -277,7 +269,6 @@ public class GyroIODual implements GyroIO {
   public void setYaw(Angle yaw) {
     double target = yaw.in(Radians);
 
-    // Apply the offset mathematically to whichever hardware is currently online
     if (navX.isConnected()) {
       navxYawOffset = Radians.of(target - Units.degreesToRadians(-navX.getAngle()));
     }
@@ -286,11 +277,5 @@ public class GyroIODual implements GyroIO {
     }
 
     hasBeenSet = true;
-
-    // Clear queues to prevent applying old offsets to pending samples
-    synchronized (yawPositionQueue) {
-      yawPositionQueue.clear();
-      yawTimestampQueue.clear();
-    }
   }
 }

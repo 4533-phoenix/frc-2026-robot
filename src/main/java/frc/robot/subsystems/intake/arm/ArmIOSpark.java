@@ -21,8 +21,6 @@ import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
 import frc.lib.lowlevel.SparkTap;
@@ -53,12 +51,7 @@ public class ArmIOSpark implements ArmIO {
     internalEncoder = spark.getEncoder();
     controller = spark.getClosedLoopController();
 
-    var armConfig = new SparkMaxConfig();
-    armConfig
-        .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
-        .voltageCompensation(12.0)
-        .inverted(false);
+    var armConfig = createBaseConfig(MOTOR_CURRENT_LIMIT, false);
     armConfig
         .encoder
         .positionConversionFactor(INTERNAL_ENCODER_POSITION_FACTOR)
@@ -84,12 +77,7 @@ public class ArmIOSpark implements ArmIO {
         .primaryEncoderVelocityAlwaysOn(true)
         .primaryEncoderVelocityPeriodMs(50)
         .absoluteEncoderPositionAlwaysOn(true)
-        .absoluteEncoderPositionPeriodMs(50)
-        .appliedOutputPeriodMs(50)
-        .busVoltagePeriodMs(50)
-        .outputCurrentPeriodMs(50)
-        .faultsAlwaysOn(true)
-        .warningsAlwaysOn(true);
+        .absoluteEncoderPositionPeriodMs(50);
     armConfig
         .softLimit
         .forwardSoftLimitEnabled(true)

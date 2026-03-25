@@ -64,7 +64,7 @@ import org.littletonrobotics.junction.Logger;
  */
 public class Drive extends SubsystemBase {
   /** Lock used to synchronize access to odometry data between the main loop and sampling thread. */
-  public static final Lock odometryLock = new ReentrantLock();
+  private final Lock odometryLock = new ReentrantLock();
 
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
@@ -174,7 +174,7 @@ public class Drive extends SubsystemBase {
             new SysIdRoutine.Mechanism((voltage) -> runCharacterization(voltage), null, this));
   }
 
-  public void setVisionHighFreqConsumer(Consumer<IMUState> callback) {
+  public void setIMUHighFreqConsumer(Consumer<IMUState> callback) {
     this.visionHighFreqConsumer = callback;
   }
 

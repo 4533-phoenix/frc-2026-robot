@@ -10,6 +10,7 @@
 package frc.robot.subsystems.drive.module;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.lib.util.SparkUtil.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import com.revrobotics.PersistMode;
@@ -22,13 +23,11 @@ import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.*;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
-import frc.lib.PrimitiveQueue;
+import frc.lib.HighFreqBuffer;
 
 /**
  * Physics simulation implementation of {@link ModuleIO}.
@@ -49,12 +48,13 @@ public class ModuleIOSim implements ModuleIO {
   private final DCMotorSim driveMotorSim;
   private final DCMotorSim turnMotorSim;
 
-  // Primitive Zero-GC Queues for high-frequency data
-  private final PrimitiveQueue timestampQueue = new PrimitiveQueue();
-  private final PrimitiveQueue drivePositionQueue = new PrimitiveQueue();
-  private final PrimitiveQueue turnPositionQueue = new PrimitiveQueue();
-  private final PrimitiveQueue driveVelocityQueue = new PrimitiveQueue();
-  private final PrimitiveQueue turnVelocityQueue = new PrimitiveQueue();
+  // High-frequency data tracking
+  private final HighFreqBuffer moduleBuffer = new HighFreqBuffer(2);
+
+  private double latestDrivePosition = 0.0;
+  private double latestTurnPosition = 0.0;
+  private double latestDriveVelocity = 0.0;
+  private double latestTurnVelocity = 0.0;
 
   /**
    * Creates a new ModuleIOSim and initializes the simulated Spark MAX motor controllers.
@@ -89,11 +89,7 @@ public class ModuleIOSim implements ModuleIO {
             TURN_GEARBOX);
 
     // Configure drive Spark MAX
-    var driveConfig = new SparkMaxConfig();
-    driveConfig
-        .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) DRIVE_MOTOR_CURRENT_LIMIT.in(Amps))
-        .voltageCompensation(12.0);
+    var driveConfig = createBaseConfig(DRIVE_MOTOR_CURRENT_LIMIT, false);
     driveConfig
         .encoder
         .positionConversionFactor(DRIVE_ENCODER_POSITION_FACTOR)
@@ -108,12 +104,7 @@ public class ModuleIOSim implements ModuleIO {
         driveConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
 
     // Configure turn Spark MAX
-    var turnConfig = new SparkMaxConfig();
-    turnConfig
-        .inverted(TURN_INVERTED)
-        .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) TURN_MOTOR_CURRENT_LIMIT.in(Amps))
-        .voltageCompensation(12.0);
+    var turnConfig = createBaseConfig(TURN_MOTOR_CURRENT_LIMIT, TURN_INVERTED);
     turnConfig
         .encoder
         .positionConversionFactor((2.0 * Math.PI) / TURN_MOTOR_REDUCTION)
@@ -144,11 +135,12 @@ public class ModuleIOSim implements ModuleIO {
     turnSparkSim.iterate(
         turnMotorSim.getAngularVelocityRadPerSec(), RoboRioSim.getVInVoltage(), 0.005);
 
-    drivePositionQueue.offer(driveEncoder.getPosition());
-    turnPositionQueue.offer(turnEncoder.getPosition());
-    driveVelocityQueue.offer(driveEncoder.getVelocity());
-    turnVelocityQueue.offer(turnEncoder.getVelocity());
-    timestampQueue.offer(timestampSec);
+    latestDrivePosition = driveEncoder.getPosition();
+    latestTurnPosition = turnEncoder.getPosition();
+    latestDriveVelocity = driveEncoder.getVelocity();
+    latestTurnVelocity = turnEncoder.getVelocity();
+
+    moduleBuffer.offer(timestampSec, latestDrivePosition, latestTurnPosition);
   }
 
   @Override
@@ -164,30 +156,22 @@ public class ModuleIOSim implements ModuleIO {
     inputs.turnAppliedVoltage = Volts.of(turnSpark.getAppliedOutput() * turnSpark.getBusVoltage());
     inputs.turnCurrent = Amps.of(turnSpark.getOutputCurrent());
 
-    // Transfer primitive data to AdvantageKit inputs
-    int count = timestampQueue.size;
-    if (inputs.odometryTimestamps == null || inputs.odometryTimestamps.length != count) {
-      inputs.odometryTimestamps = new double[count];
-      inputs.odometryDrivePositionsRad = new double[count];
-      inputs.odometryTurnPositionsRad = new double[count];
+    // Transfer high-frequency data to AdvantageKit inputs
+    double[][] tsRef = {inputs.odometryTimestamps};
+    double[][] driveRef = {inputs.odometryDrivePositionsRad};
+    double[][] turnRef = {inputs.odometryTurnPositionsRad};
+    moduleBuffer.drain(tsRef, driveRef, turnRef);
+    inputs.odometryTimestamps = tsRef[0];
+    inputs.odometryDrivePositionsRad = driveRef[0];
+    inputs.odometryTurnPositionsRad = turnRef[0];
+
+    // Assign standard telemetry from the last read in the high-frequency thread
+    if (inputs.odometryTimestamps.length > 0) {
+      inputs.drivePosition = Radians.of(latestDrivePosition);
+      inputs.turnPosition = Radians.of(latestTurnPosition);
+      inputs.driveVelocity = RadiansPerSecond.of(latestDriveVelocity);
+      inputs.turnVelocity = RadiansPerSecond.of(latestTurnVelocity);
     }
-
-    System.arraycopy(timestampQueue.data, 0, inputs.odometryTimestamps, 0, count);
-    System.arraycopy(drivePositionQueue.data, 0, inputs.odometryDrivePositionsRad, 0, count);
-    System.arraycopy(turnPositionQueue.data, 0, inputs.odometryTurnPositionsRad, 0, count);
-
-    if (count > 0) {
-      inputs.drivePosition = Radians.of(drivePositionQueue.data[count - 1]);
-      inputs.turnPosition = Radians.of(turnPositionQueue.data[count - 1]);
-      inputs.driveVelocity = RadiansPerSecond.of(driveVelocityQueue.data[count - 1]);
-      inputs.turnVelocity = RadiansPerSecond.of(turnVelocityQueue.data[count - 1]);
-    }
-
-    timestampQueue.clear();
-    drivePositionQueue.clear();
-    turnPositionQueue.clear();
-    driveVelocityQueue.clear();
-    turnVelocityQueue.clear();
 
     inputs.driveHealthy = true;
     inputs.turnHealthy = true;

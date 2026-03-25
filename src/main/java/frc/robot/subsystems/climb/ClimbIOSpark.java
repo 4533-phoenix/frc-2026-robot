@@ -15,8 +15,6 @@ import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Voltage;
 import frc.lib.lowlevel.SparkTap;
@@ -32,26 +30,13 @@ public class ClimbIOSpark implements ClimbIO {
 
   /** Creates a new ClimbIOSpark and configures the Spark Max. */
   public ClimbIOSpark() {
-    var liftCfg = new SparkMaxConfig();
-    liftCfg
-        .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
-        .inverted(true)
-        .voltageCompensation(12.0);
-    liftCfg
-        .signals
-        .appliedOutputPeriodMs(50)
-        .busVoltagePeriodMs(50)
-        .outputCurrentPeriodMs(50)
-        .limitsPeriodMs(20)
-        .faultsAlwaysOn(true)
-        .warningsAlwaysOn(true);
+    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, true);
 
     tryUntilOk(
         5,
         () ->
             spark.configure(
-                liftCfg, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters));
+                config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters));
   }
 
   @Override

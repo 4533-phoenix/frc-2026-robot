@@ -8,6 +8,7 @@
 package frc.robot.subsystems.climb;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.lib.util.SparkUtil.*;
 import static frc.robot.subsystems.climb.ClimbConstants.*;
 
 import com.revrobotics.PersistMode;
@@ -18,8 +19,6 @@ import com.revrobotics.spark.SparkLimitSwitch;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.LimitSwitchConfig;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
@@ -64,14 +63,10 @@ public class ClimbIOSim implements ClimbIO {
             SPRING_CONSTANT.in(Newtons));
 
     // Disable hardware limit switch behavior so the Spark's internal firmware does not block output
-    var liftCfg = new SparkMaxConfig();
-    liftCfg
-        .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
-        .voltageCompensation(12.0);
-    liftCfg.limitSwitch.forwardLimitSwitchType(LimitSwitchConfig.Type.kNormallyOpen);
-    liftCfg.limitSwitch.reverseLimitSwitchType(LimitSwitchConfig.Type.kNormallyOpen);
-    spark.configure(liftCfg, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, true);
+    config.limitSwitch.forwardLimitSwitchType(LimitSwitchConfig.Type.kNormallyOpen);
+    config.limitSwitch.reverseLimitSwitchType(LimitSwitchConfig.Type.kNormallyOpen);
+    spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
   /**

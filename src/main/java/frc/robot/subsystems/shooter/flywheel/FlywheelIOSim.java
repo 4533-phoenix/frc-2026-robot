@@ -8,6 +8,7 @@
 package frc.robot.subsystems.shooter.flywheel;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.lib.util.SparkUtil.*;
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
 import com.revrobotics.PersistMode;
@@ -21,7 +22,6 @@ import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import com.revrobotics.spark.config.SparkFlexConfig;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
@@ -64,11 +64,8 @@ public class FlywheelIOSim implements FlywheelIO {
             GEARBOX);
 
     // Configuration mirrors FlywheelIOSparkFlex exactly
-    var config = new SparkFlexConfig();
-    config
-        .idleMode(IdleMode.kCoast)
-        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
-        .voltageCompensation(12.0);
+    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, false);
+    config.idleMode(IdleMode.kCoast);
     config
         .encoder
         .positionConversionFactor(FLYWHEEL_ENCODER_POSITION_FACTOR)

@@ -8,6 +8,7 @@
 package frc.robot.subsystems.intake.arm;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.lib.util.SparkUtil.*;
 import static frc.robot.subsystems.intake.arm.ArmConstants.*;
 
 import com.revrobotics.AbsoluteEncoder;
@@ -22,8 +23,6 @@ import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
@@ -66,12 +65,7 @@ public class ArmIOSim implements ArmIO {
             RETRACTED_POSITION.in(Radians));
 
     // Configure arm Spark MAX
-    var armConfig = new SparkMaxConfig();
-    armConfig
-        .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
-        .voltageCompensation(12.0)
-        .inverted(false);
+    var armConfig = createBaseConfig(MOTOR_CURRENT_LIMIT, false);
     armConfig
         .encoder
         .positionConversionFactor(INTERNAL_ENCODER_POSITION_FACTOR)

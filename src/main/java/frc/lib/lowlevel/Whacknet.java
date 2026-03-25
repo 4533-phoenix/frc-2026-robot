@@ -17,6 +17,7 @@ import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import java.util.function.ObjIntConsumer;
 
@@ -27,7 +28,7 @@ import java.util.function.ObjIntConsumer;
  * Direct ByteBuffers and the Flyweight pattern to achieve zero-allocation performance, avoiding
  * Garbage Collector pressure during matches.
  */
-public class Whacknet {
+public class Whacknet implements AutoCloseable {
   private static Whacknet instance;
 
   // Constants
@@ -85,6 +86,9 @@ public class Whacknet {
 
     // Report custom framework usage to HAL
     HAL.report(tResourceType.kResourceType_Framework, 4533);
+
+    // Register a shutdown hook to ensure resources are freed on exit
+    Runtime.getRuntime().addShutdownHook(new Thread(this::close));
   }
 
   /**
@@ -139,6 +143,9 @@ public class Whacknet {
           queueBuffer.put(socketBuffer);
           head = nextH; // Atomic update
         }
+      } catch (ClosedChannelException e) {
+        System.out.println("[Whacknet-Java] Receiver thread stopping cleanly.");
+        break;
       } catch (IOException e) {
         if (isRunning) {
           DriverStation.reportError(
@@ -223,6 +230,32 @@ public class Whacknet {
     tail = t; // Update tail so receiver thread knows we've freed up space
     currentPacketCount = count;
     return count;
+  }
+
+  /**
+   * Gracefully shuts down the Whacknet server, freeing UDP ports and stopping the receiver thread.
+   */
+  @Override
+  public synchronized void close() {
+    if (!isRunning) return;
+    isRunning = false;
+
+    try {
+      if (receiverChannel != null && receiverChannel.isOpen()) {
+        receiverChannel.close();
+      }
+      if (senderChannel != null && senderChannel.isOpen()) {
+        senderChannel.close();
+      }
+
+      if (receiverThread != null && receiverThread.isAlive()) {
+        receiverThread.interrupt();
+      }
+
+      System.out.println("[Whacknet-Java] Sockets closed and resources freed.");
+    } catch (IOException e) {
+      System.err.println("[Whacknet-Java] Error during shutdown: " + e.getMessage());
+    }
   }
 
   /**

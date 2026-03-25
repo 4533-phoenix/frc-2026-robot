@@ -8,6 +8,7 @@
 package frc.robot.subsystems.indexer;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.lib.util.SparkUtil.*;
 import static frc.robot.subsystems.indexer.IndexerConstants.*;
 
 import com.revrobotics.PersistMode;
@@ -15,8 +16,6 @@ import com.revrobotics.ResetMode;
 import com.revrobotics.sim.SparkMaxSim;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
@@ -44,12 +43,8 @@ public class IndexerIOSim implements IndexerIO {
             LinearSystemId.createDCMotorSystem(GEARBOX, MOI.in(KilogramSquareMeters), REDUCTION),
             GEARBOX);
 
-    // Configure Spark MAX (mirrors IndexerIOSpark)
-    var config = new SparkMaxConfig();
-    config
-        .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit((int) MOTOR_CURRENT_LIMIT.in(Amps))
-        .voltageCompensation(12.0);
+    // Configure Spark MAX
+    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, false);
     spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
