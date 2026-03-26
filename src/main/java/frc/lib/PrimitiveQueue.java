@@ -21,9 +21,9 @@ public class PrimitiveQueue {
   /** The array holding the primitive doubles. */
   public final double[] data = new double[CAPACITY];
 
-  // Head: Next index to write to (controlled by 200Hz producer)
+  // Next index to write to (controlled by 200Hz producer)
   private final AtomicInteger head = new AtomicInteger(0);
-  // Tail: Next index to read from (controlled by 50Hz consumer)
+  // Next index to read from (controlled by 50Hz consumer)
   private final AtomicInteger tail = new AtomicInteger(0);
 
   /**
