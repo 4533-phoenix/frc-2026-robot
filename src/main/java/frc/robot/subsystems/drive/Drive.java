@@ -51,8 +51,6 @@ import frc.robot.subsystems.drive.gyro.GyroIOInputsAutoLogged;
 import frc.robot.subsystems.drive.module.Module;
 import frc.robot.subsystems.drive.module.ModuleIO;
 import frc.robot.util.LocalADStarAK;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -64,9 +62,6 @@ import org.littletonrobotics.junction.Logger;
  * interfacing with PathPlanner for autonomous paths.
  */
 public class Drive extends SubsystemBase implements MonitoredSubsystem {
-  /** Lock used to synchronize access to odometry data between the main loop and sampling thread. */
-  private final Lock odometryLock = new ReentrantLock();
-
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
   private final GyroHealthMonitor gyroHealthMonitor = new GyroHealthMonitor();
@@ -185,41 +180,31 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
   }
 
   private void odometryLoop() {
-    odometryLock.lock();
-    try {
-      double timestampSec = RobotController.getFPGATime() / 1.0e6;
+    double timestampSec = RobotController.getFPGATime() / 1.0e6;
 
-      IMUState imuState = gyroIO.updateHighFreq(timestampSec);
-      for (var module : modules) {
-        module.updateHighFreq(timestampSec);
-      }
+    IMUState imuState = gyroIO.updateHighFreq(timestampSec);
+    for (var module : modules) {
+      module.updateHighFreq(timestampSec);
+    }
 
-      if (visionHighFreqConsumer != null && imuState != null) {
-        visionHighFreqConsumer.accept(imuState);
-      }
-    } finally {
-      odometryLock.unlock();
+    if (visionHighFreqConsumer != null && imuState != null) {
+      visionHighFreqConsumer.accept(imuState);
     }
   }
 
   @Override
   public void periodic() {
-    odometryLock.lock();
-    try {
-      gyroIO.updateInputs(gyroInputs);
+    gyroIO.updateInputs(gyroInputs);
 
-      for (int i = 0; i < gyroInputs.odometryYawTimestamps.length; i++) {
-        gyroHistory.addSample(
-            gyroInputs.odometryYawTimestamps[i],
-            Rotation2d.fromRadians(gyroInputs.odometryYawPositions[i]));
-      }
+    for (int i = 0; i < gyroInputs.odometryYawTimestamps.length; i++) {
+      gyroHistory.addSample(
+          gyroInputs.odometryYawTimestamps[i],
+          Rotation2d.fromRadians(gyroInputs.odometryYawPositions[i]));
+    }
 
-      Logger.processInputs("Drive/Gyro", gyroInputs);
-      for (var module : modules) {
-        module.periodic();
-      }
-    } finally {
-      odometryLock.unlock();
+    Logger.processInputs("Drive/Gyro", gyroInputs);
+    for (var module : modules) {
+      module.periodic();
     }
 
     // Stop moving when disabled
@@ -473,16 +458,11 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
    * @param pose The new pose to set the robot to.
    */
   public void setPose(Pose2d pose) {
-    odometryLock.lock();
-    try {
-      gyroIO.setYaw(pose.getRotation().getMeasure());
-      gyroIO.updateInputs(gyroInputs);
-      rawGyroRotation = new Rotation2d(gyroInputs.yawPosition);
-      poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
-      gyroHistory.clear();
-    } finally {
-      odometryLock.unlock();
-    }
+    gyroIO.setYaw(pose.getRotation().getMeasure());
+    gyroIO.updateInputs(gyroInputs);
+    rawGyroRotation = new Rotation2d(gyroInputs.yawPosition);
+    poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
+    gyroHistory.clear();
   }
 
   /**

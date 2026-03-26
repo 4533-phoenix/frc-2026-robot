@@ -84,24 +84,25 @@ public class HighFreqBuffer {
    * @param outValueWrappers An array of wrappers, one for each signal provided in the constructor.
    */
   public void drain(double[][] outTimestamps, double[][]... outValueWrappers) {
-    int count = timestamps.size;
+    int count = timestamps.size();
     if (count == 0) return;
 
-    // Check/Reallocate timestamps
+    // Ensure output buffers are the correct size
     if (outTimestamps[0] == null || outTimestamps[0].length != count) {
       outTimestamps[0] = new double[count];
     }
-    System.arraycopy(timestamps.data, 0, outTimestamps[0], 0, count);
-
-    // Check/Reallocate and copy all value signals
     for (int i = 0; i < Math.min(valueQueues.length, outValueWrappers.length); i++) {
       if (outValueWrappers[i][0] == null || outValueWrappers[i][0].length != count) {
         outValueWrappers[i][0] = new double[count];
       }
-      System.arraycopy(valueQueues[i].data, 0, outValueWrappers[i][0], 0, count);
-      valueQueues[i].clear();
     }
 
-    timestamps.clear();
+    // Poll from Ring Buffer into output arrays
+    for (int i = 0; i < count; i++) {
+      outTimestamps[0][i] = timestamps.poll();
+      for (int j = 0; j < Math.min(valueQueues.length, outValueWrappers.length); j++) {
+        outValueWrappers[j][0][i] = valueQueues[j].poll();
+      }
+    }
   }
 }
