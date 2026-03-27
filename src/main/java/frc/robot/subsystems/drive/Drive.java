@@ -48,12 +48,12 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.lib.IMUState;
 import frc.lib.monitors.GyroHealthMonitor;
 import frc.lib.monitors.MonitoredSubsystem;
+import frc.robot.Constants;
 import frc.robot.subsystems.drive.gyro.GyroIO;
 import frc.robot.subsystems.drive.gyro.GyroIOInputsAutoLogged;
 import frc.robot.subsystems.drive.module.Module;
 import frc.robot.subsystems.drive.module.ModuleIO;
 import frc.robot.util.LocalADStarAK;
-import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -66,14 +66,6 @@ import org.littletonrobotics.junction.Logger;
  * interfacing with PathPlanner for autonomous paths.
  */
 public class Drive extends SubsystemBase implements MonitoredSubsystem {
-
-  public enum Goal {
-    /** Standard manual or autonomous movement. */
-    DRIVE,
-    /** Prioritize rotation to face a specific target (Vision/Heading). */
-    AUTO_AIM,
-  }
-
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
   private final GyroHealthMonitor gyroHealthMonitor = new GyroHealthMonitor();
@@ -133,9 +125,7 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
               ANGLE_MAX_VELOCITY.in(RadiansPerSecond),
               ANGLE_MAX_ACCELERATION.in(RadiansPerSecondPerSecond)));
 
-  @AutoLogOutput private Goal goal = Goal.DRIVE;
-  private Supplier<Rotation2d> autoAimTargetSupplier = null;
-  private BooleanSupplier autoAimHasTargetSupplier = null;
+  private Supplier<Rotation2d> headingOverrideSupplier = () -> null;
 
   /**
    * Creates a new Drive subsystem.
@@ -170,7 +160,10 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
         this::getPose,
         this::setPose,
         this::getChassisSpeeds,
-        this::runVelocity,
+        (speeds) -> {
+          Rotation2d target = headingOverrideSupplier.get();
+          this.runVelocity(speeds, target);
+        },
         new PPHolonomicDriveController(
             new PIDConstants(5.0, 0.0, 0.0), new PIDConstants(5.0, 0.0, 0.0)),
         PP_CONFIG,
@@ -222,9 +215,31 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
     }
   }
 
+  /**
+   * Sets the supplier for the heading override.
+   *
+   * @param supplier A Supplier that provides the desired heading as a Rotation2d. If null, the
+   *     robot will use the gyro heading for odometry and control.
+   */
+  public void setHeadingOverrideSupplier(Supplier<Rotation2d> supplier) {
+    this.headingOverrideSupplier = (supplier == null) ? (() -> null) : supplier;
+  }
+
   @Override
   public void periodic() {
     gyroIO.updateInputs(gyroInputs);
+
+    if (Constants.CURRENT_MODE == Constants.Mode.SIM) {
+      Twist2d twist = kinematics.toTwist2d(odometryDeltasBuffer);
+
+      gyroInputs.connected = true;
+      gyroInputs.healthy = true;
+      gyroInputs.yawVelocity = RadiansPerSecond.of(twist.dtheta / 0.02);
+
+      double timestamp = edu.wpi.first.wpilibj.Timer.getFPGATimestamp();
+      rawGyroRotation = rawGyroRotation.plus(Rotation2d.fromRadians(twist.dtheta));
+      gyroHistory.addSample(timestamp, rawGyroRotation);
+    }
 
     for (int i = 0; i < gyroInputs.odometryYawTimestamps.length; i++) {
       if (gyroInputs.odometryYawTimestamps[i] > lastResetTimestamp) {
@@ -295,20 +310,6 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
     gyroHealthMonitor.update(gyroInputs);
   }
 
-  /** Sets the current driving goal. */
-  public void setGoal(Goal goal) {
-    if (this.goal != goal && goal == Goal.AUTO_AIM) {
-      resetRotationController();
-    }
-    this.goal = goal;
-  }
-
-  /** Sets the targets used specifically for the AUTO_AIM goal. */
-  public void setAutoAim(Supplier<Rotation2d> target, BooleanSupplier isValid) {
-    this.autoAimTargetSupplier = target;
-    this.autoAimHasTargetSupplier = isValid;
-  }
-
   /** Calculates translation scaling to ensure rotation requested is fully achieved. */
   public ChassisSpeeds applyRotationPriority(ChassisSpeeds speeds) {
     double maxSpeed = MAX_LINEAR_VELOCITY.in(MetersPerSecond);
@@ -332,34 +333,37 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
   }
 
   /**
+   * The single entry point for all robot movement.
+   *
+   * @param speeds The desired linear/angular velocity.
+   * @param targetHeading If non-null, the robot will ignore speeds.omega and calculate its own
+   *     rotation with PRIORITY BUDGETING.
+   */
+  public void runVelocity(ChassisSpeeds speeds, Rotation2d targetHeading) {
+    ChassisSpeeds finalSpeeds;
+
+    if (targetHeading != null) {
+      double rotationFeedback = calculateRotationFeedback(targetHeading);
+
+      finalSpeeds =
+          new ChassisSpeeds(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, rotationFeedback);
+
+      finalSpeeds = applyRotationPriority(finalSpeeds);
+    } else {
+      finalSpeeds = speeds;
+    }
+
+    runVelocity(finalSpeeds);
+  }
+
+  /**
    * Main entry point for movement. This acts as a wrapper that modifies the incoming speeds based
    * on the current Goal state.
    *
    * @param speeds Speeds relative to the robot's field-centric perspective.
    */
   public void runVelocity(ChassisSpeeds speeds) {
-    ChassisSpeeds finalSpeeds = speeds;
-
-    switch (goal) {
-      case AUTO_AIM -> {
-        if (autoAimHasTargetSupplier != null && autoAimHasTargetSupplier.getAsBoolean()) {
-          double rotationFeedback = calculateRotationFeedback(autoAimTargetSupplier.get());
-
-          // Construct new speeds: Keep VX/VY from input, inject Rotation feedback
-          finalSpeeds =
-              new ChassisSpeeds(
-                  speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, rotationFeedback);
-
-          // Priority scaling ensures the requested rotation is always physically achieved
-          finalSpeeds = applyRotationPriority(finalSpeeds);
-        }
-      }
-      case DRIVE -> {
-        // Use incoming speeds as provided (PathPlanner or Joystick)
-      }
-    }
-
-    ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(finalSpeeds, 0.02);
+    ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     runVelocityRaw(discreteSpeeds);
   }
 

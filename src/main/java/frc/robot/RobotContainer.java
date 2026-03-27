@@ -154,9 +154,6 @@ public class RobotContainer {
     drive.setIMUHighFreqConsumer(vision::broadcastIMUState);
     vision.setVisionMeasurementConsumer(drive::addVisionMeasurement);
 
-    // Link target suppliers for auto-aim and snapping logic
-    drive.setAutoAim(superstructure::getTargetRotation, superstructure::hasTarget);
-
     // Register auto commands for PathPlanner
     registerAutoCommands();
 
@@ -183,7 +180,7 @@ public class RobotContainer {
                 .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
                 Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
-                DriveCommands.autoAim(drive))));
+                DriveCommands.headingAim(drive, superstructure::getTargetRotation))));
 
     autoChooser.addOption(
         "Middle Shoot Preload",
@@ -203,7 +200,7 @@ public class RobotContainer {
                 .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
                 Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
-                DriveCommands.autoAim(drive))));
+                DriveCommands.headingAim(drive, superstructure::getTargetRotation))));
 
     autoChooser.addOption(
         "Right Shoot Preload",
@@ -220,7 +217,7 @@ public class RobotContainer {
                 .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
                 Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
-                DriveCommands.autoAim(drive))));
+                DriveCommands.headingAim(drive, superstructure::getTargetRotation))));
 
     // Configure the commands
     configureDriverButtonBindings();
@@ -232,18 +229,27 @@ public class RobotContainer {
   private void registerAutoCommands() {
     NamedCommands.registerCommand("Deploy Arm", arm.deploy());
     NamedCommands.registerCommand("Retract Arm", arm.retract());
-    NamedCommands.registerCommand("Start Intake", spinner.intake());
+    NamedCommands.registerCommand("Start Intake", spinner.startIntake());
     NamedCommands.registerCommand("Stop Intake", spinner.stop());
     NamedCommands.registerCommand("Spin Up Shooter", shooter.run());
     NamedCommands.registerCommand("Stop Down Shooter", shooter.stop());
     NamedCommands.registerCommand(
         "Shoot When Ready",
-        Commands.sequence(Commands.waitUntil(superstructure.isReadyToShoot()), indexer.run()));
+        Commands.sequence(Commands.waitUntil(superstructure.isReadyToShoot()), indexer.startRun()));
+    NamedCommands.registerCommand("Stop and Shoot When Ready",     Commands.deadline(
+        Commands.sequence(
+            Commands.waitUntil(superstructure.isReadyToShoot()),
+            indexer.run().withTimeout(1.0)
+        ),
+        Commands.run(() -> drive.runVelocity(new ChassisSpeeds()), drive)
+    ));
     NamedCommands.registerCommand("Stop Shooting", indexer.stop());
     NamedCommands.registerCommand(
-        "Enable Auto Aim", Commands.runOnce(() -> drive.setGoal(Drive.Goal.AUTO_AIM)));
+        "Enable Auto Aim",
+        Commands.runOnce(
+            () -> drive.setHeadingOverrideSupplier(superstructure::getTargetRotation)));
     NamedCommands.registerCommand(
-        "Disable Auto Aim", Commands.runOnce(() -> drive.setGoal(Drive.Goal.DRIVE)));
+        "Disable Auto Aim", Commands.runOnce(() -> drive.setHeadingOverrideSupplier(null)));
   }
 
   /**
@@ -255,7 +261,7 @@ public class RobotContainer {
     driverController
         .leftTrigger()
         .and(superstructure::hasTarget)
-        .whileTrue(DriveCommands.autoAim(drive));
+        .whileTrue(DriveCommands.headingAim(drive, superstructure::getTargetRotation));
 
     // Spin up the motor if we are practicing not in match mode
     driverController
@@ -343,7 +349,7 @@ public class RobotContainer {
                 () -> -driverController.getLeftY(),
                 () -> -driverController.getLeftX(),
                 () -> -driverController.getRightX())
-            .beforeStarting(() -> drive.setGoal(Drive.Goal.DRIVE)));
+            .beforeStarting(() -> drive.setHeadingOverrideSupplier(null)));
   }
 
   /**

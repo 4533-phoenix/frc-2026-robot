@@ -79,6 +79,15 @@ public class Indexer extends SubsystemBase implements MonitoredSubsystem {
   }
 
   /**
+   * Returns a command to start running the indexer.
+   *
+   * @return The start run command.
+   */
+  public Command startRun() {
+    return this.run(() -> setGoal(Goal.RUNNING));
+  }
+
+  /**
    * Returns a command to stop the indexer.
    *
    * @return The stop command.

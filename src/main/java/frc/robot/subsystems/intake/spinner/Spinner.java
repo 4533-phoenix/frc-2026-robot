@@ -78,12 +78,30 @@ public class Spinner extends SubsystemBase implements MonitoredSubsystem {
   }
 
   /**
+   * Returns a command to start the intake.
+   * 
+   * @return The start intake command.
+   */
+  public Command startIntake() {
+    return this.runOnce(() -> setGoal(Goal.INTAKE));
+  }
+
+  /**
    * Returns a command to run the extake.
    *
    * @return The extake command.
    */
   public Command extake() {
     return this.startEnd(() -> setGoal(Goal.EXTAKE), () -> setGoal(Goal.STOP));
+  }
+
+  /**
+   * Returns a command to start the extake.
+   *
+   * @return The start extake command.
+   */
+  public Command startExtake() {
+    return this.runOnce(() -> setGoal(Goal.EXTAKE));
   }
 
   /**

@@ -31,19 +31,7 @@
         {
           "type": "named",
           "data": {
-            "name": "Shoot When Ready"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 3.0
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Stop Shooting"
+            "name": "Stop and Shoot When Ready"
           }
         },
         {

@@ -29,6 +29,7 @@ import java.text.NumberFormat;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 /**
  * Factory class for creating commands related to the drivetrain subsystem.
@@ -40,14 +41,14 @@ public class DriveCommands {
 
   private DriveCommands() {}
 
-  /**
-   * Returns a command that toggles the drive Goal. Notice: It does not require 'drive', so it can
-   * run alongside the default joystick command.
-   */
-  public static Command autoAim(Drive drive) {
+  /** Command to maintain a specific heading using a supplier for the target angle. */
+  public static Command headingAim(Drive drive, Supplier<Rotation2d> targetSupplier) {
     return Commands.startEnd(
-        () -> drive.setGoal(Drive.Goal.AUTO_AIM), () -> drive.setGoal(Drive.Goal.DRIVE));
-  }
+        () -> drive.setHeadingOverrideSupplier(targetSupplier),
+        () -> drive.setHeadingOverrideSupplier(null),
+        drive
+    );
+}
 
   /**
    * Processes joystick inputs to determine linear velocity, applying deadband and cubing inputs for
