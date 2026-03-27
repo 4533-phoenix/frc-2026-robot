@@ -28,7 +28,7 @@ public final class Constants {
    * The mode to use when running in simulation. Change to {@link Mode#REPLAY} to read from a log
    * file instead of simulating physics.
    */
-  public static final Mode SIM_MODE = Mode.SIM;
+  public static final Mode SIM_MODE = Mode.REPLAY;
 
   /** The currently active operating mode based on hardware detection. */
   public static final Mode CURRENT_MODE = RobotBase.isReal() ? Mode.REAL : SIM_MODE;

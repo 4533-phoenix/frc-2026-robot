@@ -69,6 +69,8 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
   private final Module[] modules = new Module[4]; // FL, FR, BL, BR
   private final SysIdRoutine sysId;
 
+  private double lastResetTimestamp = 0.0;
+
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(MODULE_TRANSLATIONS);
   private Rotation2d rawGyroRotation = Rotation2d.kZero;
 
@@ -197,9 +199,11 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
     gyroIO.updateInputs(gyroInputs);
 
     for (int i = 0; i < gyroInputs.odometryYawTimestamps.length; i++) {
-      gyroHistory.addSample(
-          gyroInputs.odometryYawTimestamps[i],
-          Rotation2d.fromRadians(gyroInputs.odometryYawPositions[i]));
+      if (gyroInputs.odometryYawTimestamps[i] > lastResetTimestamp) {
+        gyroHistory.addSample(
+            gyroInputs.odometryYawTimestamps[i],
+            Rotation2d.fromRadians(gyroInputs.odometryYawPositions[i]));
+      }
     }
 
     Logger.processInputs("Drive/Gyro", gyroInputs);
@@ -212,10 +216,6 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
       for (var module : modules) {
         module.stop();
       }
-    }
-
-    // Log empty setpoint states when disabled
-    if (DriverStation.isDisabled()) {
       Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
       Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
     }
@@ -231,6 +231,10 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
     }
     for (int i = 0; i < sampleCount; i++) {
       double timestamp = sampleTimestamps[i];
+
+      if (timestamp <= lastResetTimestamp) {
+        continue;
+      }
 
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
         SwerveModulePosition sample = modules[moduleIndex].getOdometryPositions()[i];
@@ -459,10 +463,19 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
    */
   public void setPose(Pose2d pose) {
     gyroIO.setYaw(pose.getRotation().getMeasure());
-    gyroIO.updateInputs(gyroInputs);
-    rawGyroRotation = new Rotation2d(gyroInputs.yawPosition);
-    poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
+    lastResetTimestamp = (RobotController.getFPGATime() / 1.0e6);
+    rawGyroRotation = pose.getRotation();
+
     gyroHistory.clear();
+    gyroHistory.addSample(lastResetTimestamp, rawGyroRotation);
+
+    SwerveModulePosition[] currentPositions = getModulePositions();
+    for (int i = 0; i < 4; i++) {
+      lastModulePositions[i].distanceMeters = currentPositions[i].distanceMeters;
+      lastModulePositions[i].angle = currentPositions[i].angle;
+    }
+
+    poseEstimator.resetPosition(rawGyroRotation, currentPositions, pose);
   }
 
   /**
