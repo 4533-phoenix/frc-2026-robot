@@ -171,11 +171,12 @@ public class Superstructure extends SubsystemBase {
     if (currentClearFaults && !lastClearFaults) {
       CompletableFuture.runAsync(this::clearFaults)
           .thenRun(() -> clearFaultsPublisher.set(false))
-          .exceptionally(ex -> {
-            DriverStation.reportError("Clear Faults Crashed: " + ex.getMessage(), true);
-            clearFaultsPublisher.set(false);
-            return null;
-          });
+          .exceptionally(
+              ex -> {
+                DriverStation.reportError("Clear Faults Crashed: " + ex.getMessage(), true);
+                clearFaultsPublisher.set(false);
+                return null;
+              });
     }
     lastClearFaults = currentClearFaults;
 

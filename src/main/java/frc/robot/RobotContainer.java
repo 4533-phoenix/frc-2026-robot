@@ -285,9 +285,9 @@ public class RobotContainer {
             Commands.runOnce(
                 () ->
                     drive.setPose(
-                        FieldUtil.flipAllianceIfNeeded(
-                            new Pose2d(
-                                0, FieldUtil.FIELD_WIDTH.in(Meters) / 2.0, Rotation2d.kZero)))));
+                        new Pose2d(
+                            drive.getPose().getTranslation(),
+                            FieldUtil.flipAllianceIfNeeded(Rotation2d.kZero)))));
   }
 
   private void configureOperatorButtonBindings() {
