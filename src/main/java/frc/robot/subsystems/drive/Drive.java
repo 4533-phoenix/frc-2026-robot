@@ -114,11 +114,7 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
   private final Notifier odometryThread;
   private Consumer<IMUState> visionHighFreqConsumer;
 
-  private final PIDController rotationController =
-      new PIDController(
-          ANGLE_KP,
-          0.0,
-          ANGLE_KD);
+  private final PIDController rotationController = new PIDController(ANGLE_KP, 0.0, ANGLE_KD);
 
   private Supplier<Rotation2d> headingOverrideSupplier = () -> null;
 

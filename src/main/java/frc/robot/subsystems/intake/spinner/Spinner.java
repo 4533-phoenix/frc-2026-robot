@@ -79,7 +79,7 @@ public class Spinner extends SubsystemBase implements MonitoredSubsystem {
 
   /**
    * Returns a command to start the intake.
-   * 
+   *
    * @return The start intake command.
    */
   public Command startIntake() {

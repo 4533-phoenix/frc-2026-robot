@@ -45,9 +45,8 @@ public class DriveCommands {
   public static Command headingAim(Drive drive, Supplier<Rotation2d> targetSupplier) {
     return Commands.startEnd(
         () -> drive.setHeadingOverrideSupplier(targetSupplier),
-        () -> drive.setHeadingOverrideSupplier(null)
-    );
-}
+        () -> drive.setHeadingOverrideSupplier(null));
+  }
 
   /**
    * Processes joystick inputs to determine linear velocity, applying deadband and cubing inputs for
