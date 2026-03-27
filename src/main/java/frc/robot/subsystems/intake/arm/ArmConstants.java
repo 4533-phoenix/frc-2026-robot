@@ -19,7 +19,7 @@ public final class ArmConstants {
   public static final int CAN_ID = 15;
 
   /** Whether the arm motor is inverted. */
-  public static final boolean MOTOR_INVERTED = true;
+  public static final boolean MOTOR_INVERTED = false;
 
   // Gear Ratios
   /** Gear ratio from internal encoder to global encoder. */
