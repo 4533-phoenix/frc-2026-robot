@@ -207,15 +207,11 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
       module.periodic();
     }
 
-    // When disabled, sync module and kinematics setpoints to the current physical state 
-    // to prevent snapping to an old target or 0 when the robot is re-enabled.
+    // Stop moving when disabled
     if (DriverStation.isDisabled()) {
-      Rotation2d[] currentAngles = new Rotation2d[4];
-      for (int i = 0; i < 4; i++) {
-        currentAngles[i] = new Rotation2d(modules[i].getCurrentAngle());
-        modules[i].runSetpoint(new SwerveModuleState(0.0, currentAngles[i]));
+      for (var module : modules) {
+        module.stop();
       }
-      kinematics.resetHeadings(currentAngles);
     }
 
     // Log empty setpoint states when disabled
