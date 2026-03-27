@@ -21,6 +21,7 @@ import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -33,6 +34,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Voltage;
@@ -51,7 +53,9 @@ import frc.robot.subsystems.drive.gyro.GyroIOInputsAutoLogged;
 import frc.robot.subsystems.drive.module.Module;
 import frc.robot.subsystems.drive.module.ModuleIO;
 import frc.robot.util.LocalADStarAK;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -62,6 +66,13 @@ import org.littletonrobotics.junction.Logger;
  * interfacing with PathPlanner for autonomous paths.
  */
 public class Drive extends SubsystemBase implements MonitoredSubsystem {
+
+  public enum DriveGoal {
+    TELEOP, // Standard manual or path following
+    HEADING_CONTROL, // Snap to angle (no rotation priority)
+    AUTO_AIM // Lock on target with rotation priority
+  }
+
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
   private final GyroHealthMonitor gyroHealthMonitor = new GyroHealthMonitor();
@@ -111,6 +122,19 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
 
   private final Notifier odometryThread;
   private Consumer<IMUState> visionHighFreqConsumer;
+
+  private final ProfiledPIDController rotationController =
+      new ProfiledPIDController(
+          ANGLE_KP,
+          0.0,
+          ANGLE_KD,
+          new TrapezoidProfile.Constraints(
+              ANGLE_MAX_VELOCITY.in(RadiansPerSecond),
+              ANGLE_MAX_ACCELERATION.in(RadiansPerSecondPerSecond)));
+
+  private DriveGoal currentGoal = DriveGoal.TELEOP;
+  private Supplier<Rotation2d> autoAimTargetSupplier = null;
+  private BooleanSupplier autoAimHasTargetSupplier = null;
 
   /**
    * Creates a new Drive subsystem.
@@ -170,6 +194,9 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
                 null,
                 (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())),
             new SysIdRoutine.Mechanism((voltage) -> runCharacterization(voltage), null, this));
+
+    // Configure PID controller
+    rotationController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
   /**
@@ -213,6 +240,7 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
 
     // Stop moving when disabled
     if (DriverStation.isDisabled()) {
+      setGoal(DriveGoal.TELEOP);
       for (var module : modules) {
         module.stop();
       }
@@ -265,17 +293,80 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
 
     // Update gyro fault alert
     gyroHealthMonitor.update(gyroInputs);
+
+    Logger.recordOutput("Drive/CurrentGoal", currentGoal.toString());
+  }
+
+  /** Calculates translation scaling to ensure rotation requested is fully achieved. */
+  public ChassisSpeeds applyRotationPriority(ChassisSpeeds speeds) {
+    double maxSpeed = MAX_LINEAR_VELOCITY.in(MetersPerSecond);
+    ChassisSpeeds rotationOnly = new ChassisSpeeds(0, 0, speeds.omegaRadiansPerSecond);
+    SwerveModuleState[] rotStates = kinematics.toSwerveModuleStates(rotationOnly);
+
+    double maxRotModuleSpeed = 0.0;
+    for (var s : rotStates) {
+      maxRotModuleSpeed = Math.max(maxRotModuleSpeed, Math.abs(s.speedMetersPerSecond));
+    }
+
+    double remainingBudget = Math.max(0.0, maxSpeed - maxRotModuleSpeed);
+    double requestedTransSpeed = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+    double transScale =
+        (requestedTransSpeed > 1e-6) ? Math.min(1.0, remainingBudget / requestedTransSpeed) : 1.0;
+
+    return new ChassisSpeeds(
+        speeds.vxMetersPerSecond * transScale,
+        speeds.vyMetersPerSecond * transScale,
+        speeds.omegaRadiansPerSecond);
+  }
+
+  /** Sets the current driving goal (e.g., standard, snap-to-angle, or auto-aim). */
+  public void setGoal(DriveGoal goal) {
+    if (goal != this.currentGoal && goal != DriveGoal.TELEOP) {
+      resetRotationController();
+    }
+    this.currentGoal = goal;
   }
 
   /**
-   * Runs the drive at the desired velocity.
+   * Runs the drive at the desired velocity. Intercepts inputs to apply rotation PID or priority
+   * scaling based on the current goal.
    *
    * @param speeds Speeds in meters/sec, relative to the robot's field-centric perspective.
    */
   public void runVelocity(ChassisSpeeds speeds) {
-    // Discretize speeds to 20ms intervals to prevent oscillations from small setpoint changes
+    if (currentGoal == DriveGoal.AUTO_AIM || currentGoal == DriveGoal.HEADING_CONTROL) {
+      boolean hasTarget =
+          autoAimHasTargetSupplier == null || autoAimHasTargetSupplier.getAsBoolean();
+      if (hasTarget && autoAimTargetSupplier != null) {
+        // Hijack rotation with PID
+        speeds.omegaRadiansPerSecond = calculateRotationFeedback(autoAimTargetSupplier.get());
+
+        // Apply scaling if priority is requested
+        if (currentGoal == DriveGoal.AUTO_AIM) {
+          speeds = applyRotationPriority(speeds);
+        }
+      }
+    }
+
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     runVelocityRaw(discreteSpeeds);
+  }
+
+  /**
+   * Sets up the target suppliers used when the DriveGoal is HEADING_CONTROL or AUTO_AIM.
+   *
+   * @param targetSupplier A Supplier for the desired rotation.
+   * @param hasTargetSupplier A BooleanSupplier to indicate if the target is valid.
+   */
+  public void setAutoAim(Supplier<Rotation2d> targetSupplier, BooleanSupplier hasTargetSupplier) {
+    this.autoAimTargetSupplier = targetSupplier;
+    this.autoAimHasTargetSupplier = hasTargetSupplier;
+  }
+
+  /** Clears the auto-aiming suppliers. */
+  public void clearAutoAim() {
+    this.autoAimTargetSupplier = null;
+    this.autoAimHasTargetSupplier = null;
   }
 
   /**
@@ -531,8 +622,19 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
    * @param tolerance The allowed angular error.
    * @return True if within tolerance, false otherwise.
    */
-  public boolean isAlignedWithTarget(Rotation2d targetAngle, Rotation2d tolerance) {
-    return Math.abs(getRotation().minus(targetAngle).getRadians()) < tolerance.getRadians();
+  public boolean isAlignedWithTarget(Rotation2d targetAngle) {
+    return Math.abs(getRotation().minus(targetAngle).getRadians())
+        < DriveConstants.HEADING_ALIGNMENT_TOLERANCE.in(Radians);
+  }
+
+  /** Resets the rotation PID to prevent sudden jerks when taking over heading control. */
+  public void resetRotationController() {
+    rotationController.reset(getRotation().getRadians(), getYawVelocityRadPerSec());
+  }
+
+  /** Calculates the closed-loop angular velocity required to reach the target heading. */
+  public double calculateRotationFeedback(Rotation2d targetHeading) {
+    return rotationController.calculate(getRotation().getRadians(), targetHeading.getRadians());
   }
 
   /**

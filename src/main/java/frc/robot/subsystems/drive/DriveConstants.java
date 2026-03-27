@@ -222,7 +222,7 @@ public class DriveConstants {
 
   // PathPlanner configuration
   /** Total mass of the robot. */
-  public static final Mass ROBOT_MASS = Pounds.of(130);
+  public static final Mass ROBOT_MASS = Pounds.of(117);
 
   // ---------- Drive Command Configuration ----------
   /** Joystick deadband for linear and rotational inputs. */

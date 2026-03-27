@@ -11,14 +11,10 @@ import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
@@ -44,6 +40,26 @@ import java.util.function.Supplier;
 public class DriveCommands {
 
   private DriveCommands() {}
+
+  /**
+   * Enables auto-aiming by overriding the rotation feedback in the path follower to point towards
+   * the target.
+   *
+   * @return A command that, when scheduled, will enable auto-aiming behavior in the path follower.
+   */
+  public static Command enableAutoAim(Drive drive) {
+    return Commands.runOnce(() -> drive.setGoal(Drive.DriveGoal.AUTO_AIM));
+  }
+
+  /**
+   * Disables auto-aiming by clearing any rotation feedback override in the path follower, allowing
+   * it to follow the path's normal rotation.
+   *
+   * @return A command that, when scheduled, will disable auto-aiming behavior in the path follower.
+   */
+  public static Command disableAutoAim(Drive drive) {
+    return Commands.runOnce(() -> drive.setGoal(Drive.DriveGoal.TELEOP));
+  }
 
   /**
    * Processes joystick inputs to determine linear velocity, applying deadband and cubing inputs for
@@ -108,8 +124,6 @@ public class DriveCommands {
 
   /**
    * Field relative drive command using joystick for linear control and PID for angular control.
-   * Possible use cases include snapping to an angle, aiming at a vision target, or controlling
-   * absolute rotation with a joystick.
    *
    * @param drive The drive subsystem.
    * @param xSupplier Supplier for forward/backward input (-1.0 to 1.0).
@@ -122,59 +136,16 @@ public class DriveCommands {
       DoubleSupplier xSupplier,
       DoubleSupplier ySupplier,
       Supplier<Rotation2d> rotationSupplier) {
-
-    // Create PID controller with motion profiling for rotation
-    ProfiledPIDController angleController =
-        new ProfiledPIDController(
-            ANGLE_KP,
-            0.0,
-            ANGLE_KD,
-            new TrapezoidProfile.Constraints(
-                ANGLE_MAX_VELOCITY.in(RadiansPerSecond),
-                ANGLE_MAX_ACCELERATION.in(RadiansPerSecondPerSecond)));
-    angleController.enableContinuousInput(-Math.PI, Math.PI);
-
-    // Construct command
-    return Commands.run(
+    return joystickDrive(drive, xSupplier, ySupplier, () -> 0.0)
+        .beforeStarting(
             () -> {
-              // Get linear velocity
-              Translation2d linearVelocity =
-                  getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
-
-              // Calculate angular speed using PID
-              double omega =
-                  angleController.calculate(
-                      drive.getRotation().getRadians(), rotationSupplier.get().getRadians());
-
-              // Convert to field relative speeds & send command
-              ChassisSpeeds speeds =
-                  new ChassisSpeeds(
-                      drive.getMaxLinearVelocity().times(linearVelocity.getX()),
-                      drive.getMaxLinearVelocity().times(linearVelocity.getY()),
-                      RadiansPerSecond.of(omega));
-
-              // Flip controls if on the Red alliance
-              boolean isFlipped =
-                  DriverStation.getAlliance().isPresent()
-                      && DriverStation.getAlliance().get() == Alliance.Red;
-              drive.runVelocity(
-                  ChassisSpeeds.fromFieldRelativeSpeeds(
-                      speeds,
-                      isFlipped
-                          ? drive.getRotation().plus(new Rotation2d(Math.PI))
-                          : drive.getRotation()));
-            },
-            drive)
-
-        // Reset PID controller when command starts to prevent erratic movement
-        .beforeStarting(() -> angleController.reset(drive.getRotation().getRadians()));
+              drive.setGoal(Drive.DriveGoal.HEADING_CONTROL);
+            })
+        .finallyDo(() -> drive.setGoal(Drive.DriveGoal.TELEOP));
   }
 
   /**
-   * Field relative drive command with rotation-priority desaturation. The PID-controlled rotation
-   * is given as much of the module speed budget as it needs, and translation is scaled to fill
-   * whatever capacity remains. This guarantees the robot will always rotate to the target heading
-   * at the speed the PID requests, while still translating as fast as physically possible.
+   * Field relative drive command with rotation-priority desaturation.
    *
    * @param drive The drive subsystem.
    * @param xSupplier Supplier for forward/backward input (-1.0 to 1.0).
@@ -187,89 +158,12 @@ public class DriveCommands {
       DoubleSupplier xSupplier,
       DoubleSupplier ySupplier,
       Supplier<Rotation2d> rotationSupplier) {
-
-    // Create PID controller with motion profiling for rotation
-    ProfiledPIDController angleController =
-        new ProfiledPIDController(
-            ANGLE_KP,
-            0.0,
-            ANGLE_KD,
-            new TrapezoidProfile.Constraints(
-                ANGLE_MAX_VELOCITY.in(RadiansPerSecond),
-                ANGLE_MAX_ACCELERATION.in(RadiansPerSecondPerSecond)));
-    angleController.enableContinuousInput(-Math.PI, Math.PI);
-
-    // Reuse the kinematics instance from Drive to test module speeds against the budget
-    SwerveDriveKinematics kinematics = drive.getKinematics();
-
-    return Commands.run(
-            () -> {
-              // Get linear velocity from joysticks
-              Translation2d linearVelocity =
-                  getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
-
-              // Calculate angular speed from PID (this is our priority demand)
-              double omega =
-                  angleController.calculate(
-                      drive.getRotation().getRadians(), rotationSupplier.get().getRadians());
-
-              double maxSpeed = MAX_LINEAR_VELOCITY.in(MetersPerSecond);
-
-              double desiredVx = maxSpeed * linearVelocity.getX();
-              double desiredVy = maxSpeed * linearVelocity.getY();
-
-              // Flip controls if on the Red alliance
-              boolean isFlipped =
-                  DriverStation.getAlliance().isPresent()
-                      && DriverStation.getAlliance().get() == Alliance.Red;
-              Rotation2d fieldHeading =
-                  isFlipped
-                      ? drive.getRotation().plus(new Rotation2d(Math.PI))
-                      : drive.getRotation();
-
-              // Convert to field-relative first, then discretize so that the rotation-priority
-              // budget accounts for the skew-correction term that discretize adds. Without this,
-              // discretize injects an extra translational component for the rotation that bypasses
-              // the budget and causes the robot to drift clockwise when the PID is active.
-              ChassisSpeeds fieldRelative =
-                  ChassisSpeeds.fromFieldRelativeSpeeds(desiredVx, desiredVy, omega, fieldHeading);
-              ChassisSpeeds discretized = ChassisSpeeds.discretize(fieldRelative, 0.02);
-
-              // Determine how much module speed rotation alone requires (post-discretize)
-              ChassisSpeeds rotationOnly =
-                  new ChassisSpeeds(0.0, 0.0, discretized.omegaRadiansPerSecond);
-              SwerveModuleState[] rotStates = kinematics.toSwerveModuleStates(rotationOnly);
-              double maxRotModule = 0.0;
-              for (SwerveModuleState s : rotStates) {
-                maxRotModule = Math.max(maxRotModule, Math.abs(s.speedMetersPerSecond));
-              }
-
-              // Calculate leftover budget for translation
-              double remainingBudget = Math.max(0.0, maxSpeed - maxRotModule);
-
-              // Scale translation to fit within the remaining budget
-              double desiredTransSpeed =
-                  Math.hypot(discretized.vxMetersPerSecond, discretized.vyMetersPerSecond);
-              double translationScale =
-                  desiredTransSpeed > 1e-6
-                      ? Math.min(1.0, remainingBudget / desiredTransSpeed)
-                      : 1.0;
-
-              ChassisSpeeds finalSpeeds =
-                  new ChassisSpeeds(
-                      discretized.vxMetersPerSecond * translationScale,
-                      discretized.vyMetersPerSecond * translationScale,
-                      discretized.omegaRadiansPerSecond);
-
-              drive.runVelocityRaw(finalSpeeds);
-            },
-            drive)
-        // Reset with both position and current velocity so the profiled controller doesn't
-        // wind up from a zero-velocity initial state and cause a sudden rotation spike.
+    return joystickDrive(drive, xSupplier, ySupplier, () -> 0.0)
         .beforeStarting(
-            () ->
-                angleController.reset(
-                    drive.getRotation().getRadians(), drive.getYawVelocityRadPerSec()));
+            () -> {
+              drive.setGoal(Drive.DriveGoal.AUTO_AIM);
+            })
+        .finallyDo(() -> drive.setGoal(Drive.DriveGoal.TELEOP));
   }
 
   /**
@@ -326,7 +220,7 @@ public class DriveCommands {
                   for (int i = 0; i < n; i++) {
                     sumX += velocitySamples.get(i).in(RadiansPerSecond);
                     sumY += voltageSamples.get(i).in(Volts);
-                    sumXY +=
+                    sumXY =
                         velocitySamples.get(i).in(RadiansPerSecond)
                             * voltageSamples.get(i).in(Volts);
                     sumX2 +=

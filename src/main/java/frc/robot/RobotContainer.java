@@ -10,6 +10,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -17,7 +18,6 @@ import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.lib.util.FieldUtil;
 import frc.robot.commands.DriveCommands;
 import frc.robot.subsystems.climb.Climb;
@@ -154,6 +154,12 @@ public class RobotContainer {
     drive.setIMUHighFreqConsumer(vision::broadcastIMUState);
     vision.setVisionMeasurementConsumer(drive::addVisionMeasurement);
 
+    // Link target suppliers for auto-aim and snapping logic
+    drive.setAutoAim(superstructure::getTargetRotation, superstructure::hasTarget);
+
+    // Register auto commands for PathPlanner
+    registerAutoCommands();
+
     // Set up auto routines via PathPlanner
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
@@ -218,25 +224,26 @@ public class RobotContainer {
                 DriveCommands.joystickDriveWithRotationPriority(
                     drive, () -> 0.0, () -> 0.0, superstructure::getTargetRotation))));
 
-    autoChooser.addOption(
-        "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
-    autoChooser.addOption(
-        "Drive Simple FF Characterization", DriveCommands.feedforwardCharacterization(drive));
-    autoChooser.addOption(
-        "Drive SysId (Quasistatic Forward)",
-        drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    autoChooser.addOption(
-        "Drive SysId (Quasistatic Reverse)",
-        drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    autoChooser.addOption(
-        "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    autoChooser.addOption(
-        "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-
     // Configure the commands
     configureDriverButtonBindings();
     configureOperatorButtonBindings();
     configureDefaultCommands();
+  }
+
+  /** Registers named commands that can be triggered from PP. */
+  private void registerAutoCommands() {
+    NamedCommands.registerCommand("Deploy Arm", arm.deploy());
+    NamedCommands.registerCommand("Retract Arm", arm.retract());
+    NamedCommands.registerCommand("Start Intake", spinner.intake());
+    NamedCommands.registerCommand("Stop Intake", spinner.stop());
+    NamedCommands.registerCommand("Spin Up Shooter", shooter.run());
+    NamedCommands.registerCommand("Stop Down Shooter", shooter.stop());
+    NamedCommands.registerCommand(
+        "Shoot When Ready",
+        Commands.sequence(Commands.waitUntil(superstructure.isReadyToShoot()), indexer.run()));
+    NamedCommands.registerCommand("Stop Shooting", indexer.stop());
+    NamedCommands.registerCommand("Enable Auto Aim", DriveCommands.enableAutoAim(drive));
+    NamedCommands.registerCommand("Disable Auto Aim", DriveCommands.disableAutoAim(drive));
   }
 
   /**
@@ -248,12 +255,8 @@ public class RobotContainer {
     driverController
         .leftTrigger()
         .and(superstructure::hasTarget)
-        .whileTrue(
-            DriveCommands.joystickDriveWithRotationPriority(
-                drive,
-                () -> -driverController.getLeftY(),
-                () -> -driverController.getLeftX(),
-                superstructure::getTargetRotation));
+        .onTrue(DriveCommands.enableAutoAim(drive))
+        .onFalse(DriveCommands.disableAutoAim(drive));
 
     // Spin up the motor if we are practicing not in match mode
     driverController
