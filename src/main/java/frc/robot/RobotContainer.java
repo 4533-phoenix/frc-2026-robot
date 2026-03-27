@@ -162,6 +162,7 @@ public class RobotContainer {
 
     // Set up auto routines via PathPlanner
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
+    autoChooser.addOption("None", fallbackPoseResetCommand());
 
     // Assign auto commands to the chooser
     autoChooser.addOption(
@@ -353,7 +354,20 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     Command autoCommand = autoChooser.get();
-    if (autoCommand == null) autoCommand = Commands.none();
+    if (autoCommand == null || autoCommand.getName().equals("None")) {
+      return fallbackPoseResetCommand();
+    }
+
     return autoCommand;
+  }
+
+  private Command fallbackPoseResetCommand() {
+    return Commands.runOnce(
+            () ->
+                drive.setPose(
+                    FieldUtil.flipAllianceIfNeeded(
+                        new Pose2d(3.5, 2.4, new Rotation2d(0)) // Your desired fallback pose
+                        )))
+        .withName("Fallback Pose Reset");
   }
 }
