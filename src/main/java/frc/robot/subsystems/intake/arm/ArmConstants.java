@@ -49,7 +49,7 @@ public final class ArmConstants {
 
   // Encoder Offsets
   /** Absolute encoder offset. */
-  public static final double GLOBAL_ENCODER_OFFSET = 0.25;
+  public static final double GLOBAL_ENCODER_OFFSET = 0.2;
 
   // Motor Current Limits
   /** Max current draw for the arm motor. */
