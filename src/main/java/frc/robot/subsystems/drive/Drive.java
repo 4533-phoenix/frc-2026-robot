@@ -47,7 +47,6 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.lib.IMUState;
 import frc.lib.monitors.GyroHealthMonitor;
 import frc.lib.monitors.MonitoredSubsystem;
-import frc.robot.Constants;
 import frc.robot.subsystems.drive.gyro.GyroIO;
 import frc.robot.subsystems.drive.gyro.GyroIOInputsAutoLogged;
 import frc.robot.subsystems.drive.module.Module;
@@ -228,18 +227,6 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
   public void periodic() {
     gyroIO.updateInputs(gyroInputs);
 
-    if (Constants.CURRENT_MODE == Constants.Mode.SIM) {
-      Twist2d twist = kinematics.toTwist2d(odometryDeltasBuffer);
-
-      gyroInputs.connected = true;
-      gyroInputs.healthy = true;
-      gyroInputs.yawVelocity = RadiansPerSecond.of(twist.dtheta / 0.02);
-
-      double timestamp = edu.wpi.first.wpilibj.Timer.getFPGATimestamp();
-      rawGyroRotation = rawGyroRotation.plus(Rotation2d.fromRadians(twist.dtheta));
-      gyroHistory.addSample(timestamp, rawGyroRotation);
-    }
-
     for (int i = 0; i < gyroInputs.odometryYawTimestamps.length; i++) {
       if (gyroInputs.odometryYawTimestamps[i] > lastResetTimestamp) {
         gyroHistory.addSample(
@@ -293,10 +280,11 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
       }
 
       // Interpolate the gyro rotation at the exact timestamp of this module sample
-      var interpolatedRotation = gyroHistory.getSample(timestamp);
-
-      if (interpolatedRotation.isPresent()) {
-        rawGyroRotation = interpolatedRotation.get();
+      if (gyroInputs.connected) {
+        var interpolatedRotation = gyroHistory.getSample(timestamp);
+        if (interpolatedRotation.isPresent()) {
+          rawGyroRotation = interpolatedRotation.get();
+        }
       } else {
         Twist2d twist = kinematics.toTwist2d(odometryDeltasBuffer);
         rawGyroRotation = rawGyroRotation.plus(Rotation2d.fromRadians(twist.dtheta));
