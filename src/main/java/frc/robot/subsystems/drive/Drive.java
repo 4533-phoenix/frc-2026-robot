@@ -462,8 +462,11 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
    * @param pose The new pose to set the robot to.
    */
   public void setPose(Pose2d pose) {
+    // We have to add 5ms delay to ensure the gyro has time to update with the new yaw before we
+    // read it for odometry.
+    lastResetTimestamp = (RobotController.getFPGATime() / 1.0e6) + 0.005;
+
     gyroIO.setYaw(pose.getRotation().getMeasure());
-    lastResetTimestamp = (RobotController.getFPGATime() / 1.0e6);
     rawGyroRotation = pose.getRotation();
 
     gyroHistory.clear();
