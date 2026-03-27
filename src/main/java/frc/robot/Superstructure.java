@@ -14,6 +14,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.BooleanSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -168,14 +169,13 @@ public class Superstructure extends SubsystemBase {
     // Check for sticky fault clear command from dashboard
     boolean currentClearFaults = clearFaultsSubscriber.get();
     if (currentClearFaults && !lastClearFaults) {
-      CompletableFuture.runAsync(
-              () -> {
-                clearFaults();
-              })
-          .thenRun(
-              () -> {
-                clearFaultsPublisher.set(false);
-              });
+      CompletableFuture.runAsync(this::clearFaults)
+          .thenRun(() -> clearFaultsPublisher.set(false))
+          .exceptionally(ex -> {
+            DriverStation.reportError("Clear Faults Crashed: " + ex.getMessage(), true);
+            clearFaultsPublisher.set(false);
+            return null;
+          });
     }
     lastClearFaults = currentClearFaults;
 
