@@ -183,8 +183,7 @@ public class RobotContainer {
                 .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
                 Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
-                DriveCommands.joystickDriveWithRotationPriority(
-                    drive, () -> 0.0, () -> 0.0, superstructure::getTargetRotation))));
+                DriveCommands.autoAim(drive))));
 
     autoChooser.addOption(
         "Middle Shoot Preload",
@@ -204,8 +203,7 @@ public class RobotContainer {
                 .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
                 Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
-                DriveCommands.joystickDriveWithRotationPriority(
-                    drive, () -> 0.0, () -> 0.0, superstructure::getTargetRotation))));
+                DriveCommands.autoAim(drive))));
 
     autoChooser.addOption(
         "Right Shoot Preload",
@@ -222,8 +220,7 @@ public class RobotContainer {
                 .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
                 Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
-                DriveCommands.joystickDriveWithRotationPriority(
-                    drive, () -> 0.0, () -> 0.0, superstructure::getTargetRotation))));
+                DriveCommands.autoAim(drive))));
 
     // Configure the commands
     configureDriverButtonBindings();
@@ -243,8 +240,10 @@ public class RobotContainer {
         "Shoot When Ready",
         Commands.sequence(Commands.waitUntil(superstructure.isReadyToShoot()), indexer.run()));
     NamedCommands.registerCommand("Stop Shooting", indexer.stop());
-    NamedCommands.registerCommand("Enable Auto Aim", DriveCommands.enableAutoAim(drive));
-    NamedCommands.registerCommand("Disable Auto Aim", DriveCommands.disableAutoAim(drive));
+    NamedCommands.registerCommand(
+        "Enable Auto Aim", Commands.runOnce(() -> drive.setGoal(Drive.Goal.AUTO_AIM)));
+    NamedCommands.registerCommand(
+        "Disable Auto Aim", Commands.runOnce(() -> drive.setGoal(Drive.Goal.DRIVE)));
   }
 
   /**
@@ -256,8 +255,7 @@ public class RobotContainer {
     driverController
         .leftTrigger()
         .and(superstructure::hasTarget)
-        .onTrue(DriveCommands.enableAutoAim(drive))
-        .onFalse(DriveCommands.disableAutoAim(drive));
+        .whileTrue(DriveCommands.autoAim(drive));
 
     // Spin up the motor if we are practicing not in match mode
     driverController
@@ -338,13 +336,14 @@ public class RobotContainer {
 
   /** Sets up the default commands for subsystems. */
   public void configureDefaultCommands() {
-    // By default, drive with the joysticks
+    // By default, drive with the joysticks and ensure the goal is DRIVE
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
-            drive,
-            () -> -driverController.getLeftY(),
-            () -> -driverController.getLeftX(),
-            () -> -driverController.getRightX()));
+                drive,
+                () -> -driverController.getLeftY(),
+                () -> -driverController.getLeftX(),
+                () -> -driverController.getRightX())
+            .beforeStarting(() -> drive.setGoal(Drive.Goal.DRIVE)));
   }
 
   /**
@@ -354,10 +353,9 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     Command autoCommand = autoChooser.get();
-    if (autoCommand == null || autoCommand.getName().equals("None")) {
+    if (autoCommand == null || autoCommand.getName().equals("Fallback Pose Reset")) {
       return fallbackPoseResetCommand();
     }
-
     return autoCommand;
   }
 

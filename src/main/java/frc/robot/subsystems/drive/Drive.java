@@ -67,10 +67,11 @@ import org.littletonrobotics.junction.Logger;
  */
 public class Drive extends SubsystemBase implements MonitoredSubsystem {
 
-  public enum DriveGoal {
-    TELEOP, // Standard manual or path following
-    HEADING_CONTROL, // Snap to angle (no rotation priority)
-    AUTO_AIM // Lock on target with rotation priority
+  public enum Goal {
+    /** Standard manual or autonomous movement. */
+    DRIVE,
+    /** Prioritize rotation to face a specific target (Vision/Heading). */
+    AUTO_AIM,
   }
 
   private final GyroIO gyroIO;
@@ -132,7 +133,7 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
               ANGLE_MAX_VELOCITY.in(RadiansPerSecond),
               ANGLE_MAX_ACCELERATION.in(RadiansPerSecondPerSecond)));
 
-  private DriveGoal currentGoal = DriveGoal.TELEOP;
+  @AutoLogOutput private Goal goal = Goal.DRIVE;
   private Supplier<Rotation2d> autoAimTargetSupplier = null;
   private BooleanSupplier autoAimHasTargetSupplier = null;
 
@@ -240,7 +241,6 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
 
     // Stop moving when disabled
     if (DriverStation.isDisabled()) {
-      setGoal(DriveGoal.TELEOP);
       for (var module : modules) {
         module.stop();
       }
@@ -293,8 +293,20 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
 
     // Update gyro fault alert
     gyroHealthMonitor.update(gyroInputs);
+  }
 
-    Logger.recordOutput("Drive/CurrentGoal", currentGoal.toString());
+  /** Sets the current driving goal. */
+  public void setGoal(Goal goal) {
+    if (this.goal != goal && goal == Goal.AUTO_AIM) {
+      resetRotationController();
+    }
+    this.goal = goal;
+  }
+
+  /** Sets the targets used specifically for the AUTO_AIM goal. */
+  public void setAutoAim(Supplier<Rotation2d> target, BooleanSupplier isValid) {
+    this.autoAimTargetSupplier = target;
+    this.autoAimHasTargetSupplier = isValid;
   }
 
   /** Calculates translation scaling to ensure rotation requested is fully achieved. */
@@ -319,54 +331,36 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
         speeds.omegaRadiansPerSecond);
   }
 
-  /** Sets the current driving goal (e.g., standard, snap-to-angle, or auto-aim). */
-  public void setGoal(DriveGoal goal) {
-    if (goal != this.currentGoal && goal != DriveGoal.TELEOP) {
-      resetRotationController();
-    }
-    this.currentGoal = goal;
-  }
-
   /**
-   * Runs the drive at the desired velocity. Intercepts inputs to apply rotation PID or priority
-   * scaling based on the current goal.
+   * Main entry point for movement. This acts as a wrapper that modifies the incoming speeds based
+   * on the current Goal state.
    *
-   * @param speeds Speeds in meters/sec, relative to the robot's field-centric perspective.
+   * @param speeds Speeds relative to the robot's field-centric perspective.
    */
   public void runVelocity(ChassisSpeeds speeds) {
-    if (currentGoal == DriveGoal.AUTO_AIM || currentGoal == DriveGoal.HEADING_CONTROL) {
-      boolean hasTarget =
-          autoAimHasTargetSupplier == null || autoAimHasTargetSupplier.getAsBoolean();
-      if (hasTarget && autoAimTargetSupplier != null) {
-        // Hijack rotation with PID
-        speeds.omegaRadiansPerSecond = calculateRotationFeedback(autoAimTargetSupplier.get());
+    ChassisSpeeds finalSpeeds = speeds;
 
-        // Apply scaling if priority is requested
-        if (currentGoal == DriveGoal.AUTO_AIM) {
-          speeds = applyRotationPriority(speeds);
+    switch (goal) {
+      case AUTO_AIM -> {
+        if (autoAimHasTargetSupplier != null && autoAimHasTargetSupplier.getAsBoolean()) {
+          double rotationFeedback = calculateRotationFeedback(autoAimTargetSupplier.get());
+
+          // Construct new speeds: Keep VX/VY from input, inject Rotation feedback
+          finalSpeeds =
+              new ChassisSpeeds(
+                  speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, rotationFeedback);
+
+          // Priority scaling ensures the requested rotation is always physically achieved
+          finalSpeeds = applyRotationPriority(finalSpeeds);
         }
+      }
+      case DRIVE -> {
+        // Use incoming speeds as provided (PathPlanner or Joystick)
       }
     }
 
-    ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
+    ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(finalSpeeds, 0.02);
     runVelocityRaw(discreteSpeeds);
-  }
-
-  /**
-   * Sets up the target suppliers used when the DriveGoal is HEADING_CONTROL or AUTO_AIM.
-   *
-   * @param targetSupplier A Supplier for the desired rotation.
-   * @param hasTargetSupplier A BooleanSupplier to indicate if the target is valid.
-   */
-  public void setAutoAim(Supplier<Rotation2d> targetSupplier, BooleanSupplier hasTargetSupplier) {
-    this.autoAimTargetSupplier = targetSupplier;
-    this.autoAimHasTargetSupplier = hasTargetSupplier;
-  }
-
-  /** Clears the auto-aiming suppliers. */
-  public void clearAutoAim() {
-    this.autoAimTargetSupplier = null;
-    this.autoAimHasTargetSupplier = null;
   }
 
   /**

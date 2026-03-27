@@ -29,7 +29,6 @@ import java.text.NumberFormat;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
 
 /**
  * Factory class for creating commands related to the drivetrain subsystem.
@@ -42,23 +41,12 @@ public class DriveCommands {
   private DriveCommands() {}
 
   /**
-   * Enables auto-aiming by overriding the rotation feedback in the path follower to point towards
-   * the target.
-   *
-   * @return A command that, when scheduled, will enable auto-aiming behavior in the path follower.
+   * Returns a command that toggles the drive Goal. Notice: It does not require 'drive', so it can
+   * run alongside the default joystick command.
    */
-  public static Command enableAutoAim(Drive drive) {
-    return Commands.runOnce(() -> drive.setGoal(Drive.DriveGoal.AUTO_AIM));
-  }
-
-  /**
-   * Disables auto-aiming by clearing any rotation feedback override in the path follower, allowing
-   * it to follow the path's normal rotation.
-   *
-   * @return A command that, when scheduled, will disable auto-aiming behavior in the path follower.
-   */
-  public static Command disableAutoAim(Drive drive) {
-    return Commands.runOnce(() -> drive.setGoal(Drive.DriveGoal.TELEOP));
+  public static Command autoAim(Drive drive) {
+    return Commands.startEnd(
+        () -> drive.setGoal(Drive.Goal.AUTO_AIM), () -> drive.setGoal(Drive.Goal.DRIVE));
   }
 
   /**
@@ -101,7 +89,7 @@ public class DriveCommands {
           // Cube rotation value for exponential feel with fine low-speed control
           omega = Math.copySign(omega * omega * omega, omega);
 
-          // Convert to field relative speeds & send command
+          // Convert to field relative speeds
           ChassisSpeeds speeds =
               new ChassisSpeeds(
                   drive.getMaxLinearVelocity().times(linearVelocity.getX()),
@@ -120,50 +108,6 @@ public class DriveCommands {
                       : drive.getRotation()));
         },
         drive);
-  }
-
-  /**
-   * Field relative drive command using joystick for linear control and PID for angular control.
-   *
-   * @param drive The drive subsystem.
-   * @param xSupplier Supplier for forward/backward input (-1.0 to 1.0).
-   * @param ySupplier Supplier for strafe left/right input (-1.0 to 1.0).
-   * @param rotationSupplier Supplier for target rotation (absolute angle).
-   * @return A command to run the drivetrain with PID-controlled rotation.
-   */
-  public static Command joystickDriveAtAngle(
-      Drive drive,
-      DoubleSupplier xSupplier,
-      DoubleSupplier ySupplier,
-      Supplier<Rotation2d> rotationSupplier) {
-    return joystickDrive(drive, xSupplier, ySupplier, () -> 0.0)
-        .beforeStarting(
-            () -> {
-              drive.setGoal(Drive.DriveGoal.HEADING_CONTROL);
-            })
-        .finallyDo(() -> drive.setGoal(Drive.DriveGoal.TELEOP));
-  }
-
-  /**
-   * Field relative drive command with rotation-priority desaturation.
-   *
-   * @param drive The drive subsystem.
-   * @param xSupplier Supplier for forward/backward input (-1.0 to 1.0).
-   * @param ySupplier Supplier for strafe left/right input (-1.0 to 1.0).
-   * @param rotationSupplier Supplier for target rotation (absolute angle).
-   * @return A command to run the drivetrain with rotation-prioritized control.
-   */
-  public static Command joystickDriveWithRotationPriority(
-      Drive drive,
-      DoubleSupplier xSupplier,
-      DoubleSupplier ySupplier,
-      Supplier<Rotation2d> rotationSupplier) {
-    return joystickDrive(drive, xSupplier, ySupplier, () -> 0.0)
-        .beforeStarting(
-            () -> {
-              drive.setGoal(Drive.DriveGoal.AUTO_AIM);
-            })
-        .finallyDo(() -> drive.setGoal(Drive.DriveGoal.TELEOP));
   }
 
   /**
@@ -220,7 +164,7 @@ public class DriveCommands {
                   for (int i = 0; i < n; i++) {
                     sumX += velocitySamples.get(i).in(RadiansPerSecond);
                     sumY += voltageSamples.get(i).in(Volts);
-                    sumXY =
+                    sumXY +=
                         velocitySamples.get(i).in(RadiansPerSecond)
                             * voltageSamples.get(i).in(Volts);
                     sumX2 +=

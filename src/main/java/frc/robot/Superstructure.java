@@ -23,6 +23,7 @@ import frc.lib.monitors.MonitoredSubsystem;
 import frc.lib.util.FieldUtil;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.drive.DriveConstants;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.intake.arm.Arm;
 import frc.robot.subsystems.intake.spinner.Spinner;
@@ -183,13 +184,6 @@ public class Superstructure extends SubsystemBase {
     Logger.recordOutput("Superstructure/ClimbMode", climbMode.get());
     Logger.recordOutput("Superstructure/CurrentAimingResult", currentAimingResult);
     Logger.recordOutput("Superstructure/IsHubEnabled", Util.isHubEnabled());
-
-    // Log all ready to shoot conditions for debugging
-    Logger.recordOutput("Superstructure/HasTarget", currentAimingResult.hasTarget());
-    Logger.recordOutput(
-        "Superstructure/IsAlignedWithTarget", drive.isAlignedWithTarget(getTargetRotation()));
-    Logger.recordOutput("Superstructure/IsShooterReady", shooter.isShooterReady().getAsBoolean());
-    Logger.recordOutput("Superstructure/TargetCanReceive", targetCanReceive);
   }
 
   /**
@@ -272,7 +266,12 @@ public class Superstructure extends SubsystemBase {
     return new Trigger(
         () ->
             currentAimingResult.hasTarget()
-                && drive.isAlignedWithTarget(getTargetRotation())
+                && Math.abs(
+                        currentAimingResult
+                            .targetRotation()
+                            .minus(drive.getPose().getRotation())
+                            .getDegrees())
+                    < DriveConstants.HEADING_ALIGNMENT_TOLERANCE.in(Degrees)
                 && shooter.isShooterReady().getAsBoolean()
                 && targetCanReceive);
   }
