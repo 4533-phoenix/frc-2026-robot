@@ -45,8 +45,7 @@ public class DriveCommands {
   public static Command headingAim(Drive drive, Supplier<Rotation2d> targetSupplier) {
     return Commands.startEnd(
         () -> drive.setHeadingOverrideSupplier(targetSupplier),
-        () -> drive.setHeadingOverrideSupplier(null),
-        drive
+        () -> drive.setHeadingOverrideSupplier(null)
     );
 }
 

@@ -223,6 +223,9 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
    */
   public void setHeadingOverrideSupplier(Supplier<Rotation2d> supplier) {
     this.headingOverrideSupplier = (supplier == null) ? (() -> null) : supplier;
+    if (supplier != null) {
+      resetRotationController();
+    }
   }
 
   @Override
@@ -353,7 +356,8 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
       finalSpeeds = speeds;
     }
 
-    runVelocity(finalSpeeds);
+    ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(finalSpeeds, 0.02);
+    runVelocityRaw(discreteSpeeds);
   }
 
   /**
@@ -363,8 +367,7 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
    * @param speeds Speeds relative to the robot's field-centric perspective.
    */
   public void runVelocity(ChassisSpeeds speeds) {
-    ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
-    runVelocityRaw(discreteSpeeds);
+    runVelocity(speeds, headingOverrideSupplier.get());
   }
 
   /**

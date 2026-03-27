@@ -237,11 +237,14 @@ public class RobotContainer {
         "Shoot When Ready",
         Commands.sequence(Commands.waitUntil(superstructure.isReadyToShoot()), indexer.startRun()));
     NamedCommands.registerCommand("Stop and Shoot When Ready",     Commands.deadline(
+    Commands.deadline(
         Commands.sequence(
-            Commands.waitUntil(superstructure.isReadyToShoot()),
+            Commands.waitUntil(superstructure.isReadyToShoot()).withTimeout(2.0),
             indexer.run().withTimeout(1.0)
         ),
+        // Force the drive to aim and stay at 0,0
         Commands.run(() -> drive.runVelocity(new ChassisSpeeds()), drive)
+    )
     ));
     NamedCommands.registerCommand("Stop Shooting", indexer.stop());
     NamedCommands.registerCommand(
