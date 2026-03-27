@@ -132,13 +132,13 @@ public class Superstructure extends SubsystemBase {
     if (!climbMode.get()) {
       // Determine if we are in the Hub Shooting zone
       if (FieldUtil.flipAllianceIfNeeded(Constants.SHOOTING_ZONE).contains(robotTranslation)
-          && (Util.isHubApproaching(5)
-              || Util.isHubApproaching(ShooterConstants.ESTIMATED_TOF.in(Seconds)))) {
+          && (Util.isHubEnabled(5)
+              || Util.isHubEnabled(ShooterConstants.ESTIMATED_TOF.in(Seconds)))) {
         currentAimingResult = hubAiming.get();
         shooter.setShooterState(
             ShooterKinematics.calculateShooterState(
                 Meters.of(currentAimingResult.distanceToTargetMeters())));
-        targetCanReceive = Util.isHubApproaching(ShooterConstants.ESTIMATED_TOF.in(Seconds));
+        targetCanReceive = Util.isHubEnabled(ShooterConstants.ESTIMATED_TOF.in(Seconds));
       }
       // Determine if we are in the Lobbing zone
       else if (FieldUtil.flipAllianceIfNeeded(Constants.LOBBING_ZONE).contains(robotTranslation)) {
