@@ -41,27 +41,9 @@
           }
         },
         {
-          "type": "named",
-          "data": {
-            "name": "Start Intake"
-          }
-        },
-        {
           "type": "path",
           "data": {
             "pathName": "Right Side Intake"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 1.0
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Stop Intake"
           }
         }
       ]
