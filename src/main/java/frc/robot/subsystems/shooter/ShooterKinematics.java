@@ -19,17 +19,25 @@ public class ShooterKinematics {
   private static final InterpolatingDoubleTreeMap hoodMap = new InterpolatingDoubleTreeMap();
 
   static {
-    flywheelMap.put(1.307, 45.0);
-    flywheelMap.put(1.734, 45.0);
-    flywheelMap.put(2.459, 53.0);
-    flywheelMap.put(2.666, 58.0);
-    flywheelMap.put(3.155, 67.0);
+    flywheelMap.put(1.672, 42.0);
+    flywheelMap.put(1.912, 43.0);
+    flywheelMap.put(2.130, 45.0);
+    flywheelMap.put(2.423, 47.0);
+    flywheelMap.put(2.575, 49.0);
+    flywheelMap.put(2.779, 51.0);
+    flywheelMap.put(3.112, 54.0);
+    flywheelMap.put(3.335, 58.0);
+    flywheelMap.put(3.641, 62.0);
 
-    hoodMap.put(1.307, 85.0);
-    hoodMap.put(1.734, 85.0);
-    hoodMap.put(2.459, 85.0);
-    hoodMap.put(2.666, 85.0);
-    hoodMap.put(3.155, 62.0);
+    hoodMap.put(1.672, 85.0);
+    hoodMap.put(1.912, 85.0);
+    hoodMap.put(2.130, 85.0);
+    hoodMap.put(2.423, 85.0);
+    hoodMap.put(2.575, 85.0);
+    hoodMap.put(2.779, 85.0);
+    hoodMap.put(3.112, 85.0);
+    hoodMap.put(3.335, 85.0);
+    hoodMap.put(3.641, 70.0);
   }
 
   /**
