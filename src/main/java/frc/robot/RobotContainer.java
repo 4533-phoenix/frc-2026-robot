@@ -23,6 +23,7 @@ import frc.robot.control.driver.DefaultDriverProfile;
 import frc.robot.control.driver.Driver;
 import frc.robot.control.driver.DriverIO;
 import frc.robot.control.driver.DriverProfile;
+import frc.robot.control.driver.SetpointDriverProfile;
 import frc.robot.control.operator.DefaultOperatorProfile;
 import frc.robot.control.operator.Operator;
 import frc.robot.control.operator.OperatorIO;
@@ -166,6 +167,16 @@ public class RobotContainer {
             driverController,
             DriveConstants.MAX_LINEAR_VELOCITY,
             DriveConstants.MAX_ANGULAR_VELOCITY,
+            superstructure.isReadyToShoot()));
+    driverChooser.addOption(
+        "Setpoint Generator",
+        new SetpointDriverProfile(
+            driverController,
+            DriveConstants.MAX_LINEAR_VELOCITY,
+            DriveConstants.MAX_LINEAR_ACCELERATION,
+            DriveConstants.MAX_ANGULAR_VELOCITY,
+            DriveConstants.MAX_ANGULAR_ACCELERATION,
+            drive::getChassisSpeeds,
             superstructure.isReadyToShoot()));
     driver = new Driver(new DriverIO() {}, driverChooser);
 

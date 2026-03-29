@@ -463,7 +463,7 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
    * @return The current robot chassis speeds.
    */
   @AutoLogOutput(key = "SwerveChassisSpeeds/Measured")
-  private ChassisSpeeds getChassisSpeeds() {
+  public ChassisSpeeds getChassisSpeeds() {
     return kinematics.toChassisSpeeds(getModuleStates());
   }
 

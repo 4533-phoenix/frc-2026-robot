@@ -28,6 +28,10 @@ public class DriveConstants {
   /** The maximum achievable linear velocity of the robot in meters per second. */
   public static final LinearVelocity MAX_LINEAR_VELOCITY = MetersPerSecond.of(4.0);
 
+  /** The maximum achievable linear acceleration of the robot in meters per second squared. */
+  public static final LinearAcceleration MAX_LINEAR_ACCELERATION =
+      MetersPerSecondPerSecond.of(15.0);
+
   /** The frequency at which odometry calculations are updated. */
   public static final Frequency ODOMETRY_FREQUENCY = Hertz.of(200);
 
