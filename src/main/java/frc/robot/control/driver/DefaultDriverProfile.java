@@ -16,11 +16,20 @@ import frc.robot.control.GenericControlProfile;
 import frc.robot.subsystems.drive.DriveConstants;
 import java.util.function.BooleanSupplier;
 
+/** Default implementation of the DriverProfile for controlling the robot drivetrain. */
 public class DefaultDriverProfile extends GenericControlProfile implements DriverProfile {
   private final LinearVelocity maxLinearVelocity;
   private final AngularVelocity maxAngularVelocity;
   private final BooleanSupplier isRobotReadyToFire;
 
+  /**
+   * Constructs a DefaultDriverProfile.
+   *
+   * @param controller The Xbox controller used for input.
+   * @param maxLinearVelocity The maximum linear velocity allowed.
+   * @param maxAngularVelocity The maximum angular velocity allowed.
+   * @param isRobotReadyToFire BooleanSupplier indicating if the robot is ready to fire.
+   */
   public DefaultDriverProfile(
       CommandXboxController controller,
       LinearVelocity maxLinearVelocity,

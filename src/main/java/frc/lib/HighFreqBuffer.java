@@ -69,6 +69,9 @@ public class HighFreqBuffer {
   /**
    * Generic offer for N signals. Note: Use specific overloads for 2 or 3 signals to remain 100%
    * GC-free.
+   *
+   * @param timestamp The timestamp for the data point.
+   * @param values The values for the signals.
    */
   public void offer(double timestamp, double[] values) {
     timestamps.offer(timestamp);

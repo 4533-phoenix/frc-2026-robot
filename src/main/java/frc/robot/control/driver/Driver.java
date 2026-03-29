@@ -20,11 +20,18 @@ import frc.robot.subsystems.drive.Drive;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
+/** Subsystem for handling driver controls and input processing. */
 public class Driver extends SubsystemBase {
   private final DriverIO io;
   private final DriverIOInputsAutoLogged inputs = new DriverIOInputsAutoLogged();
   private final LoggedDashboardChooser<DriverProfile> chooser;
 
+  /**
+   * Constructs the Driver subsystem.
+   *
+   * @param io The DriverIO implementation.
+   * @param chooser The dashboard chooser for driver profiles.
+   */
   public Driver(DriverIO io, LoggedDashboardChooser<DriverProfile> chooser) {
     this.io = io;
     this.chooser = chooser;
@@ -43,6 +50,12 @@ public class Driver extends SubsystemBase {
     hid.setRumble(GenericHID.RumbleType.kRightRumble, profile.getRightRumble());
   }
 
+  /**
+   * Creates a command to drive the robot using the current driver profile inputs.
+   *
+   * @param drive The drive subsystem.
+   * @return The drive command.
+   */
   public Command createDriveCommand(Drive drive) {
     return Commands.run(
             () -> {
@@ -62,14 +75,29 @@ public class Driver extends SubsystemBase {
         .beforeStarting(() -> drive.setHeadingOverrideSupplier(null));
   }
 
+  /**
+   * Returns a trigger that is active when the driver wants to aim.
+   *
+   * @return The aim trigger.
+   */
   public Trigger wantsAim() {
     return new Trigger(() -> inputs.wantsAim);
   }
 
+  /**
+   * Returns a trigger that is active when the driver wants to shoot.
+   *
+   * @return The shoot trigger.
+   */
   public Trigger wantsShoot() {
     return new Trigger(() -> inputs.wantsShoot);
   }
 
+  /**
+   * Returns a trigger that is active when the driver wants to reset the robot pose.
+   *
+   * @return The reset trigger.
+   */
   public Trigger wantsReset() {
     return new Trigger(() -> inputs.wantsReset);
   }

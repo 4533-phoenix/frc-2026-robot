@@ -9,12 +9,26 @@ package frc.robot.control;
 
 import edu.wpi.first.wpilibj.GenericHID;
 
+/** Represents a control profile for a physical HID device. */
 public interface ControlProfile {
-  /** Returns the physical HID device. */
+  /**
+   * Returns the physical HID device.
+   *
+   * @return The GenericHID device.
+   */
   GenericHID getHID();
 
-  /** Feedback values. */
+  /**
+   * Returns the left rumble value for the controller.
+   *
+   * @return The left rumble intensity (0.0-1.0).
+   */
   double getLeftRumble();
 
+  /**
+   * Returns the right rumble value for the controller.
+   *
+   * @return The right rumble intensity (0.0-1.0).
+   */
   double getRightRumble();
 }

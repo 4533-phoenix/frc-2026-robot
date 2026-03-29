@@ -9,18 +9,36 @@ package frc.robot.control.driver;
 
 import org.littletonrobotics.junction.AutoLog;
 
+/** Interface for driver input/output hardware abstraction. */
 public interface DriverIO {
+  /** Container for driver input values. */
   @AutoLog
   public static class DriverIOInputs {
+    /** X velocity in meters per second. */
     public double vxMetersPerSecond = 0.0;
+
+    /** Y velocity in meters per second. */
     public double vyMetersPerSecond = 0.0;
+
+    /** Angular velocity in radians per second. */
     public double omegaRadiansPerSecond = 0.0;
+
+    /** Whether the driver wants to aim. */
     public boolean wantsAim = false;
+
+    /** Whether the driver wants to shoot. */
     public boolean wantsShoot = false;
+
+    /** Whether the driver wants to reset the robot pose. */
     public boolean wantsReset = false;
   }
 
-  /** Updates the inputs based on the active profile. */
+  /**
+   * Updates the inputs based on the active profile.
+   *
+   * @param inputs The inputs object to populate.
+   * @param profile The active driver profile.
+   */
   public default void updateInputs(DriverIOInputs inputs, DriverProfile profile) {
     if (profile == null) return;
 

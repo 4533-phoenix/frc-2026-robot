@@ -10,16 +10,33 @@ package frc.robot.control.driver;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import frc.robot.control.ControlProfile;
 
+/** Represents a driver profile for controlling the robot drivetrain. */
 public interface DriverProfile extends ControlProfile {
-  /** Returns the desired chassis speeds based on joystick input. */
+  /**
+   * Returns the desired chassis speeds based on joystick input.
+   *
+   * @return The desired {@link ChassisSpeeds}.
+   */
   ChassisSpeeds getDesiredSpeeds();
 
-  /** Returns whether the driver wants to aim. */
+  /**
+   * Returns whether the driver wants to aim.
+   *
+   * @return True if aiming is requested.
+   */
   boolean wantsAim();
 
-  /** Returns whether the driver wants to shoot. */
+  /**
+   * Returns whether the driver wants to shoot.
+   *
+   * @return True if shooting is requested.
+   */
   boolean wantsShoot();
 
-  /** Returns whether the driver wants to reset the robot pose. */
+  /**
+   * Returns whether the driver wants to reset the robot pose.
+   *
+   * @return True if reset is requested.
+   */
   boolean wantsReset();
 }

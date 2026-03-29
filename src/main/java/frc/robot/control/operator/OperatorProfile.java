@@ -9,25 +9,54 @@ package frc.robot.control.operator;
 
 import frc.robot.control.ControlProfile;
 
+/** Represents an operator profile for controlling the robot superstructure. */
 public interface OperatorProfile extends ControlProfile {
-  /** Returns true if the operator wants to deploy the arm. */
+  /**
+   * Returns true if the operator wants to deploy the arm.
+   *
+   * @return True if arm deployment is requested.
+   */
   boolean wantsArmDeployment();
 
-  /** Returns true if the operator wants to retract the arm. */
+  /**
+   * Returns true if the operator wants to retract the arm.
+   *
+   * @return True if arm retraction is requested.
+   */
   boolean wantsArmRetraction();
 
-  /** Returns true if the operator wants to intake. */
+  /**
+   * Returns true if the operator wants to intake.
+   *
+   * @return True if intake is requested.
+   */
   boolean wantsIntake();
 
-  /** Returns true if the operator wants to extake. */
+  /**
+   * Returns true if the operator wants to extake.
+   *
+   * @return True if extake is requested.
+   */
   boolean wantsExtake();
 
-  /** Returns true if the operator wants to climb. */
+  /**
+   * Returns true if the operator wants to climb.
+   *
+   * @return True if climb is requested.
+   */
   boolean wantsClimb();
 
-  /** Returns true if the operator wants to raise the climber. */
+  /**
+   * Returns true if the operator wants to raise the climber.
+   *
+   * @return True if climber up is requested.
+   */
   boolean wantsClimberUp();
 
-  /** Returns true if the operator wants to lower the climber. */
+  /**
+   * Returns true if the operator wants to lower the climber.
+   *
+   * @return True if climber down is requested.
+   */
   boolean wantsClimberDown();
 }

@@ -10,9 +10,16 @@ package frc.robot.control;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
+/** Abstract base class for control profiles using a CommandXboxController. */
 public abstract class GenericControlProfile implements ControlProfile {
+  /** The Xbox controller used for input. */
   protected final CommandXboxController controller;
 
+  /**
+   * Constructs a GenericControlProfile.
+   *
+   * @param controller The Xbox controller used for input.
+   */
   public GenericControlProfile(CommandXboxController controller) {
     this.controller = controller;
   }

@@ -36,7 +36,13 @@ public class DriveCommands {
 
   private DriveCommands() {}
 
-  /** Command to maintain a specific heading using a supplier for the target angle. */
+  /**
+   * Command to maintain a specific heading using a supplier for the target angle.
+   *
+   * @param drive The drive subsystem.
+   * @param targetSupplier A supplier for the target heading (Rotation2d).
+   * @return A command that maintains the specified heading.
+   */
   public static Command headingAim(Drive drive, Supplier<Rotation2d> targetSupplier) {
     return Commands.startEnd(
         () -> drive.setHeadingOverrideSupplier(targetSupplier),

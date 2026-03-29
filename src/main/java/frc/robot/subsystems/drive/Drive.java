@@ -293,7 +293,12 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
     gyroHealthMonitor.update(gyroInputs);
   }
 
-  /** Calculates translation scaling to ensure rotation requested is fully achieved. */
+  /**
+   * Calculates translation scaling to ensure rotation requested is fully achieved.
+   *
+   * @param speeds The desired chassis speeds.
+   * @return The scaled chassis speeds with rotation priority.
+   */
   public ChassisSpeeds applyRotationPriority(ChassisSpeeds speeds) {
     double maxSpeed = MAX_LINEAR_VELOCITY.in(MetersPerSecond);
     ChassisSpeeds rotationOnly = new ChassisSpeeds(0, 0, speeds.omegaRadiansPerSecond);
@@ -612,7 +617,12 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
     rotationController.reset();
   }
 
-  /** Calculates the closed-loop angular velocity required to reach the target heading. */
+  /**
+   * Calculates the closed-loop angular velocity required to reach the target heading.
+   *
+   * @param targetHeading The target heading as a Rotation2d.
+   * @return The required angular velocity.
+   */
   public double calculateRotationFeedback(Rotation2d targetHeading) {
     return rotationController.calculate(getRotation().getRadians(), targetHeading.getRadians());
   }

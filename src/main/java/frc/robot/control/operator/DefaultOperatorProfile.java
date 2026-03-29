@@ -11,9 +11,16 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.control.GenericControlProfile;
 import java.util.function.BooleanSupplier;
 
+/** Default implementation of the OperatorProfile for controlling the robot superstructure. */
 public class DefaultOperatorProfile extends GenericControlProfile implements OperatorProfile {
   private final BooleanSupplier isClimbMode;
 
+  /**
+   * Constructs a DefaultOperatorProfile.
+   *
+   * @param controller The Xbox controller used for input.
+   * @param isClimbMode BooleanSupplier indicating if climb mode is active.
+   */
   public DefaultOperatorProfile(CommandXboxController controller, BooleanSupplier isClimbMode) {
     super(controller);
     this.isClimbMode = isClimbMode;
