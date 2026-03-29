@@ -1,3 +1,10 @@
+// Copyright (c) 2026 FRC Team 4533 (Phoenix)
+// Derived from the AdvantageKit framework by Littleton Robotics
+//
+// Use of this source code is governed by a BSD
+// license that can be found in the LICENSE file
+// at the root directory of this project.
+
 package frc.robot.control.driver;
 
 import edu.wpi.first.math.MathUtil;
@@ -5,11 +12,11 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.control.GenericControlProfile;
 import frc.robot.subsystems.drive.DriveConstants;
 import java.util.function.BooleanSupplier;
 
-public class DefaultDriverProfile implements DriverProfile {
-  private final CommandXboxController controller;
+public class DefaultDriverProfile extends GenericControlProfile implements DriverProfile {
   private final LinearVelocity maxLinearVelocity;
   private final AngularVelocity maxAngularVelocity;
   private final BooleanSupplier isRobotReadyToFire;
@@ -19,7 +26,7 @@ public class DefaultDriverProfile implements DriverProfile {
       LinearVelocity maxLinearVelocity,
       AngularVelocity maxAngularVelocity,
       BooleanSupplier isRobotReadyToFire) {
-    this.controller = controller;
+    super(controller);
     this.maxLinearVelocity = maxLinearVelocity;
     this.maxAngularVelocity = maxAngularVelocity;
     this.isRobotReadyToFire = isRobotReadyToFire;

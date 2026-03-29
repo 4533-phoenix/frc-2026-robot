@@ -1,12 +1,15 @@
+// Copyright (c) 2026 FRC Team 4533 (Phoenix)
+// Derived from the AdvantageKit framework by Littleton Robotics
+//
+// Use of this source code is governed by a BSD
+// license that can be found in the LICENSE file
+// at the root directory of this project.
+
 package frc.robot.control.operator;
 
-public interface OperatorProfile {
-  /** Returns the rumble intensity for the left joystick. */
-  double getLeftRumble();
+import frc.robot.control.ControlProfile;
 
-  /** Returns the rumble intensity for the right joystick. */
-  double getRightRumble();
-
+public interface OperatorProfile extends ControlProfile {
   /** Returns true if the operator wants to deploy the arm. */
   boolean wantsArmDeployment();
 

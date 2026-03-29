@@ -1,3 +1,10 @@
+// Copyright (c) 2026 FRC Team 4533 (Phoenix)
+// Derived from the AdvantageKit framework by Littleton Robotics
+//
+// Use of this source code is governed by a BSD
+// license that can be found in the LICENSE file
+// at the root directory of this project.
+
 package frc.robot.control.operator;
 
 import edu.wpi.first.wpilibj.GenericHID;
@@ -10,13 +17,10 @@ public class Operator extends SubsystemBase {
   private final OperatorIO io;
   private final OperatorIOInputsAutoLogged inputs = new OperatorIOInputsAutoLogged();
   private final LoggedDashboardChooser<OperatorProfile> chooser;
-  private final GenericHID controller;
 
-  public Operator(
-      OperatorIO io, LoggedDashboardChooser<OperatorProfile> chooser, GenericHID controller) {
+  public Operator(OperatorIO io, LoggedDashboardChooser<OperatorProfile> chooser) {
     this.io = io;
     this.chooser = chooser;
-    this.controller = controller;
   }
 
   @Override
@@ -27,39 +31,10 @@ public class Operator extends SubsystemBase {
     Logger.processInputs("Operator", inputs);
     Logger.recordOutput("Operator/ActiveProfile", chooser.getSendableChooser().getSelected());
 
-    controller.setRumble(GenericHID.RumbleType.kLeftRumble, profile.getLeftRumble());
-    controller.setRumble(GenericHID.RumbleType.kRightRumble, profile.getRightRumble());
+    GenericHID hid = profile.getHID();
+    hid.setRumble(GenericHID.RumbleType.kLeftRumble, profile.getLeftRumble());
+    hid.setRumble(GenericHID.RumbleType.kRightRumble, profile.getRightRumble());
   }
-
-  // package frc.robot.control.operator;
-
-  // import org.littletonrobotics.junction.AutoLog;
-
-  // public interface OperatorIO {
-  //   @AutoLog
-  //   public static class OperatorIOInputs {
-  //     public boolean armDeployment;
-  //     public boolean armRetraction;
-  //     public boolean intake;
-  //     public boolean extake;
-  //     public boolean climb;
-  //     public boolean climberUp;
-  //     public boolean climberDown;
-  //   }
-
-  //   /** Updates the inputs based on the active profile. */
-  //   public default void updateInputs(OperatorIOInputs inputs, OperatorProfile profile) {
-  //     if (profile == null) return;
-
-  //     inputs.armDeployment = profile.wantsArmDeployment();
-  //     inputs.armRetraction = profile.wantsArmRetraction();
-  //     inputs.intake = profile.wantsIntake();
-  //     inputs.extake = profile.wantsExtake();
-  //     inputs.climb = profile.wantsClimb();
-  //     inputs.climberUp = profile.wantsClimberUp();
-  //     inputs.climberDown = profile.wantsClimberDown();
-  //   }
-  // }
 
   public Trigger wantsArmDeployment() {
     return new Trigger(() -> inputs.armDeployment);

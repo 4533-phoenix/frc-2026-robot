@@ -1,3 +1,10 @@
+// Copyright (c) 2026 FRC Team 4533 (Phoenix)
+// Derived from the AdvantageKit framework by Littleton Robotics
+//
+// Use of this source code is governed by a BSD
+// license that can be found in the LICENSE file
+// at the root directory of this project.
+
 package frc.robot.control.driver;
 
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -17,12 +24,10 @@ public class Driver extends SubsystemBase {
   private final DriverIO io;
   private final DriverIOInputsAutoLogged inputs = new DriverIOInputsAutoLogged();
   private final LoggedDashboardChooser<DriverProfile> chooser;
-  private final GenericHID controller;
 
-  public Driver(DriverIO io, LoggedDashboardChooser<DriverProfile> chooser, GenericHID controller) {
+  public Driver(DriverIO io, LoggedDashboardChooser<DriverProfile> chooser) {
     this.io = io;
     this.chooser = chooser;
-    this.controller = controller;
   }
 
   @Override
@@ -33,8 +38,9 @@ public class Driver extends SubsystemBase {
     Logger.processInputs("Driver", inputs);
     Logger.recordOutput("Driver/ActiveProfile", chooser.getSendableChooser().getSelected());
 
-    controller.setRumble(GenericHID.RumbleType.kLeftRumble, profile.getLeftRumble());
-    controller.setRumble(GenericHID.RumbleType.kRightRumble, profile.getRightRumble());
+    GenericHID hid = profile.getHID();
+    hid.setRumble(GenericHID.RumbleType.kLeftRumble, profile.getLeftRumble());
+    hid.setRumble(GenericHID.RumbleType.kRightRumble, profile.getRightRumble());
   }
 
   public Command createDriveCommand(Drive drive) {

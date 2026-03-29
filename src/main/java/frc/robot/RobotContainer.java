@@ -167,7 +167,7 @@ public class RobotContainer {
             DriveConstants.MAX_LINEAR_VELOCITY,
             DriveConstants.MAX_ANGULAR_VELOCITY,
             superstructure.isReadyToShoot()));
-    driver = new Driver(new DriverIO() {}, driverChooser, driverController.getHID());
+    driver = new Driver(new DriverIO() {}, driverChooser);
 
     // Create the operator
     CommandXboxController operatorController = new CommandXboxController(1);
@@ -175,7 +175,10 @@ public class RobotContainer {
         new LoggedDashboardChooser<>("Operator Profile");
     operatorChooser.addDefaultOption(
         "Default", new DefaultOperatorProfile(operatorController, superstructure.getClimbMode()));
-    operator = new Operator(new OperatorIO() {}, operatorChooser, operatorController.getHID());
+    operatorChooser.addOption(
+        "Solo Default",
+        new DefaultOperatorProfile(driverController, superstructure.getClimbMode()));
+    operator = new Operator(new OperatorIO() {}, operatorChooser);
 
     // Wire up the data flow from vision to drive and drive to vision
     drive.setIMUHighFreqConsumer(vision::broadcastIMUState);

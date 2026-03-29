@@ -600,7 +600,6 @@ public class Drive extends SubsystemBase implements MonitoredSubsystem {
    * Checks if the robot is aligned within a certain tolerance to a target angle.
    *
    * @param targetAngle The angle to check against.
-   * @param tolerance The allowed angular error.
    * @return True if within tolerance, false otherwise.
    */
   public boolean isAlignedWithTarget(Rotation2d targetAngle) {
