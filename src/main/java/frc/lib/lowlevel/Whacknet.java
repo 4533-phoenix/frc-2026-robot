@@ -231,7 +231,8 @@ public class Whacknet implements AutoCloseable {
    * @param frequency The frequency at which to broadcast.
    * @param supplier A supplier for obtaining robot telemetry data.
    */
-  public void registerTelemetryService(int port, Frequency frequency, Supplier<RobotTelemetry> supplier) {
+  public void registerTelemetryService(
+      int port, Frequency frequency, Supplier<RobotTelemetry> supplier) {
     if (notifier != null) {
       notifier.stop();
     }
