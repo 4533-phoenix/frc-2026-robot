@@ -225,7 +225,7 @@ public class Whacknet implements AutoCloseable {
 
   /**
    * Registers a service to broadcast robot telemetry at a specified frequency. Clears the old
-   * notifier if it exists.
+   * notifier if it exists. If the consumer is not null, it will be used to process the telemetry data.
    *
    * @param port The UDP port to broadcast on.
    * @param frequency The frequency at which to broadcast.
