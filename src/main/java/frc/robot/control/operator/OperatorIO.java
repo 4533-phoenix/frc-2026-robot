@@ -17,7 +17,7 @@ public interface OperatorIO {
   /** Updates the inputs based on the active profile. */
   public default void updateInputs(OperatorIOInputs inputs, OperatorProfile profile) {
     if (profile == null) return;
-    
+
     inputs.armDeployment = profile.wantsArmDeployment();
     inputs.armRetraction = profile.wantsArmRetraction();
     inputs.intake = profile.wantsIntake();

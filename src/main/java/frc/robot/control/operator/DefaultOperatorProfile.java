@@ -1,16 +1,13 @@
 package frc.robot.control.operator;
 
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import java.util.function.BooleanSupplier;
 
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-
 public class DefaultOperatorProfile implements OperatorProfile {
-    private final CommandXboxController controller;
+  private final CommandXboxController controller;
   private final BooleanSupplier isClimbMode;
 
-  public DefaultOperatorProfile(
-      CommandXboxController controller,
-      BooleanSupplier isClimbMode) {
+  public DefaultOperatorProfile(CommandXboxController controller, BooleanSupplier isClimbMode) {
     this.controller = controller;
     this.isClimbMode = isClimbMode;
   }

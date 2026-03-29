@@ -40,8 +40,11 @@ public class Driver extends SubsystemBase {
   public Command createDriveCommand(Drive drive) {
     return Commands.run(
             () -> {
-              ChassisSpeeds speeds = new ChassisSpeeds(
-        inputs.vxMetersPerSecond, inputs.vyMetersPerSecond, inputs.omegaRadiansPerSecond);
+              ChassisSpeeds speeds =
+                  new ChassisSpeeds(
+                      inputs.vxMetersPerSecond,
+                      inputs.vyMetersPerSecond,
+                      inputs.omegaRadiansPerSecond);
 
               boolean isFlipped = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red;
               Rotation2d rot =

@@ -3,7 +3,6 @@ package frc.robot.control.operator;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
@@ -32,35 +31,35 @@ public class Operator extends SubsystemBase {
     controller.setRumble(GenericHID.RumbleType.kRightRumble, profile.getRightRumble());
   }
 
-// package frc.robot.control.operator;
+  // package frc.robot.control.operator;
 
-// import org.littletonrobotics.junction.AutoLog;
+  // import org.littletonrobotics.junction.AutoLog;
 
-// public interface OperatorIO {
-//   @AutoLog
-//   public static class OperatorIOInputs {
-//     public boolean armDeployment;
-//     public boolean armRetraction;
-//     public boolean intake;
-//     public boolean extake;
-//     public boolean climb;
-//     public boolean climberUp;
-//     public boolean climberDown;
-//   }
+  // public interface OperatorIO {
+  //   @AutoLog
+  //   public static class OperatorIOInputs {
+  //     public boolean armDeployment;
+  //     public boolean armRetraction;
+  //     public boolean intake;
+  //     public boolean extake;
+  //     public boolean climb;
+  //     public boolean climberUp;
+  //     public boolean climberDown;
+  //   }
 
-//   /** Updates the inputs based on the active profile. */
-//   public default void updateInputs(OperatorIOInputs inputs, OperatorProfile profile) {
-//     if (profile == null) return;
-    
-//     inputs.armDeployment = profile.wantsArmDeployment();
-//     inputs.armRetraction = profile.wantsArmRetraction();
-//     inputs.intake = profile.wantsIntake();
-//     inputs.extake = profile.wantsExtake();
-//     inputs.climb = profile.wantsClimb();
-//     inputs.climberUp = profile.wantsClimberUp();
-//     inputs.climberDown = profile.wantsClimberDown();
-//   }
-// }
+  //   /** Updates the inputs based on the active profile. */
+  //   public default void updateInputs(OperatorIOInputs inputs, OperatorProfile profile) {
+  //     if (profile == null) return;
+
+  //     inputs.armDeployment = profile.wantsArmDeployment();
+  //     inputs.armRetraction = profile.wantsArmRetraction();
+  //     inputs.intake = profile.wantsIntake();
+  //     inputs.extake = profile.wantsExtake();
+  //     inputs.climb = profile.wantsClimb();
+  //     inputs.climberUp = profile.wantsClimberUp();
+  //     inputs.climberDown = profile.wantsClimberDown();
+  //   }
+  // }
 
   public Trigger wantsArmDeployment() {
     return new Trigger(() -> inputs.armDeployment);

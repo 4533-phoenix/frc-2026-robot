@@ -174,8 +174,7 @@ public class RobotContainer {
     LoggedDashboardChooser<OperatorProfile> operatorChooser =
         new LoggedDashboardChooser<>("Operator Profile");
     operatorChooser.addDefaultOption(
-        "Default",
-        new DefaultOperatorProfile(operatorController, superstructure.getClimbMode()));
+        "Default", new DefaultOperatorProfile(operatorController, superstructure.getClimbMode()));
     operator = new Operator(new OperatorIO() {}, operatorChooser, operatorController.getHID());
 
     // Wire up the data flow from vision to drive and drive to vision
@@ -321,7 +320,10 @@ public class RobotContainer {
 
   private void configureOperatorButtonBindings() {
     // If left or right bumper is pressed while the climb is down, deploy the intake arm
-    operator.wantsArmDeployment().and(superstructure.canDeployArm()).onTrue(superstructure.deployArm());
+    operator
+        .wantsArmDeployment()
+        .and(superstructure.canDeployArm())
+        .onTrue(superstructure.deployArm());
     operator.wantsIntake().and(superstructure.canRunIntake()).whileTrue(superstructure.intake());
     operator.wantsExtake().and(superstructure.canRunIntake()).whileTrue(superstructure.extake());
 
@@ -333,7 +335,10 @@ public class RobotContainer {
 
     // If climb mode is on and the arm is retracted
     operator.wantsClimberUp().and(superstructure.canClimb()).whileTrue(superstructure.raiseClimb());
-    operator.wantsClimberDown().and(superstructure.canClimb()).whileTrue(superstructure.lowerClimb());
+    operator
+        .wantsClimberDown()
+        .and(superstructure.canClimb())
+        .whileTrue(superstructure.lowerClimb());
   }
 
   /** Sets up the default commands for subsystems. */
