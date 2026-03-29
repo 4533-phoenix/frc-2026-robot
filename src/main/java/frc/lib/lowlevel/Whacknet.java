@@ -241,15 +241,17 @@ public class Whacknet implements AutoCloseable {
         new Notifier(
             () -> {
               RobotTelemetry data = supplier.get();
-              this.broadcastTelemetry(
-                  data.timestampUs(),
-                  data.roll().in(Radians),
-                  data.pitch().in(Radians),
-                  data.yaw().in(Radians),
-                  data.rollVel().in(RadiansPerSecond),
-                  data.pitchVel().in(RadiansPerSecond),
-                  data.yawVel().in(RadiansPerSecond),
-                  port);
+              if (data != null) {
+                this.broadcastTelemetry(
+                    data.timestampUs(),
+                    data.roll().in(Radians),
+                    data.pitch().in(Radians),
+                    data.yaw().in(Radians),
+                    data.rollVel().in(RadiansPerSecond),
+                    data.pitchVel().in(RadiansPerSecond),
+                    data.yawVel().in(RadiansPerSecond),
+                    port);
+              }
             });
     notifier.startPeriodic(1.0 / frequency.in(Hertz));
   }
