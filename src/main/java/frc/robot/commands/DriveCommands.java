@@ -10,16 +10,12 @@ package frc.robot.commands;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -28,7 +24,6 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 /**
@@ -46,67 +41,6 @@ public class DriveCommands {
     return Commands.startEnd(
         () -> drive.setHeadingOverrideSupplier(targetSupplier),
         () -> drive.setHeadingOverrideSupplier(null));
-  }
-
-  /**
-   * Processes joystick inputs to determine linear velocity, applying deadband and cubing inputs for
-   * fine control.
-   */
-  private static Translation2d getLinearVelocityFromJoysticks(double x, double y) {
-    double norm = Math.hypot(x, y);
-    if (norm < JOYSTICK_DEADBAND) return Translation2d.kZero;
-
-    double deadbanded = MathUtil.applyDeadband(norm, JOYSTICK_DEADBAND);
-    double cubed = deadbanded * deadbanded * deadbanded;
-
-    return new Translation2d(x, y).times(cubed / norm);
-  }
-
-  /**
-   * Field relative drive command using two joysticks for linear and angular control.
-   *
-   * @param drive The drive subsystem.
-   * @param xSupplier Supplier for forward/backward input (-1.0 to 1.0).
-   * @param ySupplier Supplier for strafe left/right input (-1.0 to 1.0).
-   * @param omegaSupplier Supplier for rotation input (-1.0 to 1.0).
-   * @return A command to run the drivetrain based on joystick inputs.
-   */
-  public static Command joystickDrive(
-      Drive drive,
-      DoubleSupplier xSupplier,
-      DoubleSupplier ySupplier,
-      DoubleSupplier omegaSupplier) {
-    return Commands.run(
-        () -> {
-          // Get linear velocity
-          Translation2d linearVelocity =
-              getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
-
-          // Apply rotation deadband
-          double omega = MathUtil.applyDeadband(omegaSupplier.getAsDouble(), JOYSTICK_DEADBAND);
-
-          // Cube rotation value for exponential feel with fine low-speed control
-          omega = Math.copySign(omega * omega * omega, omega);
-
-          // Convert to field relative speeds
-          ChassisSpeeds speeds =
-              new ChassisSpeeds(
-                  drive.getMaxLinearVelocity().times(linearVelocity.getX()),
-                  drive.getMaxLinearVelocity().times(linearVelocity.getY()),
-                  drive.getMaxAngularVelocity().times(omega));
-
-          // Flip controls if on the Red alliance
-          boolean isFlipped =
-              DriverStation.getAlliance().isPresent()
-                  && DriverStation.getAlliance().get() == Alliance.Red;
-          drive.runVelocity(
-              ChassisSpeeds.fromFieldRelativeSpeeds(
-                  speeds,
-                  isFlipped
-                      ? drive.getRotation().plus(new Rotation2d(Math.PI))
-                      : drive.getRotation()));
-        },
-        drive);
   }
 
   /**

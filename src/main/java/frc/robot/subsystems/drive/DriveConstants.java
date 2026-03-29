@@ -236,10 +236,10 @@ public class DriveConstants {
   public static final double ANGLE_KD = 0.5;
 
   /** Maximum angular velocity for the rotation motion profile in radians per second. */
-  public static final AngularVelocity ANGLE_MAX_VELOCITY = RadiansPerSecond.of(16.0);
+  public static final AngularVelocity MAX_ANGULAR_VELOCITY = RadiansPerSecond.of(16.0);
 
   /** Maximum angular acceleration for the rotation motion profile in radians per second squared. */
-  public static final AngularAcceleration ANGLE_MAX_ACCELERATION =
+  public static final AngularAcceleration MAX_ANGULAR_ACCELERATION =
       RadiansPerSecondPerSecond.of(40.0);
 
   // Feedforward characterization configuration

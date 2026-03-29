@@ -14,17 +14,25 @@ import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.lib.util.FieldUtil;
 import frc.robot.commands.DriveCommands;
+import frc.robot.control.driver.DefaultDriverProfile;
+import frc.robot.control.driver.Driver;
+import frc.robot.control.driver.DriverIO;
+import frc.robot.control.driver.DriverProfile;
+import frc.robot.control.operator.DefaultOperatorProfile;
+import frc.robot.control.operator.Operator;
+import frc.robot.control.operator.OperatorIO;
+import frc.robot.control.operator.OperatorProfile;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.climb.ClimbIO;
 import frc.robot.subsystems.climb.ClimbIOSim;
 import frc.robot.subsystems.climb.ClimbIOSpark;
 import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.drive.DriveConstants;
 import frc.robot.subsystems.drive.gyro.GyroIO;
 import frc.robot.subsystems.drive.gyro.GyroIODual;
 import frc.robot.subsystems.drive.module.ModuleIO;
@@ -75,11 +83,9 @@ public class RobotContainer {
   // Superstructure
   private final Superstructure superstructure;
 
-  /** Controller for the driver. */
-  public final CommandXboxController driverController = new CommandXboxController(0);
-
-  /** Controller for the operator. */
-  public final CommandXboxController operatorController = new CommandXboxController(1);
+  // Control systems
+  private final Driver driver;
+  private final Operator operator;
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -149,6 +155,28 @@ public class RobotContainer {
 
     // Create the superstructure, which coordinates between subsystems
     superstructure = new Superstructure(drive, climb, arm, spinner, shooter, indexer, vision, pdh);
+
+    // Create the driver
+    CommandXboxController driverController = new CommandXboxController(0);
+    LoggedDashboardChooser<DriverProfile> driverChooser =
+        new LoggedDashboardChooser<>("Driver Profile");
+    driverChooser.addDefaultOption(
+        "Default",
+        new DefaultDriverProfile(
+            driverController,
+            DriveConstants.MAX_LINEAR_VELOCITY,
+            DriveConstants.MAX_ANGULAR_VELOCITY,
+            superstructure.isReadyToShoot()));
+    driver = new Driver(new DriverIO() {}, driverChooser, driverController.getHID());
+
+    // Create the operator
+    CommandXboxController operatorController = new CommandXboxController(1);
+    LoggedDashboardChooser<OperatorProfile> operatorChooser =
+        new LoggedDashboardChooser<>("Operator Profile");
+    operatorChooser.addDefaultOption(
+        "Default",
+        new DefaultOperatorProfile(operatorController, superstructure.getClimbMode()));
+    operator = new Operator(new OperatorIO() {}, operatorChooser, operatorController.getHID());
 
     // Wire up the data flow from vision to drive and drive to vision
     drive.setIMUHighFreqConsumer(vision::broadcastIMUState);
@@ -259,36 +287,28 @@ public class RobotContainer {
    */
   private void configureDriverButtonBindings() {
     // When left trigger held and shooter has a target, rotate to aim at the target
-    driverController
-        .leftTrigger()
+    driver
+        .wantsAim()
         .and(superstructure::hasTarget)
         .whileTrue(DriveCommands.headingAim(drive, superstructure::getTargetRotation));
 
     // Spin up the motor if we are practicing not in match mode
-    driverController
-        .leftTrigger()
+    driver
+        .wantsAim()
         .and(superstructure::hasTarget)
-        .and(() -> !Util.isMatchMode())
+        .and(() -> Util.isMatchMode())
         .whileTrue(shooter.runHeld());
 
     // When right trigger held, shooter is ready, and robot is aimed, run the indexer
-    driverController
-        .rightTrigger()
-        .and(driverController.leftTrigger())
+    driver
+        .wantsShoot()
+        .and(driver.wantsAim())
         .and(superstructure.isReadyToShoot())
         .whileTrue(indexer.run());
 
-    driverController
-        .leftTrigger()
-        .and(superstructure.isReadyToShoot())
-        .whileTrue(
-            Commands.runEnd(
-                () -> driverController.getHID().setRumble(RumbleType.kBothRumble, 0.5),
-                () -> driverController.getHID().setRumble(RumbleType.kBothRumble, 0)));
-
     // When B is pressed, reset the current pose to the alliance origin facing away
-    driverController
-        .b()
+    driver
+        .wantsReset()
         .and(() -> !Util.isMatchMode() || Util.isMatchModeOverridden())
         .onTrue(
             Commands.runOnce(
@@ -301,56 +321,25 @@ public class RobotContainer {
 
   private void configureOperatorButtonBindings() {
     // If left or right bumper is pressed while the climb is down, deploy the intake arm
-    operatorController
-        .leftBumper()
-        .or(operatorController.rightBumper())
-        .and(superstructure.canDeployArm())
-        .onTrue(superstructure.deployArm());
-    operatorController
-        .leftBumper()
-        .and(superstructure.canRunIntake())
-        .whileTrue(superstructure.intake());
-    operatorController
-        .rightBumper()
-        .and(superstructure.canRunIntake())
-        .whileTrue(superstructure.extake());
+    operator.wantsArmDeployment().and(superstructure.canDeployArm()).onTrue(superstructure.deployArm());
+    operator.wantsIntake().and(superstructure.canRunIntake()).whileTrue(superstructure.intake());
+    operator.wantsExtake().and(superstructure.canRunIntake()).whileTrue(superstructure.extake());
 
-    // If right dpad is pressed, retract intake.
-    operatorController.povRight().onTrue(superstructure.retractArm());
+    // Retract intake
+    operator.wantsArmRetraction().onTrue(superstructure.retractArm());
 
-    // If left dpad is pressed, toggle climb mode. If climb mode is on, also retract the arm
-    operatorController.povLeft().onTrue(Commands.runOnce(superstructure::toggleClimbMode));
+    // Toggle climb mode. If climb mode is on, also retract the arm
+    operator.wantsClimb().onTrue(Commands.runOnce(superstructure::toggleClimbMode));
 
-    // If climb mode is on and the arm is retracted, up dpad raises the climb and down dpad lowers
-    operatorController
-        .povUp()
-        .and(superstructure.canClimb())
-        .whileTrue(superstructure.raiseClimb());
-    operatorController
-        .povDown()
-        .and(superstructure.canClimb())
-        .whileTrue(superstructure.lowerClimb());
-
-    // Rumble operator controller when climb mode is engaged
-    superstructure
-        .getClimbMode()
-        .whileTrue(
-            Commands.runEnd(
-                () -> operatorController.getHID().setRumble(RumbleType.kRightRumble, 0.25),
-                () -> operatorController.getHID().setRumble(RumbleType.kBothRumble, 0),
-                climb));
+    // If climb mode is on and the arm is retracted
+    operator.wantsClimberUp().and(superstructure.canClimb()).whileTrue(superstructure.raiseClimb());
+    operator.wantsClimberDown().and(superstructure.canClimb()).whileTrue(superstructure.lowerClimb());
   }
 
   /** Sets up the default commands for subsystems. */
   public void configureDefaultCommands() {
     // By default, drive with the joysticks and ensure the goal is DRIVE
-    drive.setDefaultCommand(
-        DriveCommands.joystickDrive(
-                drive,
-                () -> -driverController.getLeftY(),
-                () -> -driverController.getLeftX(),
-                () -> -driverController.getRightX())
-            .beforeStarting(() -> drive.setHeadingOverrideSupplier(null)));
+    drive.setDefaultCommand(driver.createDriveCommand(drive));
   }
 
   /**

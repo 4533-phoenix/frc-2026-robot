@@ -11,3 +11,5 @@
 * Move shooter kinematics map to constants
 * Anti skew swerve drive logic (254 shared something like this)
 * Figure out when the hubs *actually* get disabled
+* Reverify names for everything (especially intake/spinner/arm)
+* Create new profiles for people
