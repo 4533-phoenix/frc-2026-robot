@@ -235,6 +235,7 @@ public class Whacknet implements AutoCloseable {
       int port, Frequency frequency, Supplier<RobotTelemetry> supplier) {
     if (notifier != null) {
       notifier.stop();
+      notifier.close();
     }
 
     notifier =
