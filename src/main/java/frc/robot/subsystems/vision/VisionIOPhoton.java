@@ -153,9 +153,9 @@ public class VisionIOPhoton implements VisionIO {
 
   @SuppressWarnings("unused")
   @Override
-  public void broadcastImuState(IMUState imuState) {
+  public void broadcastTelemetry(IMUState imuState) {
     if (whacknet != null && imuState != null && BROADCAST_HEADING) {
-      whacknet.broadcast(
+      whacknet.broadcastTelemetry(
           (long) (imuState.timestampSec() * 1.0e6),
           imuState.rollRad(),
           imuState.pitchRad(),

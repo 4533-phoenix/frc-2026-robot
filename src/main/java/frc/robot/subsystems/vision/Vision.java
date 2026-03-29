@@ -105,8 +105,8 @@ public class Vision extends SubsystemBase implements MonitoredSubsystem {
    *
    * @param imuState The current 6-DOF IMU state.
    */
-  public void broadcastIMUState(IMUState imuState) {
-    io.broadcastImuState(imuState);
+  public void broadcastTelemetry(IMUState imuState) {
+    io.broadcastTelemetry(imuState);
   }
 
   /**

@@ -7,11 +7,17 @@
 
 package frc.lib.lowlevel;
 
+import static edu.wpi.first.units.Units.*;
+
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Notifier;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
@@ -20,6 +26,7 @@ import java.nio.ByteOrder;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import java.util.function.ObjIntConsumer;
+import java.util.function.Supplier;
 
 /**
  * Pure Java implementation of the Whacknet UDP Vision Protocol.
@@ -29,6 +36,16 @@ import java.util.function.ObjIntConsumer;
  * Garbage Collector pressure during matches.
  */
 public class Whacknet implements AutoCloseable {
+  /** A record representing the robot's telemetry data. */
+  public record RobotTelemetry(
+      long timestampUs,
+      Angle roll,
+      Angle pitch,
+      Angle yaw,
+      AngularVelocity rollVel,
+      AngularVelocity pitchVel,
+      AngularVelocity yawVel) {}
+
   private static Whacknet instance;
 
   // Constants
@@ -63,6 +80,7 @@ public class Whacknet implements AutoCloseable {
   private Thread receiverThread;
   private int currentPacketCount = 0;
   private boolean isRunning = false;
+  private Notifier notifier;
 
   /**
    * Returns the singleton instance of Whacknet.
@@ -167,7 +185,7 @@ public class Whacknet implements AutoCloseable {
    * @param yawVel Yaw velocity in radians per second.
    * @param port The UDP port to broadcast on.
    */
-  public void broadcast(
+  public void broadcastTelemetry(
       long timestamp,
       double roll,
       double pitch,
@@ -203,6 +221,36 @@ public class Whacknet implements AutoCloseable {
     } catch (IOException e) {
       DriverStation.reportError("[Whacknet-Java] Broadcast failed: " + e.getMessage(), false);
     }
+  }
+
+  /**
+   * Registers a service to broadcast robot telemetry at a specified frequency. Clears the old
+   * notifier if it exists.
+   *
+   * @param port The UDP port to broadcast on.
+   * @param frequency The frequency at which to broadcast.
+   * @param supplier A supplier for obtaining robot telemetry data.
+   */
+  public void registerService(int port, Frequency frequency, Supplier<RobotTelemetry> supplier) {
+    if (notifier != null) {
+      notifier.stop();
+    }
+
+    notifier =
+        new Notifier(
+            () -> {
+              RobotTelemetry data = supplier.get();
+              this.broadcastTelemetry(
+                  data.timestampUs(),
+                  data.roll().in(Radians),
+                  data.pitch().in(Radians),
+                  data.yaw().in(Radians),
+                  data.rollVel().in(RadiansPerSecond),
+                  data.pitchVel().in(RadiansPerSecond),
+                  data.yawVel().in(RadiansPerSecond),
+                  port);
+            });
+    notifier.startPeriodic(1.0 / frequency.in(Hertz));
   }
 
   /**

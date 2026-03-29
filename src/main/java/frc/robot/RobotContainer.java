@@ -192,7 +192,7 @@ public class RobotContainer {
     operator = new Operator(new OperatorIO() {}, operatorChooser);
 
     // Wire up the data flow from vision to drive and drive to vision
-    drive.setIMUHighFreqConsumer(vision::broadcastIMUState);
+    drive.setIMUHighFreqConsumer(vision::broadcastTelemetry);
     vision.setVisionMeasurementConsumer(drive::addVisionMeasurement);
 
     // Register auto commands for PathPlanner

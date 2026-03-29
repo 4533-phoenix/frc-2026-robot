@@ -38,5 +38,5 @@ public interface VisionIO {
    *
    * @param imuState The latest snapshot of the robot's IMU.
    */
-  public default void broadcastImuState(IMUState imuState) {}
+  public default void broadcastTelemetry(IMUState imuState) {}
 }
