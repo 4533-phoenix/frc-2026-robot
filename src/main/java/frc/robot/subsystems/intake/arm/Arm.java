@@ -14,8 +14,8 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.lib.monitors.MonitoredSubsystem;
-import frc.lib.monitors.SparkHealthMonitor;
+import frc.lib.monitor.Monitored;
+import frc.lib.monitor.checkers.SparkMonitor;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -25,10 +25,10 @@ import org.littletonrobotics.junction.Logger;
  * <p>Responsible for deploying/retracting the intake arm and controlling the rollers to pull in or
  * push out game pieces.
  */
-public class Arm extends SubsystemBase implements MonitoredSubsystem {
+public class Arm extends SubsystemBase implements Monitored {
   private final ArmIO io;
   private final ArmIOInputsAutoLogged inputs = new ArmIOInputsAutoLogged();
-  private final SparkHealthMonitor healthMonitor = new SparkHealthMonitor("Intake Arm");
+  private final SparkMonitor healthMonitor = new SparkMonitor("Intake Arm");
 
   /** High-level goals for the intake arm. */
   public enum Goal {

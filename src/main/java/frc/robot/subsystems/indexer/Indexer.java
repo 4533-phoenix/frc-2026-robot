@@ -12,8 +12,8 @@ import static frc.robot.subsystems.indexer.IndexerConstants.*;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.lib.monitors.MonitoredSubsystem;
-import frc.lib.monitors.SparkHealthMonitor;
+import frc.lib.monitor.Monitored;
+import frc.lib.monitor.checkers.SparkMonitor;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -23,10 +23,10 @@ import org.littletonrobotics.junction.Logger;
  * <p>Responsible for controlling the speed of the motor driving the indexer to transfer game pieces
  * from the intake to the shooter.
  */
-public class Indexer extends SubsystemBase implements MonitoredSubsystem {
+public class Indexer extends SubsystemBase implements Monitored {
   private final IndexerIO io;
   private final IndexerIOInputsAutoLogged inputs = new IndexerIOInputsAutoLogged();
-  private final SparkHealthMonitor healthMonitor = new SparkHealthMonitor("Indexer");
+  private final SparkMonitor healthMonitor = new SparkMonitor("Indexer");
 
   /** High-level goals for the indexer. */
   public enum Goal {
