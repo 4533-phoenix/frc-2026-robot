@@ -15,4 +15,5 @@
 * Create new profiles for people
 * Setpoint gen
 * Close notifier when closing whacknet
-
+* Dont use command based controllers anymore
+* Steal virtual subsystem, or like prerunner for vision and controls?
