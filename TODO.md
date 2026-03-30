@@ -14,3 +14,4 @@
 * Reverify names for everything (especially intake/spinner/arm)
 * Create new profiles for people
 * Document services/subsystems architecture
+* Auto registering montiored?
