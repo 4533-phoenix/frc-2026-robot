@@ -14,3 +14,5 @@
 * Reverify names for everything (especially intake/spinner/arm)
 * Create new profiles for people
 * Setpoint gen
+* Close notifier when closing whacknet
+
