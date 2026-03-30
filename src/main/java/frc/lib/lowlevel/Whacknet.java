@@ -305,7 +305,7 @@ public class Whacknet implements AutoCloseable {
       if (receiverThread != null && receiverThread.isAlive()) {
         receiverThread.interrupt();
       }
-      
+
       if (notifier != null) {
         notifier.stop();
         notifier.close();
