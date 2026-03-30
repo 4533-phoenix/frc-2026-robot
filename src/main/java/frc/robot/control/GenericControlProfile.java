@@ -8,25 +8,25 @@
 package frc.robot.control;
 
 import edu.wpi.first.wpilibj.GenericHID;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj.XboxController;
 
 /** Abstract base class for control profiles using a CommandXboxController. */
 public abstract class GenericControlProfile implements ControlProfile {
   /** The Xbox controller used for input. */
-  protected final CommandXboxController controller;
+  protected final XboxController controller;
 
   /**
    * Constructs a GenericControlProfile.
    *
    * @param controller The Xbox controller used for input.
    */
-  public GenericControlProfile(CommandXboxController controller) {
+  public GenericControlProfile(XboxController controller) {
     this.controller = controller;
   }
 
   @Override
   public GenericHID getHID() {
-    return controller.getHID();
+    return controller;
   }
 
   @Override

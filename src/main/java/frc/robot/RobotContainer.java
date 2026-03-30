@@ -14,9 +14,9 @@ import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.lib.util.FieldUtil;
 import frc.robot.commands.DriveCommands;
 import frc.robot.control.driver.DefaultDriverProfile;
@@ -158,7 +158,7 @@ public class RobotContainer {
     superstructure = new Superstructure(drive, climb, arm, spinner, shooter, indexer, vision, pdh);
 
     // Create the driver
-    CommandXboxController driverController = new CommandXboxController(0);
+    XboxController driverController = new XboxController(0);
     LoggedDashboardChooser<DriverProfile> driverChooser =
         new LoggedDashboardChooser<>("Driver Profile");
     driverChooser.addDefaultOption(
@@ -181,7 +181,7 @@ public class RobotContainer {
     driver = new Driver(new DriverIO() {}, driverChooser);
 
     // Create the operator
-    CommandXboxController operatorController = new CommandXboxController(1);
+    XboxController operatorController = new XboxController(1);
     LoggedDashboardChooser<OperatorProfile> operatorChooser =
         new LoggedDashboardChooser<>("Operator Profile");
     operatorChooser.addDefaultOption(

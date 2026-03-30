@@ -11,7 +11,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.control.GenericControlProfile;
 import frc.robot.subsystems.drive.DriveConstants;
 import java.util.function.BooleanSupplier;
@@ -31,7 +31,7 @@ public class DefaultDriverProfile extends GenericControlProfile implements Drive
    * @param isRobotReadyToFire BooleanSupplier indicating if the robot is ready to fire.
    */
   public DefaultDriverProfile(
-      CommandXboxController controller,
+      XboxController controller,
       LinearVelocity maxLinearVelocity,
       AngularVelocity maxAngularVelocity,
       BooleanSupplier isRobotReadyToFire) {
@@ -73,16 +73,16 @@ public class DefaultDriverProfile extends GenericControlProfile implements Drive
 
   @Override
   public boolean wantsAim() {
-    return controller.leftTrigger().getAsBoolean();
+    return controller.getLeftTriggerAxis() > 0.5;
   }
 
   @Override
   public boolean wantsShoot() {
-    return controller.rightTrigger().getAsBoolean();
+    return controller.getRightTriggerAxis() > 0.5;
   }
 
   @Override
   public boolean wantsReset() {
-    return controller.start().getAsBoolean();
+    return controller.getStartButton();
   }
 }

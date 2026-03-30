@@ -7,7 +7,7 @@
 
 package frc.robot.control.operator;
 
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.control.GenericControlProfile;
 import java.util.function.BooleanSupplier;
 
@@ -21,7 +21,7 @@ public class DefaultOperatorProfile extends GenericControlProfile implements Ope
    * @param controller The Xbox controller used for input.
    * @param isClimbMode BooleanSupplier indicating if climb mode is active.
    */
-  public DefaultOperatorProfile(CommandXboxController controller, BooleanSupplier isClimbMode) {
+  public DefaultOperatorProfile(XboxController controller, BooleanSupplier isClimbMode) {
     super(controller);
     this.isClimbMode = isClimbMode;
   }
@@ -41,31 +41,31 @@ public class DefaultOperatorProfile extends GenericControlProfile implements Ope
 
   @Override
   public boolean wantsArmRetraction() {
-    return controller.povRight().getAsBoolean();
+    return controller.getPOV() == 90;
   }
 
   @Override
   public boolean wantsIntake() {
-    return controller.leftBumper().getAsBoolean();
+    return controller.getLeftBumperButton();
   }
 
   @Override
   public boolean wantsExtake() {
-    return controller.rightBumper().getAsBoolean();
+    return controller.getRightBumperButton();
   }
 
   @Override
   public boolean wantsClimb() {
-    return controller.povLeft().getAsBoolean();
+    return controller.getPOV() == 270;
   }
 
   @Override
   public boolean wantsClimberUp() {
-    return controller.povUp().getAsBoolean();
+    return controller.getPOV() == 0;
   }
 
   @Override
   public boolean wantsClimberDown() {
-    return controller.povDown().getAsBoolean();
+    return controller.getPOV() == 180;
   }
 }
