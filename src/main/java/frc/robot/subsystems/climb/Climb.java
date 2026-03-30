@@ -13,8 +13,8 @@ import static frc.robot.subsystems.climb.ClimbConstants.*;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.lib.monitors.MonitoredSubsystem;
-import frc.lib.monitors.SparkHealthMonitor;
+import frc.lib.monitor.Monitored;
+import frc.lib.monitor.checkers.SparkMonitor;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -24,10 +24,10 @@ import org.littletonrobotics.junction.Logger;
  * <p>Handles controlling the lift motor voltage and monitoring limit switches to prevent
  * over-extension or damage to the mechanism.
  */
-public class Climb extends SubsystemBase implements MonitoredSubsystem {
+public class Climb extends SubsystemBase implements Monitored {
   private final ClimbIO io;
   private final ClimbIOInputsAutoLogged inputs = new ClimbIOInputsAutoLogged();
-  private final SparkHealthMonitor monitor = new SparkHealthMonitor("Climb");
+  private final SparkMonitor monitor = new SparkMonitor("Climb");
 
   /** High-level goals for the climb subsystem. */
   public enum Goal {

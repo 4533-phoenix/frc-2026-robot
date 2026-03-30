@@ -19,19 +19,19 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.WritableTrigger;
-import frc.lib.monitors.MonitoredSubsystem;
+import frc.lib.monitor.Monitored;
 import frc.lib.util.FieldUtil;
+import frc.robot.services.pdh.PDH;
+import frc.robot.services.vision.Vision;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveConstants;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.intake.arm.Arm;
 import frc.robot.subsystems.intake.spinner.Spinner;
-import frc.robot.subsystems.pdh.PDH;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.shooter.ShooterKinematics;
-import frc.robot.subsystems.vision.Vision;
 import frc.robot.util.Aiming;
 import frc.robot.util.Aiming.AimingResult;
 import frc.robot.util.Util;
@@ -76,7 +76,7 @@ public class Superstructure extends SubsystemBase {
   private final WritableTrigger climbMode = new WritableTrigger(false);
   private AimingResult currentAimingResult = Aiming.NO_TARGET;
   private boolean targetCanReceive = false;
-  private final MonitoredSubsystem[] subsystems;
+  private final Monitored[] monitors;
 
   /**
    * Constructs a new Superstructure.
@@ -108,7 +108,7 @@ public class Superstructure extends SubsystemBase {
     this.shooter = shooter;
 
     // We keep an array of all subsystems for easy health monitoring and fault clearing
-    this.subsystems = new MonitoredSubsystem[] {climb, arm, spinner, shooter, indexer, vision, pdh};
+    this.monitors = new Monitored[] {climb, arm, spinner, shooter, indexer, vision, pdh};
 
     this.hubAiming =
         Aiming.hubAimingSupplier(
@@ -304,8 +304,8 @@ public class Superstructure extends SubsystemBase {
    */
   @AutoLogOutput(key = "Superstructure/IsHealthy")
   public boolean isHealthy() {
-    for (MonitoredSubsystem subsystem : subsystems) {
-      if (!subsystem.isHealthy()) {
+    for (Monitored monitor : monitors) {
+      if (!monitor.isHealthy()) {
         return false;
       }
     }
@@ -314,8 +314,8 @@ public class Superstructure extends SubsystemBase {
 
   /** Clears all faults and warnings from all subsystems. */
   public void clearFaults() {
-    for (MonitoredSubsystem subsystem : subsystems) {
-      subsystem.clearFaults();
+    for (Monitored monitor : monitors) {
+      monitor.clearFaults();
     }
   }
 }

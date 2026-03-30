@@ -18,7 +18,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.*;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-import frc.lib.monitors.SparkHealthMonitor;
+import frc.lib.monitor.checkers.SparkMonitor;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -33,8 +33,8 @@ public class Module {
   private final int index;
   private final String name;
 
-  private final SparkHealthMonitor driveMonitor;
-  private final SparkHealthMonitor turnMonitor;
+  private final SparkMonitor driveMonitor;
+  private final SparkMonitor turnMonitor;
   private final Alert turnEncoderDisconnectedAlert;
 
   private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
@@ -50,8 +50,8 @@ public class Module {
     this.index = index;
     this.name = MODULE_CONFIGS[index].name();
 
-    driveMonitor = new SparkHealthMonitor(name + "Drive");
-    turnMonitor = new SparkHealthMonitor(name + "Turn");
+    driveMonitor = new SparkMonitor(name + "Drive");
+    turnMonitor = new SparkMonitor(name + "Turn");
     turnEncoderDisconnectedAlert = new Alert(name + " turn encoder disconnected", AlertType.kError);
   }
 
