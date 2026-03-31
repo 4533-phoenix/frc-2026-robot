@@ -22,7 +22,7 @@ import edu.wpi.first.units.measure.Time;
 import java.util.Map;
 
 /**
- * Hardware and tuning constants for the vision subsystem.
+ * Hardware and tuning constants for the vision service.
  *
  * <p>Contains configurations for cameras, including their positions relative to the robot,
  * field-of-view limits, and maximum detection ranges.

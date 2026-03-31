@@ -12,7 +12,7 @@ import frc.robot.services.vision.Vision.VisionObservation;
 import org.littletonrobotics.junction.AutoLog;
 
 /**
- * Interface for the vision subsystem input/output abstraction.
+ * Interface for the vision service input/output abstraction.
  *
  * <p>This interface allows for interchangeable vision hardware (e.g., Limelight, PhotonVision) and
  * comprehensive simulation support by standardizing how pose data is retrieved and how robot state

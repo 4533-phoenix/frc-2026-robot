@@ -14,7 +14,7 @@ import frc.lib.lowlevel.Whacknet;
 import frc.robot.services.vision.Vision.VisionObservation;
 
 /**
- * Real IO implementation for the vision subsystem using the 'Whacknet' JNI wrapper.
+ * Real IO implementation for the vision service using Whacknet.
  *
  * <p>This implementation communicates with a high-performance native vision pipeline to retrieve
  * AprilTag pose estimations. It maps raw data from a shared direct byte buffer into WPILib geometry

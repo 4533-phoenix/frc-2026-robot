@@ -25,7 +25,7 @@ import java.util.Collections;
 import org.littletonrobotics.junction.Logger;
 
 /**
- * Subsystem for processing vision data, specifically from AprilTag cameras.
+ * Service for processing vision data, specifically from AprilTag cameras.
  *
  * <p>Receives raw camera detections, filters them based on quality (tag count), and feeds valid
  * measurements into the Drive subsystem's pose estimator to refine the robot's field position. Also
@@ -73,7 +73,7 @@ public class Vision extends BaseService implements Monitored {
   private final Matrix<N3, N1> stdVector = VecBuilder.fill(0, 0, 0);
 
   /**
-   * Creates a new Vision subsystem.
+   * Creates a new Vision service.
    *
    * @param io The abstraction layer for the vision hardware.
    */
@@ -158,9 +158,9 @@ public class Vision extends BaseService implements Monitored {
   }
 
   /**
-   * Returns whether or not the subsystem is healthy
+   * Returns whether or not the service is healthy
    *
-   * @return True if the subsystem is healthy, false otherwise.
+   * @return True if the service is healthy, false otherwise.
    */
   public boolean isHealthy() {
     double currentTime = Timer.getTimestamp();
@@ -173,7 +173,7 @@ public class Vision extends BaseService implements Monitored {
     return false;
   }
 
-  /** Clear all faults and reset the subsystem. */
+  /** Clear all faults and reset the service. */
   public void clearFaults() {}
 
   /**
