@@ -10,8 +10,7 @@
 package frc.robot.subsystems.drive.gyro;
 
 import static edu.wpi.first.units.Units.*;
-import static frc.robot.subsystems.drive.DriveConstants.NAVX_LATENCY_SEC;
-import static frc.robot.subsystems.drive.DriveConstants.ODOMETRY_FREQUENCY;
+import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
