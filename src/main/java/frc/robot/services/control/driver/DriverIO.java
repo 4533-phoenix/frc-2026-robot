@@ -31,6 +31,9 @@ public interface DriverIO {
 
     /** Whether the driver wants to reset the robot pose. */
     public boolean wantsReset = false;
+
+    /** Whether the driver is connected. */
+    public boolean connected = false;
   }
 
   /**
@@ -49,5 +52,6 @@ public interface DriverIO {
     inputs.wantsAim = profile.wantsAim();
     inputs.wantsShoot = profile.wantsShoot();
     inputs.wantsReset = profile.wantsReset();
+    inputs.connected = profile.isConnected();
   }
 }

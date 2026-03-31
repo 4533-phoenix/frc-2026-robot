@@ -31,4 +31,11 @@ public interface ControlProfile {
    * @return The right rumble intensity (0.0-1.0).
    */
   double getRightRumble();
+
+  /**
+   * Returns whether or not the controller is connected.
+   *
+   * @return True if the controller is connected, false otherwise.
+   */
+  boolean isConnected();
 }

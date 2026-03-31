@@ -153,13 +153,21 @@ public class RobotContainer {
         break;
     }
 
+    // Create the control choosers
+    LoggedDashboardChooser<DriverProfile> driverChooser =
+        new LoggedDashboardChooser<>("Driver Profile");
+    driver = new Driver(new DriverIO() {}, driverChooser);
+    LoggedDashboardChooser<OperatorProfile> operatorChooser =
+        new LoggedDashboardChooser<>("Operator Profile");
+    operator = new Operator(new OperatorIO() {}, operatorChooser);
+
     // Create the superstructure, which coordinates between subsystems
-    superstructure = new Superstructure(drive, climb, arm, spinner, shooter, indexer, vision, pdh);
+    superstructure =
+        new Superstructure(
+            drive, climb, arm, spinner, shooter, indexer, pdh, vision, driver, operator);
 
     // Create the driver
     XboxController driverController = new XboxController(0);
-    LoggedDashboardChooser<DriverProfile> driverChooser =
-        new LoggedDashboardChooser<>("Driver Profile");
     driverChooser.addDefaultOption(
         "Default",
         new DefaultDriverProfile(
@@ -177,18 +185,14 @@ public class RobotContainer {
             DriveConstants.MAX_ANGULAR_ACCELERATION,
             drive::getChassisSpeeds,
             superstructure.isReadyToShoot()));
-    driver = new Driver(new DriverIO() {}, driverChooser);
 
     // Create the operator
     XboxController operatorController = new XboxController(1);
-    LoggedDashboardChooser<OperatorProfile> operatorChooser =
-        new LoggedDashboardChooser<>("Operator Profile");
     operatorChooser.addDefaultOption(
         "Default", new DefaultOperatorProfile(operatorController, superstructure.getClimbMode()));
     operatorChooser.addOption(
         "Solo Default",
         new DefaultOperatorProfile(driverController, superstructure.getClimbMode()));
-    operator = new Operator(new OperatorIO() {}, operatorChooser);
 
     // Wire up the data flow from vision to drive and drive to vision
     drive.setIMUHighFreqConsumer(vision::broadcastTelemetry);

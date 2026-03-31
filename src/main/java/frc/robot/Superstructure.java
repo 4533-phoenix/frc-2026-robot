@@ -21,6 +21,8 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.WritableTrigger;
 import frc.lib.monitor.Monitored;
 import frc.lib.util.FieldUtil;
+import frc.robot.services.control.driver.Driver;
+import frc.robot.services.control.operator.Operator;
 import frc.robot.services.vision.Vision;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.drive.Drive;
@@ -97,8 +99,10 @@ public class Superstructure extends SubsystemBase {
       Spinner spinner,
       Shooter shooter,
       Indexer indexer,
+      PDH pdh,
       Vision vision,
-      PDH pdh) {
+      Driver driver,
+      Operator operator) {
 
     // If we need to interact with the subsystems we can store them
     this.drive = drive;
@@ -108,7 +112,8 @@ public class Superstructure extends SubsystemBase {
     this.shooter = shooter;
 
     // We keep an array of all subsystems for easy health monitoring and fault clearing
-    this.monitors = new Monitored[] {climb, arm, spinner, shooter, indexer, vision, pdh};
+    this.monitors =
+        new Monitored[] {climb, arm, spinner, shooter, indexer, pdh, vision, driver, operator};
 
     this.hubAiming =
         Aiming.hubAimingSupplier(

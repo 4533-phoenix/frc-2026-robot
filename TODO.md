@@ -12,3 +12,6 @@
 * Reverify names for everything (especially intake/spinner/arm)
 * Create new profiles for people
 * Auto registering montiored?
+* Make control system (driver, operator) share a common interface/parent class.
+* move profiles to subfolder
+* Add fatal alert or warning if controller is not plugged in

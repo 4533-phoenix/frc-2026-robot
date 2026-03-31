@@ -8,8 +8,8 @@
 package frc.robot.subsystems.intake.spinner;
 
 import static edu.wpi.first.units.Units.*;
-import static frc.robot.subsystems.intake.spinner.SpinnerConstants.*;
 import static frc.lib.util.SparkUtil.*;
+import static frc.robot.subsystems.intake.spinner.SpinnerConstants.*;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
@@ -46,8 +46,7 @@ public class SpinnerIOSim implements SpinnerIO {
         .encoder
         .positionConversionFactor(INTERNAL_ENCODER_POSITION_FACTOR)
         .velocityConversionFactor(INTERNAL_ENCODER_VELOCITY_FACTOR);
-    spark.configure(
-        config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+    spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
   /**
@@ -62,13 +61,11 @@ public class SpinnerIOSim implements SpinnerIO {
 
     // Update SparkMaxSim with physics results
     // iterate() expects velocity in units AFTER the encoder conversion factor (rad/s mechanism)
-    sparkSim.iterate(
-        physiscsSim.getAngularVelocityRadPerSec(), RoboRioSim.getVInVoltage(), 0.02);
+    sparkSim.iterate(physiscsSim.getAngularVelocityRadPerSec(), RoboRioSim.getVInVoltage(), 0.02);
 
     // Populate logged inputs from Spark encoders
     inputs.connected = true;
-    inputs.appliedVoltage =
-        Volts.of(spark.getAppliedOutput() * spark.getBusVoltage());
+    inputs.appliedVoltage = Volts.of(spark.getAppliedOutput() * spark.getBusVoltage());
     inputs.appliedCurrent = Amps.of(spark.getOutputCurrent());
   }
 

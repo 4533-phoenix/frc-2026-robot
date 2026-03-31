@@ -186,7 +186,7 @@ public class Drive extends SubsystemBase implements Monitored {
     rotationController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
-    /**
+  /**
    * Command to maintain a specific heading using a supplier for the target angle.
    *
    * @param drive The drive subsystem.
@@ -195,8 +195,7 @@ public class Drive extends SubsystemBase implements Monitored {
    */
   public Command headingAim(Supplier<Rotation2d> targetSupplier) {
     return Commands.startEnd(
-        () -> setHeadingOverrideSupplier(targetSupplier),
-        () -> setHeadingOverrideSupplier(null));
+        () -> setHeadingOverrideSupplier(targetSupplier), () -> setHeadingOverrideSupplier(null));
   }
 
   /**

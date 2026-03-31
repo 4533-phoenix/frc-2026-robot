@@ -38,4 +38,9 @@ public abstract class GenericControlProfile implements ControlProfile {
   public double getRightRumble() {
     return 0.0;
   }
+
+  @Override
+  public boolean isConnected() {
+    return controller.isConnected();
+  }
 }

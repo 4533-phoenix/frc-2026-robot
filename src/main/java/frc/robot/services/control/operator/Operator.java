@@ -9,12 +9,13 @@ package frc.robot.services.control.operator;
 
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.lib.monitor.Monitored;
 import frc.lib.service.BaseService;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /** Subsystem for handling operator controls and input processing. */
-public class Operator extends BaseService {
+public class Operator extends BaseService implements Monitored {
   private final OperatorIO io;
   private final OperatorIOInputsAutoLogged inputs = new OperatorIOInputsAutoLogged();
   private final LoggedDashboardChooser<OperatorProfile> chooser;
@@ -105,4 +106,16 @@ public class Operator extends BaseService {
   public Trigger wantsClimberDown() {
     return new Trigger(() -> inputs.climberDown);
   }
+
+  /**
+   * Returns whether or not the subsystem is healthy
+   *
+   * @return True if the subsystem is healthy, false otherwise.
+   */
+  public boolean isHealthy() {
+    return inputs.connected;
+  }
+
+  /** Clears all faults and warnings. */
+  public void clearFaults() {}
 }

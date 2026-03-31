@@ -34,6 +34,9 @@ public interface OperatorIO {
 
     /** Whether the operator wants to lower the climber. */
     public boolean climberDown;
+
+    /** Whether the operator is connected. */
+    public boolean connected;
   }
 
   /**
@@ -52,5 +55,6 @@ public interface OperatorIO {
     inputs.climb = profile.wantsClimb();
     inputs.climberUp = profile.wantsClimberUp();
     inputs.climberDown = profile.wantsClimberDown();
+    inputs.connected = profile.isConnected();
   }
 }
