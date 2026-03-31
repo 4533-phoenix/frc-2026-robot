@@ -117,5 +117,5 @@ public class VisionConstants {
       AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
 
   /** Whether or not to broadcast heading information. */
-  public static final boolean BROADCAST_HEADING = false;
+  public static final boolean BROADCAST_HEADING = true;
 }
