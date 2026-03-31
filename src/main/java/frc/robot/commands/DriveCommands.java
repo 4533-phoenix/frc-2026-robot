@@ -24,7 +24,6 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * Factory class for creating commands related to the drivetrain subsystem.
@@ -35,19 +34,6 @@ import java.util.function.Supplier;
 public class DriveCommands {
 
   private DriveCommands() {}
-
-  /**
-   * Command to maintain a specific heading using a supplier for the target angle.
-   *
-   * @param drive The drive subsystem.
-   * @param targetSupplier A supplier for the target heading (Rotation2d).
-   * @return A command that maintains the specified heading.
-   */
-  public static Command headingAim(Drive drive, Supplier<Rotation2d> targetSupplier) {
-    return Commands.startEnd(
-        () -> drive.setHeadingOverrideSupplier(targetSupplier),
-        () -> drive.setHeadingOverrideSupplier(null));
-  }
 
   /**
    * Measures the velocity feedforward constants (kS and kV) for the drive motors.

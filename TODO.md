@@ -3,11 +3,9 @@
 * Tune drive
 * Make vision 0 alloc again
 * Add elastic integration
-* Update PP config
 * Remove units in hot loops?
 * Use whacknet for vision
 * Reseed gyro from vision if we are not locked
-* Clean up drive command factory
 * Move shooter kinematics map to constants
 * Anti skew swerve drive logic (254 shared something like this)
 * Figure out when the hubs *actually* get disabled

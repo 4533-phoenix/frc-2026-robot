@@ -18,7 +18,6 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.lib.util.FieldUtil;
-import frc.robot.commands.DriveCommands;
 import frc.robot.services.control.driver.DefaultDriverProfile;
 import frc.robot.services.control.driver.Driver;
 import frc.robot.services.control.driver.DriverIO;
@@ -221,7 +220,7 @@ public class RobotContainer {
                 .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
                 Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
-                DriveCommands.headingAim(drive, superstructure::getTargetRotation))));
+                drive.headingAim(superstructure::getTargetRotation))));
 
     autoChooser.addOption(
         "Middle Shoot Preload",
@@ -241,7 +240,7 @@ public class RobotContainer {
                 .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
                 Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
-                DriveCommands.headingAim(drive, superstructure::getTargetRotation))));
+                drive.headingAim(superstructure::getTargetRotation))));
 
     autoChooser.addOption(
         "Right Shoot Preload",
@@ -258,7 +257,7 @@ public class RobotContainer {
                 .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
                 Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
-                DriveCommands.headingAim(drive, superstructure::getTargetRotation))));
+                drive.headingAim(superstructure::getTargetRotation))));
 
     // Configure the commands
     configureDriverButtonBindings();
@@ -303,7 +302,7 @@ public class RobotContainer {
     driver
         .wantsAim()
         .and(superstructure::hasTarget)
-        .whileTrue(DriveCommands.headingAim(drive, superstructure::getTargetRotation));
+        .whileTrue(drive.headingAim(superstructure::getTargetRotation));
 
     // Spin up the motor if we are practicing not in match mode
     driver

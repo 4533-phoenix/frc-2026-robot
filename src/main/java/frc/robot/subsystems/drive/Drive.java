@@ -42,6 +42,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.lib.IMUState;
@@ -183,6 +184,19 @@ public class Drive extends SubsystemBase implements Monitored {
 
     // Configure PID controller
     rotationController.enableContinuousInput(-Math.PI, Math.PI);
+  }
+
+    /**
+   * Command to maintain a specific heading using a supplier for the target angle.
+   *
+   * @param drive The drive subsystem.
+   * @param targetSupplier A supplier for the target heading (Rotation2d).
+   * @return A command that maintains the specified heading.
+   */
+  public Command headingAim(Supplier<Rotation2d> targetSupplier) {
+    return Commands.startEnd(
+        () -> setHeadingOverrideSupplier(targetSupplier),
+        () -> setHeadingOverrideSupplier(null));
   }
 
   /**
