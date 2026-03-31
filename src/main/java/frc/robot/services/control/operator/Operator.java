@@ -7,18 +7,13 @@
 
 package frc.robot.services.control.operator;
 
-import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.lib.monitor.Monitored;
-import frc.lib.service.BaseService;
-import org.littletonrobotics.junction.Logger;
+import frc.robot.services.control.ControlService;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /** Subsystem for handling operator controls and input processing. */
-public class Operator extends BaseService implements Monitored {
-  private final OperatorIO io;
-  private final OperatorIOInputsAutoLogged inputs = new OperatorIOInputsAutoLogged();
-  private final LoggedDashboardChooser<OperatorProfile> chooser;
+public class Operator
+    extends ControlService<OperatorProfile, OperatorIO, OperatorIOInputsAutoLogged> {
 
   /**
    * Constructs the Operator subsystem.
@@ -27,21 +22,13 @@ public class Operator extends BaseService implements Monitored {
    * @param chooser The dashboard chooser for operator profiles.
    */
   public Operator(OperatorIO io, LoggedDashboardChooser<OperatorProfile> chooser) {
-    this.io = io;
-    this.chooser = chooser;
+    super("Operator", io, new OperatorIOInputsAutoLogged(), chooser);
   }
 
   @Override
-  public void update() {
-    OperatorProfile profile = chooser.get();
-    if (profile == null) return;
+  protected void updateInputs(
+      OperatorIO io, OperatorIOInputsAutoLogged inputs, OperatorProfile profile) {
     io.updateInputs(inputs, profile);
-    Logger.processInputs("Operator", inputs);
-    Logger.recordOutput("Operator/ActiveProfile", chooser.getSendableChooser().getSelected());
-
-    GenericHID hid = profile.getHID();
-    hid.setRumble(GenericHID.RumbleType.kLeftRumble, profile.getLeftRumble());
-    hid.setRumble(GenericHID.RumbleType.kRightRumble, profile.getRightRumble());
   }
 
   /**
@@ -106,16 +93,4 @@ public class Operator extends BaseService implements Monitored {
   public Trigger wantsClimberDown() {
     return new Trigger(() -> inputs.climberDown);
   }
-
-  /**
-   * Returns whether or not the subsystem is healthy
-   *
-   * @return True if the subsystem is healthy, false otherwise.
-   */
-  public boolean isHealthy() {
-    return inputs.connected;
-  }
-
-  /** Clears all faults and warnings. */
-  public void clearFaults() {}
 }

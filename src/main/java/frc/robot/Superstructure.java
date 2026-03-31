@@ -92,6 +92,20 @@ public class Superstructure extends SubsystemBase {
    * @param vision The vision subsystem.
    * @param pdh The power distribution hub subsystem.
    */
+  /**
+   * Constructs the Superstructure.
+   *
+   * @param drive The drive subsystem.
+   * @param climb The climb subsystem.
+   * @param arm The arm subsystem.
+   * @param spinner The spinner subsystem.
+   * @param shooter The shooter subsystem.
+   * @param indexer The indexer subsystem.
+   * @param pdh The power distribution hub subsystem.
+   * @param vision The vision subsystem.
+   * @param driver The driver control service.
+   * @param operator The operator control service.
+   */
   public Superstructure(
       Drive drive,
       Climb climb,

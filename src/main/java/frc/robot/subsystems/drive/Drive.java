@@ -189,7 +189,6 @@ public class Drive extends SubsystemBase implements Monitored {
   /**
    * Command to maintain a specific heading using a supplier for the target angle.
    *
-   * @param drive The drive subsystem.
    * @param targetSupplier A supplier for the target heading (Rotation2d).
    * @return A command that maintains the specified heading.
    */

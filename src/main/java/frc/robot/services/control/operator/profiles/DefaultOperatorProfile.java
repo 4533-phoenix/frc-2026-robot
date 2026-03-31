@@ -5,10 +5,11 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-package frc.robot.services.control.operator;
+package frc.robot.services.control.operator.profiles;
 
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.services.control.GenericControlProfile;
+import frc.robot.services.control.operator.OperatorProfile;
 import java.util.function.BooleanSupplier;
 
 /** Default implementation of the OperatorProfile for controlling the robot superstructure. */

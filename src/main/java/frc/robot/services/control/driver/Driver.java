@@ -11,21 +11,15 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.lib.monitor.Monitored;
-import frc.lib.service.BaseService;
+import frc.robot.services.control.ControlService;
 import frc.robot.subsystems.drive.Drive;
-import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /** Subsystem for handling driver controls and input processing. */
-public class Driver extends BaseService implements Monitored {
-  private final DriverIO io;
-  private final DriverIOInputsAutoLogged inputs = new DriverIOInputsAutoLogged();
-  private final LoggedDashboardChooser<DriverProfile> chooser;
+public class Driver extends ControlService<DriverProfile, DriverIO, DriverIOInputsAutoLogged> {
 
   /**
    * Constructs the Driver subsystem.
@@ -34,21 +28,12 @@ public class Driver extends BaseService implements Monitored {
    * @param chooser The dashboard chooser for driver profiles.
    */
   public Driver(DriverIO io, LoggedDashboardChooser<DriverProfile> chooser) {
-    this.io = io;
-    this.chooser = chooser;
+    super("Driver", io, new DriverIOInputsAutoLogged(), chooser);
   }
 
   @Override
-  public void update() {
-    DriverProfile profile = chooser.get();
-    if (profile == null) return;
+  protected void updateInputs(DriverIO io, DriverIOInputsAutoLogged inputs, DriverProfile profile) {
     io.updateInputs(inputs, profile);
-    Logger.processInputs("Driver", inputs);
-    Logger.recordOutput("Driver/ActiveProfile", chooser.getSendableChooser().getSelected());
-
-    GenericHID hid = profile.getHID();
-    hid.setRumble(GenericHID.RumbleType.kLeftRumble, profile.getLeftRumble());
-    hid.setRumble(GenericHID.RumbleType.kRightRumble, profile.getRightRumble());
   }
 
   /**
@@ -102,16 +87,4 @@ public class Driver extends BaseService implements Monitored {
   public Trigger wantsReset() {
     return new Trigger(() -> inputs.wantsReset);
   }
-
-  /**
-   * Returns whether or not the subsystem is healthy
-   *
-   * @return True if the subsystem is healthy, false otherwise.
-   */
-  public boolean isHealthy() {
-    return inputs.connected;
-  }
-
-  /** Clears all faults and warnings. */
-  public void clearFaults() {}
 }

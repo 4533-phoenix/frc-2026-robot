@@ -9,6 +9,7 @@ package frc.lib.service;
 
 /** The base class for all background data providers. */
 public abstract class BaseService {
+  /** The name of the service. */
   protected final String name;
 
   /** Constructs a BaseService with the default name. */

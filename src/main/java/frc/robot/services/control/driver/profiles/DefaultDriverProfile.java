@@ -5,7 +5,7 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-package frc.robot.services.control.driver;
+package frc.robot.services.control.driver.profiles;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -13,6 +13,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.services.control.GenericControlProfile;
+import frc.robot.services.control.driver.DriverProfile;
 import frc.robot.subsystems.drive.DriveConstants;
 import java.util.function.BooleanSupplier;
 
