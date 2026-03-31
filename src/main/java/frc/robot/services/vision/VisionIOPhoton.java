@@ -31,7 +31,6 @@ public class VisionIOPhoton implements VisionIO {
   private static final Pose2d EMPTY_POSE = new Pose2d();
   private final Whacknet whacknet = BROADCAST_HEADING ? Whacknet.getInstance() : null;
 
-  // We strictly maintain exactly 2 observations (0: Normal, 1: Constrained)
   private final VisionObservation[] observationBuffer = new VisionObservation[2];
 
   private static class CameraContext {
@@ -106,8 +105,6 @@ public class VisionIOPhoton implements VisionIO {
       }
     }
 
-    // Always provide exactly the 2 observations (it will just hold the old objects if no new ones
-    // arrived)
     inputs.observations = new VisionObservation[] {observationBuffer[0], observationBuffer[1]};
   }
 
