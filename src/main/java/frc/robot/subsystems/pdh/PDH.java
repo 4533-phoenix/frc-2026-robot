@@ -5,7 +5,7 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-package frc.robot.services.pdh;
+package frc.robot.subsystems.pdh;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.monitor.Monitored;
