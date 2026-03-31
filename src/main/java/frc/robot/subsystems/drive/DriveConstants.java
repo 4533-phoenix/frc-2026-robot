@@ -11,8 +11,6 @@ package frc.robot.subsystems.drive;
 
 import static edu.wpi.first.units.Units.*;
 
-import com.pathplanner.lib.config.ModuleConfig;
-import com.pathplanner.lib.config.RobotConfig;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.*;
@@ -266,18 +264,4 @@ public class DriveConstants {
 
   /** Coefficient of friction for the wheels. */
   public static final double WHEEL_COF = 1.1;
-
-  /** PathPlanner configuration object. */
-  public static final RobotConfig PP_CONFIG =
-      new RobotConfig(
-          ROBOT_MASS,
-          ROBOT_MOI,
-          new ModuleConfig(
-              WHEEL_RADIUS.in(Meters),
-              MAX_LINEAR_VELOCITY.in(MetersPerSecond),
-              WHEEL_COF,
-              DRIVE_GEARBOX.withReduction(DRIVE_MOTOR_REDUCTION),
-              DRIVE_MOTOR_CURRENT_LIMIT.in(Amps),
-              1),
-          MODULE_TRANSLATIONS);
 }
