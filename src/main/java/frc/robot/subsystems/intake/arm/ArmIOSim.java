@@ -29,31 +29,31 @@ import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 
 /** Simulation implementation for the intake arm IO interface. */
 public class ArmIOSim implements ArmIO {
-  private final SparkMax armSpark;
-  private final SparkMaxSim armSparkSim;
-  private final SparkAbsoluteEncoderSim armAbsEncoderSim;
-  private final AbsoluteEncoder armAbsEncoder;
-  private final RelativeEncoder armEncoder;
-  private final SparkClosedLoopController armController;
-  private final SingleJointedArmSim armPhysicsSim;
+  private final SparkMax spark;
+  private final SparkMaxSim sparkSim;
+  private final SparkAbsoluteEncoderSim absEncoderSim;
+  private final AbsoluteEncoder absEncoder;
+  private final RelativeEncoder encoder;
+  private final SparkClosedLoopController controller;
+  private final SingleJointedArmSim physicsSim;
 
   private Angle sentPosition = null;
 
   /** Creates a new ArmIOSim and initializes the simulated Spark MAX motor controllers. */
   public ArmIOSim() {
     // Create Spark MAX objects
-    armSpark = new SparkMax(CAN_ID, MotorType.kBrushless);
+    spark = new SparkMax(CAN_ID, MotorType.kBrushless);
 
-    armEncoder = armSpark.getEncoder();
-    armAbsEncoder = armSpark.getAbsoluteEncoder();
-    armController = armSpark.getClosedLoopController();
+    encoder = spark.getEncoder();
+    absEncoder = spark.getAbsoluteEncoder();
+    controller = spark.getClosedLoopController();
 
     // Create SparkMaxSim wrappers
-    armSparkSim = new SparkMaxSim(armSpark, GEARBOX);
-    armAbsEncoderSim = armSparkSim.getAbsoluteEncoderSim();
+    sparkSim = new SparkMaxSim(spark, GEARBOX);
+    absEncoderSim = sparkSim.getAbsoluteEncoderSim();
 
     // Create physics models
-    armPhysicsSim =
+    physicsSim =
         new SingleJointedArmSim(
             GEARBOX,
             TOTAL_REDUCTION,
@@ -65,33 +65,33 @@ public class ArmIOSim implements ArmIO {
             RETRACTED_POSITION.in(Radians));
 
     // Configure arm Spark MAX
-    var armConfig = createBaseConfig(MOTOR_CURRENT_LIMIT, MOTOR_INVERTED);
-    armConfig
+    var config = createBaseConfig(MOTOR_CURRENT_LIMIT, MOTOR_INVERTED);
+    config
         .encoder
         .positionConversionFactor(INTERNAL_ENCODER_POSITION_FACTOR)
         .velocityConversionFactor(INTERNAL_ENCODER_VELOCITY_FACTOR);
-    armConfig
+    config
         .absoluteEncoder
         .positionConversionFactor(GLOBAL_ENCODER_POSITION_FACTOR)
         .velocityConversionFactor(GLOBAL_ENCODER_VELOCITY_FACTOR)
         .zeroOffset(GLOBAL_ENCODER_OFFSET)
         .inverted(true);
-    armConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(KP, 0.0, KD);
-    armConfig.closedLoop.feedForward.kV(KV).kA(KA).kS(KS).kCos(KG).kCosRatio(1.0 / (2.0 * Math.PI));
-    armConfig
+    config.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(KP, 0.0, KD);
+    config.closedLoop.feedForward.kV(KV).kA(KA).kS(KS).kCos(KG).kCosRatio(1.0 / (2.0 * Math.PI));
+    config
         .closedLoop
         .maxMotion
         .allowedProfileError(PID_TOLERANCE.in(Radians))
         .cruiseVelocity(CRUISE_VELOCITY.in(RadiansPerSecond))
         .maxAcceleration(MAX_ACCELERATION.in(RadiansPerSecondPerSecond));
-    armConfig
+    config
         .softLimit
         .forwardSoftLimitEnabled(true)
         .forwardSoftLimit(RETRACTED_POSITION.plus(SOFT_LIMIT_TOLERANCE).in(Radians))
         .reverseSoftLimitEnabled(true)
         .reverseSoftLimit(DEPLOYED_POSITION.minus(SOFT_LIMIT_TOLERANCE).in(Radians));
-    armSpark.configure(armConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
-    armEncoder.setPosition(RETRACTED_POSITION.in(Radians));
+    spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+    encoder.setPosition(RETRACTED_POSITION.in(Radians));
   }
 
   /**
@@ -102,37 +102,37 @@ public class ArmIOSim implements ArmIO {
   @Override
   public void updateInputs(ArmIOInputs inputs) {
     // Update physics models with voltage from Spark sim
-    armPhysicsSim.setInputVoltage(armSparkSim.getAppliedOutput() * RoboRioSim.getVInVoltage());
+    physicsSim.setInputVoltage(sparkSim.getAppliedOutput() * RoboRioSim.getVInVoltage());
 
     // Advance physics
-    armPhysicsSim.update(0.02);
+    physicsSim.update(0.02);
 
     // Update SparkMaxSim with physics results
     // iterate() expects velocity in units AFTER the encoder conversion factor (rad/s mechanism)
-    armSparkSim.iterate(armPhysicsSim.getVelocityRadPerSec(), RoboRioSim.getVInVoltage(), 0.02);
+    sparkSim.iterate(physicsSim.getVelocityRadPerSec(), RoboRioSim.getVInVoltage(), 0.02);
 
     // Update absolute encoder sim with arm mechanism velocity (rad/s)
-    armAbsEncoderSim.iterate(armPhysicsSim.getVelocityRadPerSec(), 0.02);
+    absEncoderSim.iterate(physicsSim.getVelocityRadPerSec(), 0.02);
 
     // Populate logged inputs from Spark encoders
     inputs.connected = true;
-    inputs.position = Radians.of(armAbsEncoder.getPosition());
-    inputs.velocity = RadiansPerSecond.of(armAbsEncoder.getVelocity());
-    inputs.appliedVoltage = Volts.of(armSpark.getAppliedOutput() * armSpark.getBusVoltage());
-    inputs.appliedCurrent = Amps.of(armSpark.getOutputCurrent());
+    inputs.position = Radians.of(absEncoder.getPosition());
+    inputs.velocity = RadiansPerSecond.of(absEncoder.getVelocity());
+    inputs.appliedVoltage = Volts.of(spark.getAppliedOutput() * spark.getBusVoltage());
+    inputs.appliedCurrent = Amps.of(spark.getOutputCurrent());
   }
 
   @Override
   public void setPosition(Angle angle) {
     if (sentPosition != null && angle.isEquivalent(sentPosition)) return;
-    armController.setSetpoint(
+    controller.setSetpoint(
         angle.in(Radians), ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
     sentPosition = angle;
   }
 
   @Override
   public void stop() {
-    armSpark.stopMotor();
+    spark.stopMotor();
     sentPosition = null;
   }
 }
