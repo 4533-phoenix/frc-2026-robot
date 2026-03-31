@@ -11,7 +11,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.services.vision.Vision;
-import frc.robot.services.vision.VisionIOWhacknet;
+import frc.robot.services.vision.VisionIOPhoton;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.gyro.GyroIONavX;
 import frc.robot.subsystems.drive.module.ModuleIO;
@@ -35,7 +35,7 @@ public class RobotContainer {
             new ModuleIO() {},
             new ModuleIO() {},
             new ModuleIO() {});
-    vision = new Vision(new VisionIOWhacknet());
+    vision = new Vision(new VisionIOPhoton());
     // Wire up the data flow from vision to drive and drive to vision
     drive.setIMUHighFreqConsumer(vision::broadcastTelemetry);
     vision.setVisionMeasurementConsumer(drive::addVisionMeasurement);
