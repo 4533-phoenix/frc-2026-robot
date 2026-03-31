@@ -143,6 +143,7 @@ public class Drive extends SubsystemBase implements Monitored {
     HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_AdvantageKit);
 
     // Start odometry thread
+    Notifier.setHALThreadPriority(true, 50);
     odometryThread = new Notifier(this::odometryLoop);
     odometryThread.startPeriodic(1.0 / ODOMETRY_FREQUENCY.in(Hertz));
 
