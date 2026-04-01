@@ -69,39 +69,61 @@ public class GyroIODual implements GyroIO {
     canAndGyro.setSettings(settings);
   }
 
-  @Override
+@Override
   public IMUState updateHighFreq(double timestampSec) {
     boolean navxConnected = navX.isConnected();
     boolean canConnected = canAndGyro.isConnected();
 
     if (!navxConnected && !canConnected) return null;
 
-    double yaw, vel, pitch, roll, pitchVel, rollVel;
+    double rollVelocity, compRoll;
+    double pitchVelocity, compPitch;
+    double yawVelocity, compYaw;
 
     if (navxConnected) {
-      double rawYawRad = Units.degreesToRadians(-navX.getAngle());
-      vel = Units.degreesToRadians(-navX.getRate());
-      yaw = rawYawRad + navxYawOffset.in(Radians) + (vel * NAVX_LATENCY_SEC.in(Seconds));
+      double latency = NAVX_LATENCY_SEC.in(Seconds);
 
-      pitch = Units.degreesToRadians(navX.getPitch()) + navxPitchOffset.in(Radians);
-      roll = Units.degreesToRadians(navX.getRoll()) + navxRollOffset.in(Radians);
-      pitchVel = Units.degreesToRadians(navX.getRawGyroY());
-      rollVel = Units.degreesToRadians(navX.getRawGyroX());
+      // ROLL
+      rollVelocity = Units.degreesToRadians(navX.getRawGyroX());
+      double rollPosition = Units.degreesToRadians(navX.getRoll()) + navxRollOffset.in(Radians);
+      compRoll = rollPosition + (rollVelocity * latency);
+
+      // PITCH
+      pitchVelocity = Units.degreesToRadians(navX.getRawGyroY());
+      double pitchPosition = Units.degreesToRadians(navX.getPitch()) + navxPitchOffset.in(Radians);
+      compPitch = pitchPosition + (pitchVelocity * latency);
+
+      // YAW
+      yawVelocity = Units.degreesToRadians(-navX.getRate());
+      double yawPosition = Units.degreesToRadians(-navX.getAngle()) + navxYawOffset.in(Radians);
+      compYaw = yawPosition + (yawVelocity * latency);
+
     } else {
-      double rawYawRad = Units.rotationsToRadians(canAndGyro.getYaw());
-      vel = Units.rotationsToRadians(canAndGyro.getAngularVelocityYaw());
-      yaw = rawYawRad + canYawOffset.in(Radians) + (vel * CANANDGYRO_LATENCY_SEC.in(Seconds));
+      double latency = CANANDGYRO_LATENCY_SEC.in(Seconds);
 
-      pitch = Units.rotationsToRadians(canAndGyro.getPitch()) + canPitchOffset.in(Radians);
-      roll = Units.rotationsToRadians(canAndGyro.getRoll()) + canRollOffset.in(Radians);
-      pitchVel = Units.rotationsToRadians(canAndGyro.getAngularVelocityPitch());
-      rollVel = Units.rotationsToRadians(canAndGyro.getAngularVelocityRoll());
+      // ROLL
+      rollVelocity = Units.rotationsToRadians(canAndGyro.getAngularVelocityRoll());
+      double rollPosition = Units.rotationsToRadians(canAndGyro.getRoll()) + canRollOffset.in(Radians);
+      compRoll = rollPosition + (rollVelocity * latency);
+
+      // PITCH
+      pitchVelocity = Units.rotationsToRadians(canAndGyro.getAngularVelocityPitch());
+      double pitchPosition = Units.rotationsToRadians(canAndGyro.getPitch()) + canPitchOffset.in(Radians);
+      compPitch = pitchPosition + (pitchVelocity * latency);
+
+      // YAW
+      yawVelocity = Units.rotationsToRadians(canAndGyro.getAngularVelocityYaw());
+      double yawPosition = Units.rotationsToRadians(canAndGyro.getYaw()) + canYawOffset.in(Radians);
+      compYaw = yawPosition + (yawVelocity * latency);
     }
 
-    yawBuffer.offer(timestampSec, yaw);
-    latestYawRad = yaw;
+    yawBuffer.offer(timestampSec, compYaw);
+    latestYawRad = compYaw;
 
-    return isLocked ? new IMUState(timestampSec, roll, pitch, yaw, rollVel, pitchVel, vel) : null;
+    return isLocked
+        ? new IMUState(
+            timestampSec, compRoll, compPitch, compYaw, rollVelocity, pitchVelocity, yawVelocity)
+        : null;
   }
 
   @Override

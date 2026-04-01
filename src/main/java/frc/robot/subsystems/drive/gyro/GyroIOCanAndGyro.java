@@ -27,7 +27,10 @@ public class GyroIOCanAndGyro implements GyroIO {
   private final HighFreqBuffer yawBuffer = new HighFreqBuffer(1);
   private double latestYawRad = 0.0;
 
+  private volatile Angle rollOffset = Radians.zero();
+  private volatile Angle pitchOffset = Radians.zero();
   private volatile Angle yawOffset = Radians.zero();
+
   private volatile boolean isLocked = false;
   private boolean hasBeenSet = false;
 
@@ -47,21 +50,30 @@ public class GyroIOCanAndGyro implements GyroIO {
   public IMUState updateHighFreq(double timestampSec) {
     if (!canAndGyro.isConnected()) return null;
 
+    double latency = CANANDGYRO_LATENCY_SEC.in(Seconds);
+
+    // ROLL
+    double rollVelocity = Units.rotationsToRadians(canAndGyro.getAngularVelocityRoll());
+    double rollPosition = Units.rotationsToRadians(canAndGyro.getRoll()) + rollOffset.in(Radians);
+    double compRoll = rollPosition + (rollVelocity * latency);
+
+    // PITCH
+    double pitchVelocity = Units.rotationsToRadians(canAndGyro.getAngularVelocityPitch());
+    double pitchPosition =
+        Units.rotationsToRadians(canAndGyro.getPitch()) + pitchOffset.in(Radians);
+    double compPitch = pitchPosition + (pitchVelocity * latency);
+
+    // YAW
     double yawVelocity = Units.rotationsToRadians(canAndGyro.getAngularVelocityYaw());
     double yawPosition = Units.rotationsToRadians(canAndGyro.getYaw()) + yawOffset.in(Radians);
-    double latencyCompensatedYaw = yawPosition + (yawVelocity * CANANDGYRO_LATENCY_SEC.in(Seconds));
+    double compYaw = yawPosition + (yawVelocity * latency);
 
-    double roll = Units.rotationsToRadians(canAndGyro.getRoll());
-    double pitch = Units.rotationsToRadians(canAndGyro.getPitch());
-    double rollVel = Units.rotationsToRadians(canAndGyro.getAngularVelocityRoll());
-    double pitchVel = Units.rotationsToRadians(canAndGyro.getAngularVelocityPitch());
-
-    yawBuffer.offer(timestampSec, latencyCompensatedYaw);
-    latestYawRad = latencyCompensatedYaw;
+    yawBuffer.offer(timestampSec, compYaw);
+    latestYawRad = compYaw;
 
     return isLocked
         ? new IMUState(
-            timestampSec, roll, pitch, latencyCompensatedYaw, rollVel, pitchVel, yawVelocity)
+            timestampSec, compRoll, compPitch, compYaw, rollVelocity, pitchVelocity, yawVelocity)
         : null;
   }
 
@@ -110,6 +122,8 @@ public class GyroIOCanAndGyro implements GyroIO {
 
   @Override
   public void setRotation(Rotation3d rotation) {
+    rollOffset = Radians.of(rotation.getX() - Units.rotationsToRadians(canAndGyro.getRoll()));
+    pitchOffset = Radians.of(rotation.getY() - Units.rotationsToRadians(canAndGyro.getPitch()));
     yawOffset = Radians.of(rotation.getZ() - Units.rotationsToRadians(canAndGyro.getYaw()));
     hasBeenSet = true;
   }

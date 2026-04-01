@@ -548,7 +548,8 @@ public class Drive extends SubsystemBase implements Monitored {
   }
 
   /**
-   * Resets the current odometry pose to a specific position. This assumes the bot is flat on the ground and will break horrendously if not.
+   * Resets the current odometry pose to a specific position. This assumes the bot is flat on the
+   * ground and will break horrendously if not.
    *
    * @param pose The new pose to set the robot to.
    */

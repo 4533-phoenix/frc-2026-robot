@@ -29,7 +29,10 @@ public class GyroIONavX implements GyroIO {
   private final HighFreqBuffer yawBuffer = new HighFreqBuffer(1);
   private double latestYawRad = 0.0;
 
+  private volatile Angle pitchOffset = Radians.zero();
+  private volatile Angle rollOffset = Radians.zero();
   private volatile Angle yawOffset = Radians.zero();
+
   private volatile boolean isLocked = false;
   private boolean hasBeenSet = false;
 
@@ -46,21 +49,29 @@ public class GyroIONavX implements GyroIO {
   public IMUState updateHighFreq(double timestampSec) {
     if (!navX.isConnected()) return null;
 
+    double latency = NAVX_LATENCY_SEC.in(Seconds);
+
+    // ROLL
+    double rollVelocity = Units.degreesToRadians(navX.getRawGyroX());
+    double rollPosition = Units.degreesToRadians(navX.getRoll()) + rollOffset.in(Radians);
+    double compRoll = rollPosition + (rollVelocity * latency);
+
+    // PITCH
+    double pitchVelocity = Units.degreesToRadians(navX.getRawGyroY());
+    double pitchPosition = Units.degreesToRadians(navX.getPitch()) + pitchOffset.in(Radians);
+    double compPitch = pitchPosition + (pitchVelocity * latency);
+
+    // YAW
     double yawVelocity = Units.degreesToRadians(-navX.getRate());
     double yawPosition = Units.degreesToRadians(-navX.getAngle()) + yawOffset.in(Radians);
-    double latencyCompensatedYaw = yawPosition + (yawVelocity * NAVX_LATENCY_SEC.in(Seconds));
+    double compYaw = yawPosition + (yawVelocity * latency);
 
-    double roll = Units.degreesToRadians(navX.getRoll());
-    double pitch = Units.degreesToRadians(navX.getPitch());
-    double rollVel = Units.degreesToRadians(navX.getRawGyroX());
-    double pitchVel = Units.degreesToRadians(navX.getRawGyroY());
-
-    yawBuffer.offer(timestampSec, latencyCompensatedYaw);
-    latestYawRad = latencyCompensatedYaw;
+    yawBuffer.offer(timestampSec, compYaw);
+    latestYawRad = compYaw;
 
     return isLocked
         ? new IMUState(
-            timestampSec, roll, pitch, latencyCompensatedYaw, rollVel, pitchVel, yawVelocity)
+            timestampSec, compRoll, compPitch, compYaw, rollVelocity, pitchVelocity, yawVelocity)
         : null;
   }
 
@@ -110,6 +121,8 @@ public class GyroIONavX implements GyroIO {
   @Override
   public void setRotation(Rotation3d rotation) {
     yawOffset = Radians.of(rotation.getZ() - Units.degreesToRadians(-navX.getAngle()));
+    pitchOffset = Radians.of(rotation.getY() - Units.degreesToRadians(navX.getPitch()));
+    rollOffset = Radians.of(rotation.getX() - Units.degreesToRadians(navX.getRoll()));
     hasBeenSet = true;
   }
 }
