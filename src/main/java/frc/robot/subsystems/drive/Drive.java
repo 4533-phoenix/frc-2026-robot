@@ -25,6 +25,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
@@ -547,7 +548,7 @@ public class Drive extends SubsystemBase implements Monitored {
   }
 
   /**
-   * Resets the current odometry pose to a specific position.
+   * Resets the current odometry pose to a specific position. This assumes the bot is flat on the ground and will break horrendously if not.
    *
    * @param pose The new pose to set the robot to.
    */
@@ -556,7 +557,7 @@ public class Drive extends SubsystemBase implements Monitored {
     // read it for odometry.
     lastResetTimestamp = (RobotController.getFPGATime() / 1.0e6) + 0.005;
 
-    gyroIO.setYaw(pose.getRotation().getMeasure());
+    gyroIO.setRotation(new Rotation3d(pose.getRotation()));
     rawGyroRotation = pose.getRotation();
 
     gyroHistory.clear();

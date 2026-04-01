@@ -15,6 +15,7 @@ import com.reduxrobotics.sensors.canandgyro.CanandgyroSettings;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import frc.lib.HighFreqBuffer;
@@ -266,14 +267,20 @@ public class GyroIODual implements GyroIO {
   }
 
   @Override
-  public void setYaw(Angle yaw) {
-    double target = yaw.in(Radians);
+  public void setRotation(Rotation3d rotation) {
+    double targetYaw = rotation.getZ();
+    double targetPitch = rotation.getY();
+    double targetRoll = rotation.getX();
 
     if (navX.isConnected()) {
-      navxYawOffset = Radians.of(target - Units.degreesToRadians(-navX.getAngle()));
+      navxYawOffset = Radians.of(targetYaw - Units.degreesToRadians(-navX.getAngle()));
+      navxPitchOffset = Radians.of(targetPitch - Units.degreesToRadians(navX.getPitch()));
+      navxRollOffset = Radians.of(targetRoll - Units.degreesToRadians(navX.getRoll()));
     }
     if (canAndGyro.isConnected()) {
-      canYawOffset = Radians.of(target - Units.rotationsToRadians(canAndGyro.getYaw()));
+      canYawOffset = Radians.of(targetYaw - Units.rotationsToRadians(canAndGyro.getYaw()));
+      canPitchOffset = Radians.of(targetPitch - Units.rotationsToRadians(canAndGyro.getPitch()));
+      canRollOffset = Radians.of(targetRoll - Units.rotationsToRadians(canAndGyro.getRoll()));
     }
 
     hasBeenSet = true;

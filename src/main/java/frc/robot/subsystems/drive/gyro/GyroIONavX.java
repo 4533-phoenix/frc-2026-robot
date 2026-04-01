@@ -14,6 +14,7 @@ import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import frc.lib.HighFreqBuffer;
@@ -107,8 +108,8 @@ public class GyroIONavX implements GyroIO {
   }
 
   @Override
-  public void setYaw(Angle yaw) {
-    yawOffset = Radians.of(yaw.in(Radians) - Units.degreesToRadians(-navX.getAngle()));
+  public void setRotation(Rotation3d rotation) {
+    yawOffset = Radians.of(rotation.getZ() - Units.degreesToRadians(-navX.getAngle()));
     hasBeenSet = true;
   }
 }
