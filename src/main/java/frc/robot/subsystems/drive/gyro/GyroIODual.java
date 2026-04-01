@@ -69,7 +69,7 @@ public class GyroIODual implements GyroIO {
     canAndGyro.setSettings(settings);
   }
 
-@Override
+  @Override
   public IMUState updateHighFreq(double timestampSec) {
     boolean navxConnected = navX.isConnected();
     boolean canConnected = canAndGyro.isConnected();
@@ -103,12 +103,14 @@ public class GyroIODual implements GyroIO {
 
       // ROLL
       rollVelocity = Units.rotationsToRadians(canAndGyro.getAngularVelocityRoll());
-      double rollPosition = Units.rotationsToRadians(canAndGyro.getRoll()) + canRollOffset.in(Radians);
+      double rollPosition =
+          Units.rotationsToRadians(canAndGyro.getRoll()) + canRollOffset.in(Radians);
       compRoll = rollPosition + (rollVelocity * latency);
 
       // PITCH
       pitchVelocity = Units.rotationsToRadians(canAndGyro.getAngularVelocityPitch());
-      double pitchPosition = Units.rotationsToRadians(canAndGyro.getPitch()) + canPitchOffset.in(Radians);
+      double pitchPosition =
+          Units.rotationsToRadians(canAndGyro.getPitch()) + canPitchOffset.in(Radians);
       compPitch = pitchPosition + (pitchVelocity * latency);
 
       // YAW
