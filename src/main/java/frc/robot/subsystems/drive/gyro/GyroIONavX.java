@@ -60,7 +60,7 @@ public class GyroIONavX implements GyroIO {
 
     return isLocked
         ? new IMUState(
-            timestampSec, roll, pitch, latencyCompensatedYaw, rollVel, pitchVel, yawVelocity)
+            timestampSec, roll, -pitch, latencyCompensatedYaw, rollVel, pitchVel, yawVelocity)
         : null;
   }
 

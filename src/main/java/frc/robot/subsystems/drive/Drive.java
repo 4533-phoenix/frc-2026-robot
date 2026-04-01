@@ -516,7 +516,6 @@ public class Drive extends SubsystemBase implements Monitored {
 
     gyroIO.setRotation(new Rotation3d(pose.getRotation()));
     rawGyroRotation = pose.getRotation();
-  
 
     gyroHistory.clear();
     gyroHistory.addSample(lastResetTimestamp, rawGyroRotation);
