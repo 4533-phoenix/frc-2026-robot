@@ -11,6 +11,7 @@ package frc.robot.subsystems.drive.gyro;
 
 import static edu.wpi.first.units.Units.*;
 
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.units.measure.*;
 import frc.lib.IMUState;
 import frc.lib.hardware.GyroType;
@@ -93,9 +94,9 @@ public interface GyroIO {
   public default void clearFaults() {}
 
   /**
-   * Sets the gyro's yaw position to the specified angle.
+   * Sets the gyro's rotation to the specified value.
    *
-   * @param yaw The angle to set the gyro's yaw position to.
+   * @param rotation The rotation to set the gyro to.
    */
-  public default void setYaw(Angle yaw) {}
+  public default void setRotation(Rotation3d rotation) {}
 }
