@@ -11,3 +11,4 @@
 * Reverify names for everything (especially intake/spinner/arm)
 * Create new profiles for people
 * Auto registering montiored?
+* Move locking out of gyros?
