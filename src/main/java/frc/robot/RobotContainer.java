@@ -38,9 +38,10 @@ public class RobotContainer {
     vision = new Vision(new VisionIOPhoton());
     // Wire up the data flow from vision to drive and drive to vision
     drive.setIMUHighFreqConsumer(vision::broadcastTelemetry);
+    drive.setAccuratePoseSupplier(vision::getBestSeedPose);
     vision.setVisionMeasurementConsumer(drive::addVisionMeasurement);
 
-    drive.setPose(Pose2d.kZero);
+    // drive.setPose(Pose2d.kZero);
     CommandXboxController controller = new CommandXboxController(0);
     controller
         .a()

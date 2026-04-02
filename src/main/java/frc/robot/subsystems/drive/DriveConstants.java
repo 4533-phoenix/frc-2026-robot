@@ -22,6 +22,9 @@ import edu.wpi.first.units.measure.*;
  * values for both real and simulated hardware.
  */
 public class DriveConstants {
+  public static final LinearVelocity STATIONARY_VELOCITY_THRESHOLD = MetersPerSecond.of(0.01);
+  public static final AngularVelocity STATIONARY_ROTATION_THRESHOLD = RadiansPerSecond.of(0.01);
+
   // Physical constants
   /** The maximum achievable linear velocity of the robot in meters per second. */
   public static final LinearVelocity MAX_LINEAR_VELOCITY = MetersPerSecond.of(4.0);

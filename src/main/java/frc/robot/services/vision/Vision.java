@@ -22,6 +22,7 @@ import frc.lib.IMUState;
 import frc.lib.monitor.Monitored;
 import frc.lib.service.BaseService;
 import java.util.Collections;
+import java.util.Optional;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -60,6 +61,7 @@ public class Vision extends BaseService implements Monitored {
 
   // State variables
   private VisionMeasurementConsumer measurementConsumer = null;
+  private Pose2d bestSeedPose = null;
 
   // We size the arrays based on the highest camera ID in the map to ensure direct index mapping.
   private final int maxCameraId;
@@ -118,6 +120,7 @@ public class Vision extends BaseService implements Monitored {
     io.updateInputs(inputs);
     Logger.processInputs("Vision", inputs);
 
+    VisionObservation bestSeedObservation = null;
     double currentTime = Timer.getTimestamp();
 
     // Process all detections received this frame
@@ -125,11 +128,6 @@ public class Vision extends BaseService implements Monitored {
       int id = inputs.observations[i].cameraId();
       if (id >= 0 && id <= maxCameraId && cameraActiveFlags[id]) {
         lastTimestamps[id] = currentTime;
-      }
-
-      // Single-tag detections are often unreliable for field position
-      if (inputs.observations[i].tagCount() <= 1) {
-        continue;
       }
 
       // Update Consumer with refined pose
@@ -141,7 +139,20 @@ public class Vision extends BaseService implements Monitored {
         measurementConsumer.accept(
             inputs.observations[i].visionPose(), inputs.observations[i].timestamp(), stdVector);
       }
+
+      // We will not trust single tags as being accurate
+      if (inputs.observations[i].tagCount() <= 1) {
+        continue;
+      }
+
+      // Get the best seed observation
+      if (bestSeedObservation == null
+          || inputs.observations[i].tagCount() > bestSeedObservation.tagCount()) {
+        bestSeedObservation = inputs.observations[i];
+      }
     }
+
+    bestSeedPose = (bestSeedObservation != null) ? bestSeedObservation.visionPose() : null;
 
     // Check for offline cameras
     for (int id = 0; id <= maxCameraId; id++) {
@@ -155,6 +166,27 @@ public class Vision extends BaseService implements Monitored {
       boolean seen = (currentTime - lastTimestamps[id]) <= OFFLINE_TIMEOUT.in(Seconds);
       Logger.recordOutput(seenPaths[id], seen);
     }
+  }
+
+  /**
+   * Sets the consumer for vision measurements.
+   *
+   * @param consumer A callback function that will be called with each valid vision measurement,
+   *     providing the pose, timestamp, and standard deviations. This allows external systems to
+   *     react to new vision data in real-time.
+   */
+  public void setVisionMeasurementConsumer(VisionMeasurementConsumer consumer) {
+    this.measurementConsumer = consumer;
+  }
+
+  /**
+   * Supplies the most accurate multi-tag pose available from the current loop. Returns
+   * Optional.empty() if no highly-accurate pose is currently available.
+   *
+   * @return An Optional containing the best seed Pose2d.
+   */
+  public Optional<Pose2d> getBestSeedPose() {
+    return Optional.ofNullable(bestSeedPose);
   }
 
   /**
@@ -175,15 +207,4 @@ public class Vision extends BaseService implements Monitored {
 
   /** Clear all faults and reset the subsystem. */
   public void clearFaults() {}
-
-  /**
-   * Sets the consumer for vision measurements.
-   *
-   * @param consumer A callback function that will be called with each valid vision measurement,
-   *     providing the pose, timestamp, and standard deviations. This allows external systems to
-   *     react to new vision data in real-time.
-   */
-  public void setVisionMeasurementConsumer(VisionMeasurementConsumer consumer) {
-    this.measurementConsumer = consumer;
-  }
 }

@@ -46,6 +46,7 @@ import frc.robot.subsystems.drive.gyro.GyroIO;
 import frc.robot.subsystems.drive.gyro.GyroIOInputsAutoLogged;
 import frc.robot.subsystems.drive.module.Module;
 import frc.robot.subsystems.drive.module.ModuleIO;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -111,6 +112,7 @@ public class Drive extends SubsystemBase implements Monitored {
   private final PIDController rotationController = new PIDController(ANGLE_KP, 0.0, ANGLE_KD);
 
   private Supplier<Rotation2d> headingOverrideSupplier = () -> null;
+  private Supplier<Optional<Pose2d>> accuratePoseSupplier = Optional::empty;
 
   /**
    * Creates a new Drive subsystem.
@@ -193,6 +195,13 @@ public class Drive extends SubsystemBase implements Monitored {
   @Override
   public void periodic() {
     gyroIO.updateInputs(gyroInputs);
+
+    if (!gyroInputs.locked && gyroInputs.connected && gyroInputs.healthy && isRobotStationary()) {
+      Optional<Pose2d> seedPose = accuratePoseSupplier.get();
+      if (seedPose.isPresent()) {
+        setPose(seedPose.get());
+      }
+    }
 
     for (int i = 0; i < gyroInputs.odometryYawTimestamps.length; i++) {
       if (gyroInputs.odometryYawTimestamps[i] > lastResetTimestamp) {
@@ -596,6 +605,25 @@ public class Drive extends SubsystemBase implements Monitored {
    */
   public double calculateRotationFeedback(Rotation2d targetHeading) {
     return rotationController.calculate(getRotation().getRadians(), targetHeading.getRadians());
+  }
+
+  /**
+   * Sets the supplier used to request a highly accurate pose (e.g., from Vision) to seed the
+   * odometry when the gyro loses lock.
+   */
+  public void setAccuratePoseSupplier(Supplier<Optional<Pose2d>> supplier) {
+    this.accuratePoseSupplier = (supplier == null) ? Optional::empty : supplier;
+  }
+
+  /**
+   * Checks if the robot is physically stationary based on module feedback. We use this instead of
+   * the gyro because the gyro might be unlocked/unreliable.
+   */
+  public boolean isRobotStationary() {
+    ChassisSpeeds speeds = getChassisSpeeds();
+    return Math.abs(speeds.vxMetersPerSecond) < STATIONARY_VELOCITY_THRESHOLD.in(MetersPerSecond)
+        && Math.abs(speeds.vyMetersPerSecond) < STATIONARY_VELOCITY_THRESHOLD.in(MetersPerSecond)
+        && Math.abs(getYawVelocityRadPerSec()) < STATIONARY_ROTATION_THRESHOLD.in(RadiansPerSecond);
   }
 
   /**
