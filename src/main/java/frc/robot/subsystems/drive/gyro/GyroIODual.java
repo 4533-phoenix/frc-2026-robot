@@ -136,6 +136,15 @@ public class GyroIODual implements GyroIO {
     boolean canCalibrating = canAndGyro.isCalibrating();
 
     inputs.connected = navxConn || canConn;
+    if (!inputs.connected && hasBeenSet) {
+      hasBeenSet = false;
+      navxYawOffset = Radians.zero();
+      canYawOffset = Radians.zero();
+      navxRollOffset = Radians.zero();
+      canRollOffset = Radians.zero();
+      navxPitchOffset = Radians.zero();
+      canPitchOffset = Radians.zero();
+    }
     inputs.locked = isLocked = inputs.connected && hasBeenSet;
 
     double rawNavxYaw = Units.degreesToRadians(-navX.getAngle());

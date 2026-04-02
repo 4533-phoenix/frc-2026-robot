@@ -82,6 +82,14 @@ public class GyroIOCanAndGyro implements GyroIO {
     inputs.connected = canAndGyro.isConnected();
     inputs.locked = isLocked = inputs.connected && hasBeenSet;
 
+    // Reset offset if disconnected
+    if (!inputs.connected && hasBeenSet) {
+      hasBeenSet = false;
+      yawOffset = Radians.zero();
+      pitchOffset = Radians.zero();
+      rollOffset = Radians.zero();
+    }
+
     // Drain high-frequency yaw measurements
     double[][] tsRef = {inputs.odometryYawTimestamps};
     double[][] yawRef = {inputs.odometryYawPositions};
