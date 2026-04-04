@@ -91,17 +91,13 @@ public class VisionConstants {
   public static final Matrix<N3, N1> NO_STD_DEVS = VecBuilder.fill(0, 0, 0);
 
   /** Standard deviations for vision measurements when only one AprilTag is visible. */
-  public static final Matrix<N3, N1> SINGLE_TAG_STD_DEVS = VecBuilder.fill(2, 2, Double.MAX_VALUE);
+  public static final Matrix<N3, N1> SINGLE_TAG_STD_DEVS = VecBuilder.fill(2, 2, 4.0);
 
   /**
    * Standard deviations for vision measurements when multiple AprilTags are visible (higher
    * confidence).
    */
-  public static final Matrix<N3, N1> MULTI_TAG_STD_DEVS =
-      VecBuilder.fill(0.5, 0.5, Double.MAX_VALUE);
-
-  /** Standard deviations for vision measurements used for individual tag tracking. */
-  public static final Matrix<N3, N1> TAG_STD_DEVS = VecBuilder.fill(0, 0, Double.MAX_VALUE);
+  public static final Matrix<N3, N1> MULTI_TAG_STD_DEVS = VecBuilder.fill(0.5, 0.5, 1.0);
 
   /** The maximum allowed ambiguity for a single-tag detection to be considered valid. */
   public static final double AMBIGUITY_CUTOFF = 0.05;

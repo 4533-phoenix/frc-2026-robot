@@ -76,8 +76,14 @@ public class RobotContainer {
   private final Arm arm;
   private final Spinner spinner;
   private final Shooter shooter;
+
+  @SuppressWarnings("unused")
   private final Indexer indexer;
+
+  @SuppressWarnings("unused")
   private final Vision vision;
+
+  @SuppressWarnings("unused")
   private final PDH pdh;
 
   // Superstructure
@@ -162,9 +168,7 @@ public class RobotContainer {
     operator = new Operator(new OperatorIO() {}, operatorChooser);
 
     // Create the superstructure, which coordinates between subsystems
-    superstructure =
-        new Superstructure(
-            drive, climb, arm, spinner, shooter, indexer, pdh, vision, driver, operator);
+    superstructure = new Superstructure(drive, climb, arm, spinner, shooter);
 
     // Create the driver
     XboxController driverController = new XboxController(0);

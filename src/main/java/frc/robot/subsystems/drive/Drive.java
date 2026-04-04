@@ -44,10 +44,9 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.lib.IMUState;
-import frc.lib.monitor.Monitored;
+import frc.lib.monitor.MonitoredSubsystemBase;
 import frc.lib.monitor.checkers.GyroMonitor;
 import frc.robot.subsystems.drive.gyro.GyroIO;
 import frc.robot.subsystems.drive.gyro.GyroIOInputsAutoLogged;
@@ -65,7 +64,7 @@ import org.littletonrobotics.junction.Logger;
  * <p>Handles kinematics, odometry estimation (incorporating gyro, modules, and vision), and
  * interfacing with PathPlanner for autonomous paths.
  */
-public class Drive extends SubsystemBase implements Monitored {
+public class Drive extends MonitoredSubsystemBase {
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
   private final GyroMonitor gyroHealthMonitor = new GyroMonitor();

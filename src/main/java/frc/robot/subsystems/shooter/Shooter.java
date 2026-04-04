@@ -18,11 +18,10 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.lib.WritableTrigger;
-import frc.lib.monitor.Monitored;
+import frc.lib.monitor.MonitoredSubsystemBase;
 import frc.lib.monitor.checkers.SparkMonitor;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOInputsAutoLogged;
@@ -37,7 +36,7 @@ import org.littletonrobotics.junction.Logger;
  * <p>Responsible for controlling the angular velocity of the flywheels and the position of the
  * adjustable hood to regulate launch angle and distance.
  */
-public class Shooter extends SubsystemBase implements Monitored {
+public class Shooter extends MonitoredSubsystemBase {
   /**
    * Represents the desired physical state of the shooter subsystem.
    *

@@ -19,18 +19,13 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.WritableTrigger;
-import frc.lib.monitor.Monitored;
+import frc.lib.monitor.MonitorRegistry;
 import frc.lib.util.FieldUtil;
-import frc.robot.services.control.driver.Driver;
-import frc.robot.services.control.operator.Operator;
-import frc.robot.services.vision.Vision;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveConstants;
-import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.intake.arm.Arm;
 import frc.robot.subsystems.intake.spinner.Spinner;
-import frc.robot.subsystems.pdh.PDH;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.shooter.ShooterKinematics;
@@ -78,20 +73,7 @@ public class Superstructure extends SubsystemBase {
   private final WritableTrigger climbMode = new WritableTrigger(false);
   private AimingResult currentAimingResult = Aiming.NO_TARGET;
   private boolean targetCanReceive = false;
-  private final Monitored[] monitors;
 
-  /**
-   * Constructs a new Superstructure.
-   *
-   * @param drive The drive subsystem for pose and velocity data.
-   * @param climb The climb subsystem.
-   * @param arm The intake arm subsystem.
-   * @param spinner The intake spinner subsystem.
-   * @param shooter The shooter subsystem.
-   * @param indexer The indexer subsystem.
-   * @param vision The vision subsystem.
-   * @param pdh The power distribution hub subsystem.
-   */
   /**
    * Constructs the Superstructure.
    *
@@ -100,34 +82,13 @@ public class Superstructure extends SubsystemBase {
    * @param arm The arm subsystem.
    * @param spinner The spinner subsystem.
    * @param shooter The shooter subsystem.
-   * @param indexer The indexer subsystem.
-   * @param pdh The power distribution hub subsystem.
-   * @param vision The vision subsystem.
-   * @param driver The driver control service.
-   * @param operator The operator control service.
    */
-  public Superstructure(
-      Drive drive,
-      Climb climb,
-      Arm arm,
-      Spinner spinner,
-      Shooter shooter,
-      Indexer indexer,
-      PDH pdh,
-      Vision vision,
-      Driver driver,
-      Operator operator) {
-
-    // If we need to interact with the subsystems we can store them
+  public Superstructure(Drive drive, Climb climb, Arm arm, Spinner spinner, Shooter shooter) {
     this.drive = drive;
     this.climb = climb;
     this.arm = arm;
     this.spinner = spinner;
     this.shooter = shooter;
-
-    // We keep an array of all subsystems for easy health monitoring and fault clearing
-    this.monitors =
-        new Monitored[] {climb, arm, spinner, shooter, indexer, pdh, vision, driver, operator};
 
     this.hubAiming =
         Aiming.hubAimingSupplier(
@@ -323,18 +284,11 @@ public class Superstructure extends SubsystemBase {
    */
   @AutoLogOutput(key = "Superstructure/IsHealthy")
   public boolean isHealthy() {
-    for (Monitored monitor : monitors) {
-      if (!monitor.isHealthy()) {
-        return false;
-      }
-    }
-    return true;
+    return MonitorRegistry.isHealthy();
   }
 
   /** Clears all faults and warnings from all subsystems. */
   public void clearFaults() {
-    for (Monitored monitor : monitors) {
-      monitor.clearFaults();
-    }
+    MonitorRegistry.clearFaults();
   }
 }

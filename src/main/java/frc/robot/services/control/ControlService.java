@@ -10,8 +10,7 @@ package frc.robot.services.control;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.GenericHID;
-import frc.lib.monitor.Monitored;
-import frc.lib.service.BaseService;
+import frc.lib.monitor.MonitoredBaseService;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
@@ -25,7 +24,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
  * @param <IN> The AutoLogged inputs type
  */
 public abstract class ControlService<P extends ControlProfile, IO, IN extends LoggableInputs>
-    extends BaseService implements Monitored {
+    extends MonitoredBaseService {
 
   /** Dashboard chooser for profiles. */
   protected final LoggedDashboardChooser<P> chooser;

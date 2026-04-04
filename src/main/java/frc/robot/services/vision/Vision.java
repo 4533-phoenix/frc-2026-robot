@@ -19,8 +19,7 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
 import frc.lib.IMUState;
-import frc.lib.monitor.Monitored;
-import frc.lib.service.BaseService;
+import frc.lib.monitor.MonitoredBaseService;
 import java.util.Collections;
 import org.littletonrobotics.junction.Logger;
 
@@ -31,7 +30,7 @@ import org.littletonrobotics.junction.Logger;
  * measurements into the Drive subsystem's pose estimator to refine the robot's field position. Also
  * monitors camera health and status using highly optimized zero-allocation data structures.
  */
-public class Vision extends BaseService implements Monitored {
+public class Vision extends MonitoredBaseService {
   /** A record representing a single vision observation. */
   public record VisionObservation(
       Pose2d visionPose,
