@@ -13,3 +13,4 @@
 * Auto registering montiored?
 * Move locking out of gyros?
 * Verify is aligned to target is correct?
+* Verify rotation is inf in drive.java

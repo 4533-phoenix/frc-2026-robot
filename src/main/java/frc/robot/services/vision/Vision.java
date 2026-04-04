@@ -135,7 +135,7 @@ public class Vision extends BaseService implements Monitored {
       // Update Consumer with refined pose
       stdVector.set(0, 0, inputs.observations[i].stdDevX());
       stdVector.set(1, 0, inputs.observations[i].stdDevY());
-      stdVector.set(2, 0, inputs.observations[i].stdDevRot());
+      stdVector.set(2, 0, Double.MAX_VALUE);
 
       if (measurementConsumer != null) {
         measurementConsumer.accept(

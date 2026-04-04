@@ -68,6 +68,7 @@ public class Whacknet implements AutoCloseable {
   // Members
   private final ByteBuffer queueBuffer;
   private final ByteBuffer readBuffer;
+  private final ByteBuffer telBuf;
   private final PacketView packetView = new PacketView();
 
   // Thread-safe indices for the circular buffer
@@ -101,6 +102,9 @@ public class Whacknet implements AutoCloseable {
 
     readBuffer = ByteBuffer.allocateDirect(MAX_QUEUE_SIZE * STRUCT_SIZE);
     readBuffer.order(ByteOrder.nativeOrder());
+
+    telBuf = ByteBuffer.allocateDirect(TELEMETRY_SIZE);
+    telBuf.order(ByteOrder.nativeOrder());
 
     // Report custom framework usage to HAL
     HAL.report(tResourceType.kResourceType_Framework, 4533);
@@ -155,10 +159,10 @@ public class Whacknet implements AutoCloseable {
         // If queue is not full, copy packet into shared memory
         if (nextH != t) {
           int offset = h * STRUCT_SIZE;
-          // Thread-safe copy to the direct buffer
-          queueBuffer.limit(offset + STRUCT_SIZE);
-          queueBuffer.position(offset);
-          queueBuffer.put(socketBuffer);
+          // Thread-safe copy to the direct buffer using absolute indexing
+          for (int i = 0; i < STRUCT_SIZE; i++) {
+            queueBuffer.put(offset + i, socketBuffer.get(i));
+          }
           head = nextH; // Atomic update
         }
       } catch (ClosedChannelException e) {
@@ -205,8 +209,7 @@ public class Whacknet implements AutoCloseable {
       }
 
       // Re-use a single direct buffer for broadcasting to remain 0-allocation
-      ByteBuffer telBuf = ByteBuffer.allocateDirect(TELEMETRY_SIZE);
-      telBuf.order(ByteOrder.nativeOrder());
+      telBuf.clear();
       telBuf.putLong(timestamp);
       telBuf.putDouble(roll);
       telBuf.putDouble(pitch);
