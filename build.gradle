@@ -260,7 +260,7 @@ spotless {
     target project.fileTree(projectDir) {
       include "src/main/native/c/**/*.c"
       include "src/main/native/include/**/*.h"
-      exclude "**/build/**"
+      exclude "**/build/**", "**/build-*/**", "src/main/deploy/**", "wiki/**"
     }
     eclipseCdt("11.3")
     trimTrailingWhitespace()
@@ -270,7 +270,7 @@ spotless {
   java {
     target fileTree(".") {
       include "**/*.java"
-      exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
+      exclude "**/build/**", "**/build-*/**", "src/main/deploy/**", "wiki/**"
     }
     toggleOffOn()
     googleJavaFormat()
@@ -281,7 +281,7 @@ spotless {
   groovyGradle {
     target fileTree(".") {
       include "**/*.gradle"
-      exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
+      exclude "**/build/**", "**/build-*/**", "src/main/deploy/**", "wiki/**"
     }
     greclipse()
     leadingTabsToSpaces(2)
@@ -291,14 +291,14 @@ spotless {
   json {
     target fileTree(".") {
       include "**/*.json"
-      exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
+      exclude "**/build/**", "**/build-*/**", "src/main/deploy/**", "wiki/**"
     }
     gson().indentWithSpaces(2)
   }
   format "misc", {
     target fileTree(".") {
       include "**/*.md", "**/.gitignore"
-      exclude "**/build/**", "**/build-*/**", "src/main/deploy/**"
+      exclude "**/build/**", "**/build-*/**", "src/main/deploy/**", "wiki/**"
     }
     trimTrailingWhitespace()
     leadingTabsToSpaces(2)
