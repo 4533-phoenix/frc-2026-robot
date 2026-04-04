@@ -47,32 +47,12 @@ public class VisionConstants {
       Map.of(
           1,
           new CameraConfig(
-              "Front",
+              "Camera",
               new Transform3d(
-                  Centimeters.of(-13.713),
                   Centimeters.of(0.0),
-                  Centimeters.of(51.887519),
-                  new Rotation3d(Degrees.of(180.0), Degrees.of(-5.0), Degrees.of(0.0))),
-              92.0,
-              10.0),
-          2,
-          new CameraConfig(
-              "Back Left",
-              new Transform3d(
-                  Centimeters.of(-31.8),
-                  Centimeters.of(18.4),
-                  Centimeters.of(25.1),
-                  new Rotation3d(Degrees.of(90.0), Degrees.of(-20.0), Degrees.of(138.0))),
-              92.0,
-              10.0),
-          3,
-          new CameraConfig(
-              "Back Right",
-              new Transform3d(
-                  Centimeters.of(-29.5),
-                  Centimeters.of(-28.0),
-                  Centimeters.of(26.2679),
-                  new Rotation3d(Degrees.of(0.0), Degrees.of(-21.0), Degrees.of(-137.0))),
+                  Centimeters.of(0.0),
+                  Centimeters.of(0.0),
+                  new Rotation3d(Degrees.of(0.0), Degrees.of(-20.0), Degrees.of(0.0))),
               92.0,
               10.0));
 
