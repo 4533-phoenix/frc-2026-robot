@@ -76,11 +76,7 @@ public class RobotContainer {
   private final Arm arm;
   private final Spinner spinner;
   private final Shooter shooter;
-
-  @SuppressWarnings("unused")
   private final Indexer indexer;
-
-  @SuppressWarnings("unused")
   private final Vision vision;
 
   @SuppressWarnings("unused")
@@ -309,13 +305,13 @@ public class RobotContainer {
     // When left trigger held and shooter has a target, rotate to aim at the target
     driver
         .wantsAim()
-        .and(superstructure::hasTarget)
+        .and(superstructure.hasTarget())
         .whileTrue(drive.headingAim(superstructure::getTargetRotation));
 
     // Spin up the motor if we are practicing not in match mode
     driver
         .wantsAim()
-        .and(superstructure::hasTarget)
+        .and(superstructure.hasTarget())
         .and(() -> Util.isMatchMode())
         .whileTrue(shooter.runHeld());
 
@@ -375,7 +371,7 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     Command autoCommand = autoChooser.get();
-    if (autoCommand == null || autoCommand.getName().equals("Fallback Pose Reset")) {
+    if (autoCommand == null) {
       return fallbackPoseResetCommand();
     }
     return autoCommand;
@@ -385,9 +381,7 @@ public class RobotContainer {
     return Commands.runOnce(
             () ->
                 drive.setPose(
-                    FieldUtil.flipAllianceIfNeeded(
-                        new Pose2d(3.5, 2.4, new Rotation2d(0)) // Your desired fallback pose
-                        )))
+                    FieldUtil.flipAllianceIfNeeded(new Pose2d(3.5, 2.4, new Rotation2d(0)))))
         .withName("Fallback Pose Reset");
   }
 }

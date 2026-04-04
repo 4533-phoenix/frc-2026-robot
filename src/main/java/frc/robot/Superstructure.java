@@ -259,8 +259,8 @@ public class Superstructure extends SubsystemBase {
   /**
    * @return Whether the superstructure currently has an active aiming target.
    */
-  public boolean hasTarget() {
-    return currentAimingResult.hasTarget();
+  public Trigger hasTarget() {
+    return new Trigger(() -> currentAimingResult.hasTarget());
   }
 
   /**
