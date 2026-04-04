@@ -67,9 +67,9 @@ public class DefaultDriverProfile extends GenericControlProfile implements Drive
   @Override
   public ChassisSpeeds getDesiredSpeeds() {
     return new ChassisSpeeds(
-        maxLinearVelocity.times(processJoystick(controller.getLeftY())),
-        maxLinearVelocity.times(processJoystick(controller.getLeftX())),
-        maxAngularVelocity.times(processJoystick(controller.getRightX())));
+        maxLinearVelocity.times(processJoystick(-controller.getLeftY())),
+        maxLinearVelocity.times(processJoystick(-controller.getLeftX())),
+        maxAngularVelocity.times(processJoystick(-controller.getRightX())));
   }
 
   @Override
