@@ -22,6 +22,7 @@ import frc.robot.services.control.driver.Driver;
 import frc.robot.services.control.driver.DriverIO;
 import frc.robot.services.control.driver.DriverProfile;
 import frc.robot.services.control.driver.profiles.DefaultDriverProfile;
+import frc.robot.services.control.driver.profiles.NoAssistsDriverProfile;
 import frc.robot.services.control.driver.profiles.SetpointDriverProfile;
 import frc.robot.services.control.operator.Operator;
 import frc.robot.services.control.operator.OperatorIO;
@@ -185,6 +186,12 @@ public class RobotContainer {
             DriveConstants.MAX_ANGULAR_ACCELERATION,
             drive::getChassisSpeeds,
             superstructure.isReadyToShoot()));
+    driverChooser.addOption(
+        "No Assists",
+        new NoAssistsDriverProfile(
+            driverController,
+            DriveConstants.MAX_LINEAR_VELOCITY,
+            DriveConstants.MAX_ANGULAR_VELOCITY));
 
     // Create the operator
     XboxController operatorController = new XboxController(1);

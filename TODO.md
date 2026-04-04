@@ -8,3 +8,4 @@
 * Figure out when the hubs *actually* get disabled
 * Reverify names for everything (especially intake/spinner/arm)
 * Create new profiles for people
+* Automatically move intake when shooting
