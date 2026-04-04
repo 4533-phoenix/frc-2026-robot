@@ -104,9 +104,9 @@ public class SetpointDriverProfile extends GenericControlProfile implements Driv
     }
 
     // Get raw intent (cubed and deadbanded)
-    double rawX = processJoystick(controller.getLeftY()); // Joystick Y is Field X
-    double rawY = processJoystick(controller.getLeftX()); // Joystick X is Field Y
-    double rawOmega = processJoystick(controller.getRightX());
+    double rawX = processJoystick(-controller.getLeftY()); // Joystick Y is Field X
+    double rawY = processJoystick(-controller.getLeftX()); // Joystick X is Field Y
+    double rawOmega = processJoystick(-controller.getRightX());
 
     // Scale to maximum desired velocities
     double targetVx = rawX * maxLinearVelocity.in(MetersPerSecond);
