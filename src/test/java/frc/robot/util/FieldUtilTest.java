@@ -21,8 +21,6 @@ public class FieldUtilTest {
 
   @BeforeAll
   public static void setup() {
-    // Initialize the WPILib Hardware Abstraction Layer (HAL)
-    // This prevents wpiHal.dll from crashing when using DriverStation, Timers, or Alerts
     assert HAL.initialize(500, 0);
   }
 
