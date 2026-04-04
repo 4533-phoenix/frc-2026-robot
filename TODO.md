@@ -10,6 +10,4 @@
 * Figure out when the hubs *actually* get disabled
 * Reverify names for everything (especially intake/spinner/arm)
 * Create new profiles for people
-* Auto registering montiored?
 * Move locking out of gyros?
-* Verify is aligned to target is correct?
