@@ -113,7 +113,7 @@ public final class ShooterConstants {
 
   //  Aiming / lead constants
   /** Estimated time of flight for the game piece from shooter to target. */
-  public static final Time ESTIMATED_TOF = Seconds.of(0.5);
+  public static final Time ESTIMATED_TOF = Seconds.of(0.55);
 
   /**
    * Position of the shooter on the robot relative to the robot center (robot-frame). X is forward,

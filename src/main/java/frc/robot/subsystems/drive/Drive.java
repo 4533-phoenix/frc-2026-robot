@@ -21,7 +21,7 @@ import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -35,6 +35,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Voltage;
@@ -115,7 +116,14 @@ public class Drive extends MonitoredSubsystemBase {
   private final Notifier odometryThread;
   private Consumer<IMUState> visionHighFreqConsumer;
 
-  private final PIDController rotationController = new PIDController(ANGLE_KP, 0.0, ANGLE_KD);
+  private final ProfiledPIDController rotationController =
+      new ProfiledPIDController(
+          ANGLE_KP,
+          0.0,
+          ANGLE_KD,
+          new TrapezoidProfile.Constraints(
+              MAX_ANGULAR_VELOCITY.in(RadiansPerSecond),
+              MAX_ANGULAR_ACCELERATION.in(RadiansPerSecondPerSecond)));
 
   private Supplier<Rotation2d> headingOverrideSupplier = () -> null;
 
@@ -158,7 +166,7 @@ public class Drive extends MonitoredSubsystemBase {
           this.runVelocity(speeds, target);
         },
         new PPHolonomicDriveController(
-            new PIDConstants(5.0, 0.0, 0.0), new PIDConstants(5.0, 0.0, 0.0)),
+            new PIDConstants(8.0, 0.0, 0.0), new PIDConstants(8.0, 0.0, 0.0)),
         PP_CONFIG,
         () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
         this);
@@ -628,7 +636,7 @@ public class Drive extends MonitoredSubsystemBase {
 
   /** Resets the rotation PID to prevent sudden jerks when taking over heading control. */
   public void resetRotationController() {
-    rotationController.reset();
+    rotationController.reset(getRotation().getRadians());
   }
 
   /**

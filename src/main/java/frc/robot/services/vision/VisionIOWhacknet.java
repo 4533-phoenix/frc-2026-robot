@@ -45,10 +45,12 @@ public class VisionIOWhacknet implements VisionIO {
 
     whacknet.forEachPacket(
         (packet, i) -> {
+          double timestampSeconds = packet.getTimestamp() / 1_000_000.0;
+
           inputs.observations[i] =
               new VisionObservation(
                   packet.getPose2d(),
-                  packet.getTimestamp() * 1.0e-6,
+                  timestampSeconds,
                   packet.getCameraId(),
                   packet.getNumTags(),
                   packet.getStdX(),

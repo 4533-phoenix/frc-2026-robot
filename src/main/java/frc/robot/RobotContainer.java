@@ -30,8 +30,8 @@ import frc.robot.services.control.operator.OperatorProfile;
 import frc.robot.services.control.operator.profiles.DefaultOperatorProfile;
 import frc.robot.services.vision.Vision;
 import frc.robot.services.vision.VisionIO;
-import frc.robot.services.vision.VisionIOPhoton;
 import frc.robot.services.vision.VisionIOSim;
+import frc.robot.services.vision.VisionIOWhacknet;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.climb.ClimbIO;
 import frc.robot.subsystems.climb.ClimbIOSim;
@@ -115,7 +115,7 @@ public class RobotContainer {
         spinner = new Spinner(new SpinnerIOSpark());
         shooter = new Shooter(new FlywheelIOSpark(), new HoodIOServo());
         indexer = new Indexer(new IndexerIOSpark());
-        vision = new Vision(new VisionIOPhoton());
+        vision = new Vision(new VisionIOWhacknet());
         pdh = new PDH(new PDHIOReal());
         break;
 
@@ -165,7 +165,7 @@ public class RobotContainer {
     operator = new Operator(new OperatorIO() {}, operatorChooser);
 
     // Create the superstructure, which coordinates between subsystems
-    superstructure = new Superstructure(drive, climb, arm, spinner, shooter);
+    superstructure = new Superstructure(drive, climb, arm, spinner, shooter, indexer);
 
     // Create the driver
     XboxController driverController = new XboxController(0);
@@ -209,8 +209,9 @@ public class RobotContainer {
     registerAutoCommands();
 
     // Set up auto routines via PathPlanner
-    autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
-    autoChooser.addOption("None", fallbackPoseResetCommand());
+    autoChooser =
+        new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser("None"));
+    autoChooser.addDefaultOption("None", fallbackPoseResetCommand());
 
     // Assign auto commands to the chooser
     autoChooser.addOption(
@@ -230,7 +231,10 @@ public class RobotContainer {
                 .withTimeout(1.0)
                 .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
-                Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
+                Commands.sequence(
+                        Commands.waitUntil(superstructure.isReadyToShoot()),
+                        superstructure.feedBalls().onlyWhile(superstructure.isReadyToShoot()))
+                    .repeatedly(),
                 drive.headingAim(superstructure::getTargetRotation))));
 
     autoChooser.addOption(
@@ -250,7 +254,10 @@ public class RobotContainer {
                 .withTimeout(1.0)
                 .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
-                Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
+                Commands.sequence(
+                        Commands.waitUntil(superstructure.isReadyToShoot()),
+                        superstructure.feedBalls().onlyWhile(superstructure.isReadyToShoot()))
+                    .repeatedly(),
                 drive.headingAim(superstructure::getTargetRotation))));
 
     autoChooser.addOption(
@@ -267,7 +274,10 @@ public class RobotContainer {
                 .withTimeout(1.0)
                 .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
-                Commands.sequence(Commands.waitUntil(shooter.isShooterReady()), indexer.run()),
+                Commands.sequence(
+                        Commands.waitUntil(superstructure.isReadyToShoot()),
+                        superstructure.feedBalls().onlyWhile(superstructure.isReadyToShoot()))
+                    .repeatedly(),
                 drive.headingAim(superstructure::getTargetRotation))));
 
     // Configure the commands
@@ -319,15 +329,16 @@ public class RobotContainer {
     driver
         .wantsAim()
         .and(superstructure.hasTarget())
-        .and(() -> Util.isMatchMode())
+        .and(() -> !Util.isMatchMode())
         .whileTrue(shooter.runHeld());
 
-    // When right trigger held, shooter is ready, and robot is aimed, run the indexer
+    // When right trigger held, shooter is ready, and robot is aimed, run the indexer and oscillate
+    // arm
     driver
         .wantsShoot()
         .and(driver.wantsAim())
         .and(superstructure.isReadyToShoot())
-        .whileTrue(indexer.run());
+        .whileTrue(superstructure.feedBalls());
 
     // When B is pressed, reset the current pose to the alliance origin facing away
     driver

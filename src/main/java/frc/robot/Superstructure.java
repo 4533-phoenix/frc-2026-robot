@@ -16,6 +16,7 @@ import edu.wpi.first.networktables.BooleanSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.WritableTrigger;
@@ -24,6 +25,7 @@ import frc.lib.util.FieldUtil;
 import frc.robot.subsystems.climb.Climb;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveConstants;
+import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.intake.arm.Arm;
 import frc.robot.subsystems.intake.spinner.Spinner;
 import frc.robot.subsystems.shooter.Shooter;
@@ -50,6 +52,7 @@ public class Superstructure extends SubsystemBase {
   private final Arm arm;
   private final Spinner spinner;
   private final Shooter shooter;
+  private final Indexer indexer;
 
   // Dashboard helpers
   private boolean lastClearFaults = false;
@@ -82,13 +85,16 @@ public class Superstructure extends SubsystemBase {
    * @param arm The arm subsystem.
    * @param spinner The spinner subsystem.
    * @param shooter The shooter subsystem.
+   * @param indexer The indexer subsystem.
    */
-  public Superstructure(Drive drive, Climb climb, Arm arm, Spinner spinner, Shooter shooter) {
+  public Superstructure(
+      Drive drive, Climb climb, Arm arm, Spinner spinner, Shooter shooter, Indexer indexer) {
     this.drive = drive;
     this.climb = climb;
     this.arm = arm;
     this.spinner = spinner;
     this.shooter = shooter;
+    this.indexer = indexer;
 
     this.hubAiming =
         Aiming.hubAimingSupplier(
@@ -192,6 +198,14 @@ public class Superstructure extends SubsystemBase {
    */
   public Command extake() {
     return spinner.extake();
+  }
+
+  /**
+   * @return A command to feed balls by running the indexer, oscillating the arm, and spinning the
+   *     intake.
+   */
+  public Command feedBalls() {
+    return Commands.parallel(indexer.run(), arm.oscillate(), spinner.intake());
   }
 
   /**

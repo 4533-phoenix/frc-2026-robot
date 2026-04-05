@@ -10,6 +10,8 @@ import frc.robot.subsystems.climb.ClimbIO;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.gyro.GyroIO;
 import frc.robot.subsystems.drive.module.ModuleIO;
+import frc.robot.subsystems.indexer.Indexer;
+import frc.robot.subsystems.indexer.IndexerIO;
 import frc.robot.subsystems.intake.arm.Arm;
 import frc.robot.subsystems.intake.arm.ArmIO;
 import frc.robot.subsystems.intake.spinner.Spinner;
@@ -27,6 +29,7 @@ class SuperstructureTest {
   private Arm arm;
   private Spinner spinner;
   private Shooter shooter;
+  private Indexer indexer;
   private Superstructure superstructure;
 
   @BeforeEach
@@ -43,8 +46,9 @@ class SuperstructureTest {
     arm = new Arm(new ArmIO() {});
     spinner = new Spinner(new SpinnerIO() {});
     shooter = new Shooter(new FlywheelIO() {}, new HoodIO() {});
+    indexer = new Indexer(new IndexerIO() {});
 
-    superstructure = new Superstructure(drive, climb, arm, spinner, shooter);
+    superstructure = new Superstructure(drive, climb, arm, spinner, shooter, indexer);
   }
 
   @AfterEach

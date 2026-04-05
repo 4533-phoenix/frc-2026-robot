@@ -232,7 +232,7 @@ public class DriveConstants {
   /** Joystick deadband for linear and rotational inputs. */
   public static final double JOYSTICK_DEADBAND = 0.1;
 
-  // Angle PID configuration (for rotation-locked drive commands)
+  // Angle PID configuration
   /** Proportional gain for rotational PID control. */
   public static final double ANGLE_KP = 10.0;
 

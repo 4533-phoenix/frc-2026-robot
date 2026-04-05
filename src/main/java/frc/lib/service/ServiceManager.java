@@ -14,10 +14,7 @@ import java.util.List;
 public class ServiceManager {
   /** Interface for services that are updated every loop. */
   public interface Service {
-    /**
-     * Logic to be executed every loop. Since this runs in parallel, ensure this method is
-     * thread-safe!
-     */
+    /** Logic to be executed every loop. This runs sequentially on the main thread. */
     void update();
   }
 
@@ -32,11 +29,8 @@ public class ServiceManager {
     services.add(service);
   }
 
-  /**
-   * Executes all registered services in parallel and waits for all to complete. This acts as a
-   * synchronous barrier.
-   */
+  /** Executes all registered services sequentially. */
   public static void updateAll() {
-    services.parallelStream().forEach(BaseService::update);
+    services.forEach(BaseService::update);
   }
 }

@@ -11,6 +11,7 @@ import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.intake.arm.ArmConstants.*;
 
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.monitor.MonitoredSubsystemBase;
@@ -41,6 +42,9 @@ public class Arm extends MonitoredSubsystemBase {
 
   @AutoLogOutput(key = "Intake/Arm/Goal")
   private Goal goal = Goal.UNKNOWN;
+
+  @AutoLogOutput(key = "Intake/Arm/Oscillating")
+  private boolean oscillate = false;
 
   private final Trigger deployedTrigger;
   private final Trigger retractedTrigger;
@@ -93,9 +97,36 @@ public class Arm extends MonitoredSubsystemBase {
 
     switch (goal) {
       case RETRACT -> io.setPosition(RETRACTED_POSITION);
-      case DEPLOY -> io.setPosition(DEPLOYED_POSITION);
+      case DEPLOY -> {
+        if (oscillate) {
+          boolean atApex = (Timer.getFPGATimestamp() * OSCILLATE_FREQUENCY.in(Hertz)) % 1.0 > 0.5;
+          io.setPosition(
+              atApex ? DEPLOYED_POSITION.plus(OSCILLATE_POSITION_OFFSET) : DEPLOYED_POSITION);
+        } else {
+          io.setPosition(DEPLOYED_POSITION);
+        }
+      }
       case UNKNOWN -> io.stop();
     }
+  }
+
+  /**
+   * Sets whether the arm should oscillate when deployed.
+   *
+   * @param oscillate True to oscillate, false to remain still.
+   */
+  public void setOscillate(boolean oscillate) {
+    this.oscillate = oscillate;
+  }
+
+  /** Command to deploy and oscillate the arm until canceled. */
+  public Command oscillate() {
+    return this.startEnd(
+        () -> {
+          setGoal(Goal.DEPLOY);
+          setOscillate(true);
+        },
+        () -> setOscillate(false));
   }
 
   /**

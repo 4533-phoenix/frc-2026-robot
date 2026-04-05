@@ -49,7 +49,7 @@ public final class ArmConstants {
 
   // Encoder Offsets
   /** Absolute encoder offset. */
-  public static final double GLOBAL_ENCODER_OFFSET = 0.21;
+  public static final double GLOBAL_ENCODER_OFFSET = 0.20;
 
   // Motor Current Limits
   /** Max current draw for the arm motor. */
@@ -88,6 +88,12 @@ public final class ArmConstants {
 
   /** Angle of the arm when fully retracted inside the robot perimeter. */
   public static final Angle RETRACTED_POSITION = Radians.of(2.7);
+
+  /** Angle offset for oscillation from the deployed position. */
+  public static final Angle OSCILLATE_POSITION_OFFSET = Degrees.of(55.0);
+
+  /** Frequency of oscillation for the arm. */
+  public static final Frequency OSCILLATE_FREQUENCY = Hertz.of(0.5);
 
   /** Tolerance for considering the arm at a specific PID setpoint. */
   public static final Angle PID_TOLERANCE = Degrees.of(1.0);

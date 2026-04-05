@@ -32,6 +32,9 @@ public class Aiming {
   /** A default empty result to prevent NullPointerExceptions */
   public static final AimingResult NO_TARGET = new AimingResult(new Rotation2d(), 0.0, false);
 
+  /** Estimated magazine travel time. */
+  public static final Time MECHANICAL_DELAY = Seconds.of(0.15);
+
   /**
    * Gets the amount of angle to compensate for curve of the ball in the air.
    *
@@ -82,65 +85,40 @@ public class Aiming {
       boolean log) {
 
     Translation2d target = FieldUtil.flipAllianceIfNeeded(targetPosition);
-    double targetX = target.getX();
-    double targetY = target.getY();
-    double robotX = robotCenter.getX();
-    double robotY = robotCenter.getY();
-    double robotAngle = currentRobotRotation.getRadians();
-    double offsetX = shooterRobotOffset.getX();
-    double offsetY = shooterRobotOffset.getY();
-    double velX = fieldVelocity.getX();
-    double velY = fieldVelocity.getY();
-    double tof = estimatedTimeOfFlight.in(edu.wpi.first.units.Units.Seconds);
 
-    // Estimate rotation from current position
+    double tMech = MECHANICAL_DELAY.in(Seconds); // magazine travel time
+    double futureRobotX = robotCenter.getX() + (fieldVelocity.getX() * tMech);
+    double futureRobotY = robotCenter.getY() + (fieldVelocity.getY() * tMech);
+    Translation2d futureRobotCenter = new Translation2d(futureRobotX, futureRobotY);
+
+    double robotAngle = currentRobotRotation.getRadians();
     double cos = Math.cos(robotAngle);
     double sin = Math.sin(robotAngle);
-    double shooterX = robotX + (offsetX * cos - offsetY * sin);
-    double shooterY = robotY + (offsetX * sin + offsetY * cos);
+    double shooterX =
+        futureRobotX + (shooterRobotOffset.getX() * cos - shooterRobotOffset.getY() * sin);
+    double shooterY =
+        futureRobotY + (shooterRobotOffset.getX() * sin + shooterRobotOffset.getY() * cos);
 
-    double virtualTargetX = targetX - (velX * tof);
-    double virtualTargetY = targetY - (velY * tof);
+    double tof = estimatedTimeOfFlight.in(Seconds);
+    double virtualTargetX = target.getX() - (fieldVelocity.getX() * tof);
+    double virtualTargetY = target.getY() - (fieldVelocity.getY() * tof);
 
-    // Clamp lead
-    double dxRaw = virtualTargetX - shooterX;
-    double dyRaw = virtualTargetY - shooterY;
-    double distToVirtual = Math.sqrt(dxRaw * dxRaw + dyRaw * dyRaw);
-    double leadX = velX * tof;
-    double leadY = velY * tof;
-    double leadMag = Math.sqrt(leadX * leadX + leadY * leadY);
-    double maxLead = distToVirtual * 0.5;
+    double dx = virtualTargetX - shooterX;
+    double dy = virtualTargetY - shooterY;
 
-    if (leadMag > maxLead && leadMag > 1e-6) {
-      double scale = maxLead / leadMag;
-      virtualTargetX = targetX - (leadX * scale);
-      virtualTargetY = targetY - (leadY * scale);
-    }
+    double finalAngle = Math.atan2(dy, dx);
+    double finalDist = Math.sqrt(dx * dx + dy * dy);
 
-    double estimatedAngle = Math.atan2(virtualTargetY - shooterY, virtualTargetX - shooterX);
-
-    // Recompute with predicted shooter position
-    cos = Math.cos(estimatedAngle);
-    sin = Math.sin(estimatedAngle);
-    double predShooterX = robotX + (offsetX * cos - offsetY * sin);
-    double predShooterY = robotY + (offsetX * sin + offsetY * cos);
-
-    double finalDx = virtualTargetX - predShooterX;
-    double finalDy = virtualTargetY - predShooterY;
-    double finalAngle = Math.atan2(finalDy, finalDx);
-    double finalDist = Math.sqrt(finalDx * finalDx + finalDy * finalDy);
-
-    Rotation2d baseRotation = Rotation2d.fromRadians(finalAngle);
-    Rotation2d finalRotation = baseRotation.plus(getCurveCompensation(finalDist));
+    Rotation2d finalRotation =
+        Rotation2d.fromRadians(finalAngle).plus(getCurveCompensation(finalDist));
 
     if (log) {
+      Logger.recordOutput(
+          "Aiming/FutureRobotPose", new Pose2d(futureRobotCenter, currentRobotRotation));
       Logger.recordOutput(
           "Aiming/VirtualTarget", new Pose2d(virtualTargetX, virtualTargetY, Rotation2d.kZero));
       Logger.recordOutput(
           "Aiming/ShooterPosition", new Pose2d(shooterX, shooterY, currentRobotRotation));
-      Logger.recordOutput(
-          "Aiming/PredictedShooterPosition",
-          new Pose2d(predShooterX, predShooterY, Rotation2d.fromRadians(estimatedAngle)));
       Logger.recordOutput("Aiming/TargetRotation", finalRotation.getDegrees());
       Logger.recordOutput("Aiming/CurveCompDegrees", getCurveCompensation(finalDist).getDegrees());
       Logger.recordOutput("Aiming/DistanceToTarget", finalDist);

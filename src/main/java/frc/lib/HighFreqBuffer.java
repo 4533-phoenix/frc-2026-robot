@@ -8,103 +8,86 @@
 package frc.lib;
 
 /**
- * A buffer for storing synchronized high-frequency data points across multiple signals. Handles N
- * signals per timestamp with zero-allocation performance.
+ * A buffer for storing synchronized high-frequency data points across multiple signals. Specialized
+ * for handling at most 2 data channels (e.g., Gyro Yaw or Swerve Module Drive + Turn).
  */
 public class HighFreqBuffer {
-  private final PrimitiveQueue timestamps = new PrimitiveQueue();
-  private final PrimitiveQueue[] valueQueues;
+  private final PrimitiveQueue dataQueue = new PrimitiveQueue();
+  private final int numSignals;
+  private final int stride;
 
   /**
-   * Creates a new HighFreqBuffer with a specific number of value signals.
+   * Creates a new HighFreqBuffer with a specific number of value signals (max 2).
    *
-   * @param numSignals The number of data streams to associate with the timestamp stream.
+   * @param numSignals The number of data streams (1 for Gyro, 2 for Swerve Modules).
    */
   public HighFreqBuffer(int numSignals) {
-    valueQueues = new PrimitiveQueue[numSignals];
-    for (int i = 0; i < numSignals; i++) {
-      valueQueues[i] = new PrimitiveQueue();
+    if (numSignals < 1 || numSignals > 2) {
+      throw new IllegalArgumentException("This buffer only supports 1 or 2 signals.");
     }
+    this.numSignals = numSignals;
+    this.stride = numSignals + 1;
   }
 
   /**
-   * Offers a new data point for a single signal. Overloaded to avoid varargs array allocation.
+   * Offers a new data point for a single signal (e.g., Gyro Yaw).
    *
    * @param timestamp The timestamp for the data point.
-   * @param v0 The value for the first signal.
+   * @param v0 The value for the signal.
    */
   public void offer(double timestamp, double v0) {
-    timestamps.offer(timestamp);
-    valueQueues[0].offer(v0);
+    if (numSignals != 1) {
+      throw new IllegalStateException("Buffer configured for 2 signals, but only 1 offered.");
+    }
+    // Prevent partial frame desync if the queue is full
+    if (dataQueue.size() + stride >= 64) return;
+
+    dataQueue.offer(timestamp);
+    dataQueue.offer(v0);
   }
 
   /**
-   * Offers a new data point for two signals. Overloaded to avoid varargs array allocation.
+   * Offers a new data point for two signals (e.g., Swerve Module Drive and Turn).
    *
    * @param timestamp The timestamp for the data point.
    * @param v0 The value for the first signal.
    * @param v1 The value for the second signal.
    */
   public void offer(double timestamp, double v0, double v1) {
-    timestamps.offer(timestamp);
-    valueQueues[0].offer(v0);
-    valueQueues[1].offer(v1);
-  }
-
-  /**
-   * Offers a new data point for three signals. Overloaded to avoid varargs array allocation.
-   *
-   * @param timestamp The timestamp for the data point.
-   * @param v0 The value for the first signal.
-   * @param v1 The value for the second signal.
-   * @param v2 The value for the third signal.
-   */
-  public void offer(double timestamp, double v0, double v1, double v2) {
-    timestamps.offer(timestamp);
-    valueQueues[0].offer(v0);
-    valueQueues[1].offer(v1);
-    valueQueues[2].offer(v2);
-  }
-
-  /**
-   * Generic offer for N signals. Note: Use specific overloads for 2 or 3 signals to remain 100%
-   * GC-free.
-   *
-   * @param timestamp The timestamp for the data point.
-   * @param values The values for the signals.
-   */
-  public void offer(double timestamp, double[] values) {
-    timestamps.offer(timestamp);
-    for (int i = 0; i < Math.min(values.length, valueQueues.length); i++) {
-      valueQueues[i].offer(values[i]);
+    if (numSignals != 2) {
+      throw new IllegalStateException("Buffer configured for 1 signal, but 2 offered.");
     }
+    if (dataQueue.size() + stride >= 64) return;
+
+    dataQueue.offer(timestamp);
+    dataQueue.offer(v0);
+    dataQueue.offer(v1);
   }
 
   /**
    * Drains the buffer contents into the provided AdvantageKit array wrappers.
    *
    * @param outTimestamps A wrapper (double[1][N]) for the timestamp array.
-   * @param outValueWrappers An array of wrappers, one for each signal provided in the constructor.
+   * @param outValueWrappers Wrappers for the signals (1 wrapper for Gyro, 2 for Modules).
    */
   public void drain(double[][] outTimestamps, double[][]... outValueWrappers) {
-    int count = timestamps.size();
-    if (count == 0) return;
+    int frames = dataQueue.size() / stride;
+    if (frames == 0) return;
 
-    // Ensure output buffers are the correct size
-    if (outTimestamps[0] == null || outTimestamps[0].length != count) {
-      outTimestamps[0] = new double[count];
-    }
-    for (int i = 0; i < Math.min(valueQueues.length, outValueWrappers.length); i++) {
-      if (outValueWrappers[i][0] == null || outValueWrappers[i][0].length != count) {
-        outValueWrappers[i][0] = new double[count];
-      }
+    // Allocate exact array sizes to keep AdvantageKit logs clean.
+    outTimestamps[0] = new double[frames];
+    outValueWrappers[0][0] = new double[frames];
+    if (numSignals == 2) {
+      outValueWrappers[1][0] = new double[frames];
     }
 
-    // Poll from Ring Buffer into output arrays
-    for (int i = 0; i < count; i++) {
-      outTimestamps[0][i] = timestamps.poll();
-      for (int j = 0; j < Math.min(valueQueues.length, outValueWrappers.length); j++) {
-        outValueWrappers[j][0][i] = valueQueues[j].poll();
+    // Poll from Ring Buffer into output arrays without looping through signals
+    for (int i = 0; i < frames; i++) {
+      outTimestamps[0][i] = dataQueue.poll();
+      outValueWrappers[0][0][i] = dataQueue.poll();
+
+      if (numSignals == 2) {
+        outValueWrappers[1][0][i] = dataQueue.poll();
       }
     }
   }
