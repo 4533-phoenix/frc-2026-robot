@@ -8,3 +8,4 @@
 * Figure out when the hubs *actually* get disabled
 * Create new profiles for people
 * Automatically move intake when shooting
+* Shoot faster with code?
