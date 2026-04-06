@@ -54,6 +54,8 @@ import frc.robot.subsystems.drive.gyro.GyroIOInputsAutoLogged;
 import frc.robot.subsystems.drive.module.Module;
 import frc.robot.subsystems.drive.module.ModuleIO;
 import frc.robot.util.LocalADStarAK;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -127,6 +129,12 @@ public class Drive extends MonitoredSubsystemBase {
 
   private Supplier<Rotation2d> headingOverrideSupplier = () -> null;
 
+  private final SwerveDriveKinematics[] dynamicKinematics = new SwerveDriveKinematics[16];
+  private final boolean[] isCaster = new boolean[4];
+  private final boolean[] isOpportunistic = new boolean[4];
+  private final boolean[] isDead = new boolean[4];
+  private final SwerveModuleState[] finalStates = new SwerveModuleState[4];
+
   /**
    * Creates a new Drive subsystem.
    *
@@ -147,6 +155,23 @@ public class Drive extends MonitoredSubsystemBase {
     modules[1] = new Module(frModuleIO, 1);
     modules[2] = new Module(blModuleIO, 2);
     modules[3] = new Module(brModuleIO, 3);
+
+    // Try our absolute best to keep this thing driving
+    for (int mask = 1; mask < 16; mask++) {
+      List<Translation2d> activeTranslations = new ArrayList<>();
+      for (int mod = 0; mod < 4; mod++) {
+        if ((mask & (1 << mod)) != 0) {
+          activeTranslations.add(MODULE_TRANSLATIONS[mod]);
+        }
+      }
+
+      while (activeTranslations.size() < 2) {
+        activeTranslations.add(new Translation2d());
+      }
+
+      dynamicKinematics[mask] =
+          new SwerveDriveKinematics(activeTranslations.toArray(new Translation2d[0]));
+    }
 
     // Usage reporting for swerve template
     HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_AdvantageKit);
@@ -382,21 +407,58 @@ public class Drive extends MonitoredSubsystemBase {
    * @param speeds Speeds in meters/sec, relative to the robot's field-centric perspective.
    */
   public void runVelocityRaw(ChassisSpeeds speeds) {
-    SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(speeds);
-    SwerveDriveKinematics.desaturateWheelSpeeds(
-        setpointStates, MAX_LINEAR_VELOCITY.in(MetersPerSecond));
+    int healthyMask = 0;
 
-    // Log unoptimized setpoints
-    Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
-    Logger.recordOutput("SwerveChassisSpeeds/Setpoints", speeds);
-
-    // Send setpoints to modules
     for (int i = 0; i < 4; i++) {
-      modules[i].runSetpoint(setpointStates[i]);
+      boolean driveOK = modules[i].isDriveMotorHealthy();
+      boolean turnOK = modules[i].isTurnMotorHealthy();
+      boolean encOK = modules[i].isTurnEncoderHealthy();
+
+      isCaster[i] = false;
+      isOpportunistic[i] = false;
+      isDead[i] = false;
+
+      if (!encOK) {
+        isDead[i] = true;
+      } else if (driveOK && turnOK) {
+        healthyMask |= (1 << i);
+      } else if (!driveOK && turnOK) {
+        isCaster[i] = true;
+      } else if (driveOK && !turnOK) {
+        isOpportunistic[i] = true;
+      } else {
+        isDead[i] = true;
+      }
     }
 
-    // Log optimized setpoints (runSetpoint mutates each state)
-    Logger.recordOutput("SwerveStates/SetpointsOptimized", setpointStates);
+    SwerveModuleState[] idealStates = kinematics.toSwerveModuleStates(speeds);
+
+    SwerveModuleState[] balancedStates = null;
+    if (healthyMask > 0) {
+      balancedStates = dynamicKinematics[healthyMask].toSwerveModuleStates(speeds);
+      SwerveDriveKinematics.desaturateWheelSpeeds(
+          balancedStates, MAX_LINEAR_VELOCITY.in(MetersPerSecond));
+    }
+
+    int balancedIdx = 0;
+    for (int i = 0; i < 4; i++) {
+      if (isDead[i]) {
+        finalStates[i] = new SwerveModuleState(0.0, new Rotation2d(modules[i].getCurrentAngle()));
+        modules[i].stop();
+      } else if (isCaster[i]) {
+        finalStates[i] = new SwerveModuleState(0.0, idealStates[i].angle);
+        modules[i].runSetpoint(finalStates[i]);
+      } else if (isOpportunistic[i]) {
+        finalStates[i] = idealStates[i];
+        modules[i].runSetpoint(finalStates[i]);
+      } else {
+        finalStates[i] = balancedStates[balancedIdx++];
+        modules[i].runSetpoint(finalStates[i]);
+      }
+    }
+
+    Logger.recordOutput("SwerveStates/SetpointsOptimized", finalStates);
+    Logger.recordOutput("Drive/FaultTolerantMask", healthyMask);
   }
 
   /**

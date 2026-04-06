@@ -5,10 +5,10 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-package frc.robot.subsystems.climb;
+package frc.robot.subsystems.climber;
 
 import static edu.wpi.first.units.Units.Volts;
-import static frc.robot.subsystems.climb.ClimbConstants.*;
+import static frc.robot.subsystems.climber.ClimberConstants.*;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -23,8 +23,8 @@ import org.littletonrobotics.junction.Logger;
  * <p>Handles controlling the lift motor voltage and monitoring limit switches to prevent
  * over-extension or damage to the mechanism.
  */
-public class Climb extends MonitoredSubsystemBase {
-  private final ClimbIO io;
+public class Climber extends MonitoredSubsystemBase {
+  private final ClimberIO io;
   private final ClimbIOInputsAutoLogged inputs = new ClimbIOInputsAutoLogged();
   private final SparkMonitor monitor = new SparkMonitor("Climb");
 
@@ -48,7 +48,7 @@ public class Climb extends MonitoredSubsystemBase {
    *
    * @param io The abstraction layer for the climb hardware.
    */
-  public Climb(ClimbIO io) {
+  public Climber(ClimberIO io) {
     this.io = io;
 
     upTrigger = new Trigger(() -> inputs.upperLimit);

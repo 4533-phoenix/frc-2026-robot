@@ -6,6 +6,5 @@
 * Use whacknet for vision
 * Reseed gyro from vision if we are not locked
 * Figure out when the hubs *actually* get disabled
-* Reverify names for everything (especially intake/spinner/arm)
 * Create new profiles for people
 * Automatically move intake when shooting

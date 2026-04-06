@@ -204,6 +204,33 @@ public class Module {
   }
 
   /**
+   * Returns whether the drive motor is healthy.
+   *
+   * @return True if the drive motor is healthy, false otherwise.
+   */
+  public boolean isDriveMotorHealthy() {
+    return inputs.driveConnected && inputs.driveHealthy;
+  }
+
+  /**
+   * Returns whether the turn motor is healthy.
+   *
+   * @return True if the turn motor is healthy, false otherwise.
+   */
+  public boolean isTurnMotorHealthy() {
+    return inputs.turnConnected && inputs.turnHealthy;
+  }
+
+  /**
+   * Returns whether the turn encoder is healthy.
+   *
+   * @return True if the turn encoder is healthy, false otherwise.
+   */
+  public boolean isTurnEncoderHealthy() {
+    return inputs.turnEncoderConnected;
+  }
+
+  /**
    * Returns whether or not the subsystem is healthy
    *
    * @return True if the subsystem is healthy, false otherwise.

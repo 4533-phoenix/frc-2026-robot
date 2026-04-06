@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
-import frc.robot.subsystems.climb.Climb;
-import frc.robot.subsystems.climb.ClimbIO;
+import frc.robot.subsystems.climber.Climber;
+import frc.robot.subsystems.climber.ClimberIO;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.gyro.GyroIO;
 import frc.robot.subsystems.drive.module.ModuleIO;
@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 
 class SuperstructureTest {
   private Drive drive;
-  private Climb climb;
+  private Climber climb;
   private Arm arm;
   private Spinner spinner;
   private Shooter shooter;
@@ -42,7 +42,7 @@ class SuperstructureTest {
             new ModuleIO() {},
             new ModuleIO() {},
             new ModuleIO() {});
-    climb = new Climb(new ClimbIO() {});
+    climb = new Climber(new ClimberIO() {});
     arm = new Arm(new ArmIO() {});
     spinner = new Spinner(new SpinnerIO() {});
     shooter = new Shooter(new FlywheelIO() {}, new HoodIO() {});

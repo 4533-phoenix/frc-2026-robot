@@ -5,7 +5,7 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-package frc.robot.subsystems.climb;
+package frc.robot.subsystems.climber;
 
 import static edu.wpi.first.units.Units.*;
 
@@ -22,7 +22,7 @@ import frc.lib.hardware.ExtraMotors;
  *
  * <p>Contains CAN IDs, current limits, and gearbox models for the climb mechanism.
  */
-public final class ClimbConstants {
+public final class ClimberConstants {
   // CAN IDs
   /** CAN ID for the lift mechanism motor. */
   public static final int CAN_ID = 19;

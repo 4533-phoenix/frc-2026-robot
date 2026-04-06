@@ -5,11 +5,11 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-package frc.robot.subsystems.climb;
+package frc.robot.subsystems.climber;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.lib.util.SparkUtil.*;
-import static frc.robot.subsystems.climb.ClimbConstants.*;
+import static frc.robot.subsystems.climber.ClimberConstants.*;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
@@ -21,7 +21,7 @@ import frc.lib.lowlevel.SparkTap;
 import frc.lib.lowlevel.SparkTap.MotorView;
 
 /** Real IO implementation for the climb subsystem using a Spark Max motor controller. */
-public class ClimbIOSpark implements ClimbIO {
+public class ClimberIOSpark implements ClimberIO {
   private final SparkMax spark = new SparkMax(CAN_ID, MotorType.kBrushed);
   private final MotorView motorView = SparkTap.getInstance().getMotor(CAN_ID);
 
@@ -29,7 +29,7 @@ public class ClimbIOSpark implements ClimbIO {
   private final Debouncer connectedDebounce = new Debouncer(0.1, Debouncer.DebounceType.kFalling);
 
   /** Creates a new ClimbIOSpark and configures the Spark Max. */
-  public ClimbIOSpark() {
+  public ClimberIOSpark() {
     var config = createBaseConfig(MOTOR_CURRENT_LIMIT, MOTOR_INVERTED);
 
     tryUntilOk(

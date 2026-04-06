@@ -21,9 +21,9 @@ import frc.lib.util.FieldUtil;
 import frc.robot.services.control.driver.Driver;
 import frc.robot.services.control.driver.DriverIO;
 import frc.robot.services.control.driver.DriverProfile;
+import frc.robot.services.control.driver.profiles.BasicDriverProfile;
 import frc.robot.services.control.driver.profiles.DefaultDriverProfile;
 import frc.robot.services.control.driver.profiles.NoAssistsDriverProfile;
-import frc.robot.services.control.driver.profiles.SetpointDriverProfile;
 import frc.robot.services.control.operator.Operator;
 import frc.robot.services.control.operator.OperatorIO;
 import frc.robot.services.control.operator.OperatorProfile;
@@ -32,10 +32,10 @@ import frc.robot.services.vision.Vision;
 import frc.robot.services.vision.VisionIO;
 import frc.robot.services.vision.VisionIOSim;
 import frc.robot.services.vision.VisionIOWhacknet;
-import frc.robot.subsystems.climb.Climb;
-import frc.robot.subsystems.climb.ClimbIO;
-import frc.robot.subsystems.climb.ClimbIOSim;
-import frc.robot.subsystems.climb.ClimbIOSpark;
+import frc.robot.subsystems.climber.Climber;
+import frc.robot.subsystems.climber.ClimberIO;
+import frc.robot.subsystems.climber.ClimberIOSim;
+import frc.robot.subsystems.climber.ClimberIOSpark;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveConstants;
 import frc.robot.subsystems.drive.gyro.GyroIO;
@@ -60,6 +60,7 @@ import frc.robot.subsystems.pdh.PDHIO;
 import frc.robot.subsystems.pdh.PDHIOReal;
 import frc.robot.subsystems.pdh.PDHIOSim;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.Shooter.Goal;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSpark;
@@ -73,7 +74,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
-  private final Climb climb;
+  private final Climber climber;
   private final Arm arm;
   private final Spinner spinner;
   private final Shooter shooter;
@@ -110,7 +111,7 @@ public class RobotContainer {
                 new ModuleIOSpark(1),
                 new ModuleIOSpark(2),
                 new ModuleIOSpark(3));
-        climb = new Climb(new ClimbIOSpark());
+        climber = new Climber(new ClimberIOSpark());
         arm = new Arm(new ArmIOSpark());
         spinner = new Spinner(new SpinnerIOSpark());
         shooter = new Shooter(new FlywheelIOSpark(), new HoodIOServo());
@@ -128,7 +129,7 @@ public class RobotContainer {
                 new ModuleIOSim(1),
                 new ModuleIOSim(2),
                 new ModuleIOSim(3));
-        climb = new Climb(new ClimbIOSim());
+        climber = new Climber(new ClimberIOSim());
         arm = new Arm(new ArmIOSim());
         spinner = new Spinner(new SpinnerIOSim());
         shooter = new Shooter(new FlywheelIOSim(), new HoodIOSim());
@@ -146,7 +147,7 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {},
                 new ModuleIO() {});
-        climb = new Climb(new ClimbIO() {});
+        climber = new Climber(new ClimberIO() {});
         arm = new Arm(new ArmIO() {});
         spinner = new Spinner(new SpinnerIO() {});
         shooter = new Shooter(new FlywheelIO() {}, new HoodIO() {});
@@ -165,7 +166,7 @@ public class RobotContainer {
     operator = new Operator(new OperatorIO() {}, operatorChooser);
 
     // Create the superstructure, which coordinates between subsystems
-    superstructure = new Superstructure(drive, climb, arm, spinner, shooter, indexer);
+    superstructure = new Superstructure(drive, climber, arm, spinner, shooter, indexer);
 
     // Create the driver
     XboxController driverController = new XboxController(0);
@@ -174,17 +175,17 @@ public class RobotContainer {
         new DefaultDriverProfile(
             driverController,
             DriveConstants.MAX_LINEAR_VELOCITY,
-            DriveConstants.MAX_ANGULAR_VELOCITY,
-            superstructure.isReadyToShoot()));
-    driverChooser.addOption(
-        "Setpoint Generator",
-        new SetpointDriverProfile(
-            driverController,
-            DriveConstants.MAX_LINEAR_VELOCITY,
             DriveConstants.MAX_LINEAR_ACCELERATION,
             DriveConstants.MAX_ANGULAR_VELOCITY,
             DriveConstants.MAX_ANGULAR_ACCELERATION,
             drive::getChassisSpeeds,
+            superstructure.isReadyToShoot()));
+    driverChooser.addOption(
+        "Basic",
+        new BasicDriverProfile(
+            driverController,
+            DriveConstants.MAX_LINEAR_VELOCITY,
+            DriveConstants.MAX_ANGULAR_VELOCITY,
             superstructure.isReadyToShoot()));
     driverChooser.addOption(
         "No Assists",
@@ -288,30 +289,40 @@ public class RobotContainer {
 
   /** Registers named commands that can be triggered from PP. */
   private void registerAutoCommands() {
+    // General bot controls
     NamedCommands.registerCommand("Deploy Arm", arm.deploy());
     NamedCommands.registerCommand("Retract Arm", arm.retract());
     NamedCommands.registerCommand("Start Intake", spinner.startIntake());
     NamedCommands.registerCommand("Stop Intake", spinner.stop());
-    NamedCommands.registerCommand("Spin Up Shooter", shooter.run());
-    NamedCommands.registerCommand("Stop Down Shooter", shooter.stop());
+    NamedCommands.registerCommand("Climber Up", climber.raise());
+    NamedCommands.registerCommand("Climber Down", climber.lower());
+    NamedCommands.registerCommand("Climber Stop", climber.stop());
+
+    // Control the shooting pipeline
+    NamedCommands.registerCommand("Shooter Tracking", shooter.run());
+    NamedCommands.registerCommand("Shooter Stop", shooter.stop());
     NamedCommands.registerCommand(
-        "Shoot When Ready",
-        Commands.sequence(Commands.waitUntil(superstructure.isReadyToShoot()), indexer.startRun()));
-    NamedCommands.registerCommand(
-        "Stop and Shoot When Ready",
-        Commands.deadline(
-            Commands.deadline(
-                Commands.sequence(
-                    Commands.waitUntil(superstructure.isReadyToShoot()).withTimeout(2.0),
-                    indexer.run().withTimeout(5.0)),
-                Commands.run(() -> drive.runVelocity(new ChassisSpeeds()), drive))));
-    NamedCommands.registerCommand("Stop Shooting", indexer.stop());
-    NamedCommands.registerCommand(
-        "Enable Auto Aim",
+        "Enable Drive Aim",
         Commands.runOnce(
             () -> drive.setHeadingOverrideSupplier(superstructure::getTargetRotation)));
     NamedCommands.registerCommand(
-        "Disable Auto Aim", Commands.runOnce(() -> drive.setHeadingOverrideSupplier(null)));
+        "Disable Drive Aim", Commands.runOnce(() -> drive.setHeadingOverrideSupplier(null)));
+
+    // Start shooting
+    NamedCommands.registerCommand(
+        "Shoot When Ready",
+        Commands.sequence(
+                Commands.waitUntil(superstructure.isReadyToShoot()),
+                superstructure.feedBalls().onlyWhile(superstructure.isReadyToShoot()))
+            .repeatedly());
+    NamedCommands.registerCommand(
+        "Hold and Shoot",
+        Commands.parallel(
+            Commands.sequence(
+                    Commands.waitUntil(superstructure.isReadyToShoot()),
+                    superstructure.feedBalls().onlyWhile(superstructure.isReadyToShoot()))
+                .repeatedly(),
+            Commands.run(() -> drive.runVelocity(new ChassisSpeeds()), drive)));
   }
 
   /**
@@ -392,7 +403,11 @@ public class RobotContainer {
     if (autoCommand == null) {
       return fallbackPoseResetCommand();
     }
-    return autoCommand;
+    return autoCommand.finallyDo(
+        () -> {
+          drive.setHeadingOverrideSupplier(null);
+          shooter.setGoal(Goal.STOP);
+        });
   }
 
   private Command fallbackPoseResetCommand() {

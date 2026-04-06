@@ -5,11 +5,11 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-package frc.robot.subsystems.climb;
+package frc.robot.subsystems.climber;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.lib.util.SparkUtil.*;
-import static frc.robot.subsystems.climb.ClimbConstants.*;
+import static frc.robot.subsystems.climber.ClimberConstants.*;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
@@ -26,14 +26,14 @@ import frc.robot.simulation.ClimbSim;
 import frc.robot.subsystems.drive.DriveConstants;
 
 /**
- * Physics simulation implementation of {@link ClimbIO}.
+ * Physics simulation implementation of {@link ClimberIO}.
  *
  * <p>This class uses {@link SparkMaxSim} to simulate the Spark MAX motor controller for the climb
  * mechanism, backed by a {@link DCMotorSim} physics model. Limit switch behavior is emulated via
  * {@link SparkLimitSwitchSim} based on the simulated position. Configuration mirrors {@link
- * ClimbIOSpark}.
+ * ClimberIOSpark}.
  */
-public class ClimbIOSim implements ClimbIO {
+public class ClimberIOSim implements ClimberIO {
   private final SparkMax spark;
   private final SparkMaxSim sparkSim;
   private final SparkLimitSwitchSim forwardLimitSim;
@@ -43,7 +43,7 @@ public class ClimbIOSim implements ClimbIO {
   private final ClimbSim physicsSim;
 
   /** Creates a new ClimbIOSim and initializes the simulated Spark MAX. */
-  public ClimbIOSim() {
+  public ClimberIOSim() {
     spark = new SparkMax(CAN_ID, MotorType.kBrushed);
     sparkSim = new SparkMaxSim(spark, GEARBOX);
     forwardLimitSim = sparkSim.getForwardLimitSwitchSim();

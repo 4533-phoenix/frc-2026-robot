@@ -22,7 +22,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.WritableTrigger;
 import frc.lib.monitor.MonitorRegistry;
 import frc.lib.util.FieldUtil;
-import frc.robot.subsystems.climb.Climb;
+import frc.robot.subsystems.climber.Climber;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveConstants;
 import frc.robot.subsystems.indexer.Indexer;
@@ -48,7 +48,7 @@ import org.littletonrobotics.junction.Logger;
  */
 public class Superstructure extends SubsystemBase {
   private final Drive drive;
-  private final Climb climb;
+  private final Climber climb;
   private final Arm arm;
   private final Spinner spinner;
   private final Shooter shooter;
@@ -88,7 +88,7 @@ public class Superstructure extends SubsystemBase {
    * @param indexer The indexer subsystem.
    */
   public Superstructure(
-      Drive drive, Climb climb, Arm arm, Spinner spinner, Shooter shooter, Indexer indexer) {
+      Drive drive, Climber climb, Arm arm, Spinner spinner, Shooter shooter, Indexer indexer) {
     this.drive = drive;
     this.climb = climb;
     this.arm = arm;

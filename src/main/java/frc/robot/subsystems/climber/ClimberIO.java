@@ -5,7 +5,7 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-package frc.robot.subsystems.climb;
+package frc.robot.subsystems.climber;
 
 import static edu.wpi.first.units.Units.*;
 
@@ -14,7 +14,7 @@ import edu.wpi.first.units.measure.Voltage;
 import org.littletonrobotics.junction.AutoLog;
 
 /** Interface for the climb mechanism input/output abstraction. */
-public interface ClimbIO {
+public interface ClimberIO {
   /** Contains all of the inputs received from the climb hardware. */
   @AutoLog
   public static class ClimbIOInputs {

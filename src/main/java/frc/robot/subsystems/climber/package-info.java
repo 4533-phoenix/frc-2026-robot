@@ -1,2 +1,2 @@
 /** Contains the Climb subsystem, responsible for operating the robot climbing mechanism. */
-package frc.robot.subsystems.climb;
+package frc.robot.subsystems.climber;
