@@ -68,7 +68,6 @@ public abstract class ControlService<P extends ControlProfile, IO, IN extends Lo
     // Update IO, Log Inputs, Log Active Profile
     updateInputs(io, inputs, profile);
     Logger.processInputs(serviceName, inputs);
-    Logger.recordOutput(serviceName + "/ActiveProfile", chooser.getSendableChooser().getSelected());
 
     // Update connection health alert
     connectionAlert.set(!profile.isConnected());

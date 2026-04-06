@@ -170,6 +170,12 @@ public class Superstructure extends SubsystemBase {
     Logger.recordOutput("Superstructure/ClimbMode", climbMode.get());
     Logger.recordOutput("Superstructure/CurrentAimingResult", currentAimingResult);
     Logger.recordOutput("Superstructure/IsHubEnabled", Util.isHubEnabled());
+    Logger.recordOutput("Superstructure/HasTarget", currentAimingResult.hasTarget());
+    Logger.recordOutput(
+        "Superstructure/HeadingErrorDegrees",
+        currentAimingResult.targetRotation().minus(drive.getPose().getRotation()).getDegrees());
+    Logger.recordOutput("Superstructure/ShooterReady", shooter.isShooterReady().getAsBoolean());
+    Logger.recordOutput("Superstructure/TargetCanReceive", targetCanReceive);
   }
 
   /**

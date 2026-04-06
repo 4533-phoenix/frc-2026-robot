@@ -403,11 +403,13 @@ public class RobotContainer {
     if (autoCommand == null) {
       return fallbackPoseResetCommand();
     }
-    return autoCommand.finallyDo(
-        () -> {
-          drive.setHeadingOverrideSupplier(null);
-          shooter.setGoal(Goal.STOP);
-        });
+    return autoCommand
+        .asProxy()
+        .finallyDo(
+            () -> {
+              drive.setHeadingOverrideSupplier(null);
+              shooter.setGoal(Goal.STOP);
+            });
   }
 
   private Command fallbackPoseResetCommand() {

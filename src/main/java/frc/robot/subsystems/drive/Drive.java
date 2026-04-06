@@ -79,6 +79,7 @@ public class Drive extends MonitoredSubsystemBase {
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(MODULE_TRANSLATIONS);
   private Rotation2d rawGyroRotation = Rotation2d.kZero;
+  private final double maxModuleRadius;
 
   private final TimeInterpolatableBuffer<Rotation2d> gyroHistory =
       TimeInterpolatableBuffer.createBuffer(0.5);
@@ -133,7 +134,13 @@ public class Drive extends MonitoredSubsystemBase {
   private final boolean[] isCaster = new boolean[4];
   private final boolean[] isOpportunistic = new boolean[4];
   private final boolean[] isDead = new boolean[4];
-  private final SwerveModuleState[] finalStates = new SwerveModuleState[4];
+  private final SwerveModuleState[] finalStates =
+      new SwerveModuleState[] {
+        new SwerveModuleState(),
+        new SwerveModuleState(),
+        new SwerveModuleState(),
+        new SwerveModuleState()
+      };
 
   /**
    * Creates a new Drive subsystem.
@@ -172,6 +179,13 @@ public class Drive extends MonitoredSubsystemBase {
       dynamicKinematics[mask] =
           new SwerveDriveKinematics(activeTranslations.toArray(new Translation2d[0]));
     }
+
+    double maxR = 0.0;
+    for (var t : MODULE_TRANSLATIONS) {
+      double r = Math.hypot(t.getX(), t.getY());
+      if (r > maxR) maxR = r;
+    }
+    this.maxModuleRadius = maxR;
 
     // Usage reporting for swerve template
     HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_AdvantageKit);
@@ -347,13 +361,8 @@ public class Drive extends MonitoredSubsystemBase {
    */
   public ChassisSpeeds applyRotationPriority(ChassisSpeeds speeds) {
     double maxSpeed = MAX_LINEAR_VELOCITY.in(MetersPerSecond);
-    ChassisSpeeds rotationOnly = new ChassisSpeeds(0, 0, speeds.omegaRadiansPerSecond);
-    SwerveModuleState[] rotStates = kinematics.toSwerveModuleStates(rotationOnly);
 
-    double maxRotModuleSpeed = 0.0;
-    for (var s : rotStates) {
-      maxRotModuleSpeed = Math.max(maxRotModuleSpeed, Math.abs(s.speedMetersPerSecond));
-    }
+    double maxRotModuleSpeed = Math.abs(speeds.omegaRadiansPerSecond) * maxModuleRadius;
 
     double remainingBudget = Math.max(0.0, maxSpeed - maxRotModuleSpeed);
     double requestedTransSpeed = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
@@ -443,17 +452,23 @@ public class Drive extends MonitoredSubsystemBase {
     int balancedIdx = 0;
     for (int i = 0; i < 4; i++) {
       if (isDead[i]) {
-        finalStates[i] = new SwerveModuleState(0.0, new Rotation2d(modules[i].getCurrentAngle()));
+        // Avoid allocating a new SwerveModuleState; reuse the preallocated slot.
+        finalStates[i].speedMetersPerSecond = 0.0;
+        finalStates[i].angle = new Rotation2d(modules[i].getCurrentAngle());
         modules[i].stop();
       } else if (isCaster[i]) {
-        finalStates[i] = new SwerveModuleState(0.0, idealStates[i].angle);
+        finalStates[i].speedMetersPerSecond = 0.0;
+        finalStates[i].angle = idealStates[i].angle;
         modules[i].runSetpoint(finalStates[i]);
       } else if (isOpportunistic[i]) {
-        finalStates[i] = idealStates[i];
+        finalStates[i].speedMetersPerSecond = idealStates[i].speedMetersPerSecond;
+        finalStates[i].angle = idealStates[i].angle;
         modules[i].runSetpoint(finalStates[i]);
       } else {
-        finalStates[i] = balancedStates[balancedIdx++];
+        finalStates[i].speedMetersPerSecond = balancedStates[balancedIdx].speedMetersPerSecond;
+        finalStates[i].angle = balancedStates[balancedIdx].angle;
         modules[i].runSetpoint(finalStates[i]);
+        balancedIdx++;
       }
     }
 

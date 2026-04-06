@@ -33,6 +33,9 @@ public class Module {
   private final int index;
   private final String name;
 
+  private static final double WHEEL_RADIUS_METERS = WHEEL_RADIUS.in(Meters);
+  private static final double INV_WHEEL_RADIUS = 1.0 / WHEEL_RADIUS_METERS;
+
   private final SparkMonitor driveMonitor;
   private final SparkMonitor turnMonitor;
   private final Alert turnEncoderDisconnectedAlert;
@@ -95,14 +98,23 @@ public class Module {
    * @param state The desired state (angle and velocity) for the module.
    */
   public void runSetpoint(SwerveModuleState state) {
-    // Optimize velocity setpoint to minimize turning
-    state.optimize(new Rotation2d(getCurrentAngle()));
+    // Optimize velocity setpoint to minimize turning. Avoid allocating a
+    // temporary Rotation2d for the current angle twice by converting the
+    // current angle to a primitive radian value and using it for subsequent
+    // math.
+    double currentAngleRad = inputs.turnPosition.in(Radians);
+    state.optimize(new Rotation2d(currentAngleRad));
 
-    // Scale speed based on angle error to prevent driving while turning
-    state.cosineScale(new Rotation2d(inputs.turnPosition));
+    // Scale speed by cosine of angle error using primitives to avoid another
+    // Rotation2d allocation. Normalize error to [-pi, pi] before taking cos.
+    double angleError = state.angle.getRadians() - currentAngleRad;
+    angleError = Math.atan2(Math.sin(angleError), Math.cos(angleError));
+    double scale = Math.cos(angleError);
+    state.speedMetersPerSecond = state.speedMetersPerSecond * scale;
 
-    // Apply setpoints to hardware
-    io.setDriveVelocity(RadiansPerSecond.of(state.speedMetersPerSecond / WHEEL_RADIUS.in(Meters)));
+    // Apply setpoints to hardware (use cached wheel radius conversions).
+    double wheelRadPerSec = state.speedMetersPerSecond * INV_WHEEL_RADIUS;
+    io.setDriveVelocity(RadiansPerSecond.of(wheelRadPerSec));
     io.setTurnPosition(Radians.of(state.angle.getRadians()));
   }
 
@@ -137,7 +149,7 @@ public class Module {
    * @return The current distance as a Distance measure.
    */
   public Distance getCurrentPosition() {
-    return WHEEL_RADIUS.times(inputs.drivePosition.in(Radians));
+    return Meters.of(WHEEL_RADIUS_METERS * inputs.drivePosition.in(Radians));
   }
 
   /**
@@ -146,7 +158,7 @@ public class Module {
    * @return The current velocity as a LinearVelocity measure.
    */
   public LinearVelocity getCurrentVelocity() {
-    return MetersPerSecond.of(inputs.driveVelocity.in(RadiansPerSecond) * WHEEL_RADIUS.in(Meters));
+    return MetersPerSecond.of(inputs.driveVelocity.in(RadiansPerSecond) * WHEEL_RADIUS_METERS);
   }
 
   /**
@@ -155,7 +167,8 @@ public class Module {
    * @return The current SwerveModulePosition.
    */
   public SwerveModulePosition getPosition() {
-    return new SwerveModulePosition(getCurrentPosition(), new Rotation2d(getCurrentAngle()));
+    return new SwerveModulePosition(
+        getCurrentPosition(), new Rotation2d(getCurrentAngle().in(Radians)));
   }
 
   /**
@@ -164,7 +177,8 @@ public class Module {
    * @return The current SwerveModuleState.
    */
   public SwerveModuleState getState() {
-    return new SwerveModuleState(getCurrentVelocity(), new Rotation2d(getCurrentAngle()));
+    return new SwerveModuleState(
+        getCurrentVelocity(), new Rotation2d(getCurrentAngle().in(Radians)));
   }
 
   /**

@@ -126,10 +126,7 @@ public class Vision extends MonitoredBaseService {
         lastTimestamps[id] = currentTime;
       }
 
-      // Single-tag detections are often unreliable for field position
-      if (inputs.observations[i].tagCount() <= 1) {
-        continue;
-      }
+      if (inputs.observations[i].tagCount() == 0) continue;
 
       // Update Consumer with refined pose
       stdVector.set(0, 0, inputs.observations[i].stdDevX());
