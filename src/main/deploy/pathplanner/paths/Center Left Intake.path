@@ -83,9 +83,9 @@
     {
       "name": "Constraints Zone",
       "minWaypointRelativePos": 0.0,
-      "maxWaypointRelativePos": 1.0,
+      "maxWaypointRelativePos": 0.5,
       "constraints": {
-        "maxVelocity": 2.0,
+        "maxVelocity": 1.0,
         "maxAcceleration": 2.0,
         "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 720.0,
@@ -104,6 +104,66 @@
         "type": "named",
         "data": {
           "name": "Deploy Arm"
+        }
+      }
+    },
+    {
+      "name": "Start Shooting",
+      "waypointRelativePos": 0.0,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "parallel",
+        "data": {
+          "commands": [
+            {
+              "type": "named",
+              "data": {
+                "name": "Enable Drive Aim"
+              }
+            },
+            {
+              "type": "named",
+              "data": {
+                "name": "Shooter Tracking"
+              }
+            },
+            {
+              "type": "named",
+              "data": {
+                "name": "Enable Shoot When Ready"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Stop Shooting",
+      "waypointRelativePos": 0.5,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "parallel",
+        "data": {
+          "commands": [
+            {
+              "type": "named",
+              "data": {
+                "name": "Disable Drive Aim"
+              }
+            },
+            {
+              "type": "named",
+              "data": {
+                "name": "Shooter Stop"
+              }
+            },
+            {
+              "type": "named",
+              "data": {
+                "name": "Disable Shoot When Ready"
+              }
+            }
+          ]
         }
       }
     },
