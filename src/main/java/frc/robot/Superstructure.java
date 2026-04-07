@@ -79,6 +79,7 @@ public class Superstructure extends SubsystemBase {
   private final Debouncer alignedDebouncer = new Debouncer(0.15, DebounceType.kFalling);
   private AimingResult currentAimingResult = Aiming.NO_TARGET;
   private boolean targetCanReceive = false;
+  private boolean wantsToFire = false;
 
   /**
    * Constructs the Superstructure.
@@ -153,6 +154,16 @@ public class Superstructure extends SubsystemBase {
       } else {
         shooter.setStop();
       }
+    }
+
+    if (wantsToFire && isReadyToShoot().getAsBoolean()) {
+      indexer.setRunning();
+      arm.setOscillate(true);
+      spinner.setIntake();
+    } else {
+      indexer.setStop();
+      arm.setOscillate(false);
+      spinner.setStop();
     }
 
     // Check for sticky fault clear command from dashboard
@@ -292,6 +303,16 @@ public class Superstructure extends SubsystemBase {
    */
   public WritableTrigger getClimbMode() {
     return climbMode;
+  }
+
+  /** Requests the superstructure to fire when ready. */
+  public void requestFire() {
+    this.wantsToFire = true;
+  }
+
+  /** Requests the superstructure to stop firing. */
+  public void stopFire() {
+    this.wantsToFire = false;
   }
 
   /**

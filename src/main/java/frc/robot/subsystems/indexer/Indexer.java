@@ -55,6 +55,16 @@ public class Indexer extends MonitoredSubsystemBase {
     this.goal = goal;
   }
 
+  /** Sets the indexer to run. */
+  public void setRunning() {
+    setGoal(Goal.RUNNING);
+  }
+
+  /** Sets the indexer to stop. */
+  public void setStop() {
+    setGoal(Goal.STOP);
+  }
+
   /** Updates hardware inputs, logs data, and updates status alerts. */
   @Override
   public void periodic() {

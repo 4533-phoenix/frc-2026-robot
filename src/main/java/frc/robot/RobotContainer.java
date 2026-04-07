@@ -61,7 +61,6 @@ import frc.robot.subsystems.pdh.PDHIO;
 import frc.robot.subsystems.pdh.PDHIOReal;
 import frc.robot.subsystems.pdh.PDHIOSim;
 import frc.robot.subsystems.shooter.Shooter;
-import frc.robot.subsystems.shooter.Shooter.Goal;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSpark;
@@ -245,10 +244,8 @@ public class RobotContainer {
                 .withTimeout(1.0)
                 .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
-                Commands.sequence(
-                        Commands.waitUntil(superstructure.isReadyToShoot()),
-                        superstructure.feedBalls().onlyWhile(superstructure.isReadyToShoot()))
-                    .repeatedly(),
+                Commands.startEnd(
+                    () -> superstructure.requestFire(), () -> superstructure.stopFire()),
                 drive.headingAim(superstructure::getTargetRotation))));
 
     autoChooser.addOption(
@@ -268,10 +265,8 @@ public class RobotContainer {
                 .withTimeout(1.0)
                 .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
-                Commands.sequence(
-                        Commands.waitUntil(superstructure.isReadyToShoot()),
-                        superstructure.feedBalls().onlyWhile(superstructure.isReadyToShoot()))
-                    .repeatedly(),
+                Commands.startEnd(
+                    () -> superstructure.requestFire(), () -> superstructure.stopFire()),
                 drive.headingAim(superstructure::getTargetRotation))));
 
     autoChooser.addOption(
@@ -288,10 +283,8 @@ public class RobotContainer {
                 .withTimeout(1.0)
                 .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
-                Commands.sequence(
-                        Commands.waitUntil(superstructure.isReadyToShoot()),
-                        superstructure.feedBalls().onlyWhile(superstructure.isReadyToShoot()))
-                    .repeatedly(),
+                Commands.startEnd(
+                    () -> superstructure.requestFire(), () -> superstructure.stopFire()),
                 drive.headingAim(superstructure::getTargetRotation))));
 
     // Configure the commands
@@ -323,18 +316,13 @@ public class RobotContainer {
 
     // Start shooting
     NamedCommands.registerCommand(
-        "Shoot When Ready",
-        Commands.sequence(
-                Commands.waitUntil(superstructure.isReadyToShoot()),
-                superstructure.feedBalls().onlyWhile(superstructure.isReadyToShoot()))
-            .repeatedly());
+        "Enable Shoot When Ready", Commands.runOnce(() -> superstructure.requestFire()));
+    NamedCommands.registerCommand(
+        "Disable Shoot When Ready", Commands.runOnce(() -> superstructure.stopFire()));
     NamedCommands.registerCommand(
         "Hold and Shoot",
         Commands.parallel(
-            Commands.sequence(
-                    Commands.waitUntil(superstructure.isReadyToShoot()),
-                    superstructure.feedBalls().onlyWhile(superstructure.isReadyToShoot()))
-                .repeatedly(),
+            Commands.startEnd(() -> superstructure.requestFire(), () -> superstructure.stopFire()),
             Commands.run(() -> drive.runVelocity(new ChassisSpeeds()), drive)));
   }
 
@@ -360,9 +348,8 @@ public class RobotContainer {
     // arm
     driver
         .wantsShoot()
-        .and(driver.wantsAim())
-        .and(superstructure.isReadyToShoot())
-        .whileTrue(superstructure.feedBalls());
+        .whileTrue(
+            Commands.startEnd(() -> superstructure.requestFire(), () -> superstructure.stopFire()));
 
     // When B is pressed, reset the current pose to the alliance origin facing away
     driver
@@ -420,8 +407,9 @@ public class RobotContainer {
         .asProxy()
         .finallyDo(
             () -> {
+              superstructure.stopFire();
               drive.setHeadingOverrideSupplier(null);
-              shooter.setGoal(Goal.STOP);
+              shooter.setStop();
             });
   }
 

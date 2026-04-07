@@ -53,6 +53,21 @@ public class Spinner extends MonitoredSubsystemBase {
     this.goal = goal;
   }
 
+  /** Sets the spinner to intake game pieces. */
+  public void setIntake() {
+    setGoal(Goal.INTAKE);
+  }
+
+  /** Sets the spinner to extake game pieces. */
+  public void setExtake() {
+    setGoal(Goal.EXTAKE);
+  }
+
+  /** Sets the spinner to stop. */
+  public void setStop() {
+    setGoal(Goal.STOP);
+  }
+
   @Override
   public void periodic() {
     io.updateInputs(inputs);
