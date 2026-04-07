@@ -189,7 +189,7 @@ public class RobotContainer {
             DriveConstants.MAX_LINEAR_ACCELERATION,
             DriveConstants.MAX_LINEAR_ACCELERATION.div(2.0),
             DriveConstants.MAX_ANGULAR_VELOCITY,
-            RadiansPerSecondPerSecond.of(20.0),
+            DriveConstants.MAX_ANGULAR_ACCELERATION,
             drive::getChassisSpeeds,
             superstructure.isReadyToShoot()));
     driverChooser.addOption(

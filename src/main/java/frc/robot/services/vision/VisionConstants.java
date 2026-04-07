@@ -49,10 +49,10 @@ public class VisionConstants {
           new CameraConfig(
               "Front",
               new Transform3d(
-                  Meters.of(-0.105),
-                  Meters.of(-0.0075),
-                  Meters.of(49.590851),
-                  new Rotation3d(Degrees.of(180.0), Degrees.of(-5.0), Degrees.of(0.0))),
+                  Meters.of(0.0275),
+                  Meters.of(0.2095),
+                  Meters.of(0.531),
+                  new Rotation3d(Degrees.of(180.0), Degrees.of(-15.0), Degrees.of(0.0))),
               92.0,
               10.0),
           2,

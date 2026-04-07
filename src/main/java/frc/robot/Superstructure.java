@@ -80,6 +80,7 @@ public class Superstructure extends SubsystemBase {
   private AimingResult currentAimingResult = Aiming.NO_TARGET;
   private boolean targetCanReceive = false;
   private boolean wantsToFire = false;
+  private boolean wasFiring = false;
 
   /**
    * Constructs the Superstructure.
@@ -156,15 +157,19 @@ public class Superstructure extends SubsystemBase {
       }
     }
 
-    if (wantsToFire && isReadyToShoot().getAsBoolean()) {
+    boolean firing = wantsToFire && isReadyToShoot().getAsBoolean();
+    if (firing) {
       indexer.setRunning();
       arm.setOscillate(true);
       spinner.setIntake();
     } else {
       indexer.setStop();
       arm.setOscillate(false);
-      spinner.setStop();
+      if (wasFiring) {
+        spinner.setStop();
+      }
     }
+    wasFiring = firing;
 
     // Check for sticky fault clear command from dashboard
     boolean currentClearFaults = clearFaultsSubscriber.get();

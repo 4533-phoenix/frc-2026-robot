@@ -20,9 +20,11 @@ import com.pathplanner.lib.util.PathPlannerLogging;
 import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -35,7 +37,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Voltage;
@@ -118,15 +119,9 @@ public class Drive extends MonitoredSubsystemBase {
 
   private final Notifier odometryThread;
   private Consumer<IMUState> visionHighFreqConsumer;
+  private final LinearFilter targetVelocityFilter = LinearFilter.singlePoleIIR(0.05, 0.02);
 
-  private final ProfiledPIDController rotationController =
-      new ProfiledPIDController(
-          ANGLE_KP,
-          0.0,
-          ANGLE_KD,
-          new TrapezoidProfile.Constraints(
-              MAX_ANGULAR_VELOCITY.in(RadiansPerSecond),
-              MAX_ANGULAR_ACCELERATION.in(RadiansPerSecondPerSecond)));
+  private final PIDController rotationController = new PIDController(ANGLE_KP, 0.0, ANGLE_KD);
 
   private Supplier<Rotation2d> headingOverrideSupplier = () -> null;
   private Rotation2d lastTargetHeading = null;
@@ -232,6 +227,7 @@ public class Drive extends MonitoredSubsystemBase {
 
     // Configure PID controller
     rotationController.enableContinuousInput(-Math.PI, Math.PI);
+    rotationController.setTolerance(Math.toRadians(0.5));
   }
 
   /**
@@ -276,6 +272,7 @@ public class Drive extends MonitoredSubsystemBase {
   public void setHeadingOverrideSupplier(Supplier<Rotation2d> supplier) {
     this.headingOverrideSupplier = (supplier == null) ? (() -> null) : supplier;
     if (supplier != null) {
+      targetVelocityFilter.reset();
       resetRotationController();
     }
   }
@@ -398,7 +395,7 @@ public class Drive extends MonitoredSubsystemBase {
       finalSpeeds = speeds;
     }
 
-    ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(finalSpeeds, 0.02);
+    ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(finalSpeeds, 0.04);
     runVelocityRaw(discreteSpeeds);
   }
 
@@ -625,6 +622,18 @@ public class Drive extends MonitoredSubsystemBase {
   }
 
   /**
+   * Returns the current rotation of the robot compensated for latency. This is done by taking the
+   * current gyro rotation and adding the product of the yaw velocity and an estimated latency to
+   * predict where the robot will be when the module measurements are processed.
+   *
+   * @return The latency-compensated rotation of the robot.
+   */
+  public Rotation2d getLatCompRotation() {
+    double latency = 0.020;
+    return getRotation().plus(Rotation2d.fromRadians(getYawVelocityRadPerSec() * latency));
+  }
+
+  /**
    * Returns the current odometry rotation.
    *
    * @return The estimated rotation of the robot.
@@ -715,7 +724,7 @@ public class Drive extends MonitoredSubsystemBase {
 
   /** Resets the rotation PID to prevent sudden jerks when taking over heading control. */
   public void resetRotationController() {
-    rotationController.reset(getRotation().getRadians());
+    rotationController.reset();
   }
 
   /**
@@ -725,16 +734,20 @@ public class Drive extends MonitoredSubsystemBase {
    * @return The required angular velocity.
    */
   public double calculateRotationFeedback(Rotation2d targetHeading) {
-    double targetVelocity = 0.0;
+    double rawTargetVelocity = 0.0;
     if (lastTargetHeading != null) {
-      targetVelocity = targetHeading.minus(lastTargetHeading).getRadians() / 0.02;
+      rawTargetVelocity = targetHeading.minus(lastTargetHeading).getRadians() / 0.02;
     }
     lastTargetHeading = targetHeading;
 
-    return rotationController.calculate(
-            getRotation().getRadians(),
-            new TrapezoidProfile.State(targetHeading.getRadians(), targetVelocity))
-        + rotationController.getSetpoint().velocity;
+    // Smooth out the noisy derivative
+    double smoothedTargetVelocity = targetVelocityFilter.calculate(rawTargetVelocity);
+
+    double correction =
+        rotationController.calculate(getLatCompRotation().getRadians(), targetHeading.getRadians())
+            + smoothedTargetVelocity;
+
+    return MathUtil.clamp(correction, -7.0, 7.0) + smoothedTargetVelocity;
   }
 
   /**

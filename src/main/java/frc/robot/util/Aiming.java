@@ -33,7 +33,7 @@ public class Aiming {
   public static final AimingResult NO_TARGET = new AimingResult(new Rotation2d(), 0.0, false);
 
   /** Estimated magazine travel time. */
-  public static final Time MECHANICAL_DELAY = Seconds.of(0.15);
+  public static final Time MECHANICAL_DELAY = Seconds.of(0.2);
 
   /**
    * Gets the amount of angle to compensate for curve of the ball in the air.

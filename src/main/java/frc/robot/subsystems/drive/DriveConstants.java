@@ -43,7 +43,7 @@ public class DriveConstants {
 
   /** The radius of the circle defined by the module locations. */
   public static final Distance DRIVE_BASE_RADIUS =
-      Meters.of(Math.hypot(TRACK_WIDTH.in(Meters) / 2.0, WHEEL_BASE.in(Meters) / 2.0));
+      Meters.of(Math.hypot(WHEEL_BASE.in(Meters) / 2.0, TRACK_WIDTH.in(Meters) / 2.0));
 
   /** Maximum heading error allowed when determining if the robot is aligned to shoot. */
   public static final Angle HEADING_ALIGNMENT_TOLERANCE = Degrees.of(3.0);
@@ -171,19 +171,19 @@ public class DriveConstants {
 
   // Drive PID configuration
   /** Proportional gain for the drive motor PID controller. */
-  public static final double DRIVE_KP = 0.015;
+  public static final double DRIVE_KP = 0.00029058;
 
   /** Derivative gain for the drive motor PID controller. */
   public static final double DRIVE_KD = 0.0;
 
   /** Static friction feedforward gain for the drive motor. */
-  public static final double DRIVE_KS = 0.0;
+  public static final double DRIVE_KS = 0.068325;
 
   /** Velocity feedforward gain for the drive motor. */
-  public static final double DRIVE_KV = 0.1;
+  public static final double DRIVE_KV = 0.13587;
 
   /** Acceleration feedforward gain for the drive motor. */
-  public static final double DRIVE_KA = 0.0;
+  public static final double DRIVE_KA = 0.024351;
 
   // Turn motor configuration
   /** Whether the turn motor is inverted. */
@@ -234,17 +234,17 @@ public class DriveConstants {
 
   // Angle PID configuration
   /** Proportional gain for rotational PID control. */
-  public static final double ANGLE_KP = 10.0;
+  public static final double ANGLE_KP = 5.0;
 
   /** Derivative gain for rotational PID control. */
-  public static final double ANGLE_KD = 0.5;
+  public static final double ANGLE_KD = 0.25;
 
   /** Maximum angular velocity for the rotation motion profile in radians per second. */
-  public static final AngularVelocity MAX_ANGULAR_VELOCITY = RadiansPerSecond.of(16.0);
+  public static final AngularVelocity MAX_ANGULAR_VELOCITY = RadiansPerSecond.of(20.0);
 
   /** Maximum angular acceleration for the rotation motion profile in radians per second squared. */
   public static final AngularAcceleration MAX_ANGULAR_ACCELERATION =
-      RadiansPerSecondPerSecond.of(40.0);
+      RadiansPerSecondPerSecond.of(25.0);
 
   // Feedforward characterization configuration
   /** Delay in seconds before feedforward characterization starts ramping voltage. */
