@@ -129,7 +129,7 @@ public class Shooter extends MonitoredSubsystemBase {
         Math.abs(
                 flywheelInputs.velocity.in(RadiansPerSecond)
                     - state.flywheelSpeed().in(RadiansPerSecond))
-            < ShooterConstants.ANGULAR_TOLERANCE.in(RadiansPerSecond);
+            < ANGULAR_TOLERANCE.in(RadiansPerSecond);
     flywheelReadyTrigger.set(flywheelReadyDebouncer.calculate(isFlywheelReady));
 
     switch (goal) {

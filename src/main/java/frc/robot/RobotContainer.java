@@ -23,6 +23,7 @@ import frc.robot.services.control.driver.DriverIO;
 import frc.robot.services.control.driver.DriverProfile;
 import frc.robot.services.control.driver.profiles.BasicDriverProfile;
 import frc.robot.services.control.driver.profiles.DefaultDriverProfile;
+import frc.robot.services.control.driver.profiles.DuruDriveProfile;
 import frc.robot.services.control.driver.profiles.NoAssistsDriverProfile;
 import frc.robot.services.control.operator.Operator;
 import frc.robot.services.control.operator.OperatorIO;
@@ -178,6 +179,18 @@ public class RobotContainer {
             DriveConstants.MAX_LINEAR_ACCELERATION,
             DriveConstants.MAX_ANGULAR_VELOCITY,
             DriveConstants.MAX_ANGULAR_ACCELERATION,
+            drive::getChassisSpeeds,
+            superstructure.isReadyToShoot()));
+    driverChooser.addOption(
+        "Duru",
+        new DuruDriveProfile(
+            driverController,
+            DriveConstants.MAX_LINEAR_VELOCITY,
+            DriveConstants.MAX_LINEAR_VELOCITY.div(2.0),
+            DriveConstants.MAX_LINEAR_ACCELERATION,
+            DriveConstants.MAX_LINEAR_ACCELERATION.div(2.0),
+            DriveConstants.MAX_ANGULAR_VELOCITY,
+            RadiansPerSecondPerSecond.of(20.0),
             drive::getChassisSpeeds,
             superstructure.isReadyToShoot()));
     driverChooser.addOption(

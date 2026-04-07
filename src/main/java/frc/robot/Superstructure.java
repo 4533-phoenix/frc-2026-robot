@@ -144,8 +144,8 @@ public class Superstructure extends SubsystemBase {
     }
 
     // Determine when the shooter flywheel should actively run during a match
-    if (Util.isMatchMode()) {
-      if (currentAimingResult.hasTarget() && !climbMode.get()) {
+    if (Util.isMatchMode() && !DriverStation.isAutonomous()) {
+      if (currentAimingResult.hasTarget()) {
         shooter.setRunning();
       } else {
         shooter.setStop();

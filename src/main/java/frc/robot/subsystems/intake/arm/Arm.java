@@ -123,7 +123,6 @@ public class Arm extends MonitoredSubsystemBase {
   public Command oscillate() {
     return this.startEnd(
         () -> {
-          setGoal(Goal.DEPLOY);
           setOscillate(true);
         },
         () -> setOscillate(false));
