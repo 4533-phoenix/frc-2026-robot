@@ -16,6 +16,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Time;
 import frc.lib.util.FieldUtil;
 import frc.robot.Constants;
+import frc.robot.subsystems.shooter.ShooterKinematics;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
@@ -33,7 +34,7 @@ public class Aiming {
   public static final AimingResult NO_TARGET = new AimingResult(new Rotation2d(), 0.0, false);
 
   /** Estimated magazine travel time. */
-  public static final Time MECHANICAL_DELAY = Seconds.of(0.2);
+  public static final Time MECHANICAL_DELAY = Seconds.of(0.05);
 
   /**
    * Gets the amount of angle to compensate for curve of the ball in the air.
@@ -46,7 +47,7 @@ public class Aiming {
     double minDist = 1.307;
     double maxDist = 3.155;
     double minCurveDeg = 0.0;
-    double maxCurveDeg = 5.0;
+    double maxCurveDeg = 0.0;
 
     // Clamp the distance to our known range
     double clampedDist = Math.max(minDist, Math.min(maxDist, distanceMeters));
@@ -81,7 +82,6 @@ public class Aiming {
       Translation2d fieldVelocity,
       Translation2d targetPosition,
       Translation2d shooterRobotOffset,
-      Time estimatedTimeOfFlight,
       boolean log) {
 
     Translation2d target = FieldUtil.flipAllianceIfNeeded(targetPosition);
@@ -94,17 +94,40 @@ public class Aiming {
     double robotAngle = currentRobotRotation.getRadians();
     double cos = Math.cos(robotAngle);
     double sin = Math.sin(robotAngle);
-    double shooterX =
+
+    // Pass 1: Calculate the rough shooter position using the robot's CURRENT heading
+    double pass1ShooterX =
         futureRobotX + (shooterRobotOffset.getX() * cos - shooterRobotOffset.getY() * sin);
-    double shooterY =
+    double pass1ShooterY =
         futureRobotY + (shooterRobotOffset.getX() * sin + shooterRobotOffset.getY() * cos);
 
-    double tof = estimatedTimeOfFlight.in(Seconds);
+    // Estimate initial distance to look up TOF
+    double initialDx = target.getX() - pass1ShooterX;
+    double initialDy = target.getY() - pass1ShooterY;
+    double initialDist = Math.sqrt(initialDx * initialDx + initialDy * initialDy);
+    double tof = ShooterKinematics.estimateTOF(Meters.of(initialDist)).in(Seconds);
+
+    // Calculate virtual target position (lead compensation)
     double virtualTargetX = target.getX() - (fieldVelocity.getX() * tof);
     double virtualTargetY = target.getY() - (fieldVelocity.getY() * tof);
 
-    double dx = virtualTargetX - shooterX;
-    double dy = virtualTargetY - shooterY;
+    // Calculate rough target angle from Pass 1
+    double roughDx = virtualTargetX - pass1ShooterX;
+    double roughDy = virtualTargetY - pass1ShooterY;
+    double roughAngle = Math.atan2(roughDy, roughDx);
+
+    // Pass 2: Re-calculate the shooter's physical position using the TARGET heading we just found
+    double roughCos = Math.cos(roughAngle);
+    double roughSin = Math.sin(roughAngle);
+    double finalShooterX =
+        futureRobotX
+            + (shooterRobotOffset.getX() * roughCos - shooterRobotOffset.getY() * roughSin);
+    double finalShooterY =
+        futureRobotY
+            + (shooterRobotOffset.getX() * roughSin + shooterRobotOffset.getY() * roughCos);
+
+    double dx = virtualTargetX - finalShooterX;
+    double dy = virtualTargetY - finalShooterY;
 
     double finalAngle = Math.atan2(dy, dx);
     double finalDist = Math.sqrt(dx * dx + dy * dy);
@@ -118,7 +141,7 @@ public class Aiming {
       Logger.recordOutput(
           "Aiming/VirtualTarget", new Pose2d(virtualTargetX, virtualTargetY, Rotation2d.kZero));
       Logger.recordOutput(
-          "Aiming/ShooterPosition", new Pose2d(shooterX, shooterY, currentRobotRotation));
+          "Aiming/ShooterPosition", new Pose2d(finalShooterX, finalShooterY, currentRobotRotation));
       Logger.recordOutput("Aiming/TargetRotation", finalRotation.getDegrees());
       Logger.recordOutput("Aiming/CurveCompDegrees", getCurveCompensation(finalDist).getDegrees());
       Logger.recordOutput("Aiming/DistanceToTarget", finalDist);
@@ -218,14 +241,12 @@ public class Aiming {
    * @param robotPoseSupplier A supplier for the robot's current {@link Pose2d}.
    * @param fieldVelocitySupplier A supplier for the robot's field-relative velocity.
    * @param shooterRobotOffset The physical offset of the shooter from the robot's center.
-   * @param estimatedTimeOfFlight The estimated time for the projectile to reach the target.
    * @return A supplier that provides the calculated {@link AimingResult} for the hub.
    */
   public static Supplier<AimingResult> hubAimingSupplier(
       Supplier<Pose2d> robotPoseSupplier,
       Supplier<Translation2d> fieldVelocitySupplier,
-      Translation2d shooterRobotOffset,
-      Time estimatedTimeOfFlight) {
+      Translation2d shooterRobotOffset) {
     return new Supplier<AimingResult>() {
 
       @Override
@@ -237,7 +258,6 @@ public class Aiming {
             fieldVelocitySupplier.get(),
             Constants.HUB_POSITION,
             shooterRobotOffset,
-            estimatedTimeOfFlight,
             true);
       }
     };

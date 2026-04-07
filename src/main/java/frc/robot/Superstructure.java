@@ -103,10 +103,7 @@ public class Superstructure extends SubsystemBase {
 
     this.hubAiming =
         Aiming.hubAimingSupplier(
-            drive::getPose,
-            drive::getFieldRelativeVelocity,
-            ShooterConstants.SHOOTER_ROBOT_OFFSET,
-            ShooterConstants.ESTIMATED_TOF);
+            drive::getPose, drive::getFieldRelativeVelocity, ShooterConstants.SHOOTER_ROBOT_OFFSET);
 
     this.lobAiming =
         Aiming.lobAimingSupplier(drive::getPose, ShooterConstants.SHOOTER_ROBOT_OFFSET);
@@ -122,15 +119,20 @@ public class Superstructure extends SubsystemBase {
 
     // Evaluate aiming and automated shooting states
     if (!climbMode.get()) {
+      // Pre-calculate aiming so we can use dynamic TOF
+      AimingResult maybeHubTarget = hubAiming.get();
+      double dynamicTof =
+          ShooterKinematics.estimateTOF(Meters.of(maybeHubTarget.distanceToTargetMeters()))
+              .in(Seconds);
+
       // Determine if we are in the Hub Shooting zone
       if (FieldUtil.flipAllianceIfNeeded(Constants.SHOOTING_ZONE).contains(robotTranslation)
-          && (Util.isHubEnabled(5)
-              || Util.isHubEnabled(ShooterConstants.ESTIMATED_TOF.in(Seconds)))) {
-        currentAimingResult = hubAiming.get();
+          && (Util.isHubEnabled(5) || Util.isHubEnabled(dynamicTof))) {
+        currentAimingResult = maybeHubTarget;
         shooter.setShooterState(
             ShooterKinematics.calculateShooterState(
                 Meters.of(currentAimingResult.distanceToTargetMeters())));
-        targetCanReceive = Util.isHubEnabled(ShooterConstants.ESTIMATED_TOF.in(Seconds));
+        targetCanReceive = Util.isHubEnabled(dynamicTof);
       }
       // Determine if we are in the Lobbing zone
       else if (FieldUtil.flipAllianceIfNeeded(Constants.LOBBING_ZONE).contains(robotTranslation)) {
@@ -199,6 +201,9 @@ public class Superstructure extends SubsystemBase {
     Logger.recordOutput("Superstructure/IsAligned", alignedTrigger.getAsBoolean());
     Logger.recordOutput("Superstructure/ShooterReady", shooter.isShooterReady().getAsBoolean());
     Logger.recordOutput("Superstructure/TargetCanReceive", targetCanReceive);
+    Logger.recordOutput("Superstructure/WantsToFire", wantsToFire);
+    Logger.recordOutput(
+        "Superstructure/DistanceToTarget", currentAimingResult.distanceToTargetMeters());
   }
 
   /**

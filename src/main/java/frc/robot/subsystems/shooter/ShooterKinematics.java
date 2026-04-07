@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.Time;
 import frc.robot.subsystems.shooter.Shooter.ShooterState;
 
 /**
@@ -17,27 +18,48 @@ public class ShooterKinematics {
   // Maps to store calibrated distances and corresponding motor speeds/angles
   private static final InterpolatingDoubleTreeMap flywheelMap = new InterpolatingDoubleTreeMap();
   private static final InterpolatingDoubleTreeMap hoodMap = new InterpolatingDoubleTreeMap();
+  private static final InterpolatingDoubleTreeMap tofMap = new InterpolatingDoubleTreeMap();
 
   static {
     flywheelMap.put(1.672, 42.0);
-    flywheelMap.put(1.912, 43.0);
-    flywheelMap.put(2.130, 45.0);
-    flywheelMap.put(2.423, 47.0);
-    flywheelMap.put(2.575, 49.0);
-    flywheelMap.put(2.779, 51.0);
-    flywheelMap.put(3.112, 54.0);
-    flywheelMap.put(3.335, 58.0);
-    flywheelMap.put(3.641, 62.0);
+    flywheelMap.put(1.891, 42.0);
+    flywheelMap.put(2.152, 43.0);
+    flywheelMap.put(2.315, 44.0);
+    flywheelMap.put(2.499, 46.5);
+    flywheelMap.put(2.713, 48.0);
+    flywheelMap.put(2.713, 48.0);
+    flywheelMap.put(3.003, 52.0);
+    flywheelMap.put(3.211, 54.0);
+    flywheelMap.put(3.430, 56.0);
+    flywheelMap.put(3.560, 58.0);
+    flywheelMap.put(3.746, 62.0);
+    flywheelMap.put(4.018, 66.0);
+    flywheelMap.put(4.343, 69.0);
+    flywheelMap.put(4.520, 71.0);
+    flywheelMap.put(4.667, 74.5);
+    flywheelMap.put(4.951, 76.0);
+    flywheelMap.put(4.951, 76.0);
+    flywheelMap.put(5.251, 79.0);
 
-    hoodMap.put(1.672, 85.0);
-    hoodMap.put(1.912, 85.0);
-    hoodMap.put(2.130, 85.0);
-    hoodMap.put(2.423, 85.0);
-    hoodMap.put(2.575, 85.0);
-    hoodMap.put(2.779, 85.0);
-    hoodMap.put(3.112, 85.0);
-    hoodMap.put(3.335, 85.0);
-    hoodMap.put(3.641, 70.0);
+    hoodMap.put(0.0, 85.0);
+
+    tofMap.put(1.672, 0.901);
+    tofMap.put(1.891, 0.971);
+    tofMap.put(2.152, 1.055);
+    tofMap.put(2.315, 1.108);
+    tofMap.put(2.499, 1.167);
+    tofMap.put(2.713, 1.236);
+    tofMap.put(3.003, 1.330);
+    tofMap.put(3.211, 1.397);
+    tofMap.put(3.430, 1.467);
+    tofMap.put(3.560, 1.509);
+    tofMap.put(3.746, 1.569);
+    tofMap.put(4.018, 1.657);
+    tofMap.put(4.343, 1.762);
+    tofMap.put(4.520, 1.819);
+    tofMap.put(4.667, 1.866);
+    tofMap.put(4.951, 1.957);
+    tofMap.put(5.251, 2.054);
   }
 
   /**
@@ -52,5 +74,15 @@ public class ShooterKinematics {
     // Get interpolated values from the maps based on current distance
     return new ShooterState(
         RotationsPerSecond.of(flywheelMap.get(distMeters)), Degrees.of(hoodMap.get(distMeters)));
+  }
+
+  /**
+   * Estimates the time of flight (TOF) for a given distance to the target.
+   *
+   * @param distanceToTarget The distance from the shooter to the target.
+   * @return The estimated Time of Flight in Seconds.
+   */
+  public static Time estimateTOF(Distance distanceToTarget) {
+    return Seconds.of(tofMap.get(distanceToTarget.in(Meters)));
   }
 }

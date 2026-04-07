@@ -120,6 +120,9 @@ public class Drive extends MonitoredSubsystemBase {
   private final Notifier odometryThread;
   private Consumer<IMUState> visionHighFreqConsumer;
   private final LinearFilter targetVelocityFilter = LinearFilter.singlePoleIIR(0.05, 0.02);
+  private final LinearFilter fieldVelocityXFilter = LinearFilter.singlePoleIIR(0.1, 0.02);
+  private final LinearFilter fieldVelocityYFilter = LinearFilter.singlePoleIIR(0.1, 0.02);
+  private Translation2d currentFieldVelocity = new Translation2d();
 
   private final PIDController rotationController = new PIDController(ANGLE_KP, 0.0, ANGLE_KD);
 
@@ -349,6 +352,13 @@ public class Drive extends MonitoredSubsystemBase {
 
     // Update gyro fault alert
     gyroHealthMonitor.update(gyroInputs);
+
+    ChassisSpeeds robotSpeeds = getChassisSpeeds();
+    ChassisSpeeds fieldSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(robotSpeeds, getRotation());
+    currentFieldVelocity =
+        new Translation2d(
+            fieldVelocityXFilter.calculate(fieldSpeeds.vxMetersPerSecond),
+            fieldVelocityYFilter.calculate(fieldSpeeds.vyMetersPerSecond));
   }
 
   /**
@@ -571,9 +581,7 @@ public class Drive extends MonitoredSubsystemBase {
    * @return The current field-relative linear velocity.
    */
   public Translation2d getFieldRelativeVelocity() {
-    ChassisSpeeds robotSpeeds = getChassisSpeeds();
-    ChassisSpeeds fieldSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(robotSpeeds, getRotation());
-    return new Translation2d(fieldSpeeds.vxMetersPerSecond, fieldSpeeds.vyMetersPerSecond);
+    return currentFieldVelocity;
   }
 
   /**
@@ -744,8 +752,7 @@ public class Drive extends MonitoredSubsystemBase {
     double smoothedTargetVelocity = targetVelocityFilter.calculate(rawTargetVelocity);
 
     double correction =
-        rotationController.calculate(getLatCompRotation().getRadians(), targetHeading.getRadians())
-            + smoothedTargetVelocity;
+        rotationController.calculate(getLatCompRotation().getRadians(), targetHeading.getRadians());
 
     return MathUtil.clamp(correction, -7.0, 7.0) + smoothedTargetVelocity;
   }
