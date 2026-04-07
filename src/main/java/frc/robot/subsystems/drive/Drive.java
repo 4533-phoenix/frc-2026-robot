@@ -127,6 +127,7 @@ public class Drive extends MonitoredSubsystemBase {
   private final PIDController rotationController = new PIDController(ANGLE_KP, 0.0, ANGLE_KD);
 
   private Supplier<Rotation2d> headingOverrideSupplier = () -> null;
+  private Supplier<Double> headingVelocityOverrideSupplier = () -> 0.0;
   private Rotation2d lastTargetHeading = null;
 
   private final SwerveDriveKinematics[] dynamicKinematics = new SwerveDriveKinematics[16];
@@ -199,10 +200,7 @@ public class Drive extends MonitoredSubsystemBase {
         this::getPose,
         this::setPose,
         this::getChassisSpeeds,
-        (speeds) -> {
-          Rotation2d target = headingOverrideSupplier.get();
-          this.runVelocity(speeds, target);
-        },
+        this::runVelocity,
         new PPHolonomicDriveController(
             new PIDConstants(7.0, 0.0, 0.0), new PIDConstants(7.0, 0.0, 0.0)),
         PP_CONFIG,
@@ -240,8 +238,22 @@ public class Drive extends MonitoredSubsystemBase {
    * @return A command that maintains the specified heading.
    */
   public Command headingAim(Supplier<Rotation2d> targetSupplier) {
+    return headingAim(targetSupplier, () -> 0.0);
+  }
+
+  /**
+   * Command to maintain a specific heading using a supplier for the target angle and target angular
+   * velocity.
+   *
+   * @param targetSupplier A supplier for the target heading (Rotation2d).
+   * @param velocitySupplier A supplier for the target angular velocity (rad/s) feedforward.
+   * @return A command that maintains the specified heading.
+   */
+  public Command headingAim(
+      Supplier<Rotation2d> targetSupplier, Supplier<Double> velocitySupplier) {
     return Commands.startEnd(
-        () -> setHeadingOverrideSupplier(targetSupplier), () -> setHeadingOverrideSupplier(null));
+        () -> setHeadingOverrideSupplier(targetSupplier, velocitySupplier),
+        () -> setHeadingOverrideSupplier(null));
   }
 
   /**
@@ -273,7 +285,21 @@ public class Drive extends MonitoredSubsystemBase {
    *     robot will use the gyro heading for odometry and control.
    */
   public void setHeadingOverrideSupplier(Supplier<Rotation2d> supplier) {
+    setHeadingOverrideSupplier(supplier, () -> 0.0);
+  }
+
+  /**
+   * Sets the supplier for the heading override and angular velocity feedforward.
+   *
+   * @param supplier A Supplier that provides the desired heading as a Rotation2d. If null, the
+   *     robot will use the gyro heading for odometry and control.
+   * @param velocitySupplier A Supplier that provides the target angular velocity.
+   */
+  public void setHeadingOverrideSupplier(
+      Supplier<Rotation2d> supplier, Supplier<Double> velocitySupplier) {
     this.headingOverrideSupplier = (supplier == null) ? (() -> null) : supplier;
+    this.headingVelocityOverrideSupplier =
+        (velocitySupplier == null) ? (() -> 0.0) : velocitySupplier;
     if (supplier != null) {
       targetVelocityFilter.reset();
       resetRotationController();
@@ -386,26 +412,36 @@ public class Drive extends MonitoredSubsystemBase {
   /**
    * The single entry point for all robot movement.
    *
-   * @param speeds The desired linear/angular velocity.
+   * @param speeds The desired linear/angular velocity (robot-relative).
    * @param targetHeading If non-null, the robot will ignore speeds.omega and calculate its own
    *     rotation with PRIORITY BUDGETING.
+   * @param omegaFF Angular velocity feedforward required to track a moving heading (rad/s).
    */
-  public void runVelocity(ChassisSpeeds speeds, Rotation2d targetHeading) {
+  public void runVelocity(ChassisSpeeds speeds, Rotation2d targetHeading, double omegaFF) {
     ChassisSpeeds finalSpeeds;
 
     if (targetHeading != null) {
-      double rotationFeedback = calculateRotationFeedback(targetHeading);
+      double rotationFeedback = calculateRotationFeedback(targetHeading) + omegaFF;
 
-      finalSpeeds =
-          new ChassisSpeeds(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, rotationFeedback);
+      // Recover field-relative translation to avoid coordinate corruption that causes veering
+      ChassisSpeeds fieldSpeeds =
+          ChassisSpeeds.fromRobotRelativeSpeeds(speeds, getPose().getRotation());
 
-      finalSpeeds = applyRotationPriority(finalSpeeds);
+      // We reconstruct the robot-relative speeds for the kinematics
+      ChassisSpeeds robotSpeeds =
+          ChassisSpeeds.fromFieldRelativeSpeeds(
+              fieldSpeeds.vxMetersPerSecond,
+              fieldSpeeds.vyMetersPerSecond,
+              rotationFeedback,
+              getPose().getRotation());
+
+      finalSpeeds = applyRotationPriority(robotSpeeds);
     } else {
       lastTargetHeading = null;
       finalSpeeds = speeds;
     }
 
-    ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(finalSpeeds, 0.04);
+    ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(finalSpeeds, 0.02);
     runVelocityRaw(discreteSpeeds);
   }
 
@@ -413,16 +449,16 @@ public class Drive extends MonitoredSubsystemBase {
    * Main entry point for movement. This acts as a wrapper that modifies the incoming speeds based
    * on the current Goal state.
    *
-   * @param speeds Speeds relative to the robot's field-centric perspective.
+   * @param speeds Speeds relative to the robot's chassis.
    */
   public void runVelocity(ChassisSpeeds speeds) {
-    runVelocity(speeds, headingOverrideSupplier.get());
+    runVelocity(speeds, headingOverrideSupplier.get(), headingVelocityOverrideSupplier.get());
   }
 
   /**
    * Internal method to run velocity without re-discretizing
    *
-   * @param speeds Speeds in meters/sec, relative to the robot's field-centric perspective.
+   * @param speeds Speeds in meters/sec, relative to the robot's chassis.
    */
   public void runVelocityRaw(ChassisSpeeds speeds) {
     int healthyMask = 0;

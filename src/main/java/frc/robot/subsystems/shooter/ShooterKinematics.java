@@ -9,8 +9,8 @@ import frc.robot.subsystems.shooter.Shooter.ShooterState;
 /**
  * Calculates optimal shooter settings based on the distance to the target.
  *
- * <p>Uses linear regression formulas derived from calibrated data to provide
- * smooth, continuous target states for the flywheel and time-of-flight estimation.
+ * <p>Uses linear regression formulas derived from calibrated data to provide smooth, continuous
+ * target states for the flywheel and time-of-flight estimation.
  */
 public class ShooterKinematics {
   // Tunable Constants
@@ -36,10 +36,7 @@ public class ShooterKinematics {
 
     double targetRps = (FLYWHEEL_SLOPE * distMeters) + FLYWHEEL_INTERCEPT;
 
-    return new ShooterState(
-        RotationsPerSecond.of(targetRps), 
-        Degrees.of(DEFAULT_HOOD_ANGLE)
-    );
+    return new ShooterState(RotationsPerSecond.of(targetRps), Degrees.of(DEFAULT_HOOD_ANGLE));
   }
 
   /**

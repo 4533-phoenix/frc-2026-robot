@@ -28,10 +28,13 @@ public class Aiming {
    * Cached result of the aiming pipeline, including target rotation, distance, and target presence.
    */
   public record AimingResult(
-      Rotation2d targetRotation, double distanceToTargetMeters, boolean hasTarget) {}
+      Rotation2d targetRotation,
+      double targetVelocityRadPerSec,
+      double distanceToTargetMeters,
+      boolean hasTarget) {}
 
   /** A default empty result to prevent NullPointerExceptions */
-  public static final AimingResult NO_TARGET = new AimingResult(new Rotation2d(), 0.0, false);
+  public static final AimingResult NO_TARGET = new AimingResult(new Rotation2d(), 0.0, 0.0, false);
 
   /** Estimated magazine travel time. */
   public static final Time MECHANICAL_DELAY = Seconds.of(0.05);
@@ -132,6 +135,11 @@ public class Aiming {
     double finalAngle = Math.atan2(dy, dx);
     double finalDist = Math.sqrt(dx * dx + dy * dy);
 
+    // Calculate angular velocity feedforward for moving robot tracking stationary target
+    double vrX = -fieldVelocity.getX();
+    double vrY = -fieldVelocity.getY();
+    double targetVelocityRadPerSec = (dx * vrY - dy * vrX) / (finalDist * finalDist);
+
     Rotation2d finalRotation =
         Rotation2d.fromRadians(finalAngle).plus(getCurveCompensation(finalDist));
 
@@ -143,11 +151,12 @@ public class Aiming {
       Logger.recordOutput(
           "Aiming/ShooterPosition", new Pose2d(finalShooterX, finalShooterY, currentRobotRotation));
       Logger.recordOutput("Aiming/TargetRotation", finalRotation.getDegrees());
+      Logger.recordOutput("Aiming/TargetVelocityRadPerSec", targetVelocityRadPerSec);
       Logger.recordOutput("Aiming/CurveCompDegrees", getCurveCompensation(finalDist).getDegrees());
       Logger.recordOutput("Aiming/DistanceToTarget", finalDist);
     }
 
-    return new AimingResult(finalRotation, finalDist, true);
+    return new AimingResult(finalRotation, targetVelocityRadPerSec, finalDist, true);
   }
 
   /**
@@ -231,7 +240,7 @@ public class Aiming {
       Logger.recordOutput("Aiming/DistanceToTarget", finalDist);
     }
 
-    return new AimingResult(finalRotation, finalDist, true);
+    return new AimingResult(finalRotation, 0.0, finalDist, true);
   }
 
   /**

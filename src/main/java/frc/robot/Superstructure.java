@@ -309,6 +309,13 @@ public class Superstructure extends SubsystemBase {
   }
 
   /**
+   * @return The desired robot angular velocity feedforward for the current aiming target.
+   */
+  public double getTargetVelocity() {
+    return currentAimingResult.targetVelocityRadPerSec();
+  }
+
+  /**
    * @return The WritableTrigger representing the climb mode state.
    */
   public WritableTrigger getClimbMode() {
