@@ -129,6 +129,7 @@ public class Drive extends MonitoredSubsystemBase {
               MAX_ANGULAR_ACCELERATION.in(RadiansPerSecondPerSecond)));
 
   private Supplier<Rotation2d> headingOverrideSupplier = () -> null;
+  private Rotation2d lastTargetHeading = null;
 
   private final SwerveDriveKinematics[] dynamicKinematics = new SwerveDriveKinematics[16];
   private final boolean[] isCaster = new boolean[4];
@@ -393,6 +394,7 @@ public class Drive extends MonitoredSubsystemBase {
 
       finalSpeeds = applyRotationPriority(finalSpeeds);
     } else {
+      lastTargetHeading = null;
       finalSpeeds = speeds;
     }
 
@@ -723,7 +725,16 @@ public class Drive extends MonitoredSubsystemBase {
    * @return The required angular velocity.
    */
   public double calculateRotationFeedback(Rotation2d targetHeading) {
-    return rotationController.calculate(getRotation().getRadians(), targetHeading.getRadians());
+    double targetVelocity = 0.0;
+    if (lastTargetHeading != null) {
+      targetVelocity = targetHeading.minus(lastTargetHeading).getRadians() / 0.02;
+    }
+    lastTargetHeading = targetHeading;
+
+    return rotationController.calculate(
+            getRotation().getRadians(),
+            new TrapezoidProfile.State(targetHeading.getRadians(), targetVelocity))
+        + rotationController.getSetpoint().velocity;
   }
 
   /**

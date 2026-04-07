@@ -9,6 +9,8 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.BooleanPublisher;
@@ -24,7 +26,6 @@ import frc.lib.monitor.MonitorRegistry;
 import frc.lib.util.FieldUtil;
 import frc.robot.subsystems.climber.Climber;
 import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.drive.DriveConstants;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.intake.arm.Arm;
 import frc.robot.subsystems.intake.spinner.Spinner;
@@ -74,6 +75,8 @@ public class Superstructure extends SubsystemBase {
 
   // System State Variables
   private final WritableTrigger climbMode = new WritableTrigger(false);
+  private final WritableTrigger alignedTrigger = new WritableTrigger(false);
+  private final Debouncer alignedDebouncer = new Debouncer(0.15, DebounceType.kFalling);
   private AimingResult currentAimingResult = Aiming.NO_TARGET;
   private boolean targetCanReceive = false;
 
@@ -166,14 +169,18 @@ public class Superstructure extends SubsystemBase {
     }
     lastClearFaults = currentClearFaults;
 
+    // Calculate if we're aligned, then debounce it.
+    boolean currentlyAligned =
+        currentAimingResult.hasTarget()
+            && drive.isAlignedWithTarget(currentAimingResult.targetRotation());
+    alignedTrigger.set(alignedDebouncer.calculate(currentlyAligned));
+
     // Logging state to AdvantageKit
     Logger.recordOutput("Superstructure/ClimbMode", climbMode.get());
     Logger.recordOutput("Superstructure/CurrentAimingResult", currentAimingResult);
     Logger.recordOutput("Superstructure/IsHubEnabled", Util.isHubEnabled());
     Logger.recordOutput("Superstructure/HasTarget", currentAimingResult.hasTarget());
-    Logger.recordOutput(
-        "Superstructure/HeadingErrorDegrees",
-        currentAimingResult.targetRotation().minus(drive.getPose().getRotation()).getDegrees());
+    Logger.recordOutput("Superstructure/IsAligned", alignedTrigger.getAsBoolean());
     Logger.recordOutput("Superstructure/ShooterReady", shooter.isShooterReady().getAsBoolean());
     Logger.recordOutput("Superstructure/TargetCanReceive", targetCanReceive);
   }
@@ -263,17 +270,7 @@ public class Superstructure extends SubsystemBase {
    *     target's heading, and the shooter flywheel/hood are at their setpoints.
    */
   public Trigger isReadyToShoot() {
-    return new Trigger(
-        () ->
-            currentAimingResult.hasTarget()
-                && Math.abs(
-                        currentAimingResult
-                            .targetRotation()
-                            .minus(drive.getPose().getRotation())
-                            .getDegrees())
-                    < DriveConstants.HEADING_ALIGNMENT_TOLERANCE.in(Degrees)
-                && shooter.isShooterReady().getAsBoolean()
-                && targetCanReceive);
+    return alignedTrigger.and(shooter.isShooterReady()).and(() -> targetCanReceive);
   }
 
   /**

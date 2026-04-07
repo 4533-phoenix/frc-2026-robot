@@ -5,3 +5,4 @@ Todo list is getting short! Almost there!
 * Reseed gyro from vision if we are not locked
 * Figure out when the hubs *actually* get disabled
 * Tune drive then mess with PP
+* Tune heading pid more to shoot while driving faster
