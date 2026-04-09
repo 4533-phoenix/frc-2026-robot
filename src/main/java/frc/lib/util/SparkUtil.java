@@ -17,6 +17,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.util.function.BooleanConsumer;
+import edu.wpi.first.wpilibj.Timer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
@@ -120,6 +121,11 @@ public class SparkUtil {
       var error = command.get();
       if (error == REVLibError.kOk) {
         return true;
+      }
+
+      // Delay before retrying to prevent CAN bus spam
+      if (i < maxAttempts - 1) {
+        Timer.delay(0.010);
       }
     }
     return false;

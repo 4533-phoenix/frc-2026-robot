@@ -8,3 +8,4 @@ Todo list is getting short! Almost there!
 * Tune heading pid more to shoot while driving faster
 * Button to line up for climb
 * Button to auto drive through trench?
+* Rework services to be faster and async (via Asynchronous State Snapshots)?

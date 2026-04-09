@@ -16,6 +16,10 @@ public class HighFreqBuffer {
   private final int numSignals;
   private final int stride;
 
+  private final double[][] timestampPool = new double[65][];
+  private final double[][] valuePool0 = new double[65][];
+  private final double[][] valuePool1 = new double[65][];
+
   /**
    * Creates a new HighFreqBuffer with a specific number of value signals (max 2).
    *
@@ -27,6 +31,14 @@ public class HighFreqBuffer {
     }
     this.numSignals = numSignals;
     this.stride = numSignals + 1;
+
+    for (int i = 0; i <= 64; i++) {
+      timestampPool[i] = new double[i];
+      valuePool0[i] = new double[i];
+      if (numSignals == 2) {
+        valuePool1[i] = new double[i];
+      }
+    }
   }
 
   /**
@@ -74,20 +86,24 @@ public class HighFreqBuffer {
     int frames = dataQueue.size() / stride;
     if (frames == 0) return;
 
-    // Allocate exact array sizes to keep AdvantageKit logs clean.
-    outTimestamps[0] = new double[frames];
-    outValueWrappers[0][0] = new double[frames];
+    // Grab exact size pre-allocated arrays from the pool
+    double[] tsArray = timestampPool[frames];
+    double[] v0Array = valuePool0[frames];
+    double[] v1Array = numSignals == 2 ? valuePool1[frames] : null;
+
+    outTimestamps[0] = tsArray;
+    outValueWrappers[0][0] = v0Array;
     if (numSignals == 2) {
-      outValueWrappers[1][0] = new double[frames];
+      outValueWrappers[1][0] = v1Array;
     }
 
     // Poll from Ring Buffer into output arrays without looping through signals
     for (int i = 0; i < frames; i++) {
-      outTimestamps[0][i] = dataQueue.poll();
-      outValueWrappers[0][0][i] = dataQueue.poll();
+      tsArray[i] = dataQueue.poll();
+      v0Array[i] = dataQueue.poll();
 
       if (numSignals == 2) {
-        outValueWrappers[1][0][i] = dataQueue.poll();
+        v1Array[i] = dataQueue.poll();
       }
     }
   }

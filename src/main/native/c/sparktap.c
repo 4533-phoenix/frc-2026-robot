@@ -117,8 +117,11 @@ static void* worker_loop(void *arg) {
       }
     }
 
+    // Always sleep to yield the core, preventing CPU lockup regardless of message count.
     if (likely(messageCount < 100)) {
       usleep(250);
+    } else {
+      usleep(50);
     }
   }
   return NULL;
@@ -143,13 +146,15 @@ JNIEXPORT jobject JNICALL Java_frc_lib_lowlevel_SparkTap_initNative(JNIEnv *env,
         &status);
     atomic_store(&running, true);
 
-    // Create background thread with RT priority
+    // Create background thread with SCHED_RR real-time priority
     pthread_attr_t attr;
     pthread_attr_init(&attr);
+    pthread_attr_setschedpolicy(&attr, SCHED_RR);
+
+    struct sched_param param;
+    param.sched_priority = 15;
+    pthread_attr_setschedparam(&attr, &param);
     pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
-    pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
-    struct sched_param sp = { .sched_priority = 45 };
-    pthread_attr_setschedparam(&attr, &sp);
 
     if (pthread_create(&worker_thread, &attr, worker_loop, NULL) != 0) {
       printf(
