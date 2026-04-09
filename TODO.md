@@ -9,3 +9,4 @@ Todo list is getting short! Almost there!
 * Button to auto drive through trench?
 * Rework services to be faster and async (via Asynchronous State Snapshots)?
 * Make out own pose estimator to avoid allocs?
+* Fix arm SIM
