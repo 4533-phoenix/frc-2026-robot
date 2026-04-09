@@ -7,8 +7,8 @@
 
 package frc.robot.services.vision;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import frc.lib.IMUState;
-import frc.robot.services.vision.Vision.VisionObservation;
 import org.littletonrobotics.junction.AutoLog;
 
 /**
@@ -22,8 +22,13 @@ public interface VisionIO {
   /** Contains all of the inputs received from the vision hardware. */
   @AutoLog
   public static class VisionIOInputs {
-    /** The latest set of vision observations, including timestamps. */
-    public VisionObservation[] observations = new VisionObservation[0];
+    public Pose2d[] visionPoses = new Pose2d[0];
+    public double[] timestamps = new double[0];
+    public int[] cameraIds = new int[0];
+    public int[] tagCounts = new int[0];
+    public double[] stdDevXs = new double[0];
+    public double[] stdDevYs = new double[0];
+    public double[] stdDevRots = new double[0];
   }
 
   /**

@@ -9,9 +9,9 @@ package frc.robot.services.vision;
 
 import static frc.robot.services.vision.VisionConstants.*;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import frc.lib.IMUState;
 import frc.lib.lowlevel.Whacknet;
-import frc.robot.services.vision.Vision.VisionObservation;
 
 /**
  * Real IO implementation for the vision service using Whacknet.
@@ -24,39 +24,64 @@ public class VisionIOWhacknet implements VisionIO {
   /** The Whacknet instance for communication with the Chalkydri coprocessors. */
   private final Whacknet whacknet;
 
-  /** Creates a new VisionIOChalkydri and starts the native vision server. */
+  // Pre-allocated array pools to avoid GC overhead
+  private final Pose2d[][] posePool = new Pose2d[65][];
+  private final double[][] timestampPool = new double[65][];
+  private final int[][] cameraIdPool = new int[65][];
+  private final int[][] tagCountPool = new int[65][];
+  private final double[][] stdDevXPool = new double[65][];
+  private final double[][] stdDevYPool = new double[65][];
+  private final double[][] stdDevRotPool = new double[65][];
+
+  /** Creates a new VisionIOWhacknet and starts the native vision server. */
   public VisionIOWhacknet() {
     whacknet = Whacknet.getInstance();
     whacknet.startServer(SERVER_RPORT);
+
+    // Initialize the fixed-size pools for 0 to 64 possible frames
+    for (int i = 0; i <= 64; i++) {
+      posePool[i] = new Pose2d[i];
+      timestampPool[i] = new double[i];
+      cameraIdPool[i] = new int[i];
+      tagCountPool[i] = new int[i];
+      stdDevXPool[i] = new double[i];
+      stdDevYPool[i] = new double[i];
+      stdDevRotPool[i] = new double[i];
+    }
   }
 
   /**
    * Updates inputs by reading the latest packets from the native library and mapping them to
    * loggable Java objects.
-   *
-   * @param inputs The inputs object to update.
    */
   @Override
   public void updateInputs(VisionIOInputs inputs) {
     int count = whacknet.readPackets();
 
-    // Create a single array of our struct
-    inputs.observations = new VisionObservation[count];
+    int safeCount = Math.min(count, 64);
 
-    whacknet.forEachPacket(
-        (packet, i) -> {
-          double timestampSeconds = packet.getTimestamp() / 1_000_000.0;
+    inputs.visionPoses = posePool[safeCount];
+    inputs.timestamps = timestampPool[safeCount];
+    inputs.cameraIds = cameraIdPool[safeCount];
+    inputs.tagCounts = tagCountPool[safeCount];
+    inputs.stdDevXs = stdDevXPool[safeCount];
+    inputs.stdDevYs = stdDevYPool[safeCount];
+    inputs.stdDevRots = stdDevRotPool[safeCount];
 
-          inputs.observations[i] =
-              new VisionObservation(
-                  packet.getPose2d(),
-                  timestampSeconds,
-                  packet.getCameraId(),
-                  packet.getNumTags(),
-                  packet.getStdX(),
-                  packet.getStdY(),
-                  packet.getStdRot());
-        });
+    if (count > 0) {
+      whacknet.forEachPacket(
+          (packet, i) -> {
+            if (i >= safeCount) return;
+            inputs.visionPoses[i] =
+                packet.getPose2d();
+            inputs.timestamps[i] = packet.getTimestamp() / 1_000_000.0;
+            inputs.cameraIds[i] = packet.getCameraId();
+            inputs.tagCounts[i] = packet.getNumTags();
+            inputs.stdDevXs[i] = packet.getStdX();
+            inputs.stdDevYs[i] = packet.getStdY();
+            inputs.stdDevRots[i] = packet.getStdRot();
+          });
+    }
   }
 
   @SuppressWarnings("unused")

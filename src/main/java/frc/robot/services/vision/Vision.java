@@ -31,15 +31,6 @@ import org.littletonrobotics.junction.Logger;
  * monitors camera health and status using highly optimized zero-allocation data structures.
  */
 public class Vision extends MonitoredBaseService {
-  /** A record representing a single vision observation. */
-  public record VisionObservation(
-      Pose2d visionPose,
-      double timestamp,
-      int cameraId,
-      int tagCount,
-      double stdDevX,
-      double stdDevY,
-      double stdDevRot) {}
 
   /** A functional interface for consuming vision measurements. */
   @FunctionalInterface
@@ -120,22 +111,21 @@ public class Vision extends MonitoredBaseService {
     double currentTime = Timer.getTimestamp();
 
     // Process all detections received this frame
-    for (int i = 0; i < inputs.observations.length; i++) {
-      int id = inputs.observations[i].cameraId();
+    for (int i = 0; i < inputs.visionPoses.length; i++) {
+      int id = inputs.cameraIds[i];
       if (id >= 0 && id <= maxCameraId && cameraActiveFlags[id]) {
         lastTimestamps[id] = currentTime;
       }
 
-      if (inputs.observations[i].tagCount() == 0) continue;
+      if (inputs.tagCounts[i] == 0) continue;
 
       // Update Consumer with refined pose
-      stdVector.set(0, 0, inputs.observations[i].stdDevX());
-      stdVector.set(1, 0, inputs.observations[i].stdDevY());
+      stdVector.set(0, 0, inputs.stdDevXs[i]);
+      stdVector.set(1, 0, inputs.stdDevYs[i]);
       stdVector.set(2, 0, Double.MAX_VALUE);
 
       if (measurementConsumer != null) {
-        measurementConsumer.accept(
-            inputs.observations[i].visionPose(), inputs.observations[i].timestamp(), stdVector);
+        measurementConsumer.accept(inputs.visionPoses[i], inputs.timestamps[i], stdVector);
       }
     }
 

@@ -14,7 +14,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Timer;
-import frc.robot.services.vision.Vision.VisionObservation;
 import frc.robot.services.vision.VisionConstants.CameraConfig;
 import java.util.function.Supplier;
 
@@ -51,8 +50,14 @@ public class VisionIOSim implements VisionIO {
     double timestamp = Timer.getFPGATimestamp();
 
     int cameraCount = CAMERA_MAP.size();
-    if (inputs.observations.length != cameraCount) {
-      inputs.observations = new VisionObservation[cameraCount];
+    if (inputs.visionPoses.length != cameraCount) {
+      inputs.visionPoses = new Pose2d[cameraCount];
+      inputs.timestamps = new double[cameraCount];
+      inputs.cameraIds = new int[cameraCount];
+      inputs.tagCounts = new int[cameraCount];
+      inputs.stdDevXs = new double[cameraCount];
+      inputs.stdDevYs = new double[cameraCount];
+      inputs.stdDevRots = new double[cameraCount];
     }
 
     int index = 0;
@@ -89,15 +94,14 @@ public class VisionIOSim implements VisionIO {
         thetaStd = 0.01 * (avgDist * avgDist) / visibleTags;
       }
 
-      inputs.observations[index++] =
-          new VisionObservation(
-              visibleTags > 0 ? robotPose : EMPTY_POSE,
-              timestamp,
-              camId,
-              visibleTags,
-              xyStd,
-              xyStd,
-              thetaStd);
+      inputs.visionPoses[index] = visibleTags > 0 ? robotPose : EMPTY_POSE;
+      inputs.timestamps[index] = timestamp;
+      inputs.cameraIds[index] = camId;
+      inputs.tagCounts[index] = visibleTags;
+      inputs.stdDevXs[index] = xyStd;
+      inputs.stdDevYs[index] = xyStd;
+      inputs.stdDevRots[index] = thetaStd;
+      index++;
     }
   }
 }
