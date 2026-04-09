@@ -18,7 +18,6 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
-import frc.lib.IMUState;
 import frc.lib.monitor.MonitoredBaseService;
 import java.util.Collections;
 import org.littletonrobotics.junction.Logger;
@@ -93,10 +92,30 @@ public class Vision extends MonitoredBaseService {
   /**
    * Forwards a high frequency IMU packet to the vision pipeline.
    *
-   * @param imuState The current 6-DOF IMU state.
+   * @param timestampSec The timestamp of the measurement in seconds.
+   * @param compRoll The current roll position in radians.
+   * @param compPitch The current pitch position in radians.
+   * @param compYaw The current yaw position in radians.
+   * @param rollVelRadPerSec The current roll velocity in radians per second.
+   * @param pitchVelRadPerSec The current pitch velocity in radians per second.
+   * @param yawVelRadPerSec The current yaw velocity in radians per second.
    */
-  public void broadcastTelemetry(IMUState imuState) {
-    io.broadcastTelemetry(imuState);
+  public void broadcastTelemetry(
+      double timestampSec,
+      double compRoll,
+      double compPitch,
+      double compYaw,
+      double rollVelRadPerSec,
+      double pitchVelRadPerSec,
+      double yawVelRadPerSec) {
+    io.broadcastTelemetry(
+        timestampSec,
+        compRoll,
+        compPitch,
+        compYaw,
+        rollVelRadPerSec,
+        pitchVelRadPerSec,
+        yawVelRadPerSec);
   }
 
   /**

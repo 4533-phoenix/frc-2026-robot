@@ -16,8 +16,8 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import frc.lib.HighFreqBuffer;
-import frc.lib.IMUState;
 import frc.lib.hardware.GyroType;
+import frc.robot.subsystems.drive.Drive.IMUDataConsumer;
 
 /** IO implementation for the Redux Robotics Canandgyro. */
 public class GyroIOCanAndGyro implements GyroIO {
@@ -47,8 +47,8 @@ public class GyroIOCanAndGyro implements GyroIO {
   }
 
   @Override
-  public IMUState updateHighFreq(double timestampSec) {
-    if (!canAndGyro.isConnected()) return null;
+  public void updateHighFreq(double timestampSec, IMUDataConsumer callback) {
+    if (!canAndGyro.isConnected()) return;
 
     double latency = CANANDGYRO_LATENCY_SEC.in(Seconds);
 
@@ -71,10 +71,10 @@ public class GyroIOCanAndGyro implements GyroIO {
     yawBuffer.offer(timestampSec, compYaw);
     latestYawRad = compYaw;
 
-    return isLocked
-        ? new IMUState(
-            timestampSec, compRoll, compPitch, compYaw, rollVelocity, pitchVelocity, yawVelocity)
-        : null;
+    if (isLocked && callback != null) {
+      callback.accept(
+          timestampSec, compRoll, compPitch, compYaw, rollVelocity, pitchVelocity, yawVelocity);
+    }
   }
 
   @Override

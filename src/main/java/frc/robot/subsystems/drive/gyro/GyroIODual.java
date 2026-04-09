@@ -19,8 +19,8 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import frc.lib.HighFreqBuffer;
-import frc.lib.IMUState;
 import frc.lib.hardware.GyroType;
+import frc.robot.subsystems.drive.Drive.IMUDataConsumer;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -70,11 +70,11 @@ public class GyroIODual implements GyroIO {
   }
 
   @Override
-  public IMUState updateHighFreq(double timestampSec) {
+  public void updateHighFreq(double timestampSec, IMUDataConsumer callback) {
     boolean navxConnected = navX.isConnected();
     boolean canConnected = canAndGyro.isConnected();
 
-    if (!navxConnected && !canConnected) return null;
+    if (!navxConnected && !canConnected) return;
 
     double rollVelocity, compRoll;
     double pitchVelocity, compPitch;
@@ -122,10 +122,10 @@ public class GyroIODual implements GyroIO {
     yawBuffer.offer(timestampSec, compYaw);
     latestYawRad = compYaw;
 
-    return isLocked
-        ? new IMUState(
-            timestampSec, compRoll, compPitch, compYaw, rollVelocity, pitchVelocity, yawVelocity)
-        : null;
+    if (isLocked) {
+      callback.accept(
+          timestampSec, compRoll, compPitch, compYaw, rollVelocity, pitchVelocity, yawVelocity);
+    }
   }
 
   @Override

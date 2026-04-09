@@ -8,7 +8,6 @@
 package frc.robot.services.vision;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import frc.lib.IMUState;
 import org.littletonrobotics.junction.AutoLog;
 
 /**
@@ -22,12 +21,25 @@ public interface VisionIO {
   /** Contains all of the inputs received from the vision hardware. */
   @AutoLog
   public static class VisionIOInputs {
+    /** The robot poses corresponding to each vision measurement. */
     public Pose2d[] visionPoses = new Pose2d[0];
+
+    /** The timestamps of each vision measurement in seconds. */
     public double[] timestamps = new double[0];
+
+    /** The ID of the camera that produced each vision measurement. */
     public int[] cameraIds = new int[0];
+
+    /** The number of AprilTags seen in each vision measurement. */
     public int[] tagCounts = new int[0];
+
+    /** The standard deviation of the x position of each vision measurement. */
     public double[] stdDevXs = new double[0];
+
+    /** The standard deviation of the y position of each vision measurement. */
     public double[] stdDevYs = new double[0];
+
+    /** The standard deviation of the rotation of each vision measurement. */
     public double[] stdDevRots = new double[0];
   }
 
@@ -41,7 +53,20 @@ public interface VisionIO {
   /**
    * Broadcasts the high frequency 6-DOF IMU state to the vision coprocessor.
    *
-   * @param imuState The latest snapshot of the robot's IMU.
+   * @param timestampSec The timestamp of the measurement in seconds.
+   * @param compRoll The current roll position in radians.
+   * @param compPitch The current pitch position in radians.
+   * @param compYaw The current yaw position in radians.
+   * @param rollVelRadPerSec The current roll velocity in radians per second.
+   * @param pitchVelRadPerSec The current pitch velocity in radians per second.
+   * @param yawVelRadPerSec The current yaw velocity in radians per second.
    */
-  public default void broadcastTelemetry(IMUState imuState) {}
+  public default void broadcastTelemetry(
+      double timestampSec,
+      double compRoll,
+      double compPitch,
+      double compYaw,
+      double rollVelRadPerSec,
+      double pitchVelRadPerSec,
+      double yawVelRadPerSec) {}
 }

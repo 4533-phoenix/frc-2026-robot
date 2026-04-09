@@ -47,7 +47,6 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.lib.IMUState;
 import frc.lib.monitor.MonitoredSubsystemBase;
 import frc.lib.monitor.checkers.GyroMonitor;
 import frc.robot.subsystems.drive.gyro.GyroIO;
@@ -57,7 +56,6 @@ import frc.robot.subsystems.drive.module.ModuleIO;
 import frc.robot.util.LocalADStarAK;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -69,6 +67,30 @@ import org.littletonrobotics.junction.Logger;
  * interfacing with PathPlanner for autonomous paths.
  */
 public class Drive extends MonitoredSubsystemBase {
+  /** A functional interface for consuming IMU data. */
+  @FunctionalInterface
+  public interface IMUDataConsumer {
+    /**
+     * Consumes one discrete IMU measurement.
+     *
+     * @param timestampSec The timestamp of the measurement in seconds.
+     * @param rollRad The current roll position in radians.
+     * @param pitchRad The current pitch position in radians.
+     * @param yawRad The current yaw position in radians.
+     * @param rollVelRadPerSec The current roll velocity in radians per second.
+     * @param pitchVelRadPerSec The current pitch velocity in radians per second.
+     * @param yawVelRadPerSec The current yaw velocity in radians per second.
+     */
+    void accept(
+        double timestampSec,
+        double rollRad,
+        double pitchRad,
+        double yawRad,
+        double rollVelRadPerSec,
+        double pitchVelRadPerSec,
+        double yawVelRadPerSec);
+  }
+
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
   private final GyroMonitor gyroHealthMonitor = new GyroMonitor();
@@ -118,7 +140,7 @@ public class Drive extends MonitoredSubsystemBase {
       };
 
   private final Notifier odometryThread;
-  private Consumer<IMUState> visionHighFreqConsumer;
+  private IMUDataConsumer visionHighFreqConsumer;
   private final LinearFilter targetVelocityFilter = LinearFilter.singlePoleIIR(0.05, 0.02);
   private final LinearFilter fieldVelocityXFilter = LinearFilter.singlePoleIIR(0.1, 0.02);
   private final LinearFilter fieldVelocityYFilter = LinearFilter.singlePoleIIR(0.1, 0.02);
@@ -261,20 +283,17 @@ public class Drive extends MonitoredSubsystemBase {
    *
    * @param callback A Consumer that accepts the current IMU state.
    */
-  public void setIMUHighFreqConsumer(Consumer<IMUState> callback) {
+  public void setIMUHighFreqConsumer(IMUDataConsumer callback) {
     this.visionHighFreqConsumer = callback;
   }
 
   private void odometryLoop() {
     double timestampSec = RobotController.getFPGATime() / 1.0e6;
 
-    IMUState imuState = gyroIO.updateHighFreq(timestampSec);
+    gyroIO.updateHighFreq(timestampSec, visionHighFreqConsumer);
+
     for (var module : modules) {
       module.updateHighFreq(timestampSec);
-    }
-
-    if (visionHighFreqConsumer != null && imuState != null) {
-      visionHighFreqConsumer.accept(imuState);
     }
   }
 

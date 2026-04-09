@@ -10,7 +10,6 @@ package frc.robot.services.vision;
 import static frc.robot.services.vision.VisionConstants.*;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import frc.lib.IMUState;
 import frc.lib.lowlevel.Whacknet;
 
 /**
@@ -72,8 +71,7 @@ public class VisionIOWhacknet implements VisionIO {
       whacknet.forEachPacket(
           (packet, i) -> {
             if (i >= safeCount) return;
-            inputs.visionPoses[i] =
-                packet.getPose2d();
+            inputs.visionPoses[i] = packet.getPose2d();
             inputs.timestamps[i] = packet.getTimestamp() / 1_000_000.0;
             inputs.cameraIds[i] = packet.getCameraId();
             inputs.tagCounts[i] = packet.getNumTags();
@@ -86,16 +84,23 @@ public class VisionIOWhacknet implements VisionIO {
 
   @SuppressWarnings("unused")
   @Override
-  public void broadcastTelemetry(IMUState imuState) {
-    if (whacknet != null && imuState != null && BROADCAST_HEADING) {
+  public void broadcastTelemetry(
+      double timestampSec,
+      double compRoll,
+      double compPitch,
+      double compYaw,
+      double rollVelRadPerSec,
+      double pitchVelRadPerSec,
+      double yawVelRadPerSec) {
+    if (whacknet != null && BROADCAST_HEADING) {
       whacknet.broadcastTelemetry(
-          (long) (imuState.timestampSec() * 1.0e6),
-          imuState.rollRad(),
-          imuState.pitchRad(),
-          imuState.yawRad(),
-          imuState.rollVelRadPerSec(),
-          imuState.pitchVelRadPerSec(),
-          imuState.yawVelRadPerSec(),
+          (long) (timestampSec * 1.0e6),
+          compRoll,
+          compPitch,
+          compYaw,
+          rollVelRadPerSec,
+          pitchVelRadPerSec,
+          yawVelRadPerSec,
           VisionConstants.SERVER_BPORT);
     }
   }

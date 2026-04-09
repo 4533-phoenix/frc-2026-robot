@@ -13,8 +13,8 @@ import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.units.measure.*;
-import frc.lib.IMUState;
 import frc.lib.hardware.GyroType;
+import frc.robot.subsystems.drive.Drive.IMUDataConsumer;
 import org.littletonrobotics.junction.AutoLog;
 
 /** Interface for the gyroscope input/output abstraction. */
@@ -84,11 +84,9 @@ public interface GyroIO {
    * Polls high-frequency data for the 200Hz odometry loop.
    *
    * @param timestampSec The exact timestamp of the current 200Hz tick.
-   * @return The latest 6-DOF IMU state or null if the data is not available.
+   * @param callback A consumer to receive the raw IMU data if valid.
    */
-  public default IMUState updateHighFreq(double timestampSec) {
-    return null;
-  }
+  public default void updateHighFreq(double timestampSec, IMUDataConsumer callback) {}
 
   /** Clears all faults and warnings. */
   public default void clearFaults() {}
