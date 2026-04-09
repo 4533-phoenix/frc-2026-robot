@@ -40,30 +40,6 @@ public class Aiming {
   public static final Time MECHANICAL_DELAY = Seconds.of(0.05);
 
   /**
-   * Gets the amount of angle to compensate for curve of the ball in the air.
-   *
-   * @param distanceMeters The distance in meters to the target.
-   * @return The compensation angle in radians.
-   */
-  private static Rotation2d getCurveCompensation(double distanceMeters) {
-    // Define our data points
-    double minDist = 1.307;
-    double maxDist = 3.155;
-    double minCurveDeg = 0.0;
-    double maxCurveDeg = 0.0;
-
-    // Clamp the distance to our known range
-    double clampedDist = Math.max(minDist, Math.min(maxDist, distanceMeters));
-
-    // Linear Interpolation
-    double curveDegrees =
-        minCurveDeg + (clampedDist - minDist) * ((maxCurveDeg - minCurveDeg) / (maxDist - minDist));
-
-    // The result is added to the target angle
-    return Rotation2d.fromDegrees(curveDegrees);
-  }
-
-  /**
    * Computes all aiming outputs for a direct hub shot with lead compensation.
    *
    * <p>This method uses a two-pass approach: Pass 1 estimates the shooter's position at the current
@@ -139,8 +115,7 @@ public class Aiming {
     double vrY = -fieldVelocity.getY();
     double targetVelocityRadPerSec = (dx * vrY - dy * vrX) / (finalDist * finalDist);
 
-    Rotation2d finalRotation =
-        Rotation2d.fromRadians(finalAngle).plus(getCurveCompensation(finalDist));
+    Rotation2d finalRotation = Rotation2d.fromRadians(finalAngle);
 
     if (log) {
       Logger.recordOutput(
@@ -149,9 +124,8 @@ public class Aiming {
           "Aiming/VirtualTarget", new Pose2d(virtualTargetX, virtualTargetY, Rotation2d.kZero));
       Logger.recordOutput(
           "Aiming/ShooterPosition", new Pose2d(finalShooterX, finalShooterY, currentRobotRotation));
-      Logger.recordOutput("Aiming/TargetRotation", finalRotation.getDegrees());
+      Logger.recordOutput("Aiming/TargetRotation", finalRotation);
       Logger.recordOutput("Aiming/TargetVelocityRadPerSec", targetVelocityRadPerSec);
-      Logger.recordOutput("Aiming/CurveCompDegrees", getCurveCompensation(finalDist).getDegrees());
       Logger.recordOutput("Aiming/DistanceToTarget", finalDist);
     }
 
@@ -228,14 +202,12 @@ public class Aiming {
     double finalAngle = Math.atan2(finalDy, finalDx);
     double finalDist = Math.sqrt(finalDx * finalDx + finalDy * finalDy);
 
-    Rotation2d baseRotation = Rotation2d.fromRadians(finalAngle);
-    Rotation2d finalRotation = baseRotation.plus(getCurveCompensation(finalDist));
+    Rotation2d finalRotation = Rotation2d.fromRadians(finalAngle);
 
     if (log) {
       Logger.recordOutput(
           "Aiming/VirtualTarget", new Pose2d(targetX, finalClampedY, Rotation2d.kZero));
-      Logger.recordOutput("Aiming/TargetRotation", finalRotation.getDegrees());
-      Logger.recordOutput("Aiming/CurveCompDegrees", getCurveCompensation(finalDist).getDegrees());
+      Logger.recordOutput("Aiming/TargetRotation", finalRotation);
       Logger.recordOutput("Aiming/DistanceToTarget", finalDist);
     }
 
