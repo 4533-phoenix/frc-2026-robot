@@ -119,7 +119,11 @@ public class Arm extends MonitoredSubsystemBase {
     this.oscillate = oscillate;
   }
 
-  /** Command to deploy and oscillate the arm until canceled. */
+  /**
+   * Command to deploy and oscillate the arm until canceled.
+   *
+   * @return The oscillation command.
+   */
   public Command oscillate() {
     return this.startEnd(
         () -> {

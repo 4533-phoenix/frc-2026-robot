@@ -15,14 +15,22 @@ import frc.robot.subsystems.shooter.Shooter.ShooterState;
 public class ShooterKinematics {
   // Tunable Constants
   // Formula: RPS = (SLOPE * distance) + INTERCEPT
+
+  /** Slope for flywheel speed calculation. */
   public static final double FLYWHEEL_SLOPE = 11.4894;
+
+  /** Intercept for flywheel speed calculation. */
   public static final double FLYWHEEL_INTERCEPT = 18.6636;
 
   // Formula: TOF = (SLOPE * distance) + INTERCEPT
+  
+  /** Slope for time-of-flight calculation. */
   public static final double TOF_SLOPE = 0.3223;
+
+  /** Intercept for time-of-flight calculation. */
   public static final double TOF_INTERCEPT = 0.3617;
 
-  // Constant hood angle (as per your current map)
+  /** Default hood angle for all shots. */
   public static final double DEFAULT_HOOD_ANGLE = 85.0;
 
   /**

@@ -75,7 +75,6 @@ public class Aiming {
    * @param fieldVelocity The robot's field-relative velocity (m/s).
    * @param targetPosition The blue-alliance target position.
    * @param shooterRobotOffset The physical offset of the shooter from the robot's center.
-   * @param estimatedTimeOfFlight Estimated time for the projectile to travel to the target.
    * @param log Whether to publish outputs to AdvantageKit for visualization.
    * @return The computed aiming result.
    */
