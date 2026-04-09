@@ -8,3 +8,4 @@ Todo list is getting short! Almost there!
 * Button to line up for climb
 * Button to auto drive through trench?
 * Rework services to be faster and async (via Asynchronous State Snapshots)?
+* Make out own pose estimator to avoid allocs?
