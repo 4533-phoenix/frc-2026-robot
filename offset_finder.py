@@ -30,7 +30,7 @@ HOW TO CALIBRATE CAMERA OFFSETS WITH THIS SCRIPT
 ===============================================================================
 """
 
-LOG_PATH = "logs/akit_26-04-10_00-05-29_sccmp.wpilog"
+LOG_PATH = "akit_26-04-10_12-34-28.wpilog"
 
 reader = DataLogReader(LOG_PATH)
 entries = {}
@@ -145,7 +145,7 @@ for record in reader:
     try:
         if entry_name in ["/Vision/TagCounts", "/Vision/CameraIds"]:
             current_data[entry_name] = record.getIntegerArray()
-        elif "Positions" in entry_name or "Timestamps" in entry_name:
+        elif "Positions" in entry_name or "Timestamps" in entry_name or "Poses" in entry_name:
             current_data[entry_name] = record.getDoubleArray()
     except Exception:
         pass
