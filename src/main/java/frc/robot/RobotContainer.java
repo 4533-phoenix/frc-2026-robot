@@ -185,9 +185,9 @@ public class RobotContainer {
         new DuruDriveProfile(
             driverController,
             DriveConstants.MAX_LINEAR_VELOCITY,
-            DriveConstants.MAX_LINEAR_VELOCITY.div(2.0),
+            DriveConstants.MAX_LINEAR_VELOCITY.div(2.5),
             DriveConstants.MAX_LINEAR_ACCELERATION,
-            DriveConstants.MAX_LINEAR_ACCELERATION.div(2.0),
+            DriveConstants.MAX_LINEAR_ACCELERATION.div(2.5),
             DriveConstants.MAX_ANGULAR_VELOCITY,
             DriveConstants.MAX_ANGULAR_ACCELERATION,
             drive::getChassisSpeeds,
