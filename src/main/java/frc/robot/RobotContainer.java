@@ -210,7 +210,7 @@ public class RobotContainer {
     XboxController operatorController = new XboxController(1);
     operatorChooser.addDefaultOption(
         "Default", new DefaultOperatorProfile(operatorController, superstructure.getClimbMode()));
-    operatorChooser.addDefaultOption(
+    operatorChooser.addOption(
         "Maria", new DefaultOperatorProfile(operatorController, superstructure.getClimbMode()));
     operatorChooser.addOption(
         "Solo Default",
