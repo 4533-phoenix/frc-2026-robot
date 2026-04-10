@@ -12,6 +12,7 @@ import edu.wpi.first.networktables.BooleanSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Timer;
 
 /**
  * Utility class for evaluating game-specific conditions and performing other geometry-related
@@ -37,6 +38,9 @@ public class Util {
     matchModePublisher.set(false);
   }
 
+  private static String cachedGameSpecificMessage = "";
+  private static double lastMessageCacheTime = 0.0;
+
   /**
    * Evaluates the game specific message to determine if the hub is enabled at a given match time.
    *
@@ -52,7 +56,14 @@ public class Util {
 
     if (DriverStation.isAutonomous() || time > 130 || time <= 30) return true;
 
-    String data = DriverStation.getGameSpecificMessage();
+    // Cache the message once per 20ms control loop
+    double currentFpgaTime = Timer.getFPGATimestamp();
+    if (currentFpgaTime - lastMessageCacheTime > 0.02) {
+      cachedGameSpecificMessage = DriverStation.getGameSpecificMessage();
+      lastMessageCacheTime = currentFpgaTime;
+    }
+
+    String data = cachedGameSpecificMessage;
     var alliance = DriverStation.getAlliance();
     if (data == null || data.isEmpty() || alliance.isEmpty()) return true;
 
