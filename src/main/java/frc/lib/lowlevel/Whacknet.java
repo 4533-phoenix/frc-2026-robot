@@ -12,7 +12,9 @@ import static edu.wpi.first.units.Units.*;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Frequency;
@@ -51,19 +53,22 @@ public class Whacknet implements AutoCloseable {
   // Constants
   private static final int MAX_QUEUE_SIZE = 64;
   private static final int MASK = MAX_QUEUE_SIZE - 1;
-  private static final int STRUCT_SIZE = 64;
+  private static final int STRUCT_SIZE = 96;
   private static final int TELEMETRY_SIZE = 64;
 
   // Struct Offsets (VisionMeasurement)
   private static final int OFFSET_X = 0;
   private static final int OFFSET_Y = 8;
-  private static final int OFFSET_ROT = 16;
-  private static final int OFFSET_STD_X = 24;
-  private static final int OFFSET_STD_Y = 32;
-  private static final int OFFSET_STD_ROT = 40;
-  private static final int OFFSET_TIMESTAMP = 48;
-  private static final int OFFSET_CAMERA_ID = 56;
-  private static final int OFFSET_NUM_TAGS = 57;
+  private static final int OFFSET_Z = 16;
+  private static final int OFFSET_ROLL = 24;
+  private static final int OFFSET_PITCH = 32;
+  private static final int OFFSET_YAW = 40;
+  private static final int OFFSET_STD_X = 48;
+  private static final int OFFSET_STD_Y = 56;
+  private static final int OFFSET_STD_ROT = 64;
+  private static final int OFFSET_TIMESTAMP = 72;
+  private static final int OFFSET_CAMERA_ID = 80;
+  private static final int OFFSET_NUM_TAGS = 81;
 
   // Members
   private final ByteBuffer queueBuffer;
@@ -356,10 +361,38 @@ public class Whacknet implements AutoCloseable {
     }
 
     /**
-     * @return Rotation in radians.
+     * @return Z position in meters.
+     */
+    public double getZ() {
+      return readBuffer.getDouble(baseOffset + OFFSET_Z);
+    }
+
+    /**
+     * @return Roll in radians.
+     */
+    public double getRoll() {
+      return readBuffer.getDouble(baseOffset + OFFSET_ROLL);
+    }
+
+    /**
+     * @return Pitch in radians.
+     */
+    public double getPitch() {
+      return readBuffer.getDouble(baseOffset + OFFSET_PITCH);
+    }
+
+    /**
+     * @return Yaw in radians.
+     */
+    public double getYaw() {
+      return readBuffer.getDouble(baseOffset + OFFSET_YAW);
+    }
+
+    /**
+     * @return Rotation in radians. (returns Yaw for 2d compatibility)
      */
     public double getRot() {
-      return readBuffer.getDouble(baseOffset + OFFSET_ROT);
+      return readBuffer.getDouble(baseOffset + OFFSET_YAW);
     }
 
     /**
@@ -408,7 +441,14 @@ public class Whacknet implements AutoCloseable {
      * @return The pose as a Pose2d object.
      */
     public Pose2d getPose2d() {
-      return new Pose2d(getX(), getY(), Rotation2d.fromRadians(getRot()));
+      return new Pose2d(getX(), getY(), Rotation2d.fromRadians(getYaw()));
+    }
+
+    /**
+     * @return The pose as a Pose3d object.
+     */
+    public Pose3d getPose3d() {
+      return new Pose3d(getX(), getY(), getZ(), new Rotation3d(getRoll(), getPitch(), getYaw()));
     }
   }
 }

@@ -144,7 +144,8 @@ public class Vision extends MonitoredBaseService {
       stdVector.set(2, 0, Double.MAX_VALUE);
 
       if (measurementConsumer != null) {
-        measurementConsumer.accept(inputs.visionPoses[i], inputs.timestamps[i], stdVector);
+        measurementConsumer.accept(
+            inputs.visionPoses[i].toPose2d(), inputs.timestamps[i], stdVector);
       }
     }
 

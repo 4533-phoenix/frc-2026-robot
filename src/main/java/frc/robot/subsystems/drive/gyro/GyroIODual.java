@@ -34,8 +34,8 @@ public class GyroIODual implements GyroIO {
   private final AHRS navX;
   private final Canandgyro canAndGyro;
 
-  // High-frequency data tracking (1 signal: Yaw)
-  private final HighFreqBuffer yawBuffer = new HighFreqBuffer(1);
+  // High-frequency data tracking
+  private final HighFreqBuffer rotationBuffer = new HighFreqBuffer(3);
   private double latestYawRad = 0.0;
 
   // Software offsets to avoid blocking hardware calls
@@ -119,7 +119,7 @@ public class GyroIODual implements GyroIO {
       compYaw = yawPosition + (yawVelocity * latency);
     }
 
-    yawBuffer.offer(timestampSec, compYaw);
+    rotationBuffer.offer(timestampSec, compYaw, compPitch, compRoll);
     latestYawRad = compYaw;
 
     if (isLocked) {
@@ -237,9 +237,13 @@ public class GyroIODual implements GyroIO {
     // Drain 200Hz Buffer
     double[][] tsRef = {inputs.odometryYawTimestamps};
     double[][] yawRef = {inputs.odometryYawPositions};
-    yawBuffer.drain(tsRef, yawRef);
+    double[][] pitchRef = {inputs.odometryPitchPositions};
+    double[][] rollRef = {inputs.odometryRollPositions};
+    rotationBuffer.drain(tsRef, yawRef, pitchRef, rollRef);
     inputs.odometryYawTimestamps = tsRef[0];
     inputs.odometryYawPositions = yawRef[0];
+    inputs.odometryPitchPositions = pitchRef[0];
+    inputs.odometryRollPositions = rollRef[0];
 
     // Standard 50Hz Telemetry
     if (inputs.odometryYawTimestamps.length > 0) {

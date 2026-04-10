@@ -9,7 +9,7 @@ package frc.robot.services.vision;
 
 import static frc.robot.services.vision.VisionConstants.*;
 
-import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import frc.lib.lowlevel.Whacknet;
 
 /**
@@ -24,7 +24,7 @@ public class VisionIOWhacknet implements VisionIO {
   private final Whacknet whacknet;
 
   // Pre-allocated array pools to avoid GC overhead
-  private final Pose2d[][] posePool = new Pose2d[65][];
+  private final Pose3d[][] posePool = new Pose3d[65][];
   private final double[][] timestampPool = new double[65][];
   private final int[][] cameraIdPool = new int[65][];
   private final int[][] tagCountPool = new int[65][];
@@ -39,7 +39,7 @@ public class VisionIOWhacknet implements VisionIO {
 
     // Initialize the fixed-size pools for 0 to 64 possible frames
     for (int i = 0; i <= 64; i++) {
-      posePool[i] = new Pose2d[i];
+      posePool[i] = new Pose3d[i];
       timestampPool[i] = new double[i];
       cameraIdPool[i] = new int[i];
       tagCountPool[i] = new int[i];
@@ -71,7 +71,7 @@ public class VisionIOWhacknet implements VisionIO {
       whacknet.forEachPacket(
           (packet, i) -> {
             if (i >= safeCount) return;
-            inputs.visionPoses[i] = packet.getPose2d();
+            inputs.visionPoses[i] = packet.getPose3d();
             inputs.timestamps[i] = packet.getTimestamp() / 1_000_000.0;
             inputs.cameraIds[i] = packet.getCameraId();
             inputs.tagCounts[i] = packet.getNumTags();

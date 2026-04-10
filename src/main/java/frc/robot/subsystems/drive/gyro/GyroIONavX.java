@@ -26,7 +26,7 @@ public class GyroIONavX implements GyroIO {
   private final AHRS navX;
 
   // High-frequency data tracking
-  private final HighFreqBuffer yawBuffer = new HighFreqBuffer(1);
+  private final HighFreqBuffer rotationBuffer = new HighFreqBuffer(3);
   private double latestYawRad = 0.0;
 
   private volatile Angle pitchOffset = Radians.zero();
@@ -66,7 +66,7 @@ public class GyroIONavX implements GyroIO {
     double yawPosition = Units.degreesToRadians(-navX.getYaw()) + yawOffset.in(Radians);
     double compYaw = yawPosition + (yawVelocity * latency);
 
-    yawBuffer.offer(timestampSec, compYaw);
+    rotationBuffer.offer(timestampSec, compYaw, compPitch, compRoll);
     latestYawRad = compYaw;
 
     if (isLocked) {
@@ -88,12 +88,16 @@ public class GyroIONavX implements GyroIO {
       rollOffset = Radians.zero();
     }
 
-    // Drain high-frequency yaw measurements
+    // Drain high-frequency rotation measurements
     double[][] tsRef = {inputs.odometryYawTimestamps};
     double[][] yawRef = {inputs.odometryYawPositions};
-    yawBuffer.drain(tsRef, yawRef);
+    double[][] pitchRef = {inputs.odometryPitchPositions};
+    double[][] rollRef = {inputs.odometryRollPositions};
+    rotationBuffer.drain(tsRef, yawRef, pitchRef, rollRef);
     inputs.odometryYawTimestamps = tsRef[0];
     inputs.odometryYawPositions = yawRef[0];
+    inputs.odometryPitchPositions = pitchRef[0];
+    inputs.odometryRollPositions = rollRef[0];
 
     // Standard telemetry
     if (inputs.odometryYawTimestamps.length > 0) {

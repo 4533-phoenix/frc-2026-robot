@@ -11,6 +11,7 @@ import static frc.robot.services.vision.VisionConstants.*;
 
 import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Timer;
@@ -27,8 +28,8 @@ import java.util.function.Supplier;
 public class VisionIOSim implements VisionIO {
   private final Supplier<Pose2d> poseSupplier;
 
-  // Pre-allocated empty pose to avoid creating 'new Pose2d()' constantly when no tags are seen
-  private static final Pose2d EMPTY_POSE = new Pose2d();
+  // Pre-allocated empty pose to avoid creating 'new Pose3d()' constantly when no tags are seen
+  private static final Pose3d EMPTY_POSE = new Pose3d();
 
   /**
    * Creates a new VisionIOSim.
@@ -51,7 +52,7 @@ public class VisionIOSim implements VisionIO {
 
     int cameraCount = CAMERA_MAP.size();
     if (inputs.visionPoses.length != cameraCount) {
-      inputs.visionPoses = new Pose2d[cameraCount];
+      inputs.visionPoses = new Pose3d[cameraCount];
       inputs.timestamps = new double[cameraCount];
       inputs.cameraIds = new int[cameraCount];
       inputs.tagCounts = new int[cameraCount];
@@ -94,7 +95,7 @@ public class VisionIOSim implements VisionIO {
         thetaStd = 0.01 * (avgDist * avgDist) / visibleTags;
       }
 
-      inputs.visionPoses[index] = visibleTags > 0 ? robotPose : EMPTY_POSE;
+      inputs.visionPoses[index] = visibleTags > 0 ? new Pose3d(robotPose) : EMPTY_POSE;
       inputs.timestamps[index] = timestamp;
       inputs.cameraIds[index] = camId;
       inputs.tagCounts[index] = visibleTags;

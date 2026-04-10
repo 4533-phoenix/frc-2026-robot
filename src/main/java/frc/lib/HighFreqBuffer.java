@@ -19,15 +19,16 @@ public class HighFreqBuffer {
   private final double[][] timestampPool = new double[65][];
   private final double[][] valuePool0 = new double[65][];
   private final double[][] valuePool1 = new double[65][];
+  private final double[][] valuePool2 = new double[65][];
 
   /**
-   * Creates a new HighFreqBuffer with a specific number of value signals (max 2).
+   * Creates a new HighFreqBuffer with a specific number of value signals (max 3).
    *
-   * @param numSignals The number of data streams (1 for Gyro, 2 for Swerve Modules).
+   * @param numSignals The number of data streams (1 to 3).
    */
   public HighFreqBuffer(int numSignals) {
-    if (numSignals < 1 || numSignals > 2) {
-      throw new IllegalArgumentException("This buffer only supports 1 or 2 signals.");
+    if (numSignals < 1 || numSignals > 3) {
+      throw new IllegalArgumentException("This buffer only supports 1 to 3 signals.");
     }
     this.numSignals = numSignals;
     this.stride = numSignals + 1;
@@ -35,8 +36,11 @@ public class HighFreqBuffer {
     for (int i = 0; i <= 64; i++) {
       timestampPool[i] = new double[i];
       valuePool0[i] = new double[i];
-      if (numSignals == 2) {
+      if (numSignals >= 2) {
         valuePool1[i] = new double[i];
+      }
+      if (numSignals == 3) {
+        valuePool2[i] = new double[i];
       }
     }
   }
@@ -67,7 +71,7 @@ public class HighFreqBuffer {
    */
   public void offer(double timestamp, double v0, double v1) {
     if (numSignals != 2) {
-      throw new IllegalStateException("Buffer configured for 1 signal, but 2 offered.");
+      throw new IllegalStateException("Buffer configured for 2 signals, but wrong number offered.");
     }
     if (dataQueue.size() + stride >= 64) return;
 
@@ -77,10 +81,30 @@ public class HighFreqBuffer {
   }
 
   /**
+   * Offers a new data point for three signals.
+   *
+   * @param timestamp The timestamp for the data point.
+   * @param v0 The value for the first signal.
+   * @param v1 The value for the second signal.
+   * @param v2 The value for the third signal.
+   */
+  public void offer(double timestamp, double v0, double v1, double v2) {
+    if (numSignals != 3) {
+      throw new IllegalStateException("Buffer configured for 3 signals, but wrong number offered.");
+    }
+    if (dataQueue.size() + stride >= 64) return;
+
+    dataQueue.offer(timestamp);
+    dataQueue.offer(v0);
+    dataQueue.offer(v1);
+    dataQueue.offer(v2);
+  }
+
+  /**
    * Drains the buffer contents into the provided AdvantageKit array wrappers.
    *
    * @param outTimestamps A wrapper (double[1][N]) for the timestamp array.
-   * @param outValueWrappers Wrappers for the signals (1 wrapper for Gyro, 2 for Modules).
+   * @param outValueWrappers Wrappers for the signals.
    */
   public void drain(double[][] outTimestamps, double[][]... outValueWrappers) {
     int frames = dataQueue.size() / stride;
@@ -89,12 +113,16 @@ public class HighFreqBuffer {
     // Grab exact size pre-allocated arrays from the pool
     double[] tsArray = timestampPool[frames];
     double[] v0Array = valuePool0[frames];
-    double[] v1Array = numSignals == 2 ? valuePool1[frames] : null;
+    double[] v1Array = numSignals >= 2 ? valuePool1[frames] : null;
+    double[] v2Array = numSignals == 3 ? valuePool2[frames] : null;
 
     outTimestamps[0] = tsArray;
     outValueWrappers[0][0] = v0Array;
-    if (numSignals == 2) {
+    if (numSignals >= 2) {
       outValueWrappers[1][0] = v1Array;
+    }
+    if (numSignals == 3) {
+      outValueWrappers[2][0] = v2Array;
     }
 
     // Poll from Ring Buffer into output arrays without looping through signals
@@ -102,8 +130,11 @@ public class HighFreqBuffer {
       tsArray[i] = dataQueue.poll();
       v0Array[i] = dataQueue.poll();
 
-      if (numSignals == 2) {
+      if (numSignals >= 2) {
         v1Array[i] = dataQueue.poll();
+      }
+      if (numSignals == 3) {
+        v2Array[i] = dataQueue.poll();
       }
     }
   }

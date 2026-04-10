@@ -23,8 +23,8 @@ import frc.robot.subsystems.drive.Drive.IMUDataConsumer;
 public class GyroIOCanAndGyro implements GyroIO {
   private final Canandgyro canAndGyro = new Canandgyro(IMU_CAN_ID);
 
-  // High-frequency data tracking (1 signal: Yaw)
-  private final HighFreqBuffer yawBuffer = new HighFreqBuffer(1);
+  // High-frequency data tracking
+  private final HighFreqBuffer rotationBuffer = new HighFreqBuffer(3);
   private double latestYawRad = 0.0;
 
   private volatile Angle rollOffset = Radians.zero();
@@ -68,7 +68,7 @@ public class GyroIOCanAndGyro implements GyroIO {
     double yawPosition = Units.rotationsToRadians(canAndGyro.getYaw()) + yawOffset.in(Radians);
     double compYaw = yawPosition + (yawVelocity * latency);
 
-    yawBuffer.offer(timestampSec, compYaw);
+    rotationBuffer.offer(timestampSec, compYaw, compPitch, compRoll);
     latestYawRad = compYaw;
 
     if (isLocked && callback != null) {
@@ -90,12 +90,16 @@ public class GyroIOCanAndGyro implements GyroIO {
       rollOffset = Radians.zero();
     }
 
-    // Drain high-frequency yaw measurements
+    // Drain high-frequency rotation measurements
     double[][] tsRef = {inputs.odometryYawTimestamps};
     double[][] yawRef = {inputs.odometryYawPositions};
-    yawBuffer.drain(tsRef, yawRef);
+    double[][] pitchRef = {inputs.odometryPitchPositions};
+    double[][] rollRef = {inputs.odometryRollPositions};
+    rotationBuffer.drain(tsRef, yawRef, pitchRef, rollRef);
     inputs.odometryYawTimestamps = tsRef[0];
     inputs.odometryYawPositions = yawRef[0];
+    inputs.odometryPitchPositions = pitchRef[0];
+    inputs.odometryRollPositions = rollRef[0];
 
     // Standard 50Hz Telemetry
     if (inputs.odometryYawTimestamps.length > 0) {

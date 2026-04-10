@@ -7,7 +7,7 @@
 
 package frc.robot.services.vision;
 
-import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import org.littletonrobotics.junction.AutoLog;
 
 /**
@@ -22,7 +22,7 @@ public interface VisionIO {
   @AutoLog
   public static class VisionIOInputs {
     /** The robot poses corresponding to each vision measurement. */
-    public Pose2d[] visionPoses = new Pose2d[0];
+    public Pose3d[] visionPoses = new Pose3d[0];
 
     /** The timestamps of each vision measurement in seconds. */
     public double[] timestamps = new double[0];

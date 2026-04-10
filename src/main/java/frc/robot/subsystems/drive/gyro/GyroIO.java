@@ -71,6 +71,20 @@ public interface GyroIO {
      * <p>Measured in radians.
      */
     public double[] odometryYawPositions = new double[] {};
+
+    /**
+     * Pitch positions corresponding to the timestamps in {@link #odometryYawTimestamps}.
+     *
+     * <p>Measured in radians.
+     */
+    public double[] odometryPitchPositions = new double[] {};
+
+    /**
+     * Roll positions corresponding to the timestamps in {@link #odometryYawTimestamps}.
+     *
+     * <p>Measured in radians.
+     */
+    public double[] odometryRollPositions = new double[] {};
   }
 
   /**
