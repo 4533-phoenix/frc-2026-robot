@@ -52,7 +52,7 @@ public abstract class ControlService<P extends ControlProfile, IO, IN extends Lo
     this.inputs = inputs;
     this.chooser = chooser;
 
-    this.connectionAlert = new Alert(serviceName + " controller disconnected!", AlertType.kError);
+    this.connectionAlert = new Alert(serviceName + " controller disconnected", AlertType.kError);
   }
 
   @Override
