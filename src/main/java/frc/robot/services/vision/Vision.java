@@ -156,9 +156,6 @@ public class Vision extends MonitoredBaseService {
 
       // Update Alerts for drivers and log status
       alerts[id].set(isOffline);
-      Logger.recordOutput(logPaths[id], !isOffline);
-      boolean seen = (currentTime - lastTimestamps[id]) <= OFFLINE_TIMEOUT.in(Seconds);
-      Logger.recordOutput(seenPaths[id], seen);
     }
   }
 
