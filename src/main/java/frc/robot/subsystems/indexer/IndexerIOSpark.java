@@ -33,6 +33,8 @@ public class IndexerIOSpark implements IndexerIO {
   // Debouncer to prevent rapidly toggling connection status
   private final Debouncer connectedDebounce = new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
+  private Voltage sentVoltage = null;
+
   /** Creates a new IndexerIOSpark and configures the Spark Max. */
   public IndexerIOSpark() {
     var config = createBaseConfig(MOTOR_CURRENT_LIMIT, MOTOR_INVERTED);
@@ -67,7 +69,9 @@ public class IndexerIOSpark implements IndexerIO {
    */
   @Override
   public void setVoltage(Voltage voltage) {
+    if (sentVoltage != null && voltage.isEquivalent(sentVoltage)) return;
     spark.setVoltage(voltage.in(Volts));
+    sentVoltage = voltage;
   }
 
   @Override

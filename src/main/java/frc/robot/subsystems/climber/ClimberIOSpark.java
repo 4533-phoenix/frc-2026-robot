@@ -28,6 +28,8 @@ public class ClimberIOSpark implements ClimberIO {
   // Debouncer to prevent rapidly toggling connection status
   private final Debouncer connectedDebounce = new Debouncer(0.1, Debouncer.DebounceType.kFalling);
 
+  private Voltage sentVoltage = null;
+
   /** Creates a new ClimbIOSpark and configures the Spark Max. */
   public ClimberIOSpark() {
     var config = createBaseConfig(MOTOR_CURRENT_LIMIT, MOTOR_INVERTED);
@@ -61,12 +63,15 @@ public class ClimberIOSpark implements ClimberIO {
 
   @Override
   public void setLiftVoltage(Voltage voltage) {
+    Voltage targetVoltage = voltage;
     if ((voltage.gt(Volts.zero()) && motorView.getForwardLimit())
         || (voltage.lt(Volts.zero()) && motorView.getReverseLimit())) {
-      spark.setVoltage(0.0);
-    } else {
-      spark.setVoltage(voltage.magnitude());
+      targetVoltage = Volts.zero();
     }
+
+    if (sentVoltage != null && targetVoltage.isEquivalent(sentVoltage)) return;
+    spark.setVoltage(targetVoltage.in(Volts));
+    sentVoltage = targetVoltage;
   }
 
   @Override

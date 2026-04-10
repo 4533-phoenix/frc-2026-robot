@@ -13,7 +13,6 @@ import static edu.wpi.first.units.Units.*;
 import static frc.lib.util.SparkUtil.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
-import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -27,7 +26,6 @@ import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -56,6 +54,10 @@ public class ModuleIOSpark implements ModuleIO {
 
   private final MotorView driveTap;
   private final MotorView turnTap;
+
+  // Add caching variables to the class
+  private AngularVelocity sentDriveVelocity = null;
+  private Angle sentTurnPosition = null;
 
   // High-frequency data tracking
   private final HighFreqBuffer moduleBuffer = new HighFreqBuffer(2);
@@ -136,8 +138,9 @@ public class ModuleIOSpark implements ModuleIO {
             ? SensorDirectionValue.Clockwise_Positive
             : SensorDirectionValue.CounterClockwise_Positive;
     turnEncoder.getConfigurator().apply(turnEncoderConfig);
-    turnAbsolutePositionSignal.setUpdateFrequency(ODOMETRY_FREQUENCY);
-    turnVelocitySignal.setUpdateFrequency(ODOMETRY_FREQUENCY);
+    // Lower frequency to save CAN bandwidth since we only need it for connection checking now
+    turnAbsolutePositionSignal.setUpdateFrequency(50);
+    turnVelocitySignal.setUpdateFrequency(50);
 
     // Configure Turn Spark Max using centralized base config
     var turnConfig = createBaseConfig(TURN_MOTOR_CURRENT_LIMIT, TURN_INVERTED);
@@ -196,7 +199,6 @@ public class ModuleIOSpark implements ModuleIO {
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
     // Drive Motor Inputs
-    boolean driveOk = driveTap.isConnected();
     inputs.driveAppliedVoltage = Volts.of(driveTap.getAppliedOutput() * driveTap.getBusVoltage());
     inputs.driveCurrent = Amps.of(driveTap.getOutputCurrent());
 
@@ -222,26 +224,10 @@ public class ModuleIOSpark implements ModuleIO {
       inputs.turnVelocity = RadiansPerSecond.of(latestTurnVelocity);
     }
 
-    inputs.driveConnected = driveConnectedDebounce.calculate(driveOk);
+    inputs.driveConnected = driveConnectedDebounce.calculate(driveTap.isConnected());
 
-    // Turn Encoder Inputs
-    BaseStatusSignal.refreshAll(turnAbsolutePositionSignal, turnVelocitySignal);
+    // Turn Encoder Inputs - Background Thread updates status automatically, no need to block
     boolean turnEncoderOk = turnAbsolutePositionSignal.getStatus().isOK();
-
-    if (turnEncoderOk) {
-      // Sync internal encoder to CANcoder if still and error is high
-      double internalPos = inputs.turnPosition.in(Radians);
-      double absolutePos =
-          (turnAbsolutePositionSignal.getValueAsDouble() * TURN_ENCODER_POSITION_FACTOR)
-              - zeroRotation.in(Radians);
-      double turnError = Math.abs(MathUtil.angleModulus(internalPos - absolutePos));
-      boolean isStill =
-          inputs.turnVelocity.abs(RadiansPerSecond) < VELOCITY_GATE.in(RadiansPerSecond);
-
-      if (isStill && turnError > ERROR_THRESHOLD.in(Radians)) {
-        turnInternalEncoder.setPosition(absolutePos);
-      }
-    }
 
     inputs.turnConnected = turnConnectedDebounce.calculate(turnSparkOk);
     inputs.turnEncoderConnected = turnEncoderConnectedDebounce.calculate(turnEncoderOk);
@@ -273,13 +259,17 @@ public class ModuleIOSpark implements ModuleIO {
 
   @Override
   public void setDriveVelocity(AngularVelocity velocity) {
+    if (sentDriveVelocity != null && velocity.isEquivalent(sentDriveVelocity)) return;
     driveController.setSetpoint(
         velocity.in(RadiansPerSecond), ControlType.kVelocity, ClosedLoopSlot.kSlot0);
+    sentDriveVelocity = velocity;
   }
 
   @Override
   public void setTurnPosition(Angle rotation) {
+    if (sentTurnPosition != null && rotation.isEquivalent(sentTurnPosition)) return;
     turnController.setSetpoint(rotation.in(Radians), ControlType.kPosition, ClosedLoopSlot.kSlot0);
+    sentTurnPosition = rotation;
   }
 
   @Override

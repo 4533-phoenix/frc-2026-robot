@@ -34,6 +34,8 @@ public class SpinnerIOSpark implements SpinnerIO {
   // Debouncers to prevent rapid flickering of connection status
   private final Debouncer connectedDebounce = new Debouncer(0.5, Debouncer.DebounceType.kFalling);
 
+  private Voltage sentVoltage = null;
+
   /** Creates a new SpinnerIOSpark and configures the SparkMax controllers. */
   public SpinnerIOSpark() {
     var config = createBaseConfig(MOTOR_CURRENT_LIMIT, MOTOR_INVERTED);
@@ -62,7 +64,9 @@ public class SpinnerIOSpark implements SpinnerIO {
 
   @Override
   public void setVoltage(Voltage voltage) {
+    if (sentVoltage != null && voltage.isEquivalent(sentVoltage)) return;
     spark.setVoltage(voltage.in(Volts));
+    sentVoltage = voltage;
   }
 
   @Override
