@@ -241,14 +241,16 @@ public class RobotContainer {
                                 FieldUtil.FIELD_WIDTH.in(Meters) - 2.437,
                                 new Rotation2d(0))))),
             arm.deploy(),
-            shooter.run(),
-            Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
-                .withTimeout(1.0)
-                .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
-                Commands.startEnd(
-                    () -> superstructure.requestFire(), () -> superstructure.stopFire()),
-                drive.headingAim(superstructure::getTargetRotation))));
+                shooter.run(),
+                Commands.sequence(
+                    Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
+                        .withTimeout(1.0)
+                        .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
+                    Commands.parallel(
+                        Commands.startEnd(
+                            () -> superstructure.requestFire(), () -> superstructure.stopFire()),
+                        drive.headingAim(superstructure::getTargetRotation))))));
 
     autoChooser.addOption(
         "Middle Shoot Preload",
@@ -262,14 +264,16 @@ public class RobotContainer {
                                 FieldUtil.FIELD_WIDTH.in(Meters) / 2.0,
                                 new Rotation2d(0))))),
             arm.deploy(),
-            shooter.run(),
-            Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
-                .withTimeout(1.0)
-                .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
-                Commands.startEnd(
-                    () -> superstructure.requestFire(), () -> superstructure.stopFire()),
-                drive.headingAim(superstructure::getTargetRotation))));
+                shooter.run(),
+                Commands.sequence(
+                    Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
+                        .withTimeout(1.0)
+                        .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
+                    Commands.parallel(
+                        Commands.startEnd(
+                            () -> superstructure.requestFire(), () -> superstructure.stopFire()),
+                        drive.headingAim(superstructure::getTargetRotation))))));
 
     autoChooser.addOption(
         "Right Shoot Preload",
@@ -280,14 +284,16 @@ public class RobotContainer {
                         FieldUtil.flipAllianceIfNeeded(
                             new Pose2d(3.536, 2.437, new Rotation2d(0))))),
             arm.deploy(),
-            shooter.run(),
-            Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
-                .withTimeout(1.0)
-                .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
             Commands.parallel(
-                Commands.startEnd(
-                    () -> superstructure.requestFire(), () -> superstructure.stopFire()),
-                drive.headingAim(superstructure::getTargetRotation))));
+                shooter.run(),
+                Commands.sequence(
+                    Commands.run(() -> drive.runVelocity(new ChassisSpeeds(-1.0, 0, 0)), drive)
+                        .withTimeout(1.0)
+                        .finallyDo(() -> drive.runVelocity(new ChassisSpeeds())),
+                    Commands.parallel(
+                        Commands.startEnd(
+                            () -> superstructure.requestFire(), () -> superstructure.stopFire()),
+                        drive.headingAim(superstructure::getTargetRotation))))));
 
     // Configure the commands
     configureDriverButtonBindings();

@@ -1,5 +1,3 @@
-
-
 import math
 from bisect import bisect_right
 from wpilog import DataLogReader
@@ -8,25 +6,12 @@ from scipy.optimize import least_squares
 
 """
 ===============================================================================
-HOW TO CALIBRATE CAMERA OFFSETS WITH THIS SCRIPT
+STOP-AND-GO CAMERA OFFSET CALIBRATOR
 ===============================================================================
-1. PREPARE COPROCESSORS: Go into your vision coprocessor settings and TURN OFF 
-   "Constrained Solve" or any setting that forces the robot to a flat Z/Roll/Pitch 
-   (e.g., in PhotonVision disable "Z/Rot Constrained"). You need raw 3D poses.
-2. PLACE ROBOT: Put the robot down on the field (disabled mode is fine, 
-   AdvantageKit will record). Ensure the cameras can clearly see multiple AprilTags.
-3. SPIN (STATIONARY): DO NOT PUSH OR DRIVE THE ROBOT ACROSS THE FLOOR. Manually 
-   spin the robot in place 360 degrees, nice and smoothly, for about 5-10 seconds.
-4. MOVE AND REPEAT: Pick the robot entirely up (this breaks the clustering logic 
-   so the math knows it moved) and place it in a new spot on the field with tags 
-   in view. Perform another 360-degree stationary spin.
-5. DOWNLOAD LOG: Turn off the robot, grab the USB or download the latest .wpilog.
-6. UPDATE PATH: Change the `LOG_PATH` variable below to point to your new log.
-7. RUN SCRIPT: The output will yield `X/Y/Z` and `Roll/Pitch/Yaw` deltas. 
-8. APPLY CORRECTIONS: MATHEMATICALLY ADD the resulting translations and rotations 
-   to your existing Java `Transform3d` camera configurations. DO NOT REPLACE your 
-   old numbers with these—these are the mathematical CORRECTIONS for your current 
-   assumptions.
+1. Turn OFF Constrained Solve on the coprocessor.
+2. Spin the robot in place, stopping completely for 2 seconds every ~30 degrees.
+3. Move to a new spot and repeat.
+4. Apply these offsets to Java, then turn Constrained Solve BACK ON.
 ===============================================================================
 """
 
@@ -54,7 +39,6 @@ def interpolate_rotation(t):
         return gyro_roll[-1], gyro_pitch[-1], gyro_yaw[-1]
 
     i1 = i2 - 1
-    # Use 4 surrounding points: i0, i1, i2, i3
     i0 = max(0, i1 - 1)
     i3 = min(len(gyro_times) - 1, i2 + 1)
     
@@ -64,22 +48,16 @@ def interpolate_rotation(t):
     r0, r1, r2, r3 = gyro_roll[i0], gyro_roll[i1], gyro_roll[i2], gyro_roll[i3]
 
     def catmull_rom(tt, time0, time1, time2, time3, val0, val1, val2, val3):
-        if time2 == time0:
-            v1 = 0
-        else:
-            v1 = (val2 - val0) / (time2 - time0)
+        if time2 == time0: v1 = 0
+        else: v1 = (val2 - val0) / (time2 - time0)
             
-        if time3 == time1:
-            v2 = 0
-        else:
-            v2 = (val3 - val1) / (time3 - time1)
+        if time3 == time1: v2 = 0
+        else: v2 = (val3 - val1) / (time3 - time1)
             
         dt = time2 - time1
-        if dt == 0:
-            return val1
+        if dt == 0: return val1
             
         s = (tt - time1) / dt
-        
         h1 = 2*s**3 - 3*s**2 + 1
         h2 = -2*s**3 + 3*s**2
         h3 = s**3 - 2*s**2 + s
@@ -106,7 +84,6 @@ def process_frame(timestamp, data):
         
     vision_frames.append((timestamp, dict(data)))
 
-
 for record in reader:
     if record.isStart():
         data = record.getStartData()
@@ -127,7 +104,6 @@ for record in reader:
         if current_data.get("/Vision/TagCounts"):
             process_frame(current_frame_time, current_data)
         
-        # Pull gyro data
         if "/Drive/Gyro/OdometryYawTimestamps" in current_data:
             ts_array = current_data["/Drive/Gyro/OdometryYawTimestamps"]
             yaw_array = current_data.get("/Drive/Gyro/OdometryYawPositions", [])
@@ -153,7 +129,6 @@ for record in reader:
 if current_data and current_data.get("/Vision/TagCounts"):
     process_frame(current_frame_time, current_data)
 
-# Sort the gyro arrays by time just in case, and unwrap angles
 if gyro_times:
     combined = sorted(zip(gyro_times, gyro_yaw, gyro_pitch, gyro_roll))
     gyro_times = [c[0] for c in combined]
@@ -172,19 +147,14 @@ if gyro_times:
     gyro_roll = unwrap([c[3] for c in combined])
 
 def quat_to_euler(w, x, y, z):
-    # roll (x-axis rotation)
     sinr_cosp = 2 * (w * x + y * z)
     cosr_cosp = 1 - 2 * (x * x + y * y)
     roll = math.atan2(sinr_cosp, cosr_cosp)
 
-    # pitch (y-axis rotation)
     sinp = 2 * (w * y - z * x)
-    if abs(sinp) >= 1:
-        pitch = math.copysign(math.pi / 2, sinp)
-    else:
-        pitch = math.asin(sinp)
+    if abs(sinp) >= 1: pitch = math.copysign(math.pi / 2, sinp)
+    else: pitch = math.asin(sinp)
 
-    # yaw (z-axis rotation)
     siny_cosp = 2 * (w * z + x * y)
     cosy_cosp = 1 - 2 * (y * y + z * z)
     yaw = math.atan2(siny_cosp, cosy_cosp)
@@ -207,23 +177,13 @@ for timestamp, data in vision_frames:
             ts = timestamps[i]
             
             if pose_size == 7:
-                px = poses[i*7]
-                py = poses[i*7+1]
-                pz = poses[i*7+2]
-                qw = poses[i*7+3]
-                qx = poses[i*7+4]
-                qy = poses[i*7+5]
-                qz = poses[i*7+6]
+                px, py, pz = poses[i*7], poses[i*7+1], poses[i*7+2]
+                qw, qx, qy, qz = poses[i*7+3], poses[i*7+4], poses[i*7+5], poses[i*7+6]
                 proll, ppitch, pyaw = quat_to_euler(qw, qx, qy, qz)
             else:
-                px = poses[i*3]
-                py = poses[i*3+1]
-                pz = 0.0
-                proll = 0.0
-                ppitch = 0.0
-                pyaw = poses[i*3+2]
+                px, py, pz = poses[i*3], poses[i*3+1], 0.0
+                proll, ppitch, pyaw = 0.0, 0.0, poses[i*3+2]
             
-            # Interpolate rotation
             interp_roll, interp_pitch, interp_yaw = interpolate_rotation(ts)
             
             if cam_id not in camera_data:
@@ -236,8 +196,6 @@ for timestamp, data in vision_frames:
             })
 
 print("\n--- 6-DOF Camera Offset Optimization ---")
-print("NOTE: For X/Y/Z translation calibration to work best, the log should contain")
-print("the robot rotating (spinning in place) at a fixed location on the field.\n")
 
 def wrap_angle(angle):
     return (angle + np.pi) % (2 * np.pi) - np.pi
@@ -249,7 +207,6 @@ for cam_id, obs in camera_data.items():
         dx, dy, dz, dr, dp, dyaw = offsets
         corr_xs, corr_ys, corr_zs = [], [], []
         
-        # 1. Apply translation offsets using the Gyro's 3D rotation matrix
         for o in obs:
             cr = math.cos(o["i_roll"]); sr = math.sin(o["i_roll"])
             cp = math.cos(o["i_pitch"]); sp = math.sin(o["i_pitch"])
@@ -260,18 +217,13 @@ for cam_id, obs in camera_data.items():
             R_z = np.array([[cy, -sy, 0], [sy, cy, 0], [0, 0, 1]])
             R = R_z @ R_y @ R_x
             
-            # Rotate the bot-relative camera offset error to field space
             field_off = R @ np.array([dx, dy, dz])
             
             corr_xs.append(o["v_x"] + field_off[0])
             corr_ys.append(o["v_y"] + field_off[1])
             corr_zs.append(o["v_z"] + field_off[2])
             
-        # Instead of a global mean, we split the observations into continuous spatial/temporal clusters
-        # so that if the robot drives across the field, each "stationary" cluster gets its own mean!
         res = []
-        
-        # Simple clustering: If time jumps by >0.5s or distance > 1.5m, it's a new cluster
         clusters = []
         current_cluster = []
         for i, o in enumerate(obs):
@@ -294,18 +246,19 @@ for cam_id, obs in camera_data.items():
             clusters.append(current_cluster)
             
         for cluster_indices in clusters:
-            c_mean_x = np.mean([corr_xs[i] for i in cluster_indices])
-            c_mean_y = np.mean([corr_ys[i] for i in cluster_indices])
-            c_mean_z = np.mean([corr_zs[i] for i in cluster_indices])
+            # MODIFICATION 1: Use MEDIAN instead of MEAN. 
+            # This mathematically ignores the blurry frames where you are rotating the bot 
+            # and heavily weights the 2-second windows where the bot is perfectly stopped.
+            c_mean_x = np.median([corr_xs[i] for i in cluster_indices])
+            c_mean_y = np.median([corr_ys[i] for i in cluster_indices])
+            c_mean_z = np.median([corr_zs[i] for i in cluster_indices])
             
             for i in cluster_indices:
                 o = obs[i]
-                # Translation residuals (minimize positional variance PER cluster)
                 e_x = corr_xs[i] - c_mean_x
                 e_y = corr_ys[i] - c_mean_y
                 e_z = corr_zs[i] - c_mean_z
                 
-                # Rotation residuals (minimize angular error vs gyro)
                 e_r = wrap_angle((o["v_roll"] + dr) - o["i_roll"])
                 e_p = wrap_angle((o["v_pitch"] + dp) - o["i_pitch"])
                 e_yaw = wrap_angle((o["v_yaw"] + dyaw) - o["i_yaw"])
@@ -314,11 +267,16 @@ for cam_id, obs in camera_data.items():
             
         return res
 
-    # Initial guess: [X_off, Y_off, Z_off, Roll_off, Pitch_off, Yaw_off]
     initial_guess = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
-    # Robust least-squares with soft_l1 loss
-    result = least_squares(residuals, initial_guess, loss='soft_l1', f_scale=0.1)
+    # MODIFICATION 2: Add BOUNDS to prevent the optimizer from making wild/impossible guesses.
+    # Max allowed correction: +/- 0.3 meters (30cm), +/- 0.35 radians (20 degrees)
+    bnds = ([-0.3, -0.3, -0.3, -0.35, -0.35, -0.35], 
+            [ 0.3,  0.3,  0.3,  0.35,  0.35,  0.35])
+
+    # MODIFICATION 3: Change loss to 'huber' and scale to 0.05. 
+    # Huber loss completely ignores sudden massive errors (like motion blur jumping the pose).
+    result = least_squares(residuals, initial_guess, bounds=bnds, loss='huber', f_scale=0.05)
 
     if result.success:
         dx, dy, dz, dr, dp, dyaw = result.x
@@ -335,3 +293,4 @@ for cam_id, obs in camera_data.items():
         print("\n  Add these values mathematically to your CameraConfig Transform3d.")
     else:
         print("  Optimization failed for this camera.")
+        

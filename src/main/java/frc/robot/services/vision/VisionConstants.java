@@ -49,9 +49,9 @@ public class VisionConstants {
           new CameraConfig(
               "Front",
               new Transform3d(
-                  Meters.of(-0.001),
-                  Meters.of(0.202),
-                  Meters.of(0.531),
+                  Meters.of(0.0072),
+                  Meters.of(0.2067),
+                  Meters.of(0.5312),
                   new Rotation3d(Degrees.of(179.31), Degrees.of(-11.65), Degrees.of(-1.84))),
               92.0,
               10.0),
@@ -59,9 +59,9 @@ public class VisionConstants {
           new CameraConfig(
               "Back Left",
               new Transform3d(
-                  Meters.of(-0.3199556),
-                  Meters.of(0.2089089),
-                  Meters.of(0.23971232),
+                  Meters.of(-0.3176),
+                  Meters.of(0.2087),
+                  Meters.of(0.2397),
                   new Rotation3d(Degrees.of(92.47), Degrees.of(-19.49), Degrees.of(132.31))),
               92.0,
               10.0),
@@ -69,9 +69,9 @@ public class VisionConstants {
           new CameraConfig(
               "Back Right",
               new Transform3d(
-                  Meters.of(-0.3119262),
-                  Meters.of(-0.2848894),
-                  Meters.of(0.25494719),
+                  Meters.of(-0.3122),
+                  Meters.of(-0.2842),
+                  Meters.of(0.2549),
                   new Rotation3d(Degrees.of(1.60), Degrees.of(-21.49), Degrees.of(-135.57))),
               92.0,
               10.0));
