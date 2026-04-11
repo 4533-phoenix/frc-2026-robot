@@ -32,7 +32,9 @@ public class Indexer extends MonitoredSubsystemBase {
     /** Stop the indexer motor. */
     STOP,
     /** Run the indexer to move game pieces toward the shooter. */
-    RUNNING
+    RUNNING,
+    /** Unjam the indexer. */
+    UNJAM
   }
 
   @AutoLogOutput private Goal goal = Goal.STOP;
@@ -65,6 +67,11 @@ public class Indexer extends MonitoredSubsystemBase {
     setGoal(Goal.STOP);
   }
 
+  /** Sets the indexer to unjam. */
+  public void setUnjam() {
+    setGoal(Goal.UNJAM);
+  }
+
   /** Updates hardware inputs, logs data, and updates status alerts. */
   @Override
   public void periodic() {
@@ -75,6 +82,7 @@ public class Indexer extends MonitoredSubsystemBase {
     switch (goal) {
       case RUNNING -> io.setVoltage(DEFAULT_VOLTAGE);
       case STOP -> io.setVoltage(Volts.zero());
+      case UNJAM -> io.setVoltage(DEFAULT_VOLTAGE.unaryMinus());
     }
   }
 
@@ -85,6 +93,15 @@ public class Indexer extends MonitoredSubsystemBase {
    */
   public Command run() {
     return this.startEnd(() -> setGoal(Goal.RUNNING), () -> setGoal(Goal.STOP));
+  }
+
+  /**
+   * Returns a command to unjam the indexer while the command is held.
+   *
+   * @return The unjam command.
+   */
+  public Command unjam() {
+    return this.startEnd(() -> setGoal(Goal.UNJAM), () -> setGoal(Goal.STOP));
   }
 
   /**

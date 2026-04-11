@@ -359,6 +359,9 @@ public class RobotContainer {
         .whileTrue(
             Commands.startEnd(() -> superstructure.requestFire(), () -> superstructure.stopFire()));
 
+    // Unjam when requested
+    driver.wantsUnjam().whileTrue(indexer.unjam());
+
     // When B is pressed, reset the current pose to the alliance origin facing away
     driver
         .wantsReset()

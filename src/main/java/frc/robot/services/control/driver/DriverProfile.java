@@ -39,4 +39,11 @@ public interface DriverProfile extends ControlProfile {
    * @return True if reset is requested.
    */
   boolean wantsReset();
+
+  /**
+   * Returns whether the driver wants to unjam the indexer.
+   *
+   * @return True if runjam is requested.
+   */
+  boolean wantsUnjam();
 }

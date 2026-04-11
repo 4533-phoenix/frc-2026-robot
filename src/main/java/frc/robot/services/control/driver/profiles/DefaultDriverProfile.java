@@ -160,4 +160,9 @@ public class DefaultDriverProfile extends GenericControlProfile implements Drive
   public boolean wantsReset() {
     return controller.getStartButton();
   }
+
+  @Override
+  public boolean wantsUnjam() {
+    return false;
+  }
 }

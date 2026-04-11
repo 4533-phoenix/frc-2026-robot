@@ -87,4 +87,13 @@ public class Driver extends ControlService<DriverProfile, DriverIO, DriverIOInpu
   public Trigger wantsReset() {
     return new Trigger(() -> inputs.wantsReset);
   }
+
+  /**
+   * Returns a trigger that is active when the driver wants to unjam the indexer.
+   *
+   * @return The unjam trigger.
+   */
+  public Trigger wantsUnjam() {
+    return new Trigger(() -> inputs.wantsUnjam);
+  }
 }

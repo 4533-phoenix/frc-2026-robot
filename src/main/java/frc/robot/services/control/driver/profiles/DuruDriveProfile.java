@@ -176,4 +176,9 @@ public class DuruDriveProfile extends GenericControlProfile implements DriverPro
   public boolean wantsReset() {
     return controller.getStartButton();
   }
+
+  @Override
+  public boolean wantsUnjam() {
+    return controller.getLeftBumperButtonPressed();
+  }
 }

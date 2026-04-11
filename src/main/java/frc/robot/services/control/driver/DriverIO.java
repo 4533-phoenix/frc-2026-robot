@@ -32,6 +32,9 @@ public interface DriverIO {
     /** Whether the driver wants to reset the robot pose. */
     public boolean wantsReset = false;
 
+    /** Whether the driver wants to unjam the indexer. */
+    public boolean wantsUnjam = false;
+
     /** Whether the driver is connected. */
     public boolean connected = false;
   }

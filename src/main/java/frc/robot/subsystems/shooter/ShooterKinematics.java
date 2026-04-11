@@ -20,7 +20,7 @@ public class ShooterKinematics {
   public static final double FLYWHEEL_SLOPE = 11.4894;
 
   /** Intercept for flywheel speed calculation. */
-  public static final double FLYWHEEL_INTERCEPT = 18.6636;
+  public static final double FLYWHEEL_INTERCEPT = 19.6636;
 
   /** Slope for time-of-flight calculation. */
   public static final double TOF_SLOPE = 0.3223;

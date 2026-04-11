@@ -86,4 +86,9 @@ public class BasicDriverProfile extends GenericControlProfile implements DriverP
   public boolean wantsReset() {
     return controller.getStartButton();
   }
+
+  @Override
+  public boolean wantsUnjam() {
+    return false;
+  }
 }

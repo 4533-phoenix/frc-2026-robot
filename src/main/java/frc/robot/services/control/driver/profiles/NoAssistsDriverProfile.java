@@ -60,4 +60,9 @@ public class NoAssistsDriverProfile extends GenericControlProfile implements Dri
   public boolean wantsReset() {
     return controller.getStartButton();
   }
+
+  @Override
+  public boolean wantsUnjam() {
+    return false;
+  }
 }
