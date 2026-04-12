@@ -246,9 +246,6 @@ for cam_id, obs in camera_data.items():
             clusters.append(current_cluster)
             
         for cluster_indices in clusters:
-            # MODIFICATION 1: Use MEDIAN instead of MEAN. 
-            # This mathematically ignores the blurry frames where you are rotating the bot 
-            # and heavily weights the 2-second windows where the bot is perfectly stopped.
             c_mean_x = np.median([corr_xs[i] for i in cluster_indices])
             c_mean_y = np.median([corr_ys[i] for i in cluster_indices])
             c_mean_z = np.median([corr_zs[i] for i in cluster_indices])
@@ -269,14 +266,7 @@ for cam_id, obs in camera_data.items():
 
     initial_guess = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
-    # MODIFICATION 2: Add BOUNDS to prevent the optimizer from making wild/impossible guesses.
-    # Max allowed correction: +/- 0.3 meters (30cm), +/- 0.35 radians (20 degrees)
-    bnds = ([-0.3, -0.3, -0.3, -0.35, -0.35, -0.35], 
-            [ 0.3,  0.3,  0.3,  0.35,  0.35,  0.35])
-
-    # MODIFICATION 3: Change loss to 'huber' and scale to 0.05. 
-    # Huber loss completely ignores sudden massive errors (like motion blur jumping the pose).
-    result = least_squares(residuals, initial_guess, bounds=bnds, loss='huber', f_scale=0.05)
+    result = least_squares(residuals, initial_guess, loss='huber', f_scale=0.05)
 
     if result.success:
         dx, dy, dz, dr, dp, dyaw = result.x
