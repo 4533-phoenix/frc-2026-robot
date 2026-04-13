@@ -38,9 +38,7 @@ public class ShooterKinematics {
    * @return The calculated ShooterState containing target flywheel speed and hood angle.
    */
   public static ShooterState calculateShooterState(Distance distanceToTarget) {
-    double distMeters = distanceToTarget.in(Meters);
-
-    double targetRps = (FLYWHEEL_SLOPE * distMeters) + FLYWHEEL_INTERCEPT;
+    double targetRps = (FLYWHEEL_SLOPE * distanceToTarget.in(Meters)) + FLYWHEEL_INTERCEPT;
 
     return new ShooterState(RotationsPerSecond.of(targetRps), Degrees.of(DEFAULT_HOOD_ANGLE));
   }
@@ -52,8 +50,7 @@ public class ShooterKinematics {
    * @return The estimated Time of Flight in Seconds.
    */
   public static Time estimateTOF(Distance distanceToTarget) {
-    double distMeters = distanceToTarget.in(Meters);
-    double estimatedTof = (TOF_SLOPE * distMeters) + TOF_INTERCEPT;
+    double estimatedTof = (TOF_SLOPE * distanceToTarget.in(Meters)) + TOF_INTERCEPT;
 
     return Seconds.of(estimatedTof);
   }
