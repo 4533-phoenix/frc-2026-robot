@@ -295,6 +295,15 @@ spotless {
     }
     gson().indentWithSpaces(2)
   }
+  python {
+    target fileTree(".") {
+      include "scripts/**/*.py"
+      exclude "**/build/**", "**/build-*/**"
+    }
+    trimTrailingWhitespace()
+    leadingTabsToSpaces(4)
+    endWithNewline()
+  }
   format "misc", {
     target fileTree(".") {
       include "**/*.md", "**/.gitignore"
