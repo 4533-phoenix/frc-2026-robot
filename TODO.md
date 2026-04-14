@@ -7,4 +7,6 @@ Todo list is getting short! Almost there!
 * Make out own pose estimator to avoid allocs?
 * Fix arm SIM
 * Make custom pose estimator into kinematics engine?
-* Make estimator use pos + vel
+* Make engine use pos + vel
+* Make engine handle gyro offsets?
+* Update engine at 200hz

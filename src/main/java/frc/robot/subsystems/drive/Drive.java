@@ -46,7 +46,7 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.lib.PoseEstimator;
+import frc.lib.LocalizationEngine;
 import frc.lib.monitor.MonitoredSubsystemBase;
 import frc.lib.monitor.checkers.GyroMonitor;
 import frc.robot.subsystems.drive.gyro.GyroIO;
@@ -128,7 +128,7 @@ public class Drive extends MonitoredSubsystemBase {
         new SwerveModulePosition()
       };
 
-  private PoseEstimator poseEstimator = new PoseEstimator(Pose2d.kZero);
+  private LocalizationEngine localizationEngine = new LocalizationEngine(Pose2d.kZero);
 
   private final SwerveModuleState[] currentStates =
       new SwerveModuleState[] {
@@ -394,7 +394,7 @@ public class Drive extends MonitoredSubsystemBase {
       }
 
       // Pass the Twist directly into the zero-allocation estimator
-      poseEstimator.update(timestamp, rawGyroRotation, twist);
+      localizationEngine.update(timestamp, rawGyroRotation, twist);
     }
 
     // Update gyro fault alert
@@ -628,7 +628,7 @@ public class Drive extends MonitoredSubsystemBase {
    */
   @AutoLogOutput(key = "SwerveChassisSpeeds/Measured")
   public ChassisSpeeds getChassisSpeeds() {
-    return kinematics.toChassisSpeeds(getModuleStates());
+    return localizationEngine.getRobotRelativeSpeeds();
   }
 
   /**
@@ -638,7 +638,8 @@ public class Drive extends MonitoredSubsystemBase {
    * @return The current field-relative linear velocity.
    */
   public Translation2d getFieldRelativeVelocity() {
-    return currentFieldVelocity;
+    var fieldSpeeds = localizationEngine.getFieldVelocity();
+    return new Translation2d(fieldSpeeds.vxMetersPerSecond, fieldSpeeds.vyMetersPerSecond);
   }
 
   /**
@@ -674,7 +675,7 @@ public class Drive extends MonitoredSubsystemBase {
    */
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
-    return poseEstimator.getEstimatedPosition();
+    return localizationEngine.getPose();
   }
 
   /**
@@ -730,7 +731,7 @@ public class Drive extends MonitoredSubsystemBase {
       lastModulePositions[i].angle = currentPositions[i].angle;
     }
 
-    poseEstimator.resetPosition(rawGyroRotation, pose);
+    localizationEngine.reset(pose);
   }
 
   /**
@@ -744,7 +745,7 @@ public class Drive extends MonitoredSubsystemBase {
       Pose2d visionRobotPoseMeters,
       double timestampSeconds,
       Matrix<N3, N1> visionMeasurementStdDevs) {
-    poseEstimator.addVisionMeasurement(
+    localizationEngine.addVisionMeasurement(
         visionRobotPoseMeters, timestampSeconds, visionMeasurementStdDevs);
   }
 
