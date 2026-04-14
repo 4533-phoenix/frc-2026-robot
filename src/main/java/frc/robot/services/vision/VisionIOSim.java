@@ -1,7 +1,6 @@
 // Copyright (c) 2026 FRC Team 4533 (Phoenix)
-// Derived from the AdvantageKit framework by Littleton Robotics
 //
-// Use of this source code is governed by a BSD
+// Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
@@ -28,7 +27,7 @@ import java.util.function.Supplier;
 public class VisionIOSim implements VisionIO {
   private final Supplier<Pose2d> poseSupplier;
 
-  // Pre-allocated empty pose to avoid creating 'new Pose3d()' constantly when no tags are seen
+  // Pre-allocated empty pose to avoid creating objects constantly when no tags are seen
   private static final Pose3d EMPTY_POSE = new Pose3d();
   private static final Rotation3d EMPTY_ROTATION = new Rotation3d();
 
