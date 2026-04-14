@@ -7,3 +7,4 @@ Todo list is getting short! Almost there!
 * Make out own pose estimator to avoid allocs?
 * Fix arm SIM
 * Make custom pose estimator into kinematics engine?
+* Make estimator use pos + vel
