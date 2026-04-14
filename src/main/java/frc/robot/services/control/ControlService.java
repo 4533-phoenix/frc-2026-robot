@@ -8,6 +8,7 @@ package frc.robot.services.control;
 
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import frc.lib.monitor.MonitoredBaseService;
 import org.littletonrobotics.junction.Logger;
@@ -37,6 +38,9 @@ public abstract class ControlService<P extends ControlProfile, IO, IN extends Lo
   private final String serviceName;
   private final Alert connectionAlert;
 
+  private double lastLeftRumble = 0.0;
+  private double lastRightRumble = 0.0;
+
   /**
    * Constructs a ControlService.
    *
@@ -61,6 +65,7 @@ public abstract class ControlService<P extends ControlProfile, IO, IN extends Lo
     // Handle null/missing profile
     if (profile == null) {
       connectionAlert.set(true);
+      resetRumble(null);
       return;
     }
 
@@ -72,14 +77,49 @@ public abstract class ControlService<P extends ControlProfile, IO, IN extends Lo
     connectionAlert.set(!profile.isConnected());
 
     // Update physical hardware (Rumble)
+    updateRumble(profile);
+  }
+
+  /** Manages rumble logic: stops rumbling when disabled and only sends updates if values change. */
+  private void updateRumble(P profile) {
     GenericHID hid = profile.getHID();
-    if (hid != null) {
-      hid.setRumble(GenericHID.RumbleType.kLeftRumble, profile.getLeftRumble());
-      hid.setRumble(GenericHID.RumbleType.kRightRumble, profile.getRightRumble());
+    if (hid == null) {
+      lastLeftRumble = 0.0;
+      lastRightRumble = 0.0;
+      return;
+    }
+
+    double targetLeft = 0.0;
+    double targetRight = 0.0;
+
+    // Only allow rumble if the robot is enabled
+    if (DriverStation.isEnabled()) {
+      targetLeft = profile.getLeftRumble();
+      targetRight = profile.getRightRumble();
+    }
+
+    // Only send updates to the hardware if the value has changed
+    if (targetLeft != lastLeftRumble) {
+      hid.setRumble(GenericHID.RumbleType.kLeftRumble, targetLeft);
+      lastLeftRumble = targetLeft;
+    }
+
+    if (targetRight != lastRightRumble) {
+      hid.setRumble(GenericHID.RumbleType.kRightRumble, targetRight);
+      lastRightRumble = targetRight;
     }
   }
 
-  /** Subclasses must map the profile methods to the inputs object. */
+  /** Forces rumble to stop and resets tracking variables. */
+  private void resetRumble(GenericHID hid) {
+    if (hid != null) {
+      hid.setRumble(GenericHID.RumbleType.kLeftRumble, 0);
+      hid.setRumble(GenericHID.RumbleType.kRightRumble, 0);
+    }
+    lastLeftRumble = 0.0;
+    lastRightRumble = 0.0;
+  }
+
   /**
    * Subclasses must map the profile methods to the inputs object.
    *
