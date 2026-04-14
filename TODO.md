@@ -6,3 +6,4 @@ Todo list is getting short! Almost there!
 * Rework services to be faster and async (via Asynchronous State Snapshots)?
 * Make out own pose estimator to avoid allocs?
 * Fix arm SIM
+* Make custom pose estimator into kinematics engine?

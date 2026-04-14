@@ -23,7 +23,6 @@ import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -47,6 +46,7 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.lib.PoseEstimator;
 import frc.lib.monitor.MonitoredSubsystemBase;
 import frc.lib.monitor.checkers.GyroMonitor;
 import frc.robot.subsystems.drive.gyro.GyroIO;
@@ -128,8 +128,7 @@ public class Drive extends MonitoredSubsystemBase {
         new SwerveModulePosition()
       };
 
-  private SwerveDrivePoseEstimator poseEstimator =
-      new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
+  private PoseEstimator poseEstimator = new PoseEstimator(Pose2d.kZero);
 
   private final SwerveModuleState[] currentStates =
       new SwerveModuleState[] {
@@ -381,6 +380,9 @@ public class Drive extends MonitoredSubsystemBase {
         lastModulePositions[moduleIndex].angle = sample.angle;
       }
 
+      // Calculate the twist, we need it for the new estimator
+      Twist2d twist = kinematics.toTwist2d(odometryDeltasBuffer);
+
       // Interpolate the gyro rotation at the exact timestamp of this module sample
       if (gyroInputs.connected) {
         var interpolatedRotation = gyroHistory.getSample(timestamp);
@@ -388,11 +390,11 @@ public class Drive extends MonitoredSubsystemBase {
           rawGyroRotation = interpolatedRotation.get();
         }
       } else {
-        Twist2d twist = kinematics.toTwist2d(odometryDeltasBuffer);
         rawGyroRotation = rawGyroRotation.plus(Rotation2d.fromRadians(twist.dtheta));
       }
 
-      poseEstimator.updateWithTime(timestamp, rawGyroRotation, odometryPositionsBuffer);
+      // Pass the Twist directly into the zero-allocation estimator
+      poseEstimator.update(timestamp, rawGyroRotation, twist);
     }
 
     // Update gyro fault alert
@@ -728,7 +730,7 @@ public class Drive extends MonitoredSubsystemBase {
       lastModulePositions[i].angle = currentPositions[i].angle;
     }
 
-    poseEstimator.resetPosition(rawGyroRotation, currentPositions, pose);
+    poseEstimator.resetPosition(rawGyroRotation, pose);
   }
 
   /**
