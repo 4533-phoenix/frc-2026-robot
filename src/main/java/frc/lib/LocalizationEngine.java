@@ -49,7 +49,7 @@ public class LocalizationEngine {
   private final LinearFilter xAccelFilter;
   private final LinearFilter yAccelFilter;
 
-  // Cached objects for the 50Hz loop
+  // Cached objects
   private Pose2d latestPose = Pose2d.kZero;
   private ChassisSpeeds latestVelocity = new ChassisSpeeds();
   private ChassisSpeeds latestAcceleration = new ChassisSpeeds();
@@ -225,7 +225,7 @@ public class LocalizationEngine {
     double localErrX = errX * cosOld - errY * sinOld;
     double localErrY = errX * sinOld + errY * cosOld;
 
-    // Apply Kalman trust multipliers (Gain)
+    // Apply Kalman trust multipliers
     localErrX *= 1.0 / (1.0 + stdDevs.get(0, 0));
     localErrY *= 1.0 / (1.0 + stdDevs.get(1, 0));
 
@@ -276,7 +276,6 @@ public class LocalizationEngine {
    * @return The predicted Pose2d of the robot.
    */
   public Pose2d predictPose(Time lookahead) {
-    // Read the volatile state once to ensure Thread Safety
     Pose2d pose = latestPose;
     ChassisSpeeds vel = latestVelocity;
     ChassisSpeeds accel = latestAcceleration;
