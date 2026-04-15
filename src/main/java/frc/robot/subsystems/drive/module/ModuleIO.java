@@ -76,6 +76,9 @@ public interface ModuleIO {
 
     /** Turn positions for odometry measurements. */
     public double[] odometryTurnPositionsRad = new double[] {};
+
+    /** Drive velocities for odometry measurements. */
+    public double[] odometryDriveVelocitiesRadPerSec = new double[] {};
   }
 
   /**

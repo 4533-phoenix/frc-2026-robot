@@ -58,33 +58,20 @@ public interface GyroIO {
     /** The sticky faults associated with the gyro. */
     public int[] stickyFaults = new int[] {};
 
-    /**
-     * Timestamps for high-frequency yaw measurements used for odometry.
-     *
-     * <p>Measured in seconds via {@link edu.wpi.first.wpilibj.RobotController#getFPGATime()}.
-     */
+    /** Timestamps for high-frequency yaw measurements used for odometry. */
     public double[] odometryYawTimestamps = new double[] {};
 
-    /**
-     * Yaw positions corresponding to the timestamps in {@link #odometryYawTimestamps}.
-     *
-     * <p>Measured in radians.
-     */
+    /** Yaw positions corresponding to the timestamps in {@link #odometryYawTimestamps}. */
     public double[] odometryYawPositions = new double[] {};
 
-    /**
-     * Pitch positions corresponding to the timestamps in {@link #odometryYawTimestamps}.
-     *
-     * <p>Measured in radians.
-     */
+    /** Pitch positions corresponding to the timestamps in {@link #odometryYawTimestamps}. */
     public double[] odometryPitchPositions = new double[] {};
 
-    /**
-     * Roll positions corresponding to the timestamps in {@link #odometryYawTimestamps}.
-     *
-     * <p>Measured in radians.
-     */
+    /** Roll positions corresponding to the timestamps in {@link #odometryYawTimestamps}. */
     public double[] odometryRollPositions = new double[] {};
+
+    /** Yaw velocities corresponding to the timestamps in {@link #odometryYawTimestamps}. */
+    public double[] odometryYawVelocitiesRadPerSec = new double[] {};
   }
 
   /**

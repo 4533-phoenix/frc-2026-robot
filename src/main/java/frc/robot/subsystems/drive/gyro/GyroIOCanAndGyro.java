@@ -67,7 +67,7 @@ public class GyroIOCanAndGyro implements GyroIO {
     double yawPosition = Units.rotationsToRadians(canAndGyro.getYaw()) + yawOffset.in(Radians);
     double compYaw = yawPosition + (yawVelocity * latency);
 
-    rotationBuffer.offer(timestampSec, compYaw, compPitch, compRoll);
+    rotationBuffer.offer(timestampSec, compYaw, compPitch, compRoll, yawVelocity);
     latestYawRad = compYaw;
 
     if (isLocked && callback != null) {

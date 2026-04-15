@@ -49,7 +49,7 @@ public class ModuleIOSim implements ModuleIO {
   private final DCMotorSim turnMotorSim;
 
   // High-frequency data tracking
-  private final HighFreqBuffer moduleBuffer = new HighFreqBuffer(2);
+  private final HighFreqBuffer moduleBuffer = new HighFreqBuffer(3);
 
   private double latestDrivePosition = 0.0;
   private double latestTurnPosition = 0.0;
@@ -140,7 +140,7 @@ public class ModuleIOSim implements ModuleIO {
     latestDriveVelocity = driveEncoder.getVelocity();
     latestTurnVelocity = turnEncoder.getVelocity();
 
-    moduleBuffer.offer(timestampSec, latestDrivePosition, latestTurnPosition);
+    moduleBuffer.offer(timestampSec, latestDrivePosition, latestTurnPosition, latestDriveVelocity);
   }
 
   @Override
@@ -160,10 +160,12 @@ public class ModuleIOSim implements ModuleIO {
     double[][] tsRef = {inputs.odometryTimestamps};
     double[][] driveRef = {inputs.odometryDrivePositionsRad};
     double[][] turnRef = {inputs.odometryTurnPositionsRad};
-    moduleBuffer.drain(tsRef, driveRef, turnRef);
+    double[][] driveVelRef = {inputs.odometryDriveVelocitiesRadPerSec};
+    moduleBuffer.drain(tsRef, driveRef, turnRef, driveVelRef);
     inputs.odometryTimestamps = tsRef[0];
     inputs.odometryDrivePositionsRad = driveRef[0];
     inputs.odometryTurnPositionsRad = turnRef[0];
+    inputs.odometryDriveVelocitiesRadPerSec = driveVelRef[0];
 
     // Assign standard telemetry from the last read in the high-frequency thread
     if (inputs.odometryTimestamps.length > 0) {

@@ -19,6 +19,7 @@ public class HighFreqBuffer {
   private final double[][] valuePool0 = new double[65][];
   private final double[][] valuePool1 = new double[65][];
   private final double[][] valuePool2 = new double[65][];
+  private final double[][] valuePool3 = new double[65][];
 
   /**
    * Creates a new HighFreqBuffer with a specific number of value signals (max 3).
@@ -40,6 +41,9 @@ public class HighFreqBuffer {
       }
       if (numSignals == 3) {
         valuePool2[i] = new double[i];
+      }
+      if (numSignals == 4) {
+        valuePool3[i] = new double[i];
       }
     }
   }
@@ -100,6 +104,28 @@ public class HighFreqBuffer {
   }
 
   /**
+   * Offers a new data point for four signals.
+   *
+   * @param timestamp The timestamp for the data point.
+   * @param v0 The value for the first signal.
+   * @param v1 The value for the second signal.
+   * @param v2 The value for the third signal.
+   * @param v3 The value for the fourth signal.
+   */
+  public void offer(double timestamp, double v0, double v1, double v2, double v3) {
+    if (numSignals != 4) {
+      throw new IllegalStateException("Buffer configured for 4 signals, but wrong number offered.");
+    }
+    if (dataQueue.size() + stride >= 64) return;
+
+    dataQueue.offer(timestamp);
+    dataQueue.offer(v0);
+    dataQueue.offer(v1);
+    dataQueue.offer(v2);
+    dataQueue.offer(v3);
+  }
+
+  /**
    * Drains the buffer contents into the provided AdvantageKit array wrappers.
    *
    * @param outTimestamps A wrapper (double[1][N]) for the timestamp array.
@@ -114,6 +140,7 @@ public class HighFreqBuffer {
     double[] v0Array = valuePool0[frames];
     double[] v1Array = numSignals >= 2 ? valuePool1[frames] : null;
     double[] v2Array = numSignals == 3 ? valuePool2[frames] : null;
+    double[] v3Array = numSignals == 4 ? valuePool3[frames] : null;
 
     outTimestamps[0] = tsArray;
     outValueWrappers[0][0] = v0Array;
@@ -122,6 +149,9 @@ public class HighFreqBuffer {
     }
     if (numSignals == 3) {
       outValueWrappers[2][0] = v2Array;
+    }
+    if (numSignals == 4) {
+      outValueWrappers[3][0] = v3Array;
     }
 
     // Poll from Ring Buffer into output arrays without looping through signals
@@ -134,6 +164,9 @@ public class HighFreqBuffer {
       }
       if (numSignals == 3) {
         v2Array[i] = dataQueue.poll();
+      }
+      if (numSignals == 4) {
+        v3Array[i] = dataQueue.poll();
       }
     }
   }

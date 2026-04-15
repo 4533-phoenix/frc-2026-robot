@@ -128,7 +128,8 @@ public class Drive extends MonitoredSubsystemBase {
         new SwerveModulePosition()
       };
 
-  private LocalizationEngine localizationEngine = new LocalizationEngine(Pose2d.kZero);
+  private LocalizationEngine localizationEngine =
+      new LocalizationEngine(Pose2d.kZero, ODOMETRY_FREQUENCY);
 
   private final SwerveModuleState[] currentStates =
       new SwerveModuleState[] {
@@ -141,10 +142,6 @@ public class Drive extends MonitoredSubsystemBase {
   private final Notifier odometryThread;
   private IMUDataConsumer visionHighFreqConsumer;
   private final LinearFilter targetVelocityFilter = LinearFilter.singlePoleIIR(0.05, 0.02);
-  private final LinearFilter fieldVelocityXFilter = LinearFilter.singlePoleIIR(0.1, 0.02);
-  private final LinearFilter fieldVelocityYFilter = LinearFilter.singlePoleIIR(0.1, 0.02);
-  private Translation2d currentFieldVelocity = new Translation2d();
-
   private final PIDController rotationController = new PIDController(ANGLE_KP, 0.0, ANGLE_KD);
 
   private Supplier<Rotation2d> headingOverrideSupplier = () -> null;
@@ -351,9 +348,9 @@ public class Drive extends MonitoredSubsystemBase {
     }
 
     // Update odometry
-    double[] sampleTimestamps =
-        modules[0].getOdometryTimestamps(); // All signals are sampled together
+    double[] sampleTimestamps = modules[0].getOdometryTimestamps();
     int sampleCount = sampleTimestamps.length;
+    double hardwareYawVelocity = 0.0;
 
     // Check bounds for module positions to determine max valid sample count
     for (int i = 0; i < 4; i++) {
@@ -366,6 +363,7 @@ public class Drive extends MonitoredSubsystemBase {
         continue;
       }
 
+      SwerveModuleState[] sampleStates = new SwerveModuleState[4];
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
         SwerveModulePosition sample = modules[moduleIndex].getOdometryPositions()[i];
         odometryPositionsBuffer[moduleIndex].distanceMeters = sample.distanceMeters;
@@ -378,10 +376,15 @@ public class Drive extends MonitoredSubsystemBase {
 
         lastModulePositions[moduleIndex].distanceMeters = sample.distanceMeters;
         lastModulePositions[moduleIndex].angle = sample.angle;
+
+        double velMetersPerSec =
+            modules[moduleIndex].getOdometryDriveVelocities()[i] * WHEEL_RADIUS.in(Meters);
+        sampleStates[moduleIndex] = new SwerveModuleState(velMetersPerSec, sample.angle);
       }
 
-      // Calculate the twist, we need it for the new estimator
+      // Calculate the twist
       Twist2d twist = kinematics.toTwist2d(odometryDeltasBuffer);
+      ChassisSpeeds robotSpeeds = kinematics.toChassisSpeeds(sampleStates);
 
       // Interpolate the gyro rotation at the exact timestamp of this module sample
       if (gyroInputs.connected) {
@@ -389,23 +392,21 @@ public class Drive extends MonitoredSubsystemBase {
         if (interpolatedRotation.isPresent()) {
           rawGyroRotation = interpolatedRotation.get();
         }
+        if (gyroInputs.odometryYawVelocitiesRadPerSec.length > i) {
+          hardwareYawVelocity = gyroInputs.odometryYawVelocitiesRadPerSec[i];
+        }
       } else {
         rawGyroRotation = rawGyroRotation.plus(Rotation2d.fromRadians(twist.dtheta));
+        hardwareYawVelocity = robotSpeeds.omegaRadiansPerSecond;
       }
 
       // Pass the Twist directly into the zero-allocation estimator
-      localizationEngine.update(timestamp, rawGyroRotation, twist);
+      localizationEngine.update(
+          timestamp, rawGyroRotation, twist, robotSpeeds, hardwareYawVelocity);
     }
 
     // Update gyro fault alert
     gyroHealthMonitor.update(gyroInputs);
-
-    ChassisSpeeds robotSpeeds = getChassisSpeeds();
-    ChassisSpeeds fieldSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(robotSpeeds, getRotation());
-    currentFieldVelocity =
-        new Translation2d(
-            fieldVelocityXFilter.calculate(fieldSpeeds.vxMetersPerSecond),
-            fieldVelocityYFilter.calculate(fieldSpeeds.vyMetersPerSecond));
   }
 
   /**

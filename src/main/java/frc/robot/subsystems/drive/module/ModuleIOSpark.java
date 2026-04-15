@@ -60,7 +60,7 @@ public class ModuleIOSpark implements ModuleIO {
   private Angle sentTurnPosition = null;
 
   // High-frequency data tracking
-  private final HighFreqBuffer moduleBuffer = new HighFreqBuffer(2);
+  private final HighFreqBuffer moduleBuffer = new HighFreqBuffer(3);
 
   // Single variables instead of queues (we only need the latest velocity/position for standard
   // telemetry)
@@ -187,12 +187,13 @@ public class ModuleIOSpark implements ModuleIO {
   public void updateHighFreq(double timestampSec) {
     double drivePos = driveTap.getLatencyCompensatedPosition();
     double turnPos = turnTap.getLatencyCompensatedPosition();
+    double driveVel = driveTap.getVelocity();
 
-    moduleBuffer.offer(timestampSec, drivePos, turnPos);
+    moduleBuffer.offer(timestampSec, drivePos, turnPos, driveVel);
 
     latestDrivePosition = drivePos;
     latestTurnPosition = turnPos;
-    latestDriveVelocity = driveTap.getVelocity();
+    latestDriveVelocity = driveVel;
     latestTurnVelocity = turnTap.getVelocity();
   }
 
@@ -211,10 +212,12 @@ public class ModuleIOSpark implements ModuleIO {
     double[][] tsRef = {inputs.odometryTimestamps};
     double[][] driveRef = {inputs.odometryDrivePositionsRad};
     double[][] turnRef = {inputs.odometryTurnPositionsRad};
-    moduleBuffer.drain(tsRef, driveRef, turnRef);
+    double[][] driveVelRef = {inputs.odometryDriveVelocitiesRadPerSec};
+    moduleBuffer.drain(tsRef, driveRef, turnRef, driveVelRef);
     inputs.odometryTimestamps = tsRef[0];
     inputs.odometryDrivePositionsRad = driveRef[0];
     inputs.odometryTurnPositionsRad = turnRef[0];
+    inputs.odometryDriveVelocitiesRadPerSec = driveVelRef[0];
 
     // Assign standard telemetry from the last read in the high-frequency thread
     if (inputs.odometryTimestamps.length > 0) {

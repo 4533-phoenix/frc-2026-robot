@@ -200,6 +200,15 @@ public class Module {
   }
 
   /**
+   * Returns the drive velocities received this cycle from the asynchronous thread.
+   *
+   * @return An array of drive velocities in radians per second.
+   */
+  public double[] getOdometryDriveVelocities() {
+    return inputs.odometryDriveVelocitiesRadPerSec;
+  }
+
+  /**
    * Returns the module position in radians for wheel radius characterization.
    *
    * @return The drive position in radians.

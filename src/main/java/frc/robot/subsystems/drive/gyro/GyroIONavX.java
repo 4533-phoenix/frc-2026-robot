@@ -63,7 +63,7 @@ public class GyroIONavX implements GyroIO {
     double yawPosition = Units.degreesToRadians(-navX.getYaw()) + yawOffset.in(Radians);
     double compYaw = yawPosition + (yawVelocity * latency);
 
-    rotationBuffer.offer(timestampSec, compYaw, compPitch, compRoll);
+    rotationBuffer.offer(timestampSec, compYaw, compPitch, compRoll, yawVelocity);
     latestYawRad = compYaw;
 
     if (isLocked) {

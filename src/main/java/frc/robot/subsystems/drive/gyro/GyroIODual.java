@@ -34,7 +34,7 @@ public class GyroIODual implements GyroIO {
   private final Canandgyro canAndGyro;
 
   // High-frequency data tracking
-  private final HighFreqBuffer rotationBuffer = new HighFreqBuffer(3);
+  private final HighFreqBuffer rotationBuffer = new HighFreqBuffer(4);
   private double latestYawRad = 0.0;
 
   // Software offsets to avoid blocking hardware calls
@@ -118,7 +118,7 @@ public class GyroIODual implements GyroIO {
       compYaw = yawPosition + (yawVelocity * latency);
     }
 
-    rotationBuffer.offer(timestampSec, compYaw, compPitch, compRoll);
+    rotationBuffer.offer(timestampSec, compYaw, compPitch, compRoll, yawVelocity);
     latestYawRad = compYaw;
 
     if (isLocked) {
