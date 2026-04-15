@@ -1,9 +1,11 @@
-<h1 align="left">
-FRC 2026 Robot Code
-<img src="https://phoenix4533.org/favicon.svg" align="right" width="45" height="45" />
-</h1>
+<img width="2048" height="512" alt="Banner" src="https://github.com/user-attachments/assets/441e96cc-9e39-4cf6-8d3b-aa79dd3b2f32" />
 
-Welcome to the official repository for **FRC Team 4533 Phoenix's 2026 Robot Code**! This repository contains all the code for our robot, including subsystems, commands, and autonomous routines.
+Welcome to the official repository for **FRC Team 4533 Phoenix's 2026 Robot Code**! This repository contains all the code for our robot, including subsystems, services, commands, and autonomous routines.
+
+## The Robot
+
+<img width="4000" height="1848" alt="Phoenix's 2026 Robot: Phossil" src="https://github.com/user-attachments/assets/0d3b453d-c6e3-4b8e-a21c-d368655f52bf" />
+For our 2026 season, we developed Phossil: a fixed shooter swerve robot.
 
 ## Documentation
 
