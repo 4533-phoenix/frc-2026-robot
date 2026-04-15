@@ -10,3 +10,4 @@ Todo list is getting short! Almost there!
 * Update engine at 200hz
 * Make aim pipeline and drive use the new engine
 * Add engine to wiki
+* Use gyro velocities in the buffer to get even higher accuracy?
