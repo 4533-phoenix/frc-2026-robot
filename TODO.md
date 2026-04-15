@@ -1,5 +1,6 @@
 Todo list is getting short! Almost there!
 
+* Pull can frames from offical [repo](https://github.com/REVrobotics/REV-Specs)?
 * Reseed gyro from vision if we are not locked
 * Button to line up for climb
 * Button to auto drive through trench?
