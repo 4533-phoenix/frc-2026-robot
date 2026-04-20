@@ -31,30 +31,25 @@ import frc.robot.services.control.operator.profiles.DefaultOperatorProfile;
 import frc.robot.services.vision.Vision;
 import frc.robot.services.vision.VisionIO;
 import frc.robot.services.vision.VisionIOSim;
-import frc.robot.services.vision.VisionIOWhacknet;
 import frc.robot.subsystems.climber.Climber;
 import frc.robot.subsystems.climber.ClimberIO;
 import frc.robot.subsystems.climber.ClimberIOSim;
-import frc.robot.subsystems.climber.ClimberIOSpark;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveConstants;
 import frc.robot.subsystems.drive.gyro.GyroIO;
-import frc.robot.subsystems.drive.gyro.GyroIODual;
+import frc.robot.subsystems.drive.gyro.GyroIONavX;
 import frc.robot.subsystems.drive.module.ModuleIO;
 import frc.robot.subsystems.drive.module.ModuleIOSim;
 import frc.robot.subsystems.drive.module.ModuleIOSpark;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.indexer.IndexerIO;
 import frc.robot.subsystems.indexer.IndexerIOSim;
-import frc.robot.subsystems.indexer.IndexerIOSpark;
 import frc.robot.subsystems.intake.arm.Arm;
 import frc.robot.subsystems.intake.arm.ArmIO;
 import frc.robot.subsystems.intake.arm.ArmIOSim;
-import frc.robot.subsystems.intake.arm.ArmIOSpark;
 import frc.robot.subsystems.intake.spinner.Spinner;
 import frc.robot.subsystems.intake.spinner.SpinnerIO;
 import frc.robot.subsystems.intake.spinner.SpinnerIOSim;
-import frc.robot.subsystems.intake.spinner.SpinnerIOSpark;
 import frc.robot.subsystems.pdh.PDH;
 import frc.robot.subsystems.pdh.PDHIO;
 import frc.robot.subsystems.pdh.PDHIOReal;
@@ -62,9 +57,7 @@ import frc.robot.subsystems.pdh.PDHIOSim;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
-import frc.robot.subsystems.shooter.flywheel.FlywheelIOSpark;
 import frc.robot.subsystems.shooter.hood.HoodIO;
-import frc.robot.subsystems.shooter.hood.HoodIOServo;
 import frc.robot.subsystems.shooter.hood.HoodIOSim;
 import frc.robot.util.Util;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
@@ -105,17 +98,17 @@ public class RobotContainer {
         // Real robot, instantiate hardware IO implementations
         drive =
             new Drive(
-                new GyroIODual(),
+                new GyroIONavX(),
                 new ModuleIOSpark(0),
                 new ModuleIOSpark(1),
                 new ModuleIOSpark(2),
                 new ModuleIOSpark(3));
-        climber = new Climber(new ClimberIOSpark());
-        arm = new Arm(new ArmIOSpark());
-        spinner = new Spinner(new SpinnerIOSpark());
-        shooter = new Shooter(new FlywheelIOSpark(), new HoodIOServo());
-        indexer = new Indexer(new IndexerIOSpark());
-        vision = new Vision(new VisionIOWhacknet());
+        climber = new Climber(new ClimberIO() {});
+        arm = new Arm(new ArmIO() {});
+        spinner = new Spinner(new SpinnerIO() {});
+        shooter = new Shooter(new FlywheelIO() {}, new HoodIO() {});
+        indexer = new Indexer(new IndexerIO() {});
+        vision = new Vision(new VisionIO() {});
         pdh = new PDH(new PDHIOReal());
         break;
 
@@ -177,6 +170,16 @@ public class RobotContainer {
             DriveConstants.MAX_LINEAR_ACCELERATION,
             DriveConstants.MAX_ANGULAR_VELOCITY,
             DriveConstants.MAX_ANGULAR_ACCELERATION,
+            drive::getChassisSpeeds,
+            superstructure.isReadyToShoot()));
+    driverChooser.addDefaultOption(
+        "Demo",
+        new DefaultDriverProfile(
+            driverController,
+            MetersPerSecond.of(0.5),
+            MetersPerSecondPerSecond.of(1.0),
+            RadiansPerSecond.of(1.0),
+            RadiansPerSecondPerSecond.of(2.0),
             drive::getChassisSpeeds,
             superstructure.isReadyToShoot()));
     driverChooser.addOption(
