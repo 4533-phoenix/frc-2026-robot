@@ -399,7 +399,7 @@ public class RobotContainer {
 
   /** Sets up the default commands for subsystems. */
   public void configureDefaultCommands() {
-    // By default, drive with the joysticks and ensure the goal is DRIVE
+    // By default, drive with the joysticks
     drive.setDefaultCommand(driver.createDriveCommand(drive));
   }
 
