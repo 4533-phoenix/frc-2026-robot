@@ -163,16 +163,6 @@ public class RobotContainer {
     // Create the driver
     XboxController driverController = new XboxController(0);
     driverChooser.addDefaultOption(
-        "Default",
-        new DefaultDriverProfile(
-            driverController,
-            DriveConstants.MAX_LINEAR_VELOCITY,
-            DriveConstants.MAX_LINEAR_ACCELERATION,
-            DriveConstants.MAX_ANGULAR_VELOCITY,
-            DriveConstants.MAX_ANGULAR_ACCELERATION,
-            drive::getChassisSpeeds,
-            superstructure.isReadyToShoot()));
-    driverChooser.addDefaultOption(
         "Demo",
         new DefaultDriverProfile(
             driverController,
